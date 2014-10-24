@@ -162,6 +162,13 @@ class Firewall_db_mixin(firewall.FirewallPluginBase, base_db.CommonDbMixin):
                'enabled': firewall_rule['enabled']}
         return self._fields(res, fields)
 
+    def _check_firewall_rule_conflict(self, fwr_db, fwp_db):
+        if not fwr_db['shared']:
+            if fwr_db['tenant_id'] != fwp_db['tenant_id']:
+                raise firewall.FirewallRuleConflict(
+                    firewall_rule_id=fwr_db['id'],
+                    tenant_id=fwr_db['tenant_id'])
+
     def _set_rules_for_policy(self, context, firewall_policy_db, fwp):
         rule_id_list = fwp['firewall_rules']
         fwp_db = firewall_policy_db
@@ -180,8 +187,8 @@ class Firewall_db_mixin(firewall.FirewallPluginBase, base_db.CommonDbMixin):
                     # If we find an invalid rule in the list we
                     # do not perform the update since this breaks
                     # the integrity of this list.
-                    raise firewall.FirewallRuleNotFound(firewall_rule_id=
-                                                        fwrule_id)
+                    raise firewall.FirewallRuleNotFound(
+                        firewall_rule_id=fwrule_id)
                 elif rules_dict[fwrule_id]['firewall_policy_id']:
                     if (rules_dict[fwrule_id]['firewall_policy_id'] !=
                             fwp_db['id']):
@@ -196,6 +203,8 @@ class Firewall_db_mixin(firewall.FirewallPluginBase, base_db.CommonDbMixin):
                     raise firewall.FirewallRuleSharingConflict(
                         firewall_rule_id=fwrule_id,
                         firewall_policy_id=fwp_db['id'])
+            for fwr_db in rules_in_db:
+                self._check_firewall_rule_conflict(fwr_db, fwp_db)
             # New list of rules is valid so we will first reset the existing
             # list and then add each rule in order.
             # Note that the list could be empty in which case we interpret
@@ -264,14 +273,14 @@ class Firewall_db_mixin(firewall.FirewallPluginBase, base_db.CommonDbMixin):
         status = (const.CREATED
             if cfg.CONF.router_distributed else const.PENDING_CREATE)
         with context.session.begin(subtransactions=True):
-            firewall_db = Firewall(id=uuidutils.generate_uuid(),
-                                   tenant_id=tenant_id,
-                                   name=fw['name'],
-                                   description=fw['description'],
-                                   firewall_policy_id=
-                                   fw['firewall_policy_id'],
-                                   admin_state_up=fw['admin_state_up'],
-                                   status=status)
+            firewall_db = Firewall(
+                id=uuidutils.generate_uuid(),
+                tenant_id=tenant_id,
+                name=fw['name'],
+                description=fw['description'],
+                firewall_policy_id=fw['firewall_policy_id'],
+                admin_state_up=fw['admin_state_up'],
+                status=status)
             context.session.add(firewall_db)
         return self._make_firewall_dict(firewall_db)
 
@@ -329,6 +338,12 @@ class Firewall_db_mixin(firewall.FirewallPluginBase, base_db.CommonDbMixin):
         fwp = firewall_policy['firewall_policy']
         with context.session.begin(subtransactions=True):
             fwp_db = self._get_firewall_policy(context, id)
+            # check tenant ids are same for fw and fwp or not
+            if not fwp.get('shared', True) and fwp_db.firewalls:
+                for fw in fwp_db['firewalls']:
+                    if fwp_db['tenant_id'] != fw['tenant_id']:
+                        raise firewall.FirewallPolicyInUse(
+                            firewall_policy_id=id)
             # check any existing rules are not shared
             if 'shared' in fwp and 'firewall_rules' not in fwp:
                 self._check_unshared_rules_for_policy(fwp_db, fwp)
@@ -381,28 +396,35 @@ class Firewall_db_mixin(firewall.FirewallPluginBase, base_db.CommonDbMixin):
         dst_port_min, dst_port_max = self._get_min_max_ports_from_range(
             fwr['destination_port'])
         with context.session.begin(subtransactions=True):
-            fwr_db = FirewallRule(id=uuidutils.generate_uuid(),
-                                  tenant_id=tenant_id,
-                                  name=fwr['name'],
-                                  description=fwr['description'],
-                                  shared=fwr['shared'],
-                                  protocol=fwr['protocol'],
-                                  ip_version=fwr['ip_version'],
-                                  source_ip_address=fwr['source_ip_address'],
-                                  destination_ip_address=
-                                  fwr['destination_ip_address'],
-                                  source_port_range_min=src_port_min,
-                                  source_port_range_max=src_port_max,
-                                  destination_port_range_min=dst_port_min,
-                                  destination_port_range_max=dst_port_max,
-                                  action=fwr['action'],
-                                  enabled=fwr['enabled'])
+            fwr_db = FirewallRule(
+                id=uuidutils.generate_uuid(),
+                tenant_id=tenant_id,
+                name=fwr['name'],
+                description=fwr['description'],
+                shared=fwr['shared'],
+                protocol=fwr['protocol'],
+                ip_version=fwr['ip_version'],
+                source_ip_address=fwr['source_ip_address'],
+                destination_ip_address=fwr['destination_ip_address'],
+                source_port_range_min=src_port_min,
+                source_port_range_max=src_port_max,
+                destination_port_range_min=dst_port_min,
+                destination_port_range_max=dst_port_max,
+                action=fwr['action'],
+                enabled=fwr['enabled'])
             context.session.add(fwr_db)
         return self._make_firewall_rule_dict(fwr_db)
 
     def update_firewall_rule(self, context, id, firewall_rule):
         LOG.debug(_("update_firewall_rule() called"))
         fwr = firewall_rule['firewall_rule']
+        fwr_db = self._get_firewall_rule(context, id)
+        if fwr_db.firewall_policy_id:
+            fwp_db = self._get_firewall_policy(context,
+                                               fwr_db.firewall_policy_id)
+            if 'shared' in fwr and not fwr['shared']:
+                if fwr_db['tenant_id'] != fwp_db['tenant_id']:
+                    raise firewall.FirewallRuleInUse(firewall_rule_id=id)
         if 'source_port' in fwr:
             src_port_min, src_port_max = self._get_min_max_ports_from_range(
                 fwr['source_port'])
@@ -416,7 +438,6 @@ class Firewall_db_mixin(firewall.FirewallPluginBase, base_db.CommonDbMixin):
             fwr['destination_port_range_max'] = dst_port_max
             del fwr['destination_port']
         with context.session.begin(subtransactions=True):
-            fwr_db = self._get_firewall_rule(context, id)
             protocol = fwr.get('protocol', fwr_db['protocol'])
             if not protocol:
                 sport = fwr.get('source_port_range_min',
@@ -427,8 +448,6 @@ class Firewall_db_mixin(firewall.FirewallPluginBase, base_db.CommonDbMixin):
                     raise firewall.FirewallRuleWithPortWithoutProtocolInvalid()
             fwr_db.update(fwr)
             if fwr_db.firewall_policy_id:
-                fwp_db = self._get_firewall_policy(context,
-                                                   fwr_db.firewall_policy_id)
                 fwp_db.audited = False
         return self._make_firewall_rule_dict(fwr_db)
 
@@ -476,8 +495,10 @@ class Firewall_db_mixin(firewall.FirewallPluginBase, base_db.CommonDbMixin):
             insert_before = False
         with context.session.begin(subtransactions=True):
             fwr_db = self._get_firewall_rule(context, firewall_rule_id)
+            fwp_db = self._get_firewall_policy(context, id)
             if fwr_db.firewall_policy_id:
                 raise firewall.FirewallRuleInUse(firewall_rule_id=fwr_db['id'])
+            self._check_firewall_rule_conflict(fwr_db, fwp_db)
             if ref_firewall_rule_id:
                 # If reference_firewall_rule_id is set, the new rule
                 # is inserted depending on the value of insert_before.
