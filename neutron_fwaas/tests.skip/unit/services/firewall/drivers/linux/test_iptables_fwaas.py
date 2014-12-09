@@ -17,9 +17,9 @@ import mock
 from oslo.config import cfg
 
 from neutron.agent.common import config as a_cfg
-import neutron_fwaas.services.firewall.drivers.linux.iptables_fwaas as fwaas
 from neutron.tests import base
 from neutron.tests.unit import test_api_v2
+import neutron_fwaas.services.firewall.drivers.linux.iptables_fwaas as fwaas
 
 
 _uuid = test_api_v2._uuid

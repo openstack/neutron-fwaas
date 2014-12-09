@@ -22,9 +22,9 @@ from webob import exc
 from neutron import context
 from neutron.extensions import firewall
 from neutron.plugins.common import constants as const
-from neutron_fwaas.services.firewall import fwaas_plugin
 from neutron.tests import base
 from neutron.tests.unit.db.firewall import test_db_firewall
+from neutron_fwaas.services.firewall import fwaas_plugin
 
 
 FW_PLUGIN_KLASS = (

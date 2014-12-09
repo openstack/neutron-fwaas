@@ -25,10 +25,12 @@ from neutron.agent.linux import ip_lib
 from neutron.common import config as base_config
 from neutron import context
 from neutron.plugins.common import constants
-from neutron_fwaas.services.firewall.agents import firewall_agent_api
-from neutron_fwaas.services.firewall.agents.l3reference import firewall_l3_agent
 from neutron.tests import base
-from neutron.tests.unit.services.firewall.agents import test_firewall_agent_api
+from neutron.tests.unit.services.firewall.agents \
+    import test_firewall_agent_api
+from neutron_fwaas.services.firewall.agents import firewall_agent_api
+from neutron_fwaas.services.firewall.agents.l3reference \
+    import firewall_l3_agent
 
 
 class FWaasHelper(object):

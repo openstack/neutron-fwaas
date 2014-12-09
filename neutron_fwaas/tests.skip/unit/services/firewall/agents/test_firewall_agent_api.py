@@ -16,9 +16,9 @@
 import contextlib
 import mock
 
+from neutron.tests import base
 from neutron_fwaas.services.firewall.agents import firewall_agent_api as api
 from neutron_fwaas.services.firewall.drivers import fwaas_base as base_driver
-from neutron.tests import base
 
 
 class NoopFwaasDriver(base_driver.FwaasDriverBase):

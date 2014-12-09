@@ -24,14 +24,14 @@ import webob.exc
 from neutron.api import extensions as api_ext
 from neutron.common import config
 from neutron import context
-from neutron_fwaas.db.loadbalancer import firewall_db as fdb
 import neutron.extensions
 from neutron.extensions import firewall
 from neutron import manager
 from neutron.openstack.common import uuidutils
 from neutron.plugins.common import constants
-from neutron_fwaas.services.firewall import fwaas_plugin
 from neutron.tests.unit import test_db_plugin
+from neutron_fwaas.db.firewall import firewall_db as fdb
+from neutron_fwaas.services.firewall import fwaas_plugin
 
 
 DB_FW_PLUGIN_KLASS = (

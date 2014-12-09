@@ -16,7 +16,8 @@
 from neutron.i18n import _LW
 from neutron.openstack.common import log as logging
 from neutron_fwaas.services.firewall.agents.varmour import varmour_api
-from neutron_fwaas.services.firewall.agents.varmour import varmour_utils as va_utils
+from neutron_fwaas.services.firewall.agents.varmour \
+    import varmour_utils as va_utils
 from neutron_fwaas.services.firewall.drivers import fwaas_base
 
 LOG = logging.getLogger(__name__)
