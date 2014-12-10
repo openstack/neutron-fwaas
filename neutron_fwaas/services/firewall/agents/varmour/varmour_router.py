@@ -345,6 +345,6 @@ def main():
         binary='neutron-l3-agent',
         topic=topics.L3_AGENT,
         report_interval=cfg.CONF.AGENT.report_interval,
-        manager='neutron.services.firewall.agents.varmour.varmour_router.'
-                'vArmourL3NATAgentWithStateReport')
+        manager='neutron_fwaas.services.firewall.agents.varmour.'
+                'varmour_router.vArmourL3NATAgentWithStateReport')
     service.launch(server).wait()
