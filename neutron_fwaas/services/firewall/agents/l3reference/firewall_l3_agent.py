@@ -14,7 +14,6 @@
 #    under the License.
 
 from oslo.config import cfg
-from oslo.utils import importutils
 
 from neutron.agent.common import config
 from neutron.agent.linux import ip_lib
@@ -24,12 +23,10 @@ from neutron.extensions import firewall as fw_ext
 from neutron.i18n import _LE
 from neutron.openstack.common import log as logging
 from neutron.plugins.common import constants
-from neutron.services import provider_configuration as provconf
 from neutron_fwaas.services.firewall.agents import firewall_agent_api as api
+from neutron_fwaas.services.firewall.agents import firewall_service
 
 LOG = logging.getLogger(__name__)
-
-FIREWALL_DRIVERS = 'firewall_drivers'
 
 
 class FWaaSL3PluginApi(api.FWaaSPluginApiMixin):
@@ -58,8 +55,6 @@ class FWaaSL3AgentRpcCallback(api.FWaaSAgentRpcCallbackMixin):
     def __init__(self, conf):
         LOG.debug("Initializing firewall agent")
         self.conf = conf
-        fwaas_driver_class_path = provconf.get_provider_driver_class(
-            cfg.CONF.fwaas.driver, FIREWALL_DRIVERS)
         self.fwaas_enabled = cfg.CONF.fwaas.enabled
 
         # None means l3-agent has no information on the server
@@ -75,13 +70,10 @@ class FWaaSL3AgentRpcCallback(api.FWaaSAgentRpcCallbackMixin):
             self.fwaas_enabled = self.fwaas_enabled and fwaas_plugin_configured
 
         if self.fwaas_enabled:
-            try:
-                self.fwaas_driver = importutils.import_object(
-                    fwaas_driver_class_path)
-                LOG.debug("FWaaS Driver Loaded: '%s'", fwaas_driver_class_path)
-            except ImportError:
-                msg = _('Error importing FWaaS device driver: %s')
-                raise ImportError(msg % fwaas_driver_class_path)
+            # NOTE: Temp location for creating service and loading driver
+            self.fw_service = firewall_service.FirewallService.instance(self)
+            self.event_observers.add(self.fw_service)
+            self.fwaas_driver = self.fw_service.load_device_drivers()
         self.services_sync = False
         self.root_helper = config.get_root_helper(conf)
         # setup RPC to msg fwaas plugin

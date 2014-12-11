@@ -48,6 +48,12 @@ def _setup_test_agent_class(service_plugins):
                          FWaasHelper):
         neutron_service_plugins = service_plugins
 
+        def __init__(self, conf):
+            self.event_observers = mock.Mock()
+            self.root_helper = mock.Mock()
+            self.conf = conf
+            super(FWaasTestAgent, self).__init__(conf)
+
     return FWaasTestAgent
 
 
