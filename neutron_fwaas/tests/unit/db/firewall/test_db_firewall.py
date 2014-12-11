@@ -935,12 +935,15 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
         with self.firewall_policy() as fwp:
             fwp_id = fwp['firewall_policy']['id']
             with contextlib.nested(self.firewall(name='fw1',
+                                                 tenant_id='tenant1',
                                                  firewall_policy_id=fwp_id,
                                                  description='fw'),
                                    self.firewall(name='fw2',
+                                                 tenant_id='tenant2',
                                                  firewall_policy_id=fwp_id,
                                                  description='fw'),
                                    self.firewall(name='fw3',
+                                                 tenant_id='tenant3',
                                                  firewall_policy_id=fwp_id,
                                                  description='fw')) as fwalls:
                 self._test_list_resources('firewall', fwalls,
