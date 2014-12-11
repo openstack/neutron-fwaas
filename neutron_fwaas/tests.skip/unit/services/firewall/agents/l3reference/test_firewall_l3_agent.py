@@ -19,8 +19,9 @@ import mock
 from oslo.config import cfg
 
 from neutron.agent.common import config as agent_config
-from neutron.agent import l3_agent
-from neutron.agent import l3_ha_agent
+from neutron.agent.l3 import agent
+from neutron.agent.l3 import ha
+from neutron.agent.l3 import router_info
 from neutron.agent.linux import ip_lib
 from neutron.common import config as base_config
 from neutron import context
@@ -56,8 +57,8 @@ class TestFwaasL3AgentRpcCallback(base.BaseTestCase):
 
         self.conf = cfg.ConfigOpts()
         self.conf.register_opts(base_config.core_opts)
-        self.conf.register_opts(l3_agent.L3NATAgent.OPTS)
-        self.conf.register_opts(l3_ha_agent.OPTS)
+        self.conf.register_opts(agent.L3NATAgent.OPTS)
+        self.conf.register_opts(ha.OPTS)
         agent_config.register_use_namespaces_opts_helper(self.conf)
         agent_config.register_root_helper(self.conf)
         self.conf.root_helper = 'sudo'
@@ -338,8 +339,8 @@ class TestFwaasL3AgentRpcCallback(base.BaseTestCase):
     def _prepare_router_data(self):
         router = {'id': str(uuid.uuid4()), 'tenant_id': str(uuid.uuid4())}
         ns = "ns-" + router['id']
-        return l3_agent.RouterInfo(router['id'], self.conf.root_helper,
-                                   router=router, ns_name=ns)
+        return router_info.RouterInfo(router['id'], self.conf.root_helper,
+                                      router=router, ns_name=ns)
 
     def _get_router_info_list_helper(self, use_namespaces):
         self.conf.set_override('use_namespaces', use_namespaces)

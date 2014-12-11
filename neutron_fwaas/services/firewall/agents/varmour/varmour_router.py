@@ -22,8 +22,9 @@ import netaddr
 from oslo.config import cfg
 
 from neutron.agent.common import config
-from neutron.agent import l3_agent
-from neutron.agent import l3_ha_agent
+from neutron.agent.l3 import agent
+from neutron.agent.l3 import ha
+from neutron.agent.l3 import router_info
 from neutron.agent.linux import external_process
 from neutron.agent.linux import interface
 from neutron.agent.linux import ip_lib
@@ -44,7 +45,7 @@ from neutron_fwaas.services.firewall.agents.varmour \
 LOG = logging.getLogger(__name__)
 
 
-class vArmourL3NATAgent(l3_agent.L3NATAgent,
+class vArmourL3NATAgent(agent.L3NATAgent,
                         firewall_l3_agent.FWaaSL3AgentRpcCallback):
     def __init__(self, host, conf=None):
         LOG.debug('vArmourL3NATAgent: __init__')
@@ -62,7 +63,7 @@ class vArmourL3NATAgent(l3_agent.L3NATAgent,
 
     def _router_added(self, router_id, router):
         LOG.debug("_router_added: %s", router_id)
-        ri = l3_agent.RouterInfo(router_id, self.root_helper, router)
+        ri = router_info.RouterInfo(router_id, self.root_helper, router)
         self.router_info[router_id] = ri
         super(vArmourL3NATAgent, self).process_router_add(ri)
 
@@ -316,7 +317,7 @@ class vArmourL3NATAgent(l3_agent.L3NATAgent,
                              ex_gw_port['mac_address'],
                              bridge=self.conf.external_network_bridge,
                              namespace=ri.ns_name,
-                             prefix=l3_agent.EXTERNAL_DEV_PREFIX)
+                             prefix=agent.EXTERNAL_DEV_PREFIX)
         self.driver.init_l3(interface_name, [ex_gw_port['ip_cidr']],
                             namespace=ri.ns_name)
 
@@ -325,14 +326,14 @@ class vArmourL3NATAgent(l3_agent.L3NATAgent,
 
 
 class vArmourL3NATAgentWithStateReport(vArmourL3NATAgent,
-                                       l3_agent.L3NATAgentWithStateReport):
+                                       agent.L3NATAgentWithStateReport):
     pass
 
 
 def main():
     conf = cfg.CONF
     conf.register_opts(vArmourL3NATAgent.OPTS)
-    conf.register_opts(l3_ha_agent.OPTS)
+    conf.register_opts(ha.OPTS)
     config.register_interface_driver_opts_helper(conf)
     config.register_use_namespaces_opts_helper(conf)
     config.register_agent_state_opts_helper(conf)

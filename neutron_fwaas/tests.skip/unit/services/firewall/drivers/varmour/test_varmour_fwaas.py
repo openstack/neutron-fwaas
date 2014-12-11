@@ -17,8 +17,8 @@
 import mock
 
 from neutron.agent.common import config as agent_config
-from neutron.agent import l3_agent
-from neutron.agent import l3_ha_agent
+from neutron.agent.l3 import ha
+from neutron.agent.l3 import router_info
 from neutron.agent.linux import interface
 from neutron.common import config as base_config
 from neutron.common import constants as l3_constants
@@ -40,7 +40,7 @@ class TestBasicRouterOperations(base.BaseTestCase):
         self.conf = agent_config.setup_conf()
         self.conf.register_opts(base_config.core_opts)
         self.conf.register_opts(varmour_router.vArmourL3NATAgent.OPTS)
-        self.conf.register_opts(l3_ha_agent.OPTS)
+        self.conf.register_opts(ha.OPTS)
         agent_config.register_interface_driver_opts_helper(self.conf)
         agent_config.register_use_namespaces_opts_helper(self.conf)
         agent_config.register_root_helper(self.conf)
@@ -77,7 +77,7 @@ class TestBasicRouterOperations(base.BaseTestCase):
         self.mock_ip = mock.MagicMock()
         ip_cls.return_value = self.mock_ip
 
-        mock.patch('neutron.agent.l3_agent.L3PluginApi').start()
+        mock.patch('neutron.agent.l3.agent.L3PluginApi').start()
 
         self.looping_call_p = mock.patch(
             'neutron.openstack.common.loopingcall.FixedIntervalLoopingCall')
@@ -150,8 +150,8 @@ class TestBasicRouterOperations(base.BaseTestCase):
         if enable_snat is not None:
             router['enable_snat'] = enable_snat
 
-        ri = l3_agent.RouterInfo(router['id'], self.conf.root_helper,
-                                 router=router)
+        ri = router_info.RouterInfo(router['id'], self.conf.root_helper,
+                                    router=router)
         return ri
 
     def _add_firewall_rules(self, fw, rule_count=1):
