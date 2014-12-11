@@ -23,9 +23,10 @@ from neutron.agent.linux import interface
 from neutron.common import config as base_config
 from neutron.common import constants as l3_constants
 from neutron.openstack.common import uuidutils
-from neutron.tests import base
 from neutron_fwaas.services.firewall.agents.varmour import varmour_router
 from neutron_fwaas.services.firewall.agents.varmour import varmour_utils
+from neutron_fwaas.tests import base
+
 
 _uuid = uuidutils.generate_uuid
 HOSTNAME = 'myhost'
