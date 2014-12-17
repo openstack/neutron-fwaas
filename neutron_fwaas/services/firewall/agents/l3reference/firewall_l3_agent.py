@@ -24,9 +24,12 @@ from neutron.extensions import firewall as fw_ext
 from neutron.i18n import _LE
 from neutron.openstack.common import log as logging
 from neutron.plugins.common import constants
+from neutron.services import provider_configuration as provconf
 from neutron_fwaas.services.firewall.agents import firewall_agent_api as api
 
 LOG = logging.getLogger(__name__)
+
+FIREWALL_DRIVERS = 'firewall_drivers'
 
 
 class FWaaSL3PluginApi(api.FWaaSPluginApiMixin):
@@ -55,7 +58,8 @@ class FWaaSL3AgentRpcCallback(api.FWaaSAgentRpcCallbackMixin):
     def __init__(self, conf):
         LOG.debug("Initializing firewall agent")
         self.conf = conf
-        fwaas_driver_class_path = cfg.CONF.fwaas.driver
+        fwaas_driver_class_path = provconf.get_provider_driver_class(
+            cfg.CONF.fwaas.driver, FIREWALL_DRIVERS)
         self.fwaas_enabled = cfg.CONF.fwaas.enabled
 
         # None means l3-agent has no information on the server
