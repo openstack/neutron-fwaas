@@ -29,15 +29,14 @@ from neutron.extensions import firewall
 from neutron import manager
 from neutron.openstack.common import uuidutils
 from neutron.plugins.common import constants
-from neutron.tests.unit import test_db_plugin
 from neutron_fwaas.db.firewall import firewall_db as fdb
 from neutron_fwaas.services.firewall import fwaas_plugin
-
+from neutron_fwaas.tests import base
 
 DB_FW_PLUGIN_KLASS = (
-    "neutron.db.firewall.firewall_db.Firewall_db_mixin"
+    "neutron_fwaas.db.firewall.firewall_db.Firewall_db_mixin"
 )
-FWAAS_PLUGIN = 'neutron.services.firewall.fwaas_plugin'
+FWAAS_PLUGIN = 'neutron_fwaas.services.firewall.fwaas_plugin'
 DELETEFW_PATH = FWAAS_PLUGIN + '.FirewallAgentApi.delete_firewall'
 extensions_path = ':'.join(neutron.extensions.__path__)
 DESCRIPTION = 'default description'
@@ -71,7 +70,7 @@ class FakeAgentApi(fwaas_plugin.FirewallCallbacks):
         self.firewall_deleted(context, firewall['id'], **kwargs)
 
 
-class FirewallPluginDbTestCase(test_db_plugin.NeutronDbPluginV2TestCase):
+class FirewallPluginDbTestCase(base.NeutronDbPluginV2TestCase):
     resource_prefix_map = dict(
         (k, constants.COMMON_PREFIXES[constants.FIREWALL])
         for k in firewall.RESOURCE_ATTRIBUTE_MAP.keys()
