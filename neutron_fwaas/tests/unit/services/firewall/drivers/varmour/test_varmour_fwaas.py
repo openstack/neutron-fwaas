@@ -17,6 +17,7 @@
 import mock
 
 from neutron.agent.common import config as agent_config
+from neutron.agent.l3 import config as l3_config
 from neutron.agent.l3 import ha
 from neutron.agent.l3 import router_info
 from neutron.agent.linux import interface
@@ -39,7 +40,7 @@ class TestBasicRouterOperations(base.BaseTestCase):
         super(TestBasicRouterOperations, self).setUp()
         self.conf = agent_config.setup_conf()
         self.conf.register_opts(base_config.core_opts)
-        self.conf.register_opts(varmour_router.vArmourL3NATAgent.OPTS)
+        self.conf.register_opts(l3_config.OPTS)
         self.conf.register_opts(ha.OPTS)
         agent_config.register_interface_driver_opts_helper(self.conf)
         agent_config.register_use_namespaces_opts_helper(self.conf)

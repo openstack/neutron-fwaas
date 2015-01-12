@@ -19,7 +19,7 @@ import mock
 from oslo.config import cfg
 
 from neutron.agent.common import config as agent_config
-from neutron.agent.l3 import agent
+from neutron.agent.l3 import config as l3_config
 from neutron.agent.l3 import ha
 from neutron.agent.l3 import router_info
 from neutron.agent.linux import ip_lib
@@ -63,7 +63,7 @@ class TestFwaasL3AgentRpcCallback(base.BaseTestCase):
 
         self.conf = cfg.ConfigOpts()
         self.conf.register_opts(base_config.core_opts)
-        self.conf.register_opts(agent.L3NATAgent.OPTS)
+        self.conf.register_opts(l3_config.OPTS)
         self.conf.register_opts(ha.OPTS)
         agent_config.register_use_namespaces_opts_helper(self.conf)
         agent_config.register_root_helper(cfg.CONF)

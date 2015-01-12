@@ -23,6 +23,7 @@ from oslo.config import cfg
 
 from neutron.agent.common import config
 from neutron.agent.l3 import agent
+from neutron.agent.l3 import config as l3_config
 from neutron.agent.l3 import ha
 from neutron.agent.l3 import router_info
 from neutron.agent.linux import external_process
@@ -332,7 +333,7 @@ class vArmourL3NATAgentWithStateReport(vArmourL3NATAgent,
 
 def main():
     conf = cfg.CONF
-    conf.register_opts(vArmourL3NATAgent.OPTS)
+    conf.register_opts(l3_config.OPTS)
     conf.register_opts(ha.OPTS)
     config.register_interface_driver_opts_helper(conf)
     config.register_use_namespaces_opts_helper(conf)
