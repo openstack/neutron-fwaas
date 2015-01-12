@@ -19,7 +19,7 @@ import os
 import neutron
 from neutron.tests import base as n_base
 from neutron.tests.unit import test_db_plugin
-from oslo.config import cfg
+from oslo_config import cfg
 
 
 def override_nvalues():

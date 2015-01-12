@@ -14,7 +14,7 @@
 #    under the License.
 
 import mock
-from oslo.config import cfg
+from oslo_config import cfg
 
 from neutron.agent.common import config as a_cfg
 from neutron.tests import base

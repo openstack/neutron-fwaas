@@ -20,7 +20,7 @@ from neutron.i18n import _LE
 from neutron.openstack.common import log as logging
 from neutron.plugins.common import constants as const
 from neutron.plugins.ml2.drivers.freescale import config
-from oslo.utils import excutils
+from oslo_utils import excutils
 from sqlalchemy.orm import exc
 
 from neutron_fwaas.db.firewall import firewall_db

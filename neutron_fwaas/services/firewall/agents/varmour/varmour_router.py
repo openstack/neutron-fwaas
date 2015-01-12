@@ -19,7 +19,7 @@ import eventlet
 eventlet.monkey_patch()
 
 import netaddr
-from oslo.config import cfg
+from oslo_config import cfg
 
 from neutron.agent.common import config
 from neutron.agent.l3 import agent

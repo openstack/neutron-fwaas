@@ -16,7 +16,7 @@
 import mock
 
 from neutron.tests import base
-from oslo.config import cfg
+from oslo_config import cfg
 
 from neutron_fwaas.services.firewall.agents import firewall_service
 
