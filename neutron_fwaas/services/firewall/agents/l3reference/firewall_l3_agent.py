@@ -83,14 +83,14 @@ class FWaaSL3AgentRpcCallback(api.FWaaSAgentRpcCallbackMixin):
 
     def _get_router_info_list_for_tenant(self, routers, tenant_id):
         """Returns the list of router info objects on which to apply the fw."""
-        root_ip = ip_lib.IPWrapper(self.root_helper)
+        root_ip = ip_lib.IPWrapper(root_helper=self.root_helper)
         # Get the routers for the tenant
         router_ids = [
             router['id']
             for router in routers
             if router['tenant_id'] == tenant_id]
         local_ns_list = root_ip.get_namespaces(
-            self.root_helper) if self.conf.use_namespaces else []
+            root_helper=self.root_helper) if self.conf.use_namespaces else []
 
         router_info_list = []
         # Pick up namespaces for Tenant Routers

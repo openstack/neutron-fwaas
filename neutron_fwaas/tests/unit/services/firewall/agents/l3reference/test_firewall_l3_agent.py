@@ -369,7 +369,8 @@ class TestFwaasL3AgentRpcCallback(base.BaseTestCase):
                 routers,
                 ri.router['tenant_id'])
         if use_namespaces:
-            mock_get_namespaces.assert_called_once_with(self.conf.root_helper)
+            mock_get_namespaces.assert_called_once_with(
+                root_helper=self.conf.root_helper)
             self.assertFalse(router_info_list)
         else:
             self.assertEqual([ri], router_info_list)

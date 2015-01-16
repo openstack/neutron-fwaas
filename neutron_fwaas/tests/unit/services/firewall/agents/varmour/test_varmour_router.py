@@ -145,7 +145,8 @@ class TestVarmourRouter(base.BaseTestCase):
         if enable_snat is not None:
             router['enable_snat'] = enable_snat
 
-        ri = router_info.RouterInfo(router['id'], self.conf.root_helper,
+        ri = router_info.RouterInfo(router_id=router['id'],
+                                    root_helper=self.conf.root_helper,
                                     router=router)
         return ri
 
