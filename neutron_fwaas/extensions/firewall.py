@@ -32,6 +32,7 @@ LOG = logging.getLogger(__name__)
 # Firewall rule action
 FWAAS_ALLOW = "allow"
 FWAAS_DENY = "deny"
+FWAAS_REJECT = "reject"
 
 # Firewall resource path prefix
 FIREWALL_PREFIX = "/fw"
@@ -163,7 +164,7 @@ class FirewallRuleConflict(nexception.Conflict):
 fw_valid_protocol_values = [None, constants.PROTO_NAME_TCP,
                             constants.PROTO_NAME_UDP,
                             constants.PROTO_NAME_ICMP]
-fw_valid_action_values = [FWAAS_ALLOW, FWAAS_DENY]
+fw_valid_action_values = [FWAAS_ALLOW, FWAAS_DENY, FWAAS_REJECT]
 
 
 def convert_protocol(value):
