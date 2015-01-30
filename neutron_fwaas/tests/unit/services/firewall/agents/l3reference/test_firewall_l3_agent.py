@@ -73,6 +73,15 @@ class TestFwaasL3AgentRpcCallback(base.BaseTestCase):
         self.api = FWaasAgent(self.conf)
         self.api.fwaas_driver = test_firewall_agent_api.NoopFwaasDriver()
         self.adminContext = context.get_admin_context()
+        self.router_id = str(uuid.uuid4())
+        self.ri_kwargs = {'router': {'id': self.router_id,
+                                     'tenant_id': str(uuid.uuid4())},
+                          'root_helper': self.conf.root_helper,
+                          'agent_conf': mock.ANY,
+                          'interface_driver': mock.ANY,
+                          'use_ipv6': mock.ANY,
+                          'ns_name': "ns-" + self.router_id,
+                          }
 
     def test_fw_config_match(self):
         test_agent_class = _setup_test_agent_class([constants.FIREWALL])
@@ -345,10 +354,8 @@ class TestFwaasL3AgentRpcCallback(base.BaseTestCase):
                 fake_firewall_list[0]['id'])
 
     def _prepare_router_data(self):
-        router = {'id': str(uuid.uuid4()), 'tenant_id': str(uuid.uuid4())}
-        ns = "ns-" + router['id']
-        return router_info.RouterInfo(router['id'], self.conf.root_helper,
-                                      router=router, ns_name=ns)
+        return router_info.RouterInfo(self.router_id,
+                                      **self.ri_kwargs)
 
     def _get_router_info_list_helper(self, use_namespaces):
         self.conf.set_override('use_namespaces', use_namespaces)
