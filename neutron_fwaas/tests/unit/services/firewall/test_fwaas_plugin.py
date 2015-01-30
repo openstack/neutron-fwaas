@@ -17,11 +17,11 @@
 import contextlib
 
 import mock
+from neutron import context
+from neutron.plugins.common import constants as const
 from webob import exc
 
-from neutron import context
-from neutron.extensions import firewall
-from neutron.plugins.common import constants as const
+from neutron_fwaas.extensions import firewall
 from neutron_fwaas.services.firewall import fwaas_plugin
 from neutron_fwaas.tests import base
 from neutron_fwaas.tests.unit.db.firewall import test_db_firewall
