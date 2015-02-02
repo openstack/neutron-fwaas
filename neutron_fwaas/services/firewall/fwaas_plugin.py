@@ -158,21 +158,6 @@ class FirewallPlugin(firewall_db.Firewall_db_mixin):
             cfg.CONF.host
         )
 
-    def _make_firewall_dict_with_rules(self, context, firewall_id):
-        firewall = self.get_firewall(context, firewall_id)
-        fw_policy_id = firewall['firewall_policy_id']
-        if fw_policy_id:
-            fw_policy = self.get_firewall_policy(context, fw_policy_id)
-            fw_rules_list = [self.get_firewall_rule(
-                context, rule_id) for rule_id in fw_policy['firewall_rules']]
-            firewall['firewall_rule_list'] = fw_rules_list
-        else:
-            firewall['firewall_rule_list'] = []
-        # FIXME(Sumit): If the size of the firewall object we are creating
-        # here exceeds the largest message size supported by rabbit/qpid
-        # then we will have a problem.
-        return firewall
-
     def _rpc_update_firewall(self, context, firewall_id):
         status_update = {"firewall": {"status": const.PENDING_UPDATE}}
         super(FirewallPlugin, self).update_firewall(context, firewall_id,
