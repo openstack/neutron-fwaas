@@ -23,11 +23,12 @@ from sqlalchemy.orm import exc
 from neutron.db import common_db_mixin as base_db
 from neutron.db import model_base
 from neutron.db import models_v2
-from neutron.extensions import firewall
 from neutron import manager
 from neutron.openstack.common import log as logging
 from neutron.openstack.common import uuidutils
 from neutron.plugins.common import constants as const
+
+from neutron_fwaas.extensions import firewall
 
 
 LOG = logging.getLogger(__name__)

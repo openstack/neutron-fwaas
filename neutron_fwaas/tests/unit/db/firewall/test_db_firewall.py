@@ -13,23 +13,22 @@
 #  License for the specific language governing permissions and limitations
 #  under the License.
 
-from oslo.config import cfg
-
 import contextlib
 
 import mock
-from oslo.utils import importutils
-import webob.exc
-
 from neutron.api import extensions as api_ext
 from neutron.common import config
 from neutron import context
 import neutron.extensions
-from neutron.extensions import firewall
 from neutron import manager
 from neutron.openstack.common import uuidutils
 from neutron.plugins.common import constants
+from oslo.config import cfg
+from oslo.utils import importutils
+import webob.exc
+
 from neutron_fwaas.db.firewall import firewall_db as fdb
+from neutron_fwaas.extensions import firewall
 from neutron_fwaas.services.firewall import fwaas_plugin
 from neutron_fwaas.tests import base
 

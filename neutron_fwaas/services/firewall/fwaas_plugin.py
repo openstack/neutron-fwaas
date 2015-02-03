@@ -13,18 +13,18 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from oslo.config import cfg
-from oslo import messaging
-
 from neutron.common import exceptions as n_exception
 from neutron.common import rpc as n_rpc
 from neutron.common import topics
 from neutron import context as neutron_context
-from neutron.extensions import firewall as fw_ext
 from neutron.i18n import _LW
 from neutron.openstack.common import log as logging
 from neutron.plugins.common import constants as const
+from oslo.config import cfg
+from oslo import messaging
+
 from neutron_fwaas.db.firewall import firewall_db
+from neutron_fwaas.extensions import firewall as fw_ext
 
 
 LOG = logging.getLogger(__name__)
