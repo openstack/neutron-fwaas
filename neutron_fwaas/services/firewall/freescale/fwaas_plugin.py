@@ -14,15 +14,15 @@
 #    under the License.
 #
 
-from oslo.utils import excutils
-from sqlalchemy.orm import exc
-
 from neutron.common import rpc
 from neutron.common import topics
 from neutron.i18n import _LE
 from neutron.openstack.common import log as logging
 from neutron.plugins.common import constants as const
 from neutron.plugins.ml2.drivers.freescale import config
+from oslo.utils import excutils
+from sqlalchemy.orm import exc
+
 from neutron_fwaas.db.firewall import firewall_db
 from neutron_fwaas.services.firewall import fwaas_plugin
 
@@ -88,7 +88,7 @@ class FirewallPlugin(firewall_db.Firewall_db_mixin):
             self._client.update_firewall(firewall_id, status_update)
         except Exception:
             with excutils.save_and_reraise_exception():
-                LOG.error(_LE("Failed to update firewall status (%s)."),
+                LOG.exception(_LE("Failed to update firewall status (%s)."),
                           firewall_id)
 
     def _update_firewall_policy(self, context, firewall_policy_id):
