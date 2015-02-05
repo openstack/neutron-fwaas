@@ -19,7 +19,7 @@ import mock
 from neutron.api import extensions as api_ext
 from neutron.common import config
 from neutron import context
-import neutron.extensions
+import neutron.extensions as nextensions
 from neutron import manager
 from neutron.openstack.common import uuidutils
 from neutron.plugins.common import constants
@@ -28,6 +28,7 @@ from oslo.utils import importutils
 import webob.exc
 
 from neutron_fwaas.db.firewall import firewall_db as fdb
+from neutron_fwaas import extensions
 from neutron_fwaas.extensions import firewall
 from neutron_fwaas.services.firewall import fwaas_plugin
 from neutron_fwaas.tests import base
@@ -37,7 +38,7 @@ DB_FW_PLUGIN_KLASS = (
 )
 FWAAS_PLUGIN = 'neutron_fwaas.services.firewall.fwaas_plugin'
 DELETEFW_PATH = FWAAS_PLUGIN + '.FirewallAgentApi.delete_firewall'
-extensions_path = ':'.join(neutron.extensions.__path__)
+extensions_path = ':'.join(extensions.__path__ + nextensions.__path__)
 DESCRIPTION = 'default description'
 SHARED = True
 PROTOCOL = 'tcp'
