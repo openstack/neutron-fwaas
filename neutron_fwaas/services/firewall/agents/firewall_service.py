@@ -16,8 +16,8 @@
 from neutron.openstack.common import log as logging
 from neutron.services import advanced_service
 from neutron.services import provider_configuration as provconf
-from oslo.config import cfg
-from oslo.utils import importutils
+from oslo_config import cfg
+from oslo_utils import importutils
 
 LOG = logging.getLogger(__name__)
 

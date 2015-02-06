@@ -20,8 +20,8 @@ from neutron import context as neutron_context
 from neutron.i18n import _LW
 from neutron.openstack.common import log as logging
 from neutron.plugins.common import constants as const
-from oslo.config import cfg
-from oslo import messaging
+from oslo_config import cfg
+import oslo_messaging
 
 from neutron_fwaas.db.firewall import firewall_db
 from neutron_fwaas.extensions import firewall as fw_ext
@@ -31,7 +31,7 @@ LOG = logging.getLogger(__name__)
 
 
 class FirewallCallbacks(object):
-    target = messaging.Target(version='1.0')
+    target = oslo_messaging.Target(version='1.0')
 
     def __init__(self, plugin):
         super(FirewallCallbacks, self).__init__()
@@ -103,7 +103,7 @@ class FirewallAgentApi(object):
 
     def __init__(self, topic, host):
         self.host = host
-        target = messaging.Target(topic=topic, version='1.0')
+        target = oslo_messaging.Target(topic=topic, version='1.0')
         self.client = n_rpc.get_client(target)
 
     def create_firewall(self, context, firewall):

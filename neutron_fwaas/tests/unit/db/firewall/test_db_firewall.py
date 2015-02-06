@@ -23,8 +23,8 @@ import neutron.extensions as nextensions
 from neutron import manager
 from neutron.openstack.common import uuidutils
 from neutron.plugins.common import constants
-from oslo.config import cfg
-from oslo.utils import importutils
+from oslo_config import cfg
+from oslo_utils import importutils
 import webob.exc
 
 from neutron_fwaas.db.firewall import firewall_db as fdb

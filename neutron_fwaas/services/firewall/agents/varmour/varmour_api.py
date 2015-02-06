@@ -16,8 +16,8 @@
 import base64
 
 import httplib2
-from oslo.config import cfg
-from oslo.serialization import jsonutils
+from oslo_config import cfg
+from oslo_serialization import jsonutils
 
 from neutron.i18n import _LE
 from neutron.openstack.common import log as logging
