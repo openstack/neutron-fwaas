@@ -1,7 +1,7 @@
 [run]
 branch = True
-source = neutron
-omit = neutron/tests/*,neutron/plugins/cisco/test/*,neutron/openstack/*
+source = neutron_fwaas
+# omit = neutron_fwaas/tests/*
 
 [report]
 ignore-errors = True
