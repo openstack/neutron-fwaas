@@ -83,6 +83,8 @@ class TestBasicRouterOperations(base.BaseTestCase):
             'neutron.openstack.common.loopingcall.FixedIntervalLoopingCall')
         self.looping_call_p.start()
 
+        self.fake_agent_mode = None
+
     def _create_router(self):
         router = varmour_router.vArmourL3NATAgent(HOSTNAME, self.conf)
         router.rest.server = FAKE_DIRECTOR
@@ -189,7 +191,7 @@ class TestBasicRouterOperations(base.BaseTestCase):
         rl = [ri]
 
         fw = self._prepare_firewall_data()
-        fwaas.create_firewall(rl, fw)
+        fwaas.create_firewall(self.fake_agent_mode, rl, fw)
 
         url = varmour_utils.REST_URL_CONF_POLICY
         prefix = varmour_utils.get_firewall_object_prefix(ri, fw)
@@ -197,7 +199,7 @@ class TestBasicRouterOperations(base.BaseTestCase):
         n = fwaas.rest.count_cfg_objs(url, prefix)
         self.assertEqual(n, 0)
 
-        fwaas.delete_firewall(rl, fw)
+        fwaas.delete_firewall(self.fake_agent_mode, rl, fw)
         n = fwaas.rest.count_cfg_objs(url, prefix)
         self.assertEqual(n, 0)
 
@@ -221,7 +223,7 @@ class TestBasicRouterOperations(base.BaseTestCase):
 
         fw = self._prepare_firewall_data()
         self._add_firewall_rules(fw, 2)
-        fwaas.create_firewall(rl, fw)
+        fwaas.create_firewall(self.fake_agent_mode, rl, fw)
 
         prefix = varmour_utils.get_firewall_object_prefix(ri, fw)
         pol_url = varmour_utils.REST_URL_CONF_POLICY
@@ -236,7 +238,7 @@ class TestBasicRouterOperations(base.BaseTestCase):
         n = fwaas.rest.count_cfg_objs(serv_url, prefix)
         self.assertEqual(n, 2)
 
-        fwaas.delete_firewall(rl, fw)
+        fwaas.delete_firewall(self.fake_agent_mode, rl, fw)
         n = fwaas.rest.count_cfg_objs(pol_url, prefix)
         self.assertEqual(n, 0)
 
@@ -260,7 +262,7 @@ class TestBasicRouterOperations(base.BaseTestCase):
 
         fw = self._prepare_firewall_data()
         self._add_firewall_rules(fw, 2)
-        fwaas.create_firewall(rl, fw)
+        fwaas.create_firewall(self.fake_agent_mode, rl, fw)
 
         prefix = varmour_utils.get_firewall_object_prefix(ri, fw)
         pol_url = varmour_utils.REST_URL_CONF_POLICY
@@ -276,7 +278,7 @@ class TestBasicRouterOperations(base.BaseTestCase):
         self.assertEqual(n, 2)
 
         self._add_firewall_rules(fw, 1)
-        fwaas.create_firewall(rl, fw)
+        fwaas.create_firewall(self.fake_agent_mode, rl, fw)
         n = fwaas.rest.count_cfg_objs(pol_url, prefix)
         self.assertEqual(n, 3)
         n = fwaas.rest.count_cfg_objs(addr_url, prefix)
@@ -284,7 +286,7 @@ class TestBasicRouterOperations(base.BaseTestCase):
         n = fwaas.rest.count_cfg_objs(serv_url, prefix)
         self.assertEqual(n, 1)
 
-        fwaas.delete_firewall(rl, fw)
+        fwaas.delete_firewall(self.fake_agent_mode, rl, fw)
         n = fwaas.rest.count_cfg_objs(pol_url, prefix)
         self.assertEqual(n, 0)
 
