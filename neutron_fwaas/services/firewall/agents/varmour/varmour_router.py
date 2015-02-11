@@ -53,9 +53,6 @@ class vArmourL3NATAgent(agent.L3NATAgent,
         self.rest = varmour_api.vArmourRestAPI()
         super(vArmourL3NATAgent, self).__init__(host, conf)
 
-    def _destroy_router_namespaces(self, only_router_id=None):
-        return
-
     def _destroy_router_namespace(self, namespace):
         return
 
