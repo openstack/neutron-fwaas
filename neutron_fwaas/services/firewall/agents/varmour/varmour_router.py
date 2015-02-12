@@ -61,9 +61,7 @@ class vArmourL3NATAgent(agent.L3NATAgent,
 
     def _router_added(self, router_id, router):
         LOG.debug("_router_added: %s", router_id)
-        ri = router_info.RouterInfo(router_id=router_id,
-                                    root_helper=self.root_helper,
-                                    router=router)
+        ri = router_info.RouterInfo(router_id=router_id, router=router)
         self.router_info[router_id] = ri
         super(vArmourL3NATAgent, self).process_router_add(ri)
 
@@ -309,9 +307,7 @@ class vArmourL3NATAgent(agent.L3NATAgent,
                                interface_name, internal_cidrs):
         LOG.debug("external_gateway_added: %s", ri.router['id'])
 
-        if not ip_lib.device_exists(interface_name,
-                                    root_helper=self.root_helper,
-                                    namespace=ri.ns_name):
+        if not ip_lib.device_exists(interface_name, namespace=ri.ns_name):
             self.driver.plug(ex_gw_port['network_id'],
                              ex_gw_port['id'], interface_name,
                              ex_gw_port['mac_address'],
@@ -337,7 +333,6 @@ def main():
     config.register_interface_driver_opts_helper(conf)
     config.register_use_namespaces_opts_helper(conf)
     config.register_agent_state_opts_helper(conf)
-    config.register_root_helper(conf)
     conf.register_opts(interface.OPTS)
     conf.register_opts(external_process.OPTS)
     common_config.init(sys.argv[1:])

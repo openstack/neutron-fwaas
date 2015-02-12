@@ -50,7 +50,6 @@ def _setup_test_agent_class(service_plugins):
 
         def __init__(self, conf):
             self.event_observers = mock.Mock()
-            self.root_helper = mock.Mock()
             self.conf = conf
             super(FWaasTestAgent, self).__init__(conf)
 
@@ -66,9 +65,6 @@ class TestFwaasL3AgentRpcCallback(base.BaseTestCase):
         self.conf.register_opts(l3_config.OPTS)
         self.conf.register_opts(ha.OPTS)
         agent_config.register_use_namespaces_opts_helper(self.conf)
-        agent_config.register_root_helper(cfg.CONF)
-        agent_config.register_root_helper(self.conf)
-        self.conf.root_helper = 'sudo'
         self.conf.register_opts(firewall_agent_api.FWaaSOpts, 'fwaas')
         self.api = FWaasAgent(self.conf)
         self.api.fwaas_driver = test_firewall_agent_api.NoopFwaasDriver()
@@ -76,7 +72,6 @@ class TestFwaasL3AgentRpcCallback(base.BaseTestCase):
         self.router_id = str(uuid.uuid4())
         self.ri_kwargs = {'router': {'id': self.router_id,
                                      'tenant_id': str(uuid.uuid4())},
-                          'root_helper': self.conf.root_helper,
                           'agent_conf': mock.ANY,
                           'interface_driver': mock.ANY,
                           'use_ipv6': mock.ANY,
@@ -369,8 +364,7 @@ class TestFwaasL3AgentRpcCallback(base.BaseTestCase):
                 routers,
                 ri.router['tenant_id'])
         if use_namespaces:
-            mock_get_namespaces.assert_called_once_with(
-                root_helper=self.conf.root_helper)
+            mock_get_namespaces.assert_called_once_with()
             self.assertFalse(router_info_list)
         else:
             self.assertEqual([ri], router_info_list)

@@ -45,11 +45,9 @@ class TestBasicRouterOperations(base.BaseTestCase):
         agent_config.register_process_monitor_opts(self.conf)
         agent_config.register_interface_driver_opts_helper(self.conf)
         agent_config.register_use_namespaces_opts_helper(self.conf)
-        agent_config.register_root_helper(self.conf)
         self.conf.register_opts(interface.OPTS)
         self.conf.set_override('interface_driver',
                                'neutron.agent.linux.interface.NullDriver')
-        self.conf.root_helper = 'sudo'
         self.conf.state_path = ''
 
         self.device_exists_p = mock.patch(
@@ -152,9 +150,7 @@ class TestBasicRouterOperations(base.BaseTestCase):
         if enable_snat is not None:
             router['enable_snat'] = enable_snat
 
-        ri = router_info.RouterInfo(router_id=router['id'],
-                                    root_helper=self.conf.root_helper,
-                                    router=router)
+        ri = router_info.RouterInfo(router_id=router['id'], router=router)
         return ri
 
     def _add_firewall_rules(self, fw, rule_count=1):
