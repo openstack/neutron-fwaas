@@ -18,7 +18,7 @@ import urllib
 from neutron import context as neutron_context
 from neutron.i18n import _LW
 from neutron.openstack.common import log as logging
-from novaclient.v1_1 import client as nova_client
+from novaclient import client as nova_client
 from vyatta.common import config as vyatta_config
 from vyatta.vrouter import client as vyatta_client
 
@@ -42,11 +42,14 @@ FW_RULE_SRC_ADDR = 'firewall/name/{0}/rule/{1}/source/address/{2}'
 FW_RULE_DEST_ADDR = 'firewall/name/{0}/rule/{1}/destination/address/{2}'
 FW_RULE_ACTION = 'firewall/name/{0}/rule/{1}/action/{2}'
 
+NOVACLIENT_VERSION = '2'
+
 
 class VyattaFirewallDriver(fwaas_base.FwaasDriverBase):
     def __init__(self):
         LOG.debug("Vyatta vRouter Fwaas:: Initializing fwaas driver")
         compute_client = nova_client.Client(
+            NOVACLIENT_VERSION,
             vyatta_config.VROUTER.tenant_admin_name,
             vyatta_config.VROUTER.tenant_admin_password,
             auth_url=vyatta_config.CONF.nova_admin_auth_url,
