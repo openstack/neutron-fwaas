@@ -236,6 +236,9 @@ class FWaaSL3AgentRpcCallback(api.FWaaSAgentRpcCallbackMixin):
             self.services_sync = True
 
     def process_services_sync(self, ctx):
+        if not self.services_sync:
+            return
+
         """On RPC issues sync with plugin and apply the sync data."""
         # avoid msg to plugin when fwaas is not configured
         if not self.fwaas_enabled:
