@@ -28,7 +28,7 @@ class TestFirewallDeviceDriverLoading(base.BaseTestCase):
 
     def setUp(self):
         super(TestFirewallDeviceDriverLoading, self).setUp()
-        self.service = firewall_service.FirewallService.instance(mock.Mock())
+        self.service = firewall_service.FirewallService(mock.Mock())
 
     def test_loading_firewall_device_driver(self):
         """Get the sole device driver for FWaaS."""
