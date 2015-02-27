@@ -17,9 +17,9 @@
 from neutron.common import rpc
 from neutron.common import topics
 from neutron.i18n import _LE
-from neutron.openstack.common import log as logging
 from neutron.plugins.common import constants as const
 from neutron.plugins.ml2.drivers.freescale import config
+from oslo_log import log as logging
 from oslo_utils import excutils
 from sqlalchemy.orm import exc
 

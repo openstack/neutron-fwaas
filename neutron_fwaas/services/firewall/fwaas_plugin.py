@@ -18,9 +18,9 @@ from neutron.common import rpc as n_rpc
 from neutron.common import topics
 from neutron import context as neutron_context
 from neutron.i18n import _LW
-from neutron.openstack.common import log as logging
 from neutron.plugins.common import constants as const
 from oslo_config import cfg
+from oslo_log import log as logging
 import oslo_messaging
 
 from neutron_fwaas.db.firewall import firewall_db

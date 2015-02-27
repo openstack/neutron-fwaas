@@ -13,10 +13,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from neutron.openstack.common import log as logging
 from neutron.services import advanced_service
 from neutron.services import provider_configuration as provconf
 from oslo_config import cfg
+from oslo_log import log as logging
 from oslo_utils import importutils
 
 LOG = logging.getLogger(__name__)

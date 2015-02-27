@@ -17,7 +17,7 @@
 import urllib
 
 from neutron.common import constants as l3_constants
-from neutron.openstack.common import log as logging
+from oslo_log import log as logging
 from vyatta.vrouter import client as vyatta_client
 
 TRUST_ZONE = 'Internal_Trust'

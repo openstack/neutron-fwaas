@@ -17,9 +17,9 @@ from neutron.agent.linux import ip_lib
 from neutron.common import topics
 from neutron import context
 from neutron.i18n import _LE
-from neutron.openstack.common import log as logging
 from neutron.plugins.common import constants
 from oslo_config import cfg
+from oslo_log import log as logging
 
 from neutron_fwaas.extensions import firewall as fw_ext
 from neutron_fwaas.services.firewall.agents import firewall_agent_api as api

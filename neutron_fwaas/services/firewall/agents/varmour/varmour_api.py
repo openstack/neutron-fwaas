@@ -16,11 +16,11 @@
 import base64
 
 import httplib2
+from neutron.i18n import _LE
 from oslo_config import cfg
+from oslo_log import log as logging
 from oslo_serialization import jsonutils
 
-from neutron.i18n import _LE
-from neutron.openstack.common import log as logging
 from neutron_fwaas.services.firewall.agents.varmour \
     import varmour_utils as va_utils
 

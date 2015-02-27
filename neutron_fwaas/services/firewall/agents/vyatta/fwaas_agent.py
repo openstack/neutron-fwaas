@@ -16,7 +16,7 @@
 
 from neutron.agent import l3_agent
 from neutron import context
-from neutron.openstack.common import log as logging
+from oslo_log import log as logging
 from vyatta.common import l3_agent as vyatta_l3
 
 from neutron_fwaas.services.firewall.agents.vyatta import vyatta_utils

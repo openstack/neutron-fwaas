@@ -19,8 +19,6 @@ import eventlet
 eventlet.monkey_patch()
 
 import netaddr
-from oslo_config import cfg
-
 from neutron.agent.common import config
 from neutron.agent.l3 import agent
 from neutron.agent.l3 import config as l3_config
@@ -33,9 +31,11 @@ from neutron.common import config as common_config
 from neutron.common import constants as l3_constants
 from neutron.common import topics
 from neutron.i18n import _LW
-from neutron.openstack.common import log as logging
 from neutron.openstack.common import service
 from neutron import service as neutron_service
+from oslo_config import cfg
+from oslo_log import log as logging
+
 from neutron_fwaas.services.firewall.agents.l3reference \
     import firewall_l3_agent
 from neutron_fwaas.services.firewall.agents.varmour import varmour_api
