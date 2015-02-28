@@ -37,7 +37,7 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         super(FirewallExtensionTestCase, self).setUp()
         plural_mappings = {'firewall_policy': 'firewall_policies'}
         self._setUpExtension(
-            'neutron.extensions.firewall.FirewallPluginBase',
+            'neutron_fwaas.extensions.firewall.FirewallPluginBase',
             constants.FIREWALL, firewall.RESOURCE_ATTRIBUTE_MAP,
             firewall.Firewall, 'fw', plural_mappings=plural_mappings)
 
