@@ -30,11 +30,12 @@ class FakeL3AgentMidleware(object):
 # that depends on this library. Import will fail if not mocked and 3rd party
 # vyatta library is not installed.
 with mock.patch.dict(sys.modules, {
-    'vyatta': mock.Mock(),
-    'vyatta.common': mock.Mock(),
-    'vyatta.vrouter': mock.Mock(),
+    'networking_brocade': mock.Mock(),
+    'networking_brocade.vyatta': mock.Mock(),
+    'networking_brocade.vyatta.common': mock.Mock(),
+    'networking_brocade.vyatta.vrouter': mock.Mock(),
 }):
-    from vyatta.common import l3_agent
+    from networking_brocade.vyatta.common import l3_agent
     l3_agent.L3AgentMiddleware = FakeL3AgentMidleware
     from neutron_fwaas.services.firewall.agents.vyatta import fwaas_agent
     from neutron_fwaas.services.firewall.agents.vyatta import vyatta_utils

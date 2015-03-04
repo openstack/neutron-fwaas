@@ -25,11 +25,12 @@ from neutron.tests import base
 # that depends on this library. Import will fail if not mocked and 3rd party
 # vyatta library is not installed.
 with mock.patch.dict(sys.modules, {
-    'vyatta': mock.Mock(),
-    'vyatta.vrouter': mock.Mock(),
+    'networking_brocade': mock.Mock(),
+    'networking_brocade.vyatta': mock.Mock(),
+    'networking_brocade.vyatta.vrouter': mock.Mock(),
 }):
+    from networking_brocade.vyatta.vrouter import client as vyatta_client
     from neutron_fwaas.services.firewall.agents.vyatta import vyatta_utils
-    from vyatta.vrouter import client as vyatta_client
 
 
 def fake_cmd(*args, **kwargs):
