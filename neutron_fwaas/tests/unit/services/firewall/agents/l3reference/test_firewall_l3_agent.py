@@ -70,12 +70,13 @@ class TestFwaasL3AgentRpcCallback(base.BaseTestCase):
         self.api.fwaas_driver = test_firewall_agent_api.NoopFwaasDriver()
         self.adminContext = context.get_admin_context()
         self.router_id = str(uuid.uuid4())
+        self.agent_conf = mock.Mock()
+        self.agent_conf.use_namespaces = True
         self.ri_kwargs = {'router': {'id': self.router_id,
                                      'tenant_id': str(uuid.uuid4())},
-                          'agent_conf': mock.ANY,
+                          'agent_conf': self.agent_conf,
                           'interface_driver': mock.ANY,
                           'use_ipv6': mock.ANY,
-                          'ns_name': "ns-" + self.router_id,
                           }
 
     def test_fw_config_match(self):
