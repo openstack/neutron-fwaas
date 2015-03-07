@@ -16,9 +16,9 @@
 
 import urllib
 
+from networking_brocade.vyatta.vrouter import client as vyatta_client
 from neutron.common import constants as l3_constants
 from oslo_log import log as logging
-from vyatta.vrouter import client as vyatta_client
 
 TRUST_ZONE = 'Internal_Trust'
 UNTRUST_ZONE = 'External_Untrust'

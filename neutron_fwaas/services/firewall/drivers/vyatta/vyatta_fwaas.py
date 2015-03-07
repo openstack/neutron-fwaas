@@ -15,12 +15,12 @@
 
 import urllib
 
+from networking_brocade.vyatta.common import config as vyatta_config
+from networking_brocade.vyatta.vrouter import client as vyatta_client
 from neutron import context as neutron_context
 from neutron.i18n import _LW
 from novaclient import client as nova_client
 from oslo_log import log as logging
-from vyatta.common import config as vyatta_config
-from vyatta.vrouter import client as vyatta_client
 
 from neutron_fwaas.services.firewall.agents.vyatta import vyatta_utils
 from neutron_fwaas.services.firewall.drivers import fwaas_base
