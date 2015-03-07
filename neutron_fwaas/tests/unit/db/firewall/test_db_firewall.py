@@ -20,6 +20,7 @@ from neutron.api import extensions as api_ext
 from neutron.common import config
 from neutron import context
 import neutron.extensions as nextensions
+from neutron.extensions import l3
 from neutron import manager
 from neutron.openstack.common import uuidutils
 from neutron.plugins.common import constants
@@ -1239,3 +1240,27 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
                                   expected_code=webob.exc.HTTPNotFound.code,
                                   expected_body=None,
                                   body_data={'firewall_rule_id': None})
+
+    def test_check_router_has_no_firewall_raises(self):
+        with mock.patch.object(
+            manager.NeutronManager, 'get_service_plugins') as sp:
+            fw_plugin = mock.Mock()
+            sp.return_value = {'FIREWALL': fw_plugin}
+            fw_plugin.get_firewalls.return_value = [mock.ANY]
+            kwargs = {
+                'context': mock.ANY,
+                'router': {'id': 'foo_id', 'tenant_id': 'foo_tenant'}
+            }
+            self.assertRaises(
+                l3.RouterInUse,
+                fdb.migration_callback,
+                'router', 'before_event', mock.ANY,
+                **kwargs)
+
+    def test_check_router_has_no_firewall_passes(self):
+        with mock.patch.object(manager.NeutronManager,
+                               'get_service_plugins',
+                               return_value={}):
+            kwargs = {'context': mock.ANY, 'router': mock.ANY}
+            self.assertIsNone(fdb.migration_callback(
+                mock.ANY, mock.ANY, mock.ANY, **kwargs))
