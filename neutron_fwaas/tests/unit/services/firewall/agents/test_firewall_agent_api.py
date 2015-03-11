@@ -28,16 +28,16 @@ class NoopFwaasDriver(base_driver.FwaasDriverBase):
     This driver is for disabling Fwaas functionality.
     """
 
-    def create_firewall(self, apply_list, firewall):
+    def create_firewall(self, agent_mode, apply_list, firewall):
         pass
 
-    def delete_firewall(self, apply_list, firewall):
+    def delete_firewall(self, agent_mode, apply_list, firewall):
         pass
 
-    def update_firewall(self, apply_list, firewall):
+    def update_firewall(self, agent_mode, apply_list, firewall):
         pass
 
-    def apply_default_policy(self, apply_list, firewall):
+    def apply_default_policy(self, agent_mode, apply_list, firewall):
         pass
 
 

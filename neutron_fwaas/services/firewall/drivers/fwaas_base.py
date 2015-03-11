@@ -56,11 +56,12 @@ class FwaasDriverBase(object):
     policy is sent and the whole policy has to be applied atomically. The
     firewall rules will not get updated individually. This is to avoid problems
     related to out-of-order notifications or inconsistent behaviour by partial
-    application of rules.
+    application of rules. Argument agent_mode indicates the l3 agent in DVR or
+    DVR_SNAT or LEGACY mode.
     """
 
     @abc.abstractmethod
-    def create_firewall(self, apply_list, firewall):
+    def create_firewall(self, agent_mode, apply_list, firewall):
         """Create the Firewall with default (drop all) policy.
 
         The default policy will be applied on all the interfaces of
@@ -69,7 +70,7 @@ class FwaasDriverBase(object):
         pass
 
     @abc.abstractmethod
-    def delete_firewall(self, apply_list, firewall):
+    def delete_firewall(self, agent_mode, apply_list, firewall):
         """Delete firewall.
 
         Removes all policies created by this instance and frees up
@@ -78,7 +79,7 @@ class FwaasDriverBase(object):
         pass
 
     @abc.abstractmethod
-    def update_firewall(self, apply_list, firewall):
+    def update_firewall(self, agent_mode, apply_list, firewall):
         """Apply the policy on all trusted interfaces.
 
         Remove previous policy and apply the new policy on all trusted
@@ -87,7 +88,7 @@ class FwaasDriverBase(object):
         pass
 
     @abc.abstractmethod
-    def apply_default_policy(self, apply_list, firewall):
+    def apply_default_policy(self, agent_mode, apply_list, firewall):
         """Apply the default policy on all trusted interfaces.
 
         Remove current policy and apply the default policy on all trusted

@@ -30,12 +30,12 @@ class vArmourFwaasDriver(fwaas_base.FwaasDriverBase):
 
         self.rest = varmour_api.vArmourRestAPI()
 
-    def create_firewall(self, apply_list, firewall):
+    def create_firewall(self, agent_mode, apply_list, firewall):
         LOG.debug('create_firewall (%s)', firewall['id'])
 
         return self.update_firewall(apply_list, firewall)
 
-    def update_firewall(self, apply_list, firewall):
+    def update_firewall(self, agent_mode, apply_list, firewall):
         LOG.debug("update_firewall (%s)", firewall['id'])
 
         if firewall['admin_state_up']:
@@ -43,12 +43,12 @@ class vArmourFwaasDriver(fwaas_base.FwaasDriverBase):
         else:
             return self.apply_default_policy(apply_list, firewall)
 
-    def delete_firewall(self, apply_list, firewall):
+    def delete_firewall(self, agent_mode, apply_list, firewall):
         LOG.debug("delete_firewall (%s)", firewall['id'])
 
         return self.apply_default_policy(apply_list, firewall)
 
-    def apply_default_policy(self, apply_list, firewall):
+    def apply_default_policy(self, agent_mode, apply_list, firewall):
         LOG.debug("apply_default_policy (%s)", firewall['id'])
 
         self.rest.auth()
