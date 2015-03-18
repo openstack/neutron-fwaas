@@ -28,12 +28,13 @@ class vArmourFwaasDriver(fwaas_base.FwaasDriverBase):
     def __init__(self):
         LOG.debug("Initializing fwaas vArmour driver")
 
+        self.fake_agent_mode = None
         self.rest = varmour_api.vArmourRestAPI()
 
     def create_firewall(self, agent_mode, apply_list, firewall):
         LOG.debug('create_firewall (%s)', firewall['id'])
 
-        return self.update_firewall(apply_list, firewall)
+        return self.update_firewall(self.fake_agent_mode, apply_list, firewall)
 
     def update_firewall(self, agent_mode, apply_list, firewall):
         LOG.debug("update_firewall (%s)", firewall['id'])
@@ -46,7 +47,8 @@ class vArmourFwaasDriver(fwaas_base.FwaasDriverBase):
     def delete_firewall(self, agent_mode, apply_list, firewall):
         LOG.debug("delete_firewall (%s)", firewall['id'])
 
-        return self.apply_default_policy(apply_list, firewall)
+        return self.apply_default_policy(self.fake_agent_mode, apply_list,
+                                         firewall)
 
     def apply_default_policy(self, agent_mode, apply_list, firewall):
         LOG.debug("apply_default_policy (%s)", firewall['id'])
