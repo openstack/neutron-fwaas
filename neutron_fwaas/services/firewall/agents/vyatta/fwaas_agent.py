@@ -31,13 +31,18 @@ class VyattaFirewallAgent(vyatta_l3.L3AgentMiddleware):
     Configures zone policies on Vyatta vRouter instance.
     """
     def process_router(self, ri):
+        LOG.debug("VyattaFirewallAgent:: process_router() called")
         ctx = context.Context(None, ri.router['tenant_id'])
         client = self._vyatta_clients_pool.get_by_db_lookup(
             ri.router['id'], ctx)
         fw_list = self.fwplugin_rpc.get_firewalls_for_tenant(ctx)
         if fw_list:
-            fw_name = vyatta_utils.get_firewall_name(ri, fw_list[0])
-            zone_cmds = vyatta_utils.get_zone_cmds(client, ri, fw_name)
+            zone_cmds = []
+            for fw in fw_list:
+                if ri.router['id'] in fw['router_ids']:
+                    fw_name = vyatta_utils.get_firewall_name(ri, fw)
+                    zone_cmds.extend(vyatta_utils.get_zone_cmds(client, ri,
+                                                                fw_name))
             client.exec_cmd_batch(zone_cmds)
 
 

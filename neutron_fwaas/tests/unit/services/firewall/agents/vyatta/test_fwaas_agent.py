@@ -53,16 +53,19 @@ class TestVyattaFirewallAgent(base.BaseTestCase):
         fake_client = mock.Mock()
         agent._vyatta_clients_pool.get_by_db_lookup.return_value = fake_client
 
+        router_id = str(uuid.uuid4())
+
         fake_fw_record = {
             'id': str(uuid.uuid4()),
-            'name': 'fake-fw-record0'
+            'name': 'fake-fw-record0',
+            'router_ids': [router_id]
         }
         agent.fwplugin_rpc.get_firewalls_for_tenant.return_value = [
             fake_fw_record
         ]
 
         router = {
-            'id': str(uuid.uuid4()),
+            'id': router_id,
             'tenant_id': str(uuid.uuid4())
         }
         router_info = mock.NonCallableMock()
