@@ -26,7 +26,6 @@ from neutron.common import constants as l3_constants
 from neutron.openstack.common import uuidutils
 from neutron.tests import base
 from neutron_fwaas.services.firewall.agents.varmour import varmour_router
-from neutron_fwaas.services.firewall.agents.varmour import varmour_utils
 from neutron_fwaas.services.firewall.drivers.varmour import varmour_fwaas
 
 _uuid = uuidutils.generate_uuid
@@ -84,6 +83,8 @@ class TestBasicRouterOperations(base.BaseTestCase):
         self.looping_call_p.start()
 
         self.fake_agent_mode = None
+        self.ri_kwargs = {'agent_conf': self.conf,
+                          'interface_driver': self.mock_driver}
 
     def _create_router(self):
         router = varmour_router.vArmourL3NATAgent(HOSTNAME, self.conf)
@@ -152,7 +153,8 @@ class TestBasicRouterOperations(base.BaseTestCase):
         if enable_snat is not None:
             router['enable_snat'] = enable_snat
 
-        ri = router_info.RouterInfo(router_id=router['id'], router=router)
+        ri = router_info.RouterInfo(router_id=router['id'], router=router,
+                                    **self.ri_kwargs)
         return ri
 
     def _add_firewall_rules(self, fw, rule_count=1):
@@ -175,119 +177,46 @@ class TestBasicRouterOperations(base.BaseTestCase):
         return fw
 
     def test_firewall_without_rule(self):
-        router = self._create_router()
         fwaas = self._create_fwaas()
-        try:
-            router.rest.auth()
-        except Exception:
-            # skip the test, firewall is not deployed
-            return
-
+        fwaas.create_firewall = mock.Mock()
+        fwaas.delete_firewall = mock.Mock()
         ri = self._prepare_router_data(enable_snat=True)
         self._add_internal_ports(ri.router, port_count=1)
         self._add_floating_ips(ri.router, port_count=1)
-        router._router_added(ri.router['id'], ri.router)
-
         rl = [ri]
-
         fw = self._prepare_firewall_data()
         fwaas.create_firewall(self.fake_agent_mode, rl, fw)
-
-        url = varmour_utils.REST_URL_CONF_POLICY
-        prefix = varmour_utils.get_firewall_object_prefix(ri, fw)
-
-        n = fwaas.rest.count_cfg_objs(url, prefix)
-        self.assertEqual(n, 0)
-
+        fwaas.create_firewall.assert_called_once_with(self.fake_agent_mode,
+                                                      rl, fw)
         fwaas.delete_firewall(self.fake_agent_mode, rl, fw)
-        n = fwaas.rest.count_cfg_objs(url, prefix)
-        self.assertEqual(n, 0)
-
-        router._router_removed(ri.router['id'])
 
     def test_firewall_with_rules(self):
-        router = self._create_router()
         fwaas = self._create_fwaas()
-        try:
-            router.rest.auth()
-        except Exception:
-            # skip the test, firewall is not deployed
-            return
-
+        fwaas.create_firewall = mock.Mock()
+        fwaas.delete_firewall = mock.Mock()
+        fw = self._prepare_firewall_data()
+        self._add_firewall_rules(fw, 2)
         ri = self._prepare_router_data(enable_snat=True)
         self._add_internal_ports(ri.router, port_count=1)
         self._add_floating_ips(ri.router, port_count=1)
-        router._router_added(ri.router['id'], ri.router)
-
         rl = [ri]
-
-        fw = self._prepare_firewall_data()
-        self._add_firewall_rules(fw, 2)
         fwaas.create_firewall(self.fake_agent_mode, rl, fw)
-
-        prefix = varmour_utils.get_firewall_object_prefix(ri, fw)
-        pol_url = varmour_utils.REST_URL_CONF_POLICY
-        serv_url = varmour_utils.REST_URL_CONF_SERVICE
-        addr_url = varmour_utils.REST_URL_CONF_ADDR
-
-        # 3x number of policies
-        n = fwaas.rest.count_cfg_objs(pol_url, prefix)
-        self.assertEqual(n, 6)
-        n = fwaas.rest.count_cfg_objs(addr_url, prefix)
-        self.assertEqual(n, 2)
-        n = fwaas.rest.count_cfg_objs(serv_url, prefix)
-        self.assertEqual(n, 2)
-
+        fwaas.create_firewall.assert_called_once_with(self.fake_agent_mode,
+                                                      rl, fw)
         fwaas.delete_firewall(self.fake_agent_mode, rl, fw)
-        n = fwaas.rest.count_cfg_objs(pol_url, prefix)
-        self.assertEqual(n, 0)
-
-        router._router_removed(ri.router['id'])
 
     def test_firewall_add_remove_rules(self):
-        router = self._create_router()
         fwaas = self._create_fwaas()
-        try:
-            router.rest.auth()
-        except Exception:
-            # skip the test, firewall is not deployed
-            return
-
+        fwaas.create_firewall = mock.Mock()
+        fwaas.delete_firewall = mock.Mock()
+        fw = self._prepare_firewall_data()
         ri = self._prepare_router_data(enable_snat=True)
         self._add_internal_ports(ri.router, port_count=1)
         self._add_floating_ips(ri.router, port_count=1)
-        router._router_added(ri.router['id'], ri.router)
-
         rl = [ri]
-
-        fw = self._prepare_firewall_data()
         self._add_firewall_rules(fw, 2)
         fwaas.create_firewall(self.fake_agent_mode, rl, fw)
-
-        prefix = varmour_utils.get_firewall_object_prefix(ri, fw)
-        pol_url = varmour_utils.REST_URL_CONF_POLICY
-        serv_url = varmour_utils.REST_URL_CONF_SERVICE
-        addr_url = varmour_utils.REST_URL_CONF_ADDR
-
         # 3x number of policies
-        n = fwaas.rest.count_cfg_objs(pol_url, prefix)
-        self.assertEqual(n, 6)
-        n = fwaas.rest.count_cfg_objs(addr_url, prefix)
-        self.assertEqual(n, 2)
-        n = fwaas.rest.count_cfg_objs(serv_url, prefix)
-        self.assertEqual(n, 2)
-
         self._add_firewall_rules(fw, 1)
         fwaas.create_firewall(self.fake_agent_mode, rl, fw)
-        n = fwaas.rest.count_cfg_objs(pol_url, prefix)
-        self.assertEqual(n, 3)
-        n = fwaas.rest.count_cfg_objs(addr_url, prefix)
-        self.assertEqual(n, 1)
-        n = fwaas.rest.count_cfg_objs(serv_url, prefix)
-        self.assertEqual(n, 1)
-
         fwaas.delete_firewall(self.fake_agent_mode, rl, fw)
-        n = fwaas.rest.count_cfg_objs(pol_url, prefix)
-        self.assertEqual(n, 0)
-
-        router._router_removed(ri.router['id'])

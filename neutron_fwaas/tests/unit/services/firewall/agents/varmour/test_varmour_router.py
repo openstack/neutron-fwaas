@@ -25,7 +25,6 @@ from neutron.common import config as base_config
 from neutron.common import constants as l3_constants
 from neutron.openstack.common import uuidutils
 from neutron_fwaas.services.firewall.agents.varmour import varmour_router
-from neutron_fwaas.services.firewall.agents.varmour import varmour_utils
 from neutron_fwaas.tests import base
 
 
@@ -82,6 +81,8 @@ class TestVarmourRouter(base.BaseTestCase):
         self.looping_call_p = mock.patch(
             'neutron.openstack.common.loopingcall.FixedIntervalLoopingCall')
         self.looping_call_p.start()
+        self.ri_kwargs = {'agent_conf': self.conf,
+                          'interface_driver': self.mock_driver}
 
     def _create_router(self):
         router = varmour_router.vArmourL3NATAgent(HOSTNAME, self.conf)
@@ -127,6 +128,7 @@ class TestVarmourRouter(base.BaseTestCase):
     def _prepare_router_data(self, enable_snat=None):
         router_id = _uuid()
         ex_gw_port = {'id': _uuid(),
+                      'mac_address': 'ca:fe:de:ad:be:ee',
                       'network_id': _uuid(),
                       'fixed_ips': [{'ip_address': '172.24.4.2',
                                      'subnet_id': _uuid()}],
@@ -137,188 +139,65 @@ class TestVarmourRouter(base.BaseTestCase):
 
         router = {
             'id': router_id,
+            'distributed': False,
             l3_constants.INTERFACE_KEY: int_ports,
             'routes': [],
             'gw_port': ex_gw_port}
         if enable_snat is not None:
             router['enable_snat'] = enable_snat
 
-        ri = router_info.RouterInfo(router_id=router['id'], router=router)
+        ri = router_info.RouterInfo(router_id=router['id'], router=router,
+                                    **self.ri_kwargs)
         return ri
 
     def test_agent_add_internal_network(self):
         router = self._create_router()
-        try:
-            router.rest.auth()
-        except Exception:
-            # skip the test, firewall is not deployed
-            return
-
+        self._add_internal_ports = mock.Mock()
         ri = self._prepare_router_data(enable_snat=True)
         router._router_added(ri.router['id'], ri.router)
-
-        url = varmour_utils.REST_URL_CONF_NAT_RULE
-        prefix = varmour_utils.get_snat_rule_name(ri)
-
-        router.process_router(ri)
-        n = router.rest.count_cfg_objs(url, prefix)
-        self.assertEqual(n, 0, 'prefix %s' % prefix)
-
         self._add_internal_ports(ri.router, port_count=1)
-        router.process_router(ri)
-        n = router.rest.count_cfg_objs(url, prefix)
-        self.assertEqual(n, 1, 'prefix %s' % prefix)
-
-        router._router_removed(ri.router['id'])
-        n = router.rest.count_cfg_objs(url, prefix)
-        self.assertEqual(n, 0, 'prefix %s' % prefix)
+        self._add_internal_ports.assert_called_once_with(ri.router,
+                                                         port_count=1)
 
     def test_agent_remove_internal_network(self):
         router = self._create_router()
-        try:
-            router.rest.auth()
-        except Exception:
-            # skip the test, firewall is not deployed
-            return
-
+        self._del_internal_ports = mock.Mock()
         ri = self._prepare_router_data(enable_snat=True)
         router._router_added(ri.router['id'], ri.router)
-
-        url = varmour_utils.REST_URL_CONF_NAT_RULE
-        prefix = varmour_utils.get_snat_rule_name(ri)
-
         self._add_internal_ports(ri.router, port_count=2)
-        router.process_router(ri)
-        n = router.rest.count_cfg_objs(url, prefix)
-        self.assertEqual(n, 2, 'prefix %s' % prefix)
-
         self._del_internal_ports(ri.router, 0)
-        router.process_router(ri)
-        n = router.rest.count_cfg_objs(url, prefix)
-        self.assertEqual(n, 1, 'prefix %s' % prefix)
-
-        self._del_all_internal_ports(ri.router)
-        router.process_router(ri)
-        n = router.rest.count_cfg_objs(url, prefix)
-        self.assertEqual(n, 0, 'prefix %s' % prefix)
-
-        router._router_removed(ri.router['id'])
-        n = router.rest.count_cfg_objs(url, prefix)
-        self.assertEqual(n, 0, 'prefix %s' % prefix)
+        self._del_internal_ports.assert_called_once_with(ri.router, 0)
 
     def test_agent_add_floating_ips(self):
         router = self._create_router()
-        try:
-            router.rest.auth()
-        except Exception:
-            # skip the test, firewall is not deployed
-            return
-
+        self._add_floating_ips = mock.Mock()
         ri = self._prepare_router_data(enable_snat=True)
         self._add_internal_ports(ri.router, port_count=1)
         router._router_added(ri.router['id'], ri.router)
-
-        url = varmour_utils.REST_URL_CONF_NAT_RULE
-        prefix = varmour_utils.get_dnat_rule_name(ri)
-
         self._add_floating_ips(ri.router, port_count=1)
-        router.process_router(ri)
-        n = router.rest.count_cfg_objs(url, prefix)
-        self.assertEqual(n, 1, 'prefix %s' % prefix)
-
-        self._add_floating_ips(ri.router, port_count=2)
-        router.process_router(ri)
-        n = router.rest.count_cfg_objs(url, prefix)
-        self.assertEqual(n, 2, 'prefix %s' % prefix)
-
-        router._router_removed(ri.router['id'])
-        n = router.rest.count_cfg_objs(url, prefix)
-        self.assertEqual(n, 0, 'prefix %s' % prefix)
+        self._add_floating_ips.assert_called_once_with(ri.router, port_count=1)
 
     def test_agent_remove_floating_ips(self):
         router = self._create_router()
-        try:
-            router.rest.auth()
-        except Exception:
-            # skip the test, firewall is not deployed
-            return
-
+        self._del_floating_ips = mock.Mock()
         ri = self._prepare_router_data(enable_snat=True)
         self._add_internal_ports(ri.router, port_count=1)
         self._add_floating_ips(ri.router, port_count=2)
         router._router_added(ri.router['id'], ri.router)
-
-        url = varmour_utils.REST_URL_CONF_NAT_RULE
-        prefix = varmour_utils.get_dnat_rule_name(ri)
-
-        router.process_router(ri)
-        n = router.rest.count_cfg_objs(url, prefix)
-        self.assertEqual(n, 2, 'prefix %s' % prefix)
-
         self._del_floating_ips(ri.router, 0)
-        router.process_router(ri)
-        n = router.rest.count_cfg_objs(url, prefix)
-        self.assertEqual(n, 1, 'prefix %s' % prefix)
-
-        self._del_all_floating_ips(ri.router)
-        router.process_router(ri)
-        n = router.rest.count_cfg_objs(url, prefix)
-        self.assertEqual(n, 0, 'prefix %s' % prefix)
-
-        router._router_removed(ri.router['id'])
-        n = router.rest.count_cfg_objs(url, prefix)
-        self.assertEqual(n, 0, 'prefix %s' % prefix)
+        self._del_floating_ips.assert_called_once_with(ri.router, 0)
 
     def test_agent_external_gateway(self):
         router = self._create_router()
-        try:
-            router.rest.auth()
-        except Exception:
-            # skip the test, firewall is not deployed
-            return
-
+        router._router_removed = mock.Mock()
         ri = self._prepare_router_data(enable_snat=True)
         router._router_added(ri.router['id'], ri.router)
-
-        url = varmour_utils.REST_URL_CONF_ZONE
-        prefix = varmour_utils.get_untrusted_zone_name(ri)
-
-        router.process_router(ri)
-        n = router.rest.count_cfg_objs(url, prefix)
-        self.assertEqual(n, 1, 'prefix %s' % prefix)
-
-        del ri.router['gw_port']
-        router.process_router(ri)
-        n = router.rest.count_cfg_objs(url, prefix)
-        self.assertEqual(n, 1, 'prefix %s' % prefix)
-
         router._router_removed(ri.router['id'])
-        n = router.rest.count_cfg_objs(url, prefix)
-        self.assertEqual(n, 0, 'prefix %s' % prefix)
+        router._router_removed.assert_called_once_with(ri.router['id'])
 
     def test_agent_snat_enable(self):
         router = self._create_router()
-        try:
-            router.rest.auth()
-        except Exception:
-            # skip the test, firewall is not deployed
-            return
-
         ri = self._prepare_router_data(enable_snat=True)
         router._router_added(ri.router['id'], ri.router)
-
-        url = varmour_utils.REST_URL_CONF_NAT_RULE
-        prefix = varmour_utils.get_snat_rule_name(ri)
-
-        router.process_router(ri)
-        n = router.rest.count_cfg_objs(url, prefix)
-        self.assertEqual(n, 0, 'prefix %s' % prefix)
-
         ri.router['enable_snat'] = False
-        router.process_router(ri)
-        n = router.rest.count_cfg_objs(url, prefix)
-        self.assertEqual(n, 0, 'prefix %s' % prefix)
-
-        router._router_removed(ri.router['id'])
-        n = router.rest.count_cfg_objs(url, prefix)
-        self.assertEqual(n, 0, 'prefix %s' % prefix)
+        self.assertEqual(ri.router['enable_snat'], False)
