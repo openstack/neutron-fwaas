@@ -13,8 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import mock
-
 from neutron.tests import base
 from oslo_config import cfg
 
@@ -28,7 +26,7 @@ class TestFirewallDeviceDriverLoading(base.BaseTestCase):
 
     def setUp(self):
         super(TestFirewallDeviceDriverLoading, self).setUp()
-        self.service = firewall_service.FirewallService(mock.Mock())
+        self.service = firewall_service.FirewallService()
 
     def test_loading_firewall_device_driver(self):
         """Get the sole device driver for FWaaS."""

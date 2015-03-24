@@ -70,8 +70,7 @@ class FWaaSL3AgentRpcCallback(api.FWaaSAgentRpcCallbackMixin):
 
         if self.fwaas_enabled:
             # NOTE: Temp location for creating service and loading driver
-            self.fw_service = firewall_service.FirewallService(self)
-            self.event_observers.add(self.fw_service)
+            self.fw_service = firewall_service.FirewallService()
             self.fwaas_driver = self.fw_service.load_device_drivers()
         self.services_sync_needed = False
         # setup RPC to msg fwaas plugin
