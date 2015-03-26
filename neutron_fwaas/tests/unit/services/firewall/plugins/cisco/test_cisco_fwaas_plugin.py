@@ -21,7 +21,6 @@ from neutron import context
 from neutron import manager
 from neutron.plugins.common import constants as const
 from neutron.tests.unit import test_l3_plugin
-from neutron.tests.unit import testlib_plugin
 
 import neutron_fwaas
 from neutron_fwaas.db.cisco import cisco_fwaas_db as csrfw_db
@@ -60,7 +59,6 @@ class CSR1kvFirewallTestExtensionManager(
 
 
 class CSR1kvFirewallTestCaseBase(test_db_firewall.FirewallPluginDbTestCase,
-        testlib_plugin.NotificationSetupHelper,
         test_l3_plugin.L3NatTestCaseMixin):
 
     def setUp(self, core_plugin=None, l3_plugin=None, fw_plugin=None,

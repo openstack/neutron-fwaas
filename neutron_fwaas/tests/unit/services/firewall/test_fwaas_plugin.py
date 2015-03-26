@@ -23,7 +23,6 @@ from neutron import context
 from neutron import manager
 from neutron.plugins.common import constants as const
 from neutron.tests.unit import test_l3_plugin
-from neutron.tests.unit import testlib_plugin
 from oslo_config import cfg
 from webob import exc
 
@@ -57,8 +56,7 @@ class FirewallTestExtensionManager(test_l3_plugin.L3TestExtensionManager):
 
 
 class TestFirewallRouterInsertionBase(
-        test_db_firewall.FirewallPluginDbTestCase,
-        testlib_plugin.NotificationSetupHelper):
+        test_db_firewall.FirewallPluginDbTestCase):
 
     def setUp(self, core_plugin=None, fw_plugin=None, ext_mgr=None):
         self.agentapi_del_fw_p = mock.patch(test_db_firewall.DELETEFW_PATH,
