@@ -16,10 +16,10 @@
 # NOTE: The purpose of this module is to provide a nop test to verify that
 # the functional gate is working.
 
-from neutron.tests.functional.agent.linux import base
+from neutron.tests.functional import base
 
 
-class TestFWaaSDriver(base.BaseLinuxTestCase):
+class TestFWaaSDriver(base.BaseSudoTestCase):
 
     """Test the Iptables implmentation of the FWaaS driver."""
 
