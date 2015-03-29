@@ -18,8 +18,9 @@ import abc
 from neutron.api import extensions
 from neutron.api.v2 import attributes as attr
 from neutron.api.v2 import resource_helper
+from neutron.common import constants
 from neutron.common import exceptions as nexception
-from neutron.plugins.common import constants
+from neutron.plugins.common import constants as p_const
 from neutron.services import service_base
 from oslo_config import cfg
 from oslo_log import log as logging
@@ -27,6 +28,10 @@ import six
 
 
 LOG = logging.getLogger(__name__)
+
+# Firewall rule action
+FWAAS_ALLOW = "allow"
+FWAAS_DENY = "deny"
 
 
 # Firewall Exceptions
@@ -141,8 +146,10 @@ class FirewallRuleConflict(nexception.Conflict):
                 "another tenant %(tenant_id)s")
 
 
-fw_valid_protocol_values = [None, constants.TCP, constants.UDP, constants.ICMP]
-fw_valid_action_values = [constants.FWAAS_ALLOW, constants.FWAAS_DENY]
+fw_valid_protocol_values = [None, constants.PROTO_NAME_TCP,
+                            constants.PROTO_NAME_UDP,
+                            constants.PROTO_NAME_ICMP]
+fw_valid_action_values = [FWAAS_ALLOW, FWAAS_DENY]
 
 
 def convert_protocol(value):
@@ -372,7 +379,7 @@ class Firewall(extensions.ExtensionDescriptor):
                                           'remove_rule': 'PUT'}}
         return resource_helper.build_resource_info(plural_mappings,
                                                    RESOURCE_ATTRIBUTE_MAP,
-                                                   constants.FIREWALL,
+                                                   p_const.FIREWALL,
                                                    action_map=action_map)
 
     @classmethod
@@ -394,10 +401,10 @@ class Firewall(extensions.ExtensionDescriptor):
 class FirewallPluginBase(service_base.ServicePluginBase):
 
     def get_plugin_name(self):
-        return constants.FIREWALL
+        return p_const.FIREWALL
 
     def get_plugin_type(self):
-        return constants.FIREWALL
+        return p_const.FIREWALL
 
     def get_plugin_description(self):
         return 'Firewall service plugin'
