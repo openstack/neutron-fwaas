@@ -14,9 +14,13 @@
 #    under the License.
 
 
+from neutron.callbacks import events
+from neutron.callbacks import registry
+from neutron.callbacks import resources
 from neutron.db import common_db_mixin as base_db
 from neutron.db import model_base
 from neutron.db import models_v2
+from neutron.extensions import l3
 from neutron import manager
 from neutron.openstack.common import uuidutils
 from neutron.plugins.common import constants as const
@@ -554,3 +558,30 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
                     firewall_rule_id=fwr_db['id'],
                     firewall_policy_id=id)
             return self._process_rule_for_policy(context, id, fwr_db, None)
+
+
+def migration_callback(resource, event, trigger, **kwargs):
+    context = kwargs['context']
+    router = kwargs['router']
+    fw_plugin = manager.NeutronManager.get_service_plugins().get(
+        const.FIREWALL)
+    if fw_plugin:
+        tenant_firewalls = fw_plugin.get_firewalls(
+            context, filters={'tenant_id': [router['tenant_id']]})
+        if tenant_firewalls:
+            raise l3.RouterInUse(router_id=router['id'])
+
+
+def subscribe():
+    registry.subscribe(
+        migration_callback, resources.ROUTER, events.BEFORE_UPDATE)
+
+# NOTE(armax): multiple FW service plugins (potentially out of tree) may
+# inherit from firewall_db and may need the callbacks to be processed. Having
+# an implicit subscription (through the module import) preserves the existing
+# behavior, and at the same time it avoids fixing it manually in each and
+# every fw plugin out there. That said, The subscription is also made
+# explicitly in the reference fw plugin. The subscription operation is
+# idempotent so there is no harm in registering the same callback multiple
+# times.
+subscribe()

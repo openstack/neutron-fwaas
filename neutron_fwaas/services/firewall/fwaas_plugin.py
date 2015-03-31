@@ -158,6 +158,7 @@ class FirewallPlugin(
             topics.L3_AGENT,
             cfg.CONF.host
         )
+        firewall_db.subscribe()
 
     def _rpc_update_firewall(self, context, firewall_id):
         status_update = {"firewall": {"status": const.PENDING_UPDATE}}
