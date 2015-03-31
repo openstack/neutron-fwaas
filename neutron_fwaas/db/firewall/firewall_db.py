@@ -370,7 +370,7 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
             elif 'firewall_rules' in fwp:
                 self._set_rules_for_policy(context, fwp_db, fwp)
                 del fwp['firewall_rules']
-            if 'audited' not in fwp or fwp['audited']:
+            if 'audited' not in fwp:
                 fwp['audited'] = False
             fwp_db.update(fwp)
         return self._make_firewall_policy_dict(fwp_db)
