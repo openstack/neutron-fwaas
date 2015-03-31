@@ -13,7 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from neutron.services import advanced_service
 from neutron.services import provider_configuration as provconf
 from oslo_config import cfg
 from oslo_log import log as logging
@@ -24,7 +23,7 @@ LOG = logging.getLogger(__name__)
 FIREWALL_DRIVERS = 'firewall_drivers'
 
 
-class FirewallService(advanced_service.AdvancedService):
+class FirewallService(object):
     """Firewall Service observer."""
 
     def load_device_drivers(self):
@@ -32,9 +31,9 @@ class FirewallService(advanced_service.AdvancedService):
         device_driver = provconf.get_provider_driver_class(
             cfg.CONF.fwaas.driver, FIREWALL_DRIVERS)
         try:
-            self.devices = importutils.import_object(device_driver)
+            driver = importutils.import_object(device_driver)
             LOG.debug('Loaded FWaaS device driver: %s', device_driver)
-            return self.devices
+            return driver
         except ImportError:
             msg = _('Error importing FWaaS device driver: %s')
             raise ImportError(msg % device_driver)
