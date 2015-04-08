@@ -15,7 +15,7 @@
 #
 
 from neutron.tests import base as n_base
-from neutron.tests.unit import test_db_plugin
+from neutron.tests.unit.db import test_db_base_plugin_v2 as test_db_plugin
 
 
 class BaseTestCase(n_base.BaseTestCase):

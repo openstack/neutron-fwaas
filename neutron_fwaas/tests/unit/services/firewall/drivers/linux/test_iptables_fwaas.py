@@ -18,7 +18,7 @@ from oslo_config import cfg
 
 from neutron.agent.common import config as a_cfg
 from neutron.tests import base
-from neutron.tests.unit import test_api_v2
+from neutron.tests.unit.api.v2 import test_base as test_api_v2
 import neutron_fwaas.services.firewall.drivers.linux.iptables_fwaas as fwaas
 
 

@@ -20,20 +20,22 @@ from neutron.api.v2 import attributes as attr
 from neutron import context
 from neutron import manager
 from neutron.plugins.common import constants as const
-from neutron.tests.unit import test_l3_plugin
+from neutron.tests.unit.extensions import test_l3 as test_l3_plugin
 
 import neutron_fwaas
 from neutron_fwaas.db.cisco import cisco_fwaas_db as csrfw_db
 from neutron_fwaas.extensions.cisco import csr_firewall_insertion
 from neutron_fwaas.extensions import firewall
 from neutron_fwaas.services.firewall.plugins.cisco import cisco_fwaas_plugin
-from neutron_fwaas.tests.unit.db.firewall import test_db_firewall
+from neutron_fwaas.tests.unit.db.firewall import (
+    test_firewall_db as test_db_firewall)
 from oslo_config import cfg
 
 # We need the test_l3_plugin to ensure we have a valid port_id corresponding
 # to a router interface.
-CORE_PLUGIN_KLASS = 'neutron.tests.unit.test_l3_plugin.TestNoL3NatPlugin'
-L3_PLUGIN_KLASS = 'neutron.tests.unit.test_l3_plugin.TestL3NatServicePlugin'
+CORE_PLUGIN_KLASS = 'neutron.tests.unit.extensions.test_l3.TestNoL3NatPlugin'
+L3_PLUGIN_KLASS = (
+    'neutron.tests.unit.extensions.test_l3.TestL3NatServicePlugin')
 # the plugin under test
 CSR_FW_PLUGIN_KLASS = (
     "neutron_fwaas.services.firewall.plugins.cisco.cisco_fwaas_plugin."

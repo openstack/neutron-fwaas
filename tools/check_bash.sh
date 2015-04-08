@@ -22,7 +22,7 @@
 
 # Ignore comments, but include shebangs
 OBSERVED=$(grep -E '^([^#]|#!).*bash' tox.ini tools/* | wc -l)
-EXPECTED=5
+EXPECTED=6
 if [ ${EXPECTED} -ne ${OBSERVED} ]; then
     echo Unexpected number of bash usages are detected.
     echo Please read the comment in $0

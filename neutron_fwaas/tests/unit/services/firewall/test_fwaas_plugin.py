@@ -22,7 +22,7 @@ from neutron.api.v2 import attributes as attr
 from neutron import context
 from neutron import manager
 from neutron.plugins.common import constants as const
-from neutron.tests.unit import test_l3_plugin
+from neutron.tests.unit.extensions import test_l3 as test_l3_plugin
 from oslo_config import cfg
 from webob import exc
 
@@ -31,7 +31,8 @@ from neutron_fwaas.extensions import firewall
 from neutron_fwaas.extensions import firewallrouterinsertion
 from neutron_fwaas.services.firewall import fwaas_plugin
 from neutron_fwaas.tests import base
-from neutron_fwaas.tests.unit.db.firewall import test_db_firewall
+from neutron_fwaas.tests.unit.db.firewall import (
+    test_firewall_db as test_db_firewall)
 
 extensions_path = neutron_fwaas.extensions.__path__[0]
 
@@ -66,9 +67,9 @@ class TestFirewallRouterInsertionBase(
         plugin = None
         # the plugin without L3 support
         if not plugin:
-            plugin = 'neutron.tests.unit.test_l3_plugin.TestNoL3NatPlugin'
+            plugin = 'neutron.tests.unit.extensions.test_l3.TestNoL3NatPlugin'
         # the L3 service plugin
-        l3_plugin = ('neutron.tests.unit.test_l3_plugin.'
+        l3_plugin = ('neutron.tests.unit.extensions.test_l3.'
                      'TestL3NatServicePlugin')
 
         cfg.CONF.set_override('api_extensions_path', extensions_path)

@@ -21,7 +21,8 @@ from neutron import manager
 from webob import exc
 
 from neutron.plugins.common import constants as const
-from neutron_fwaas.tests.unit.db.firewall import test_db_firewall
+from neutron_fwaas.tests.unit.db.firewall import (
+    test_firewall_db as test_db_firewall)
 
 """Unit testing for Freescale FWaaS Plugin."""
 
