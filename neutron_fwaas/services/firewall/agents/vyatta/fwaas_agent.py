@@ -1,4 +1,4 @@
-# Copyright 2015 OpenStack Foundation.
+# Copyright 2015 Brocade Communications System, Inc.
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -16,34 +16,21 @@
 
 from networking_brocade.vyatta.common import l3_agent as vyatta_l3
 from neutron.agent import l3_agent
-from neutron import context
-from oslo_log import log as logging
 
-from neutron_fwaas.services.firewall.agents.vyatta import vyatta_utils
-
-
-LOG = logging.getLogger(__name__)
+from neutron_fwaas.services.firewall.agents.vyatta import firewall_service
 
 
 class VyattaFirewallAgent(vyatta_l3.L3AgentMiddleware):
     """Brocade Neutron Firewall agent for Vyatta vRouter.
 
-    Configures zone policies on Vyatta vRouter instance.
+    The base class FWaaSL3AgentRpcCallback of the VyattaFirewallAgent creates
+    the reference FirewallService object that loads the VyattaFirewallDriver
+    class.The VyattaFirewallService class registers callbacks and subscribes
+    to router events.
     """
-    def process_router(self, ri):
-        LOG.debug("VyattaFirewallAgent:: process_router() called")
-        ctx = context.Context(None, ri.router['tenant_id'])
-        client = self._vyatta_clients_pool.get_by_db_lookup(
-            ri.router['id'], ctx)
-        fw_list = self.fwplugin_rpc.get_firewalls_for_tenant(ctx)
-        if fw_list:
-            zone_cmds = []
-            for fw in fw_list:
-                if ri.router['id'] in fw['router_ids']:
-                    fw_name = vyatta_utils.get_firewall_name(ri, fw)
-                    zone_cmds.extend(vyatta_utils.get_zone_cmds(client, ri,
-                                                                fw_name))
-            client.exec_cmd_batch(zone_cmds)
+    def __init__(self, host, conf=None):
+        super(VyattaFirewallAgent, self).__init__(host, conf)
+        self.service = firewall_service.VyattaFirewallService(self)
 
 
 def main():
