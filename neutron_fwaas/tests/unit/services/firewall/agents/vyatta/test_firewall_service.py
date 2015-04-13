@@ -22,9 +22,10 @@ from neutron.tests import base
 
 
 class FakeL3AgentMidleware(object):
-    def __init__(self, host):
+    def __init__(self, host, conf=None):
         self._vyatta_clients_pool = mock.Mock()
         self.fwplugin_rpc = mock.Mock()
+        self.conf = conf
 
 # Mocking imports of 3rd party vyatta library in unit tests and all modules
 # that depends on this library. Import will fail if not mocked and 3rd party
@@ -37,6 +38,7 @@ with mock.patch.dict(sys.modules, {
 }):
     from networking_brocade.vyatta.common import l3_agent
     l3_agent.L3AgentMiddleware = FakeL3AgentMidleware
+    from neutron_fwaas.services.firewall.agents.vyatta import firewall_service
     from neutron_fwaas.services.firewall.agents.vyatta import fwaas_agent
     from neutron_fwaas.services.firewall.agents.vyatta import vyatta_utils
 
@@ -45,9 +47,9 @@ def fake_cmd(*args, **kwargs):
     return (args, kwargs)
 
 
-class TestVyattaFirewallAgent(base.BaseTestCase):
+class TestVyattaFirewallService(base.BaseTestCase):
 
-    def test_process_router(self):
+    def test_sync_firewall_zones(self):
         agent = self._make_agent()
 
         fake_client = mock.Mock()
@@ -84,7 +86,8 @@ class TestVyattaFirewallAgent(base.BaseTestCase):
                 vyatta_utils, 'get_zone_cmds') as get_zone_mock:
             get_zone_mock.return_value = cmd_list
 
-            agent.process_router(router_info)
+            firewall_service.sync_firewall_zones(
+                None, None, agent, router=router_info)
 
         agent._vyatta_clients_pool.get_by_db_lookup.assert_called_once_with(
             router_info.router['id'], mock.ANY)
