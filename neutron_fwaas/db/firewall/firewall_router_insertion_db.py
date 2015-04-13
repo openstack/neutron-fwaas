@@ -13,11 +13,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import sqlalchemy as sa
-
-from neutron.common import log
 from neutron.db import model_base
+from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
+import sqlalchemy as sa
 
 from neutron_fwaas.extensions import firewallrouterinsertion as fwrtrins
 
@@ -42,7 +41,7 @@ class FirewallRouterInsertionDbMixin(object):
 
     """Access methods for the firewall_router_associations table."""
 
-    @log.log
+    @log_helpers.log_method_call
     def set_routers_for_firewall(self, context, fw):
         """Sets the routers associated with the fw."""
         with context.session.begin(subtransactions=True):
@@ -51,7 +50,7 @@ class FirewallRouterInsertionDbMixin(object):
                                    router_id=r_id)
                 context.session.add(fw_rtr_db)
 
-    @log.log
+    @log_helpers.log_method_call
     def get_firewall_routers(self, context, fwid):
         """Gets all routers associated with a firewall."""
         with context.session.begin(subtransactions=True):
@@ -62,7 +61,7 @@ class FirewallRouterInsertionDbMixin(object):
         LOG.debug("get_firewall_routers(): fw_rtrs: %s", fw_rtrs)
         return fw_rtrs
 
-    @log.log
+    @log_helpers.log_method_call
     def validate_firewall_routers_not_in_use(
             self, context, router_ids, fwid=None):
         """Validate if router-ids not associated with any firewall.
@@ -78,7 +77,7 @@ class FirewallRouterInsertionDbMixin(object):
             router_ids = [entry.router_id for entry in fw_rtrs]
             raise fwrtrins.FirewallRouterInUse(router_ids=router_ids)
 
-    @log.log
+    @log_helpers.log_method_call
     def update_firewall_routers(self, context, fw):
         """Update the firewall with new routers.
 

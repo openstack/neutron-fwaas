@@ -15,13 +15,13 @@
 
 from neutron.api.v2 import attributes as attr
 from neutron.common import constants as l3_const
-from neutron.common import log
 from neutron.common import rpc as n_rpc
 from neutron import context as neutron_context
 from neutron.i18n import _LW
 from neutron import manager
 from neutron.plugins.common import constants as const
 from oslo_config import cfg
+from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
 import oslo_messaging
 
@@ -41,7 +41,7 @@ class FirewallCallbacks(object):
         super(FirewallCallbacks, self).__init__()
         self.plugin = plugin
 
-    @log.log
+    @log_helpers.log_method_call
     def set_firewall_status(self, context, firewall_id, status,
                             status_data=None, **kwargs):
         """Agent uses this to set a firewall's status."""
@@ -71,7 +71,7 @@ class FirewallCallbacks(object):
             else:
                 fw_db.status = const.ERROR
 
-    @log.log
+    @log_helpers.log_method_call
     def firewall_deleted(self, context, firewall_id, **kwargs):
         """Agent uses this to indicate firewall is deleted."""
         with context.session.begin(subtransactions=True):
@@ -86,7 +86,7 @@ class FirewallCallbacks(object):
             fw_db.status = const.ERROR
         return False
 
-    @log.log
+    @log_helpers.log_method_call
     def get_firewalls_for_tenant(self, context, **kwargs):
         """Agent uses this to get all firewalls and rules for a tenant."""
         fw_list = []
@@ -102,12 +102,12 @@ class FirewallCallbacks(object):
             fw_list.append(fw_with_rules)
         return fw_list
 
-    @log.log
+    @log_helpers.log_method_call
     def get_firewalls_for_tenant_without_rules(self, context, **kwargs):
         """Agent uses this to get all firewalls for a tenant."""
         return [fw for fw in self.plugin.get_firewalls(context)]
 
-    @log.log
+    @log_helpers.log_method_call
     def get_tenants_with_firewalls(self, context, **kwargs):
         """Agent uses this to get all tenants that have firewalls."""
         ctx = neutron_context.get_admin_context()
@@ -190,7 +190,7 @@ class CSRFirewallPlugin(ref_fw_plugin.FirewallPlugin,
                 fw_with_rules)
             self.agent_rpc.update_firewall(context, fw_with_rules)
 
-    @log.log
+    @log_helpers.log_method_call
     def _validate_fw_port_and_get_router_id(self, context, tenant_id, port_id):
         # port validation with router plugin
         l3_plugin = manager.NeutronManager.get_service_plugins().get(
@@ -240,7 +240,7 @@ class CSRFirewallPlugin(ref_fw_plugin.FirewallPlugin,
                 return vendor_ext
         # TODO(sridar): we may need to raise an excp - check backlogging
 
-    @log.log
+    @log_helpers.log_method_call
     def create_firewall(self, context, firewall):
         tenant_id = self._get_tenant_id_for_create(context,
                                                    firewall['firewall'])
@@ -282,7 +282,7 @@ class CSRFirewallPlugin(ref_fw_plugin.FirewallPlugin,
             self.agent_rpc.create_firewall(context, fw_with_rules)
         return fw
 
-    @log.log
+    @log_helpers.log_method_call
     def update_firewall(self, context, fwid, firewall):
         self._ensure_update_firewall(context, fwid)
         tenant_id = self._get_tenant_id_for_create(context,
@@ -337,7 +337,7 @@ class CSRFirewallPlugin(ref_fw_plugin.FirewallPlugin,
             self.agent_rpc.update_firewall(context, fw_with_rules)
         return fw
 
-    @log.log
+    @log_helpers.log_method_call
     def delete_firewall(self, context, fwid):
         self._ensure_update_firewall(context, fwid)
 
@@ -363,7 +363,7 @@ class CSRFirewallPlugin(ref_fw_plugin.FirewallPlugin,
 
         self.agent_rpc.delete_firewall(context, fw_with_rules)
 
-    @log.log
+    @log_helpers.log_method_call
     def get_firewall(self, context, fwid, fields=None):
         res = super(ref_fw_plugin.FirewallPlugin, self).get_firewall(
                         context, fwid, fields)

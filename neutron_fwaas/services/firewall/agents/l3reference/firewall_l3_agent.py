@@ -14,12 +14,12 @@
 #    under the License.
 
 from neutron.agent.linux import ip_lib
-from neutron.common import log
 from neutron.common import topics
 from neutron import context
 from neutron.i18n import _LE
 from neutron.plugins.common import constants
 from oslo_config import cfg
+from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
 
 from neutron_fwaas.extensions import firewall as fw_ext
@@ -239,7 +239,7 @@ class FWaaSL3AgentRpcCallback(api.FWaaSAgentRpcCallbackMixin):
             LOG.exception(_LE("Failed fwaas process services sync"))
             self.services_sync_needed = True
 
-    @log.log
+    @log_helpers.log_method_call
     def create_firewall(self, context, firewall, host):
         """Handle Rpc from plugin to create a firewall."""
 
@@ -280,7 +280,7 @@ class FWaaSL3AgentRpcCallback(api.FWaaSAgentRpcCallbackMixin):
                 {'fwid': firewall['id']})
             self.services_sync_needed = True
 
-    @log.log
+    @log_helpers.log_method_call
     def update_firewall(self, context, firewall, host):
         """Handle Rpc from plugin to update a firewall."""
 
@@ -356,7 +356,7 @@ class FWaaSL3AgentRpcCallback(api.FWaaSAgentRpcCallbackMixin):
                 {'fwid': firewall['id']})
             self.services_sync_needed = True
 
-    @log.log
+    @log_helpers.log_method_call
     def delete_firewall(self, context, firewall, host):
         """Handle Rpc from plugin to delete a firewall."""
 

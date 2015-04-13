@@ -12,12 +12,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import sqlalchemy as sa
-
-from neutron.common import log
 from neutron.db import model_base
-
+from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
+import sqlalchemy as sa
 
 LOG = logging.getLogger(__name__)
 
@@ -39,7 +37,7 @@ class CiscoFirewallAssociation(model_base.BASEV2):
 
 class CiscoFirewall_db_mixin(object):
 
-    @log.log
+    @log_helpers.log_method_call
     def add_firewall_csr_association(self, context, fw):
         with context.session.begin(subtransactions=True):
             firewall_db = CiscoFirewallAssociation(fw_id=fw['id'],
@@ -49,14 +47,14 @@ class CiscoFirewall_db_mixin(object):
                                    router_id=fw['router_id'])
             context.session.add(firewall_db)
 
-    @log.log
+    @log_helpers.log_method_call
     def lookup_firewall_csr_association(self, context, fwid):
         with context.session.begin(subtransactions=True):
             csr_fw_qry = context.session.query(CiscoFirewallAssociation)
             csr_fw = csr_fw_qry.filter_by(fw_id=fwid).first()
         return csr_fw
 
-    @log.log
+    @log_helpers.log_method_call
     def update_firewall_csr_association(self, context, fwid, firewall):
         with context.session.begin(subtransactions=True):
             csr_fw_qry = context.session.query(CiscoFirewallAssociation)
