@@ -404,14 +404,16 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
             for k, v in attrs.iteritems():
                 self.assertEqual(res['firewall_policy'][k], v)
 
-    def test_update_firewall_policy_set_audited_false(self):
-        attrs = self._get_test_firewall_policy_attrs(audited=False)
-
+    def _test_update_firewall_policy(self, with_audited):
         with self.firewall_policy(name='firewall_policy1',
                                   description='fwp',
                                   audited=AUDITED) as fwp:
+            attrs = self._get_test_firewall_policy_attrs(audited=with_audited)
             data = {'firewall_policy':
                     {'description': 'fw_p1'}}
+            if with_audited:
+                data['firewall_policy']['audited'] = 'True'
+
             req = self.new_update_request('firewall_policies', data,
                                           fwp['firewall_policy']['id'])
             res = self.deserialize(self.fmt,
@@ -419,6 +421,12 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
             attrs['description'] = 'fw_p1'
             for k, v in attrs.iteritems():
                 self.assertEqual(res['firewall_policy'][k], v)
+
+    def test_update_firewall_policy_set_audited_false(self):
+        self._test_update_firewall_policy(with_audited=False)
+
+    def test_update_firewall_policy_with_audited_set_true(self):
+        self._test_update_firewall_policy(with_audited=True)
 
     def test_update_firewall_policy_with_rules(self):
         attrs = self._get_test_firewall_policy_attrs()
