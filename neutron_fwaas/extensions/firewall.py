@@ -56,6 +56,17 @@ class FirewallPolicyInUse(nexception.InUse):
     message = _("Firewall Policy %(firewall_policy_id)s is being used.")
 
 
+class FirewallPolicyConflict(nexception.Conflict):
+    """FWaaS exception for firewall policy
+
+    Occurs when admin policy tries to use another tenant's unshared
+    policy.
+    """
+    message = _("Operation cannot be performed since Firewall Policy "
+        "%(firewall_policy_id)s is not shared and belongs to "
+        "another tenant %(tenant_id)s")
+
+
 class FirewallRuleSharingConflict(nexception.Conflict):
 
     """FWaaS exception for firewall rules
