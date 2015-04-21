@@ -275,6 +275,11 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
         else:
             return '%d:%d' % (min_port, max_port)
 
+    def _validate_fw_parameters(self, context, fw):
+        if 'firewall_policy_id' in fw:
+            fwp_id = fw['firewall_policy_id']
+            self._get_firewall_policy(context, fwp_id)
+
     def _validate_fwr_protocol_parameters(self, fwr):
         protocol = fwr['protocol']
         if protocol not in (constants.PROTO_NAME_TCP,
@@ -287,6 +292,7 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
         LOG.debug("create_firewall() called")
         fw = firewall['firewall']
         tenant_id = self._get_tenant_id_for_create(context, fw)
+        self._validate_fw_parameters(context, fw)
         # distributed routers may required a more complex state machine;
         # the introduction of a new 'CREATED' state allows this, whilst
         # keeping a backward compatible behavior of the logical resource.
@@ -308,6 +314,7 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
     def update_firewall(self, context, id, firewall):
         LOG.debug("update_firewall() called")
         fw = firewall['firewall']
+        self._validate_fw_parameters(context, fw)
         with context.session.begin(subtransactions=True):
             count = context.session.query(Firewall).filter_by(id=id).update(fw)
             if not count:

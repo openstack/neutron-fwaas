@@ -104,11 +104,19 @@ class TestFirewallRouterInsertionBase(
         self.restore_attribute_map()
         super(TestFirewallRouterInsertionBase, self).tearDown()
 
-    def _create_firewall(self, fmt, name, description, firewall_policy_id,
+    def _create_firewall(self, fmt, name, description, firewall_policy_id=None,
                          admin_state_up=True, expected_res_status=None,
                          **kwargs):
         tenant_id = kwargs.get('tenant_id', self._tenant_id)
         router_ids = kwargs.get('router_ids')
+        if firewall_policy_id is None:
+            res = self._create_firewall_policy(fmt, 'fwp',
+                                               description="firewall_policy",
+                                               shared=True,
+                                               firewall_rules=[],
+                                               audited=True)
+            firewall_policy = self.deserialize(fmt or self.fmt, res)
+            firewall_policy_id = firewall_policy["firewall_policy"]["id"]
         data = {'firewall': {'name': name,
                              'description': description,
                              'firewall_policy_id': firewall_policy_id,
