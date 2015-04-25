@@ -93,7 +93,10 @@ class IptablesFwaasTestCase(base.BaseTestCase):
         apply_list = []
         while router_count > 0:
             iptables_inst = mock.Mock()
-            router_inst = {'distributed': distributed}
+            if distributed is not None:
+                router_inst = {'distributed': distributed}
+            else:
+                router_inst = {}
             v4filter_inst = mock.Mock()
             v6filter_inst = mock.Mock()
             v4filter_inst.chains = []
@@ -203,6 +206,10 @@ class IptablesFwaasTestCase(base.BaseTestCase):
     def test_create_firewall_with_rules(self):
         self._setup_firewall_with_rules(self.firewall.create_firewall)
 
+    def test_create_firewall_with_rules_without_distributed_attr(self):
+        self._setup_firewall_with_rules(self.firewall.create_firewall,
+                                        distributed=None)
+
     def test_create_firewall_with_rules_two_routers(self):
         self._setup_firewall_with_rules(self.firewall.create_firewall,
                                         router_count=2)
@@ -210,8 +217,12 @@ class IptablesFwaasTestCase(base.BaseTestCase):
     def test_update_firewall_with_rules(self):
         self._setup_firewall_with_rules(self.firewall.update_firewall)
 
-    def test_delete_firewall(self):
-        apply_list = self._fake_apply_list()
+    def test_update_firewall_with_rules_without_distributed_attr(self):
+        self._setup_firewall_with_rules(self.firewall.update_firewall,
+                                        distributed=None)
+
+    def _test_delete_firewall(self, distributed=False):
+        apply_list = self._fake_apply_list(distributed=distributed)
         firewall = self._fake_firewall_no_rule()
         self.firewall.delete_firewall('legacy', apply_list, firewall)
         ingress_chain = 'iv4%s' % firewall['id']
@@ -220,6 +231,12 @@ class IptablesFwaasTestCase(base.BaseTestCase):
                  mock.call.remove_chain(egress_chain),
                  mock.call.remove_chain('fwaas-default-policy')]
         apply_list[0].iptables_manager.ipv4['filter'].assert_has_calls(calls)
+
+    def test_delete_firewall(self):
+        self._test_delete_firewall()
+
+    def test_delete_firewall_without_distributed_attr(self):
+        self._test_delete_firewall(distributed=None)
 
     def test_create_firewall_with_admin_down(self):
         apply_list = self._fake_apply_list()
