@@ -13,9 +13,6 @@
 #  License for the specific language governing permissions and limitations
 #  under the License.
 
-
-import contextlib
-
 import mock
 
 from neutron.api.v2 import attributes as attr
@@ -215,15 +212,12 @@ class TestFirewallCallbacks(TestFirewallRouterInsertionBase):
     def test_get_firewall_for_tenant(self):
         tenant_id = 'test-tenant'
         ctx = context.Context('', tenant_id)
-        with contextlib.nested(self.firewall_rule(name='fwr1',
-                                                  tenant_id=tenant_id),
-                               self.firewall_rule(name='fwr2',
-                                                  tenant_id=tenant_id),
-                               self.firewall_rule(name='fwr3',
-                                                  tenant_id=tenant_id)
-                               ) as fr:
+        with self.firewall_rule(name='fwr1', tenant_id=tenant_id) as fwr1, \
+                self.firewall_rule(name='fwr2', tenant_id=tenant_id) as fwr2, \
+                self.firewall_rule(name='fwr3', tenant_id=tenant_id) as fwr3:
             with self.firewall_policy(tenant_id=tenant_id) as fwp:
                 fwp_id = fwp['firewall_policy']['id']
+                fr = [fwr1, fwr2, fwr3]
                 fw_rule_ids = [r['firewall_rule']['id'] for r in fr]
                 data = {'firewall_policy':
                         {'firewall_rules': fw_rule_ids}}
@@ -280,12 +274,8 @@ class TestFirewallAgentApi(base.BaseTestCase):
         self.assertEqual(self.api.host, 'host')
 
     def _call_test_helper(self, method_name):
-        with contextlib.nested(
-            mock.patch.object(self.api.client, 'cast'),
-            mock.patch.object(self.api.client, 'prepare'),
-        ) as (
-            rpc_mock, prepare_mock
-        ):
+        with mock.patch.object(self.api.client, 'cast') as rpc_mock, \
+                mock.patch.object(self.api.client, 'prepare') as prepare_mock:
             prepare_mock.return_value = self.api.client
             getattr(self.api, method_name)(mock.sentinel.context, 'test')
 
@@ -548,10 +538,11 @@ class TestFirewallPluginBase(TestFirewallRouterInsertionBase,
 
     def test_make_firewall_dict_with_in_place_rules(self):
         ctx = context.get_admin_context()
-        with contextlib.nested(self.firewall_rule(name='fwr1'),
-                               self.firewall_rule(name='fwr2'),
-                               self.firewall_rule(name='fwr3')) as fr:
+        with self.firewall_rule(name='fwr1') as fwr1, \
+                self.firewall_rule(name='fwr2') as fwr2, \
+                self.firewall_rule(name='fwr3') as fwr3:
             with self.firewall_policy() as fwp:
+                fr = [fwr1, fwr2, fwr3]
                 fwp_id = fwp['firewall_policy']['id']
                 fw_rule_ids = [r['firewall_rule']['id'] for r in fr]
                 data = {'firewall_policy':

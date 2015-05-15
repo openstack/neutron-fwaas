@@ -13,7 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import contextlib
 import sys
 
 import mock
@@ -132,15 +131,12 @@ class VyattaFwaasTestCase(base.BaseTestCase):
         mock_api_gen = mock.Mock(return_value=mock_api)
         mock_get_firewall_rule = mock.Mock(return_value=[fake_rule_cmd])
         mock_get_zone_cmds = mock.Mock(return_value=fake_zone_configure_rules)
-        with contextlib.nested(
-                mock.patch.object(
-                    self.fwaas_driver, '_get_vyatta_client', mock_api_gen),
-                mock.patch.object(
-                    vyatta_fwaas.vyatta_utils, 'get_zone_cmds',
-                    mock_get_zone_cmds),
-                mock.patch.object(
-                    self.fwaas_driver, '_set_firewall_rule',
-                    mock_get_firewall_rule)):
+        with mock.patch.object(self.fwaas_driver, '_get_vyatta_client',
+                               mock_api_gen), \
+                mock.patch.object(vyatta_fwaas.vyatta_utils, 'get_zone_cmds',
+                                  mock_get_zone_cmds), \
+                mock.patch.object(self.fwaas_driver, '_set_firewall_rule',
+                                  mock_get_firewall_rule):
             self.fwaas_driver._setup_firewall(
                 fake_router_info, self.fake_firewall)
 

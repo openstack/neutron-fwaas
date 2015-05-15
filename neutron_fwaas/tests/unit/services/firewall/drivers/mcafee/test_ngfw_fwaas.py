@@ -14,7 +14,6 @@
 #    under the License.
 
 
-import contextlib
 import mock
 import neutron_fwaas.services.firewall.drivers.mcafee as mcafee
 import neutron_fwaas.services.firewall.drivers.mcafee.ngfw_fwaas as fwaas
@@ -138,14 +137,11 @@ class NGFWFwaasTestCase(base.BaseTestCase):
         ref_v4rule = self.tmp_ref + "/fw_ipv4_access_rule"
         ref_upload = self.tmp_ref + "/upload"
 
-        with contextlib.nested(
-                mock.patch.object(mcafee.smc_api.SMCAPIConnection, 'login'),
-                mock.patch.object(mcafee.smc_api.SMCAPIConnection, 'get'),
-                mock.patch.object(mcafee.smc_api.SMCAPIConnection, 'logout'),
-                mock.patch.object(
-                    mcafee.smc_api.SMCAPIConnection, 'post',
-                    return_value=self.post_return),
-        ) as (lg, get, logout, post):
+        with mock.patch.object(mcafee.smc_api.SMCAPIConnection, 'login'), \
+                mock.patch.object(mcafee.smc_api.SMCAPIConnection, 'get'), \
+                mock.patch.object(mcafee.smc_api.SMCAPIConnection, 'logout'), \
+                mock.patch.object(mcafee.smc_api.SMCAPIConnection, 'post',
+                                  return_value=self.post_return) as post:
 
             expected = [mock.call(
                 'elements/fw_policy',
@@ -202,17 +198,15 @@ class NGFWFwaasTestCase(base.BaseTestCase):
 
         get_value = [{'result': [{'name': self.policy_name,
                                   'href': self.tmp_ref}, ]}, ]
-        with contextlib.nested(
-                mock.patch.object(mcafee.smc_api.SMCAPIConnection, 'login'),
-                mock.patch.object(
-                    mcafee.smc_api.SMCAPIConnection, 'get',
-                    return_value=get_value),
-                mock.patch.object(mcafee.smc_api.SMCAPIConnection, 'logout'),
-                mock.patch.object(
-                    mcafee.smc_api.SMCAPIConnection, 'post',
-                    return_value=self.post_return),
-                mock.patch.object(mcafee.smc_api.SMCAPIConnection, 'delete'),
-        ) as (lg, get, logout, post, delete):
+        with mock.patch.object(mcafee.smc_api.SMCAPIConnection, 'login'), \
+                mock.patch.object(mcafee.smc_api.SMCAPIConnection, 'get',
+                                  return_value=get_value),\
+                mock.patch.object(mcafee.smc_api.SMCAPIConnection, 'logout'), \
+                mock.patch.object(mcafee.smc_api.SMCAPIConnection, 'post',
+                                  return_value=self.post_return), \
+                mock.patch.object(mcafee.smc_api.SMCAPIConnection, 'delete'
+                                  ) as delete:
+
             self.firewall.delete_firewall('legacy', self.apply_list, firewall)
 
             expected = [

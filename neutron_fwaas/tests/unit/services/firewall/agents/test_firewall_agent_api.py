@@ -13,7 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import contextlib
 import mock
 
 from neutron_fwaas.services.firewall.agents import firewall_agent_api as api
@@ -53,12 +52,9 @@ class TestFWaaSAgentApi(base.BaseTestCase):
         self.assertEqual(self.api.host, 'host')
 
     def _test_firewall_method(self, method_name, **kwargs):
-        with contextlib.nested(
-            mock.patch.object(self.api.client, 'call'),
-            mock.patch.object(self.api.client, 'prepare'),
-        ) as (
-            rpc_mock, prepare_mock
-        ):
+        with mock.patch.object(self.api.client, 'call') as rpc_mock, \
+                mock.patch.object(self.api.client, 'prepare') as prepare_mock:
+
             prepare_mock.return_value = self.api.client
             getattr(self.api, method_name)(mock.sentinel.context, 'test',
                                            **kwargs)

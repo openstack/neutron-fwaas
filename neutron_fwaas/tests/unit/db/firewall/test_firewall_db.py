@@ -336,9 +336,10 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
         name = "firewall_policy1"
         attrs = self._get_test_firewall_policy_attrs(name)
 
-        with contextlib.nested(self.firewall_rule(name='fwr1'),
-                               self.firewall_rule(name='fwr2'),
-                               self.firewall_rule(name='fwr3')) as fr:
+        with self.firewall_rule(name='fwr1') as fwr1, \
+                self.firewall_rule(name='fwr2') as fwr2, \
+                self.firewall_rule(name='fwr3') as fwr3:
+            fr = [fwr1, fwr2, fwr3]
             fw_rule_ids = [r['firewall_rule']['id'] for r in fr]
             attrs['firewall_rules'] = fw_rule_ids
             with self.firewall_policy(name=name, shared=SHARED,
@@ -391,13 +392,10 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
                 self.assertEqual(res['firewall_policy'][k], v)
 
     def test_list_firewall_policies(self):
-        with contextlib.nested(self.firewall_policy(name='fwp1',
-                                                    description='fwp'),
-                               self.firewall_policy(name='fwp2',
-                                                    description='fwp'),
-                               self.firewall_policy(name='fwp3',
-                                                    description='fwp')
-                               ) as fw_policies:
+        with self.firewall_policy(name='fwp1', description='fwp') as fwp1, \
+                self.firewall_policy(name='fwp2', description='fwp') as fwp2, \
+                self.firewall_policy(name='fwp3', description='fwp') as fwp3:
+            fw_policies = [fwp1, fwp2, fwp3]
             self._test_list_resources('firewall_policy',
                                       fw_policies,
                                       query_params='description=fwp')
@@ -443,10 +441,11 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
     def test_update_firewall_policy_with_rules(self):
         attrs = self._get_test_firewall_policy_attrs()
 
-        with contextlib.nested(self.firewall_rule(name='fwr1'),
-                               self.firewall_rule(name='fwr2'),
-                               self.firewall_rule(name='fwr3')) as fr:
+        with self.firewall_rule(name='fwr1') as fwr1, \
+                self.firewall_rule(name='fwr2') as fwr2, \
+                self.firewall_rule(name='fwr3') as fwr3:
             with self.firewall_policy() as fwp:
+                fr = [fwr1, fwr2, fwr3]
                 fw_rule_ids = [r['firewall_rule']['id'] for r in fr]
                 attrs['firewall_rules'] = fw_rule_ids
                 data = {'firewall_policy':
@@ -462,10 +461,11 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
     def test_update_firewall_policy_replace_rules(self):
         attrs = self._get_test_firewall_policy_attrs()
 
-        with contextlib.nested(self.firewall_rule(name='fwr1'),
-                               self.firewall_rule(name='fwr2'),
-                               self.firewall_rule(name='fwr3'),
-                               self.firewall_rule(name='fwr4')) as frs:
+        with self.firewall_rule(name='fwr1') as fwr1, \
+                self.firewall_rule(name='fwr2') as fwr2, \
+                self.firewall_rule(name='fwr3') as fwr3, \
+                self.firewall_rule(name='fwr4') as fwr4:
+            frs = [fwr1, fwr2, fwr3, fwr4]
             fr1 = frs[0:2]
             fr2 = frs[2:4]
             with self.firewall_policy() as fwp:
@@ -491,10 +491,11 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
     def test_update_firewall_policy_reorder_rules(self):
         attrs = self._get_test_firewall_policy_attrs()
 
-        with contextlib.nested(self.firewall_rule(name='fwr1'),
-                               self.firewall_rule(name='fwr2'),
-                               self.firewall_rule(name='fwr3'),
-                               self.firewall_rule(name='fwr4')) as fr:
+        with self.firewall_rule(name='fwr1') as fwr1, \
+                self.firewall_rule(name='fwr2') as fwr2, \
+                self.firewall_rule(name='fwr3') as fwr3, \
+                self.firewall_rule(name='fwr4') as fwr4:
+            fr = [fwr1, fwr2, fwr3, fwr4]
             with self.firewall_policy() as fwp:
                 fw_rule_ids = [fr[2]['firewall_rule']['id'],
                                fr[3]['firewall_rule']['id']]
@@ -535,8 +536,9 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
     def test_update_firewall_policy_with_non_existing_rule(self):
         attrs = self._get_test_firewall_policy_attrs()
 
-        with contextlib.nested(self.firewall_rule(name='fwr1'),
-                               self.firewall_rule(name='fwr2')) as fr:
+        with self.firewall_rule(name='fwr1') as fwr1, \
+                self.firewall_rule(name='fwr2') as fwr2:
+            fr = [fwr1, fwr2]
             with self.firewall_policy() as fwp:
                 fw_rule_ids = [r['firewall_rule']['id'] for r in fr]
                 # appending non-existent rule
@@ -743,9 +745,10 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
                     self.assertEqual(res['firewall_rule'][k], v)
 
     def test_list_firewall_rules(self):
-        with contextlib.nested(self.firewall_rule(name='fwr1'),
-                               self.firewall_rule(name='fwr2'),
-                               self.firewall_rule(name='fwr3')) as fr:
+        with self.firewall_rule(name='fwr1') as fwr1, \
+                self.firewall_rule(name='fwr2') as fwr2, \
+                self.firewall_rule(name='fwr3') as fwr3:
+            fr = [fwr1, fwr2, fwr3]
             query_params = 'protocol=tcp'
             self._test_list_resources('firewall_rule', fr,
                                       query_params=query_params)
@@ -1001,18 +1004,16 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
     def test_list_firewalls(self):
         with self.firewall_policy() as fwp:
             fwp_id = fwp['firewall_policy']['id']
-            with contextlib.nested(self.firewall(name='fw1',
-                                                 tenant_id='tenant1',
-                                                 firewall_policy_id=fwp_id,
-                                                 description='fw'),
-                                   self.firewall(name='fw2',
-                                                 tenant_id='tenant2',
-                                                 firewall_policy_id=fwp_id,
-                                                 description='fw'),
-                                   self.firewall(name='fw3',
-                                                 tenant_id='tenant3',
-                                                 firewall_policy_id=fwp_id,
-                                                 description='fw')) as fwalls:
+            with self.firewall(name='fw1', tenant_id='tenant1',
+                               firewall_policy_id=fwp_id,
+                               description='fw') as fw1, \
+                    self.firewall(name='fw2', tenant_id='tenant2',
+                                  firewall_policy_id=fwp_id,
+                                  description='fw') as fw2, \
+                    self.firewall(name='fw3', tenant_id='tenant3',
+                                  firewall_policy_id=fwp_id,
+                                  description='fw') as fw3:
+                fwalls = [fw1, fw2, fw3]
                 self._test_list_resources('firewall', fwalls,
                                           query_params='description=fw')
 
@@ -1035,12 +1036,12 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
                     self.assertEqual(res['firewall'][k], v)
 
     def test_update_firewall_fwp_not_found_on_different_tenant(self):
-        with contextlib.nested(self.firewall_policy(name='fwp1',
-                                                    tenant_id='tenant1',
-                                                    do_delete=False),
-                               self.firewall_policy(name='fwp2', shared=False,
-                                                    tenant_id='tenant2')
-                               ) as fwps:
+        with self.firewall_policy(name='fwp1', tenant_id='tenant1',
+                                  do_delete=False) as fwp1, \
+                self.firewall_policy(name='fwp2', shared=False,
+                                     tenant_id='tenant2') as fwp2:
+
+            fwps = [fwp1, fwp2]
             # create firewall using fwp1 exists the same tenant.
             fwp1_id = fwps[0]['firewall_policy']['id']
             fwp2_id = fwps[1]['firewall_policy']['id']
@@ -1075,9 +1076,10 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
         attrs = self._get_test_firewall_policy_attrs()
         attrs['audited'] = False
         attrs['firewall_list'] = []
-        with contextlib.nested(self.firewall_rule(name='fwr1'),
-                               self.firewall_rule(name='fwr2'),
-                               self.firewall_rule(name='fwr3')) as frs:
+        with self.firewall_rule(name='fwr1') as fwr1, \
+                self.firewall_rule(name='fwr2') as fwr2, \
+                self.firewall_rule(name='fwr3') as fwr3:
+            frs = [fwr1, fwr2, fwr3]
             fr1 = frs[0:2]
             fwr3 = frs[2]
             with self.firewall_policy() as fwp:
@@ -1158,29 +1160,28 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
                         expected_body=None, body_data=insert_data)
 
     def test_insert_rule_for_prev_associated_ref_rule(self):
-        with contextlib.nested(self.firewall_rule(name='fwr0'),
-                               self.firewall_rule(name='fwr1')) as fwr:
+        with self.firewall_rule(name='fwr0') as fwr0, \
+                self.firewall_rule(name='fwr1') as fwr1:
+            fwr = [fwr0, fwr1]
             fwr0_id = fwr[0]['firewall_rule']['id']
             fwr1_id = fwr[1]['firewall_rule']['id']
-            with contextlib.nested(
-                self.firewall_policy(name='fwp0'),
+            with self.firewall_policy(name='fwp0') as fwp0, \
                     self.firewall_policy(name='fwp1',
-                                         firewall_rules=[fwr1_id])) as fwp:
+                             firewall_rules=[fwr1_id]) as fwp1:
+                fwp = [fwp0, fwp1]
                 fwp0_id = fwp[0]['firewall_policy']['id']
-                # test inserting before a rule which is associated
-                # with different policy
-                self._rule_action(
-                    'insert', fwp0_id, fwr0_id,
-                    insert_before=fwr1_id,
-                    expected_code=webob.exc.HTTPBadRequest.code,
-                    expected_body=None)
-                # test inserting  after a rule which is associated
-                # with different policy
-                self._rule_action(
-                    'insert', fwp0_id, fwr0_id,
-                    insert_after=fwr1_id,
-                    expected_code=webob.exc.HTTPBadRequest.code,
-                    expected_body=None)
+                # test inserting before a rule which
+                # is associated with different policy
+                self._rule_action('insert', fwp0_id, fwr0_id,
+                        insert_before=fwr1_id,
+                        expected_code=webob.exc.HTTPBadRequest.code,
+                        expected_body=None)
+                # test inserting  after a rule which
+                # is associated with different policy
+                self._rule_action('insert', fwp0_id, fwr0_id,
+                        insert_after=fwr1_id,
+                        expected_code=webob.exc.HTTPBadRequest.code,
+                        expected_body=None)
 
     def test_insert_rule_for_policy_of_other_tenant(self):
         with self.firewall_rule(tenant_id='tenant-2', shared=False) as fwr:
@@ -1198,13 +1199,14 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
         attrs = self._get_test_firewall_policy_attrs()
         attrs['audited'] = False
         attrs['firewall_list'] = []
-        with contextlib.nested(self.firewall_rule(name='fwr0'),
-                               self.firewall_rule(name='fwr1'),
-                               self.firewall_rule(name='fwr2'),
-                               self.firewall_rule(name='fwr3'),
-                               self.firewall_rule(name='fwr4'),
-                               self.firewall_rule(name='fwr5'),
-                               self.firewall_rule(name='fwr6')) as fwr:
+        with self.firewall_rule(name='fwr0') as fwr0, \
+                self.firewall_rule(name='fwr1') as fwr1, \
+                self.firewall_rule(name='fwr2') as fwr2, \
+                self.firewall_rule(name='fwr3') as fwr3, \
+                self.firewall_rule(name='fwr4') as fwr4, \
+                self.firewall_rule(name='fwr5') as fwr5, \
+                self.firewall_rule(name='fwr6') as fwr6:
+            fwr = [fwr0, fwr1, fwr2, fwr3, fwr4, fwr5, fwr6]
             with self.firewall_policy() as fwp:
                 fwp_id = fwp['firewall_policy']['id']
                 attrs['id'] = fwp_id
@@ -1272,9 +1274,10 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
         attrs = self._get_test_firewall_policy_attrs()
         attrs['audited'] = False
         attrs['firewall_list'] = []
-        with contextlib.nested(self.firewall_rule(name='fwr1'),
-                               self.firewall_rule(name='fwr2'),
-                               self.firewall_rule(name='fwr3')) as fr1:
+        with self.firewall_rule(name='fwr1') as fwr1, \
+                self.firewall_rule(name='fwr2') as fwr2, \
+                self.firewall_rule(name='fwr3') as fwr3:
+            fr1 = [fwr1, fwr2, fwr3]
             with self.firewall_policy() as fwp:
                 fwp_id = fwp['firewall_policy']['id']
                 attrs['id'] = fwp_id

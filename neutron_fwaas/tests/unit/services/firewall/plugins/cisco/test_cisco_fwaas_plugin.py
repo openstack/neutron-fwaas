@@ -13,7 +13,6 @@
 #    under the License.
 #
 
-import contextlib
 import mock
 
 from neutron.api.v2 import attributes as attr
@@ -183,10 +182,8 @@ class TestCiscoFirewallPlugin(CSR1kvFirewallTestCaseBase,
 
     def test_create_csr_firewall(self):
 
-        with contextlib.nested(
-            self.router(tenant_id=self._tenant_id),
-            self.subnet(),
-        ) as (r, s):
+        with self.router(tenant_id=self._tenant_id) as r,\
+                self.subnet() as s:
 
             body = self._router_interface_action(
                 'add',
@@ -222,10 +219,8 @@ class TestCiscoFirewallPlugin(CSR1kvFirewallTestCaseBase,
 
     def test_create_csr_firewall_only_port_id_specified(self):
 
-        with contextlib.nested(
-            self.router(tenant_id=self._tenant_id),
-            self.subnet(),
-        ) as (r, s):
+        with self.router(tenant_id=self._tenant_id) as r, \
+                self.subnet() as s:
 
             body = self._router_interface_action(
                 'add',
@@ -276,10 +271,8 @@ class TestCiscoFirewallPlugin(CSR1kvFirewallTestCaseBase,
 
     def test_update_csr_firewall(self):
 
-        with contextlib.nested(
-            self.router(tenant_id=self._tenant_id),
-            self.subnet(),
-        ) as (r, s):
+        with self.router(tenant_id=self._tenant_id) as r, \
+                self.subnet() as s:
 
             body = self._router_interface_action(
                 'add',
@@ -333,11 +326,9 @@ class TestCiscoFirewallPlugin(CSR1kvFirewallTestCaseBase,
 
     def test_update_csr_firewall_port_id(self):
 
-        with contextlib.nested(
-            self.router(tenant_id=self._tenant_id),
-            self.subnet(),
-            self.subnet(cidr='20.0.0.0/24'),
-        ) as (r, s1, s2):
+        with self.router(tenant_id=self._tenant_id) as r, \
+                self.subnet() as s1, \
+                self.subnet(cidr='20.0.0.0/24') as s2:
 
             body = self._router_interface_action(
                 'add',
@@ -400,10 +391,9 @@ class TestCiscoFirewallPlugin(CSR1kvFirewallTestCaseBase,
 
     def test_delete_csr_firewall(self):
 
-        with contextlib.nested(
-            self.router(tenant_id=self._tenant_id),
-            self.subnet(),
-        ) as (r, s):
+        with self.router(tenant_id=self._tenant_id) as r, \
+                self.subnet() as s:
+
             body = self._router_interface_action(
                 'add',
                 r['router']['id'],

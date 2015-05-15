@@ -13,8 +13,6 @@
 #  License for the specific language governing permissions and limitations
 #  under the License.
 
-import contextlib
-
 import mock
 from neutron import context
 from neutron import manager
@@ -200,15 +198,14 @@ class TestFreescaleFirewallPlugin(test_db_firewall.TestFirewallDBPlugin):
     def test_list_firewalls(self):
         with self.firewall_policy() as fwp:
             fwp_id = fwp['firewall_policy']['id']
-            with contextlib.nested(self.firewall(name='fw1',
-                                                 firewall_policy_id=fwp_id,
-                                                 description='fw'),
-                                   self.firewall(name='fw2',
-                                                 firewall_policy_id=fwp_id,
-                                                 description='fw'),
-                                   self.firewall(name='fw3',
-                                                 firewall_policy_id=fwp_id,
-                                                 description='fw')) as fwalls:
+            with self.firewall(name='fw1', firewall_policy_id=fwp_id,
+                               description='fw') as fw1, \
+                    self.firewall(name='fw2', firewall_policy_id=fwp_id,
+                                  description='fw') as fw2, \
+                    self.firewall(name='fw3', firewall_policy_id=fwp_id,
+                                  description='fw') as fw3:
+
+                fwalls = [fw1, fw2, fw3]
                 self._test_list_resources('firewall', fwalls,
                                           query_params='description=fw')
             for fw in fwalls:
