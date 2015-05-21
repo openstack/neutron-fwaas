@@ -265,6 +265,7 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
         min_port, sep, max_port = port_range.partition(":")
         if not max_port:
             max_port = min_port
+        self._validate_fwr_port_range(min_port, max_port)
         return [int(min_port), int(max_port)]
 
     def _get_port_range_from_min_max_ports(self, min_port, max_port):
@@ -272,8 +273,8 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
             return None
         if min_port == max_port:
             return str(min_port)
-        else:
-            return '%d:%d' % (min_port, max_port)
+        self._validate_fwr_port_range(min_port, max_port)
+        return '%s:%s' % (min_port, max_port)
 
     def _validate_fw_parameters(self, context, fw):
         if 'firewall_policy_id' not in fw:
@@ -284,6 +285,11 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
             raise fw_ext.FirewallPolicyConflict(
                 firewall_policy_id=fwp_id,
                 tenant_id=fwp['tenant_id'])
+
+    def _validate_fwr_port_range(self, min_port, max_port):
+        if int(min_port) > int(max_port):
+            port_range = '%s:%s' % (min_port, max_port)
+            raise fw_ext.FirewallRuleInvalidPortValue(port=port_range)
 
     def _validate_fwr_protocol_parameters(self, fwr):
         protocol = fwr['protocol']

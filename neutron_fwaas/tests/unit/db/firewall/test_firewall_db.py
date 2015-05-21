@@ -681,6 +681,18 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
             for k, v in attrs.iteritems():
                 self.assertEqual(firewall_rule['firewall_rule'][k], v)
 
+    def test_create_firewall_src_port_illegal_range(self):
+        attrs = self._get_test_firewall_rule_attrs()
+        attrs['source_port'] = '65535:1024'
+        res = self._create_firewall_rule(self.fmt, **attrs)
+        self.assertEqual(400, res.status_int)
+
+    def test_create_firewall_dest_port_illegal_range(self):
+        attrs = self._get_test_firewall_rule_attrs()
+        attrs['destination_port'] = '65535:1024'
+        res = self._create_firewall_rule(self.fmt, **attrs)
+        self.assertEqual(400, res.status_int)
+
     def test_create_firewall_rule_icmp_with_port(self):
         attrs = self._get_test_firewall_rule_attrs()
         attrs['protocol'] = 'icmp'
@@ -833,6 +845,14 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
                                 destination_port=None,
                                 protocol=None) as fwr:
             data = {'firewall_rule': {'destination_port': 80}}
+            req = self.new_update_request('firewall_rules', data,
+                                          fwr['firewall_rule']['id'])
+            res = req.get_response(self.ext_api)
+            self.assertEqual(400, res.status_int)
+
+    def test_update_firewall_rule_with_port_illegal_range(self):
+        with self.firewall_rule() as fwr:
+            data = {'firewall_rule': {'destination_port': '65535:1024'}}
             req = self.new_update_request('firewall_rules', data,
                                           fwr['firewall_rule']['id'])
             res = req.get_response(self.ext_api)

@@ -124,7 +124,7 @@ class FirewallRuleWithPortWithoutProtocolInvalid(nexception.InvalidInput):
     message = _("Source/destination port requires a protocol")
 
 
-class FirewallInvalidPortValue(nexception.InvalidInput):
+class FirewallRuleInvalidPortValue(nexception.InvalidInput):
     message = _("Invalid value for port %(port)s.")
 
 
