@@ -20,6 +20,7 @@ from neutron import context
 from neutron import manager
 from neutron.plugins.common import constants as const
 from neutron.tests.unit.extensions import test_l3 as test_l3_plugin
+import six
 
 import neutron_fwaas
 from neutron_fwaas.db.cisco import cisco_fwaas_db as csrfw_db
@@ -72,7 +73,7 @@ class CSR1kvFirewallTestCaseBase(test_db_firewall.FirewallPluginDbTestCase,
         cfg.CONF.set_default('allow_overlapping_ips', True)
         cfg.CONF.set_default('max_routes', 3)
         self.saved_attr_map = {}
-        for resource, attrs in attr.RESOURCE_ATTRIBUTE_MAP.iteritems():
+        for resource, attrs in six.iteritems(attr.RESOURCE_ATTRIBUTE_MAP):
             self.saved_attr_map[resource] = attrs.copy()
         if not core_plugin:
             core_plugin = CORE_PLUGIN_KLASS

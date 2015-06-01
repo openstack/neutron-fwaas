@@ -26,6 +26,7 @@ from neutron.openstack.common import uuidutils
 from neutron.plugins.common import constants
 from oslo_config import cfg
 from oslo_utils import importutils
+import six
 import webob.exc
 
 from neutron_fwaas.db.firewall import firewall_db as fdb
@@ -329,7 +330,7 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
         with self.firewall_policy(name=name, shared=SHARED,
                                   firewall_rules=None,
                                   audited=AUDITED) as firewall_policy:
-            for k, v in attrs.iteritems():
+            for k, v in six.iteritems(attrs):
                 self.assertEqual(firewall_policy['firewall_policy'][k], v)
 
     def test_create_firewall_policy_with_rules(self):
@@ -345,7 +346,7 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
             with self.firewall_policy(name=name, shared=SHARED,
                                       firewall_rules=fw_rule_ids,
                                       audited=AUDITED) as fwp:
-                for k, v in attrs.iteritems():
+                for k, v in six.iteritems(attrs):
                     self.assertEqual(fwp['firewall_policy'][k], v)
 
     def test_create_admin_firewall_policy_with_other_tenant_rules(self):
@@ -388,7 +389,7 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
                                         fwp['firewall_policy']['id'],
                                         fmt=self.fmt)
             res = self.deserialize(self.fmt, req.get_response(self.ext_api))
-            for k, v in attrs.iteritems():
+            for k, v in six.iteritems(attrs):
                 self.assertEqual(res['firewall_policy'][k], v)
 
     def test_list_firewall_policies(self):
@@ -411,7 +412,7 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
             req = self.new_update_request('firewall_policies', data,
                                           fwp['firewall_policy']['id'])
             res = self.deserialize(self.fmt, req.get_response(self.ext_api))
-            for k, v in attrs.iteritems():
+            for k, v in six.iteritems(attrs):
                 self.assertEqual(res['firewall_policy'][k], v)
 
     def _test_update_firewall_policy(self, with_audited):
@@ -429,7 +430,7 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
             res = self.deserialize(self.fmt,
                                    req.get_response(self.ext_api))
             attrs['description'] = 'fw_p1'
-            for k, v in attrs.iteritems():
+            for k, v in six.iteritems(attrs):
                 self.assertEqual(res['firewall_policy'][k], v)
 
     def test_update_firewall_policy_set_audited_false(self):
@@ -455,7 +456,7 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
                 res = self.deserialize(self.fmt,
                                        req.get_response(self.ext_api))
                 attrs['audited'] = False
-                for k, v in attrs.iteritems():
+                for k, v in six.iteritems(attrs):
                     self.assertEqual(res['firewall_policy'][k], v)
 
     def test_update_firewall_policy_replace_rules(self):
@@ -485,7 +486,7 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
                 res = self.deserialize(self.fmt,
                                        req.get_response(self.ext_api))
                 attrs['audited'] = False
-                for k, v in attrs.iteritems():
+                for k, v in six.iteritems(attrs):
                     self.assertEqual(res['firewall_policy'][k], v)
 
     def test_update_firewall_policy_reorder_rules(self):
@@ -556,7 +557,7 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
                                             fmt=self.fmt)
                 res = self.deserialize(self.fmt,
                                        req.get_response(self.ext_api))
-                for k, v in attrs.iteritems():
+                for k, v in six.iteritems(attrs):
                     self.assertEqual(res['firewall_policy'][k], v)
 
     def test_update_shared_firewall_policy_with_unshared_rule(self):
@@ -657,28 +658,28 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
         attrs = self._get_test_firewall_rule_attrs()
 
         with self.firewall_rule() as firewall_rule:
-            for k, v in attrs.iteritems():
+            for k, v in six.iteritems(attrs):
                 self.assertEqual(firewall_rule['firewall_rule'][k], v)
 
         attrs['source_port'] = None
         attrs['destination_port'] = None
         with self.firewall_rule(source_port=None,
                                 destination_port=None) as firewall_rule:
-            for k, v in attrs.iteritems():
+            for k, v in six.iteritems(attrs):
                 self.assertEqual(firewall_rule['firewall_rule'][k], v)
 
         attrs['source_port'] = '10000'
         attrs['destination_port'] = '80'
         with self.firewall_rule(source_port=10000,
                                 destination_port=80) as firewall_rule:
-            for k, v in attrs.iteritems():
+            for k, v in six.iteritems(attrs):
                 self.assertEqual(firewall_rule['firewall_rule'][k], v)
 
         attrs['source_port'] = '10000'
         attrs['destination_port'] = '80'
         with self.firewall_rule(source_port='10000',
                                 destination_port='80') as firewall_rule:
-            for k, v in attrs.iteritems():
+            for k, v in six.iteritems(attrs):
                 self.assertEqual(firewall_rule['firewall_rule'][k], v)
 
     def test_create_firewall_src_port_illegal_range(self):
@@ -708,7 +709,7 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
         with self.firewall_rule(source_port=None,
                                 destination_port=None,
                                 protocol='icmp') as firewall_rule:
-            for k, v in attrs.iteritems():
+            for k, v in six.iteritems(attrs):
                 self.assertEqual(firewall_rule['firewall_rule'][k], v)
 
     def test_create_firewall_rule_without_protocol_with_dport(self):
@@ -733,7 +734,7 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
                                         fmt=self.fmt)
             res = self.deserialize(self.fmt,
                                    req.get_response(self.ext_api))
-            for k, v in attrs.iteritems():
+            for k, v in six.iteritems(attrs):
                 self.assertEqual(res['firewall_rule'][k], v)
 
     def test_show_firewall_rule_with_fw_policy_associated(self):
@@ -753,7 +754,7 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
                                             fmt=self.fmt)
                 res = self.deserialize(self.fmt,
                                        req.get_response(self.ext_api))
-                for k, v in attrs.iteritems():
+                for k, v in six.iteritems(attrs):
                     self.assertEqual(res['firewall_rule'][k], v)
 
     def test_list_firewall_rules(self):
@@ -779,7 +780,7 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
                                           fwr['firewall_rule']['id'])
             res = self.deserialize(self.fmt,
                                    req.get_response(self.ext_api))
-            for k, v in attrs.iteritems():
+            for k, v in six.iteritems(attrs):
                 self.assertEqual(res['firewall_rule'][k], v)
 
         attrs['source_port'] = '10000'
@@ -792,7 +793,7 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
                                           fwr['firewall_rule']['id'])
             res = self.deserialize(self.fmt,
                                    req.get_response(self.ext_api))
-            for k, v in attrs.iteritems():
+            for k, v in six.iteritems(attrs):
                 self.assertEqual(res['firewall_rule'][k], v)
 
         attrs['source_port'] = '10000'
@@ -805,7 +806,7 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
                                           fwr['firewall_rule']['id'])
             res = self.deserialize(self.fmt,
                                    req.get_response(self.ext_api))
-            for k, v in attrs.iteritems():
+            for k, v in six.iteritems(attrs):
                 self.assertEqual(res['firewall_rule'][k], v)
 
         attrs['source_port'] = None
@@ -818,7 +819,7 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
                                           fwr['firewall_rule']['id'])
             res = self.deserialize(self.fmt,
                                    req.get_response(self.ext_api))
-            for k, v in attrs.iteritems():
+            for k, v in six.iteritems(attrs):
                 self.assertEqual(res['firewall_rule'][k], v)
 
     def test_update_firewall_rule_with_port_and_no_proto(self):
@@ -887,7 +888,7 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
                 res = self.deserialize(self.fmt,
                                        req.get_response(self.ext_api))
                 attrs['firewall_policy_id'] = fwp_id
-                for k, v in attrs.iteritems():
+                for k, v in six.iteritems(attrs):
                     self.assertEqual(res['firewall_rule'][k], v)
                 req = self.new_show_request('firewall_policies',
                                             fwp['firewall_policy']['id'],
@@ -944,7 +945,7 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
                 firewall_policy_id=fwp_id,
                 admin_state_up=ADMIN_STATE_UP
             ) as firewall:
-                for k, v in attrs.iteritems():
+                for k, v in six.iteritems(attrs):
                     self.assertEqual(firewall['firewall'][k], v)
 
     def test_create_firewall(self):
@@ -1018,7 +1019,7 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
                                             fmt=self.fmt)
                 res = self.deserialize(self.fmt,
                                        req.get_response(self.ext_api))
-                for k, v in attrs.iteritems():
+                for k, v in six.iteritems(attrs):
                     self.assertEqual(res['firewall'][k], v)
 
     def test_list_firewalls(self):
@@ -1052,7 +1053,7 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
                                               firewall['firewall']['id'])
                 res = self.deserialize(self.fmt,
                                        req.get_response(self.ext_api))
-                for k, v in attrs.iteritems():
+                for k, v in six.iteritems(attrs):
                     self.assertEqual(res['firewall'][k], v)
 
     def test_update_firewall_fwp_not_found_on_different_tenant(self):

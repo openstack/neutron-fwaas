@@ -21,6 +21,7 @@ from neutron import manager
 from neutron.plugins.common import constants as const
 from neutron.tests.unit.extensions import test_l3 as test_l3_plugin
 from oslo_config import cfg
+import six
 from webob import exc
 
 import neutron_fwaas.extensions
@@ -71,7 +72,7 @@ class TestFirewallRouterInsertionBase(
 
         cfg.CONF.set_override('api_extensions_path', extensions_path)
         self.saved_attr_map = {}
-        for resource, attrs in attr.RESOURCE_ATTRIBUTE_MAP.iteritems():
+        for resource, attrs in six.iteritems(attr.RESOURCE_ATTRIBUTE_MAP):
             self.saved_attr_map[resource] = attrs.copy()
         if not fw_plugin:
             fw_plugin = FW_PLUGIN_KLASS
@@ -389,7 +390,7 @@ class TestFirewallPluginBase(TestFirewallRouterInsertionBase,
                     attrs = self._replace_firewall_status(attrs,
                                                       const.PENDING_CREATE,
                                                       const.PENDING_UPDATE)
-                    for k, v in attrs.iteritems():
+                    for k, v in six.iteritems(attrs):
                         self.assertEqual(res['firewall'][k], v)
 
     def test_update_firewall_fails_when_firewall_pending(self):
@@ -436,7 +437,7 @@ class TestFirewallPluginBase(TestFirewallRouterInsertionBase,
                     attrs = self._replace_firewall_status(attrs,
                                                       const.PENDING_CREATE,
                                                       const.PENDING_UPDATE)
-                    for k, v in attrs.iteritems():
+                    for k, v in six.iteritems(attrs):
                         self.assertEqual(res['firewall'][k], v)
 
     def test_update_firewall_shared_fails_for_non_admin(self):

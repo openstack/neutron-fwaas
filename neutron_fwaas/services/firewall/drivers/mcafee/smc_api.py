@@ -375,7 +375,7 @@ class SMCAPIElementL2FWSingle(SMCAPIElement):
             json_result[0]['result'] if logical_iface['name']
             in ('default_eth', 'capture'))
 
-        for name, ref in logical_interfaces.iteritems():
+        for name, ref in six.iteritems(logical_interfaces):
             LOG.debug("Using logical interface %(name)s ref %(href)s",
                       {'name': name, 'href': ref})
 
