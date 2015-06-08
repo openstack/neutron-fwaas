@@ -78,24 +78,6 @@ class TestFreescaleFirewallPlugin(test_db_firewall.TestFirewallDBPlugin):
         self.clnt = self.plugin._client
         self.ctx = context.get_admin_context()
 
-    def test_create_firewall_with_admin_and_fwp_is_shared(self):
-        fw_name = "fw_with_shared_fwp"
-        with self.firewall_policy(do_delete=False, tenant_id="tenantX") as fwp:
-            fwp_id = fwp['firewall_policy']['id']
-            ctx = context.get_admin_context()
-            target_tenant = 'tenant1'
-            with self.firewall(name=fw_name,
-                               firewall_policy_id=fwp_id,
-                               tenant_id=target_tenant,
-                               context=ctx,
-                               do_delete=False,
-                               admin_state_up=True) as fw:
-                self.assertEqual(fw['firewall']['tenant_id'], target_tenant)
-                fw_id = fw['firewall']['id']
-            self.plugin.delete_firewall(self.ctx, fw_id)
-            self.clnt.delete_firewall.assert_called_once_with(fw_id)
-            self.callbacks.firewall_deleted(self.ctx, fw_id)
-
     def test_create_update_delete_firewall_rule(self):
         """Testing create, update and delete firewall rule."""
         ctx = context.get_admin_context()
