@@ -276,10 +276,13 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
         self._validate_fwr_port_range(min_port, max_port)
         return '%s:%s' % (min_port, max_port)
 
-    def _validate_fw_parameters(self, context, fw):
-        if 'firewall_policy_id' in fw:
-            fwp_id = fw['firewall_policy_id']
-            self._get_firewall_policy(context, fwp_id)
+    def _validate_fw_parameters(self, context, fw, fw_tenant_id):
+        if 'firewall_policy_id' not in fw:
+            return
+        fwp_id = fw['firewall_policy_id']
+        fwp = self._get_firewall_policy(context, fwp_id)
+        if fw_tenant_id != fwp['tenant_id'] and not fwp['shared']:
+            raise fw_ext.FirewallPolicyConflict(firewall_policy_id=fwp_id)
 
     def _validate_fwr_port_range(self, min_port, max_port):
         if int(min_port) > int(max_port):
@@ -298,7 +301,6 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
         LOG.debug("create_firewall() called")
         fw = firewall['firewall']
         tenant_id = self._get_tenant_id_for_create(context, fw)
-        self._validate_fw_parameters(context, fw)
         # distributed routers may required a more complex state machine;
         # the introduction of a new 'CREATED' state allows this, whilst
         # keeping a backward compatible behavior of the logical resource.
@@ -306,6 +308,7 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
             status = (p_const.CREATED if cfg.CONF.router_distributed
                       else p_const.PENDING_CREATE)
         with context.session.begin(subtransactions=True):
+            self._validate_fw_parameters(context, fw, tenant_id)
             firewall_db = Firewall(
                 id=uuidutils.generate_uuid(),
                 tenant_id=tenant_id,
@@ -320,8 +323,9 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
     def update_firewall(self, context, id, firewall):
         LOG.debug("update_firewall() called")
         fw = firewall['firewall']
-        self._validate_fw_parameters(context, fw)
         with context.session.begin(subtransactions=True):
+            fw_db = self.get_firewall(context, id)
+            self._validate_fw_parameters(context, fw, fw_db['tenant_id'])
             count = context.session.query(Firewall).filter_by(id=id).update(fw)
             if not count:
                 raise fw_ext.FirewallNotFound(firewall_id=id)
@@ -423,7 +427,7 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
         self._validate_fwr_protocol_parameters(fwr)
         tenant_id = self._get_tenant_id_for_create(context, fwr)
         if not fwr['protocol'] and (fwr['source_port'] or
-                fwr['destination_port']):
+           fwr['destination_port']):
             raise fw_ext.FirewallRuleWithPortWithoutProtocolInvalid()
         src_port_min, src_port_max = self._get_min_max_ports_from_range(
             fwr['source_port'])
