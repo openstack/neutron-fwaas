@@ -73,7 +73,7 @@ class IptablesFwaasDriver(fwaas_base.FwaasDriverBase):
         namespace and a fip so this is provided back as a list - so in that
         scenario rules can be applied on both.
         """
-        if not router_info.router['distributed']:
+        if not router_info.router.get('distributed'):
             return [{'ipt': router_info.iptables_manager,
                      'if_prefix': INTERNAL_DEV_PREFIX}]
         ipt_mgrs = []
