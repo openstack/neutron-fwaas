@@ -79,7 +79,7 @@ class TestVarmourRouter(base.BaseTestCase):
         mock.patch('neutron.agent.l3.agent.L3PluginApi').start()
 
         self.looping_call_p = mock.patch(
-            'neutron.openstack.common.loopingcall.FixedIntervalLoopingCall')
+            'oslo_service.loopingcall.FixedIntervalLoopingCall')
         self.looping_call_p.start()
         self.ri_kwargs = {'agent_conf': self.conf,
                           'interface_driver': self.mock_driver}

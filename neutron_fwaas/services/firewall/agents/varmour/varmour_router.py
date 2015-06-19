@@ -31,10 +31,10 @@ from neutron.common import config as common_config
 from neutron.common import constants as l3_constants
 from neutron.common import topics
 from neutron.i18n import _LW
-from neutron.openstack.common import service
 from neutron import service as neutron_service
 from oslo_config import cfg
 from oslo_log import log as logging
+from oslo_service import service
 
 from neutron_fwaas.services.firewall.agents.l3reference \
     import firewall_l3_agent
@@ -345,4 +345,4 @@ def main():
         report_interval=cfg.CONF.AGENT.report_interval,
         manager='neutron_fwaas.services.firewall.agents.varmour.'
                 'varmour_router.vArmourL3NATAgentWithStateReport')
-    service.launch(server).wait()
+    service.launch(conf, server).wait()
