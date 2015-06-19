@@ -22,10 +22,10 @@ from neutron import context
 import neutron.extensions as nextensions
 from neutron.extensions import l3
 from neutron import manager
-from neutron.openstack.common import uuidutils
 from neutron.plugins.common import constants
 from oslo_config import cfg
 from oslo_utils import importutils
+from oslo_utils import uuidutils
 import six
 import webob.exc
 

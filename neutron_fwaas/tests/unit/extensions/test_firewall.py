@@ -16,11 +16,11 @@
 import copy
 
 import mock
-from neutron.openstack.common import uuidutils
 from neutron.plugins.common import constants
 from neutron.tests import base
 from neutron.tests.unit.api.v2 import test_base as test_api_v2
 from neutron.tests.unit.extensions import base as test_api_v2_extension
+from oslo_utils import uuidutils
 from webob import exc
 import webtest
 

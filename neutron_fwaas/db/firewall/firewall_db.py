@@ -22,10 +22,10 @@ from neutron.db import model_base
 from neutron.db import models_v2
 from neutron.extensions import l3
 from neutron import manager
-from neutron.openstack.common import uuidutils
 from neutron.plugins.common import constants as p_const
 from oslo_config import cfg
 from oslo_log import log as logging
+from oslo_utils import uuidutils
 import sqlalchemy as sa
 from sqlalchemy.ext.orderinglist import ordering_list
 from sqlalchemy import orm

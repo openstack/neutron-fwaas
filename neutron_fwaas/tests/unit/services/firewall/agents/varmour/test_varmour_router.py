@@ -23,9 +23,9 @@ from neutron.agent.l3 import router_info
 from neutron.agent.linux import interface
 from neutron.common import config as base_config
 from neutron.common import constants as l3_constants
-from neutron.openstack.common import uuidutils
 from neutron_fwaas.services.firewall.agents.varmour import varmour_router
 from neutron_fwaas.tests import base
+from oslo_utils import uuidutils
 
 
 _uuid = uuidutils.generate_uuid
