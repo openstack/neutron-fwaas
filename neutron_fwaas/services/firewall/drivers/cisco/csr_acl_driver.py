@@ -144,7 +144,10 @@ class CsrAclDriver(fwaas_base.FwaasDriverBase):
             ace_rule = {'sequence': str(seq)}
             seq += 1
 
-            ace_rule['protocol'] = rule['protocol']
+            if rule.get('protocol'):
+                ace_rule['protocol'] = rule['protocol']
+            else:
+                ace_rule['protocol'] = 'all'
 
             if rule['action'].lower() == 'allow':
                 ace_rule['action'] = 'permit'
