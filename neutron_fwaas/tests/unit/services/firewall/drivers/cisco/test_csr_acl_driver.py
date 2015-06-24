@@ -60,6 +60,8 @@ FAKE_FW = {
             'ip_version': 4,
             'protocol': 'tcp',
             'action': 'allow',
+            'source_port': '3001',
+            'destination_port': '3001',
         },
     ]
 }
