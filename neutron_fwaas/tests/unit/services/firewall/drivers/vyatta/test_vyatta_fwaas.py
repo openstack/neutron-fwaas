@@ -18,8 +18,8 @@ import sys
 import mock
 import urllib
 
-from neutron.openstack.common import uuidutils
 from neutron.tests import base
+from oslo_utils import uuidutils
 
 # Mocking imports of 3rd party vyatta library in unit tests and all modules
 # that depends on this library. Import will fail if not mocked and 3rd party
