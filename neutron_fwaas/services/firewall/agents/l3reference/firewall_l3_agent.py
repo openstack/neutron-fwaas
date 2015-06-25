@@ -317,12 +317,13 @@ class FWaaSL3AgentRpcCallback(api.FWaaSAgentRpcCallbackMixin):
                         {'fwid': firewall['id']})
                     status = constants.ERROR
 
-            # the add
+        # handle the add router and/or rule, policy, firewall
+        # attribute updates
         if status not in (constants.ERROR, constants.INACTIVE):
             router_ids = self._get_router_ids_for_fw(context, firewall)
-            if router_ids:
+            if router_ids or firewall['router_ids']:
                 router_info_list = self._get_router_info_list_for_tenant(
-                    router_ids,
+                    router_ids + firewall['router_ids'],
                     firewall['tenant_id'])
                 LOG.debug("Update: Add firewall on Router List: '%s'",
                     [ri.router['id'] for ri in router_info_list])
@@ -342,7 +343,8 @@ class FWaaSL3AgentRpcCallback(api.FWaaSAgentRpcCallbackMixin):
                                   "%(fwid)s"),
                         {'fwid': firewall['id']})
                     status = constants.ERROR
-
+            else:
+                status = constants.INACTIVE
         try:
             # send status back to plugin
             self.fwplugin_rpc.set_firewall_status(
