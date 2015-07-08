@@ -33,6 +33,9 @@ LOG = logging.getLogger(__name__)
 FWAAS_ALLOW = "allow"
 FWAAS_DENY = "deny"
 
+# Firewall resource path prefix
+FIREWALL_PREFIX = "/fw"
+
 
 # Firewall Exceptions
 class FirewallNotFound(nexception.NotFound):

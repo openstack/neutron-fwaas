@@ -144,7 +144,7 @@ class FirewallPlugin(
     firewall_db.Firewall_db_mixin.
     """
     supported_extension_aliases = ["fwaas", "fwaasrouterinsertion"]
-    path_prefix = "/fw"
+    path_prefix = fw_ext.FIREWALL_PREFIX
 
     def __init__(self):
         """Do the initialization for the firewall service plugin here."""

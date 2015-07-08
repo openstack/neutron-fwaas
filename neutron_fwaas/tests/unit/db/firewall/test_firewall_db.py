@@ -74,7 +74,7 @@ class FakeAgentApi(fwaas_plugin.FirewallCallbacks):
 
 class FirewallPluginDbTestCase(base.NeutronDbPluginV2TestCase):
     resource_prefix_map = dict(
-        (k, "/fw")
+        (k, firewall.FIREWALL_PREFIX)
         for k in firewall.RESOURCE_ATTRIBUTE_MAP.keys()
     )
 
@@ -87,6 +87,7 @@ class FirewallPluginDbTestCase(base.NeutronDbPluginV2TestCase):
         service_plugins = {'fw_plugin_name': fw_plugin}
 
         fdb.Firewall_db_mixin.supported_extension_aliases = ["fwaas"]
+        fdb.Firewall_db_mixin.path_prefix = firewall.FIREWALL_PREFIX
         super(FirewallPluginDbTestCase, self).setUp(
             ext_mgr=ext_mgr,
             service_plugins=service_plugins
