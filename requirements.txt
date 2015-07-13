@@ -1,20 +1,20 @@
 # The order of packages is significant, because pip processes them in the order
 # of appearance. Changing the order has an impact on the overall integration
 # process, which may cause wedges in the gate later.
-pbr>=0.6,!=0.7,<1.0
+pbr!=0.7,<1.0,>=0.6
 
-eventlet>=0.16.1,!=0.17.0
+eventlet!=0.17.0,>=0.16.1
 httplib2>=0.7.5
 netaddr>=0.7.12
-SQLAlchemy>=0.9.7,<=0.9.99
+SQLAlchemy<=0.9.99,>=0.9.7
 alembic>=0.7.2
 six>=1.9.0
-oslo.config>=1.9.3,<1.10.0  # Apache-2.0
-oslo.db>=1.7.0,<1.8.0  # Apache-2.0
-oslo.log>=1.0.0,<1.1.0  # Apache-2.0
-oslo.messaging>=1.8.0,<1.9.0  # Apache-2.0
-oslo.serialization>=1.4.0,<1.5.0               # Apache-2.0
-oslo.utils>=1.4.0,<1.5.0                       # Apache-2.0
+oslo.config<1.10.0,>=1.9.3 # Apache-2.0
+oslo.db<1.8.0,>=1.7.0 # Apache-2.0
+oslo.log<1.1.0,>=1.0.0 # Apache-2.0
+oslo.messaging<1.9.0,>=1.8.0 # Apache-2.0
+oslo.serialization<1.5.0,>=1.4.0 # Apache-2.0
+oslo.utils<1.5.0,>=1.4.0 # Apache-2.0
 
 # This project does depend on neutron as a library, but the
 # openstack tooling does not play nicely with projects that
