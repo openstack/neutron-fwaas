@@ -14,11 +14,11 @@
 
 from networking_cisco.plugins.cisco.cfg_agent.service_helpers import (
     service_helper)
-from neutron.common import log
 from neutron.common import rpc as n_rpc
 from neutron import context as n_context
 from neutron.i18n import _LE
 from neutron.plugins.common import constants
+from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
 import oslo_messaging
 
@@ -35,32 +35,32 @@ CSR_FW_EVENT_DELETE = 'FW_EVENT_DELETE'
 class CsrFirewalllPluginApi(object):
     """CsrFirewallServiceHelper (Agent) side of the ACL RPC API."""
 
-    @log.log
+    @log_helpers.log_method_call
     def __init__(self, topic, host):
         self.host = host
         target = oslo_messaging.Target(topic=topic, version='1.0')
         self.client = n_rpc.get_client(target)
 
-    @log.log
+    @log_helpers.log_method_call
     def get_firewalls_for_device(self, context, **kwargs):
         """Get Firewalls with rules for a device from Plugin."""
         cctxt = self.client.prepare()
         return cctxt.call(context, 'get_firewalls_for_device', host=self.host)
 
-    @log.log
+    @log_helpers.log_method_call
     def get_firewalls_for_tenant(self, context, **kwargs):
         """Get Firewalls with rules for a tenant from the Plugin."""
         cctxt = self.client.prepare()
         return cctxt.call(context, 'get_firewalls_for_tenant', host=self.host)
 
-    @log.log
+    @log_helpers.log_method_call
     def get_tenants_with_firewalls(self, context, **kwargs):
         """Get Tenants that have Firewalls configured from plugin."""
         cctxt = self.client.prepare()
         return cctxt.call(context,
                          'get_tenants_with_firewalls', host=self.host)
 
-    @log.log
+    @log_helpers.log_method_call
     def set_firewall_status(self, context, fw_id, status, status_data=None):
         """Make a RPC to set the status of a firewall."""
         cctxt = self.client.prepare()
@@ -77,7 +77,7 @@ class CsrFirewalllPluginApi(object):
 
 class CsrFirewallServiceHelper(object):
 
-    @log.log
+    @log_helpers.log_method_call
     def __init__(self, host, conf, cfg_agent):
         super(CsrFirewallServiceHelper, self).__init__()
         self.conf = conf

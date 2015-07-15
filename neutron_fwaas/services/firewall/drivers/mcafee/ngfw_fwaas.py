@@ -22,10 +22,10 @@
 import netaddr
 
 from neutron.common import constants
-from neutron.common import log
 from neutron_fwaas.services.firewall.drivers import fwaas_base
 import neutron_fwaas.services.firewall.drivers.mcafee.smc_api as smc_api
 from oslo_config import cfg
+from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
 from oslo_serialization import jsonutils
 
@@ -68,18 +68,18 @@ class NgfwFwaasDriver(fwaas_base.FwaasDriverBase):
             cfg.CONF.ngfw.smc_api_version,
             cfg.CONF.ngfw.smc_api_auth_key)
 
-    @log.log
+    @log_helpers.log_method_call
     def create_firewall(self, agent_mode, apply_list, firewall):
         # call update_firewall, because one tenant only support
         # one firewall
         return self.update_firewall(agent_mode, apply_list, firewall)
 
-    @log.log
+    @log_helpers.log_method_call
     def delete_firewall(self, agent_mode, apply_list, firewall):
         # tell SMC server to remove the ngfw policy
         return self._delete_policy(apply_list, firewall)
 
-    @log.log
+    @log_helpers.log_method_call
     def update_firewall(self, agent_mode, apply_list, firewall):
         for router_info in apply_list:
             rt = router_info.router
@@ -95,7 +95,7 @@ class NgfwFwaasDriver(fwaas_base.FwaasDriverBase):
 
             self._clear_policy(rt, firewall)
 
-    @log.log
+    @log_helpers.log_method_call
     def apply_default_policy(self, apply_list, firewall):
         return self._delete_policy(apply_list, firewall)
 
