@@ -581,3 +581,33 @@ class TestFirewallPluginBase(TestFirewallRouterInsertionBase,
                                description='fw') as fwalls:
                 self._test_list_resources('firewall', [fwalls],
                                           query_params='description=fw')
+
+    def test_insert_rule(self):
+        ctx = context.get_admin_context()
+        with self.firewall_rule() as fwr:
+            fr_id = fwr['firewall_rule']['id']
+            rule_info = {'firewall_rule_id': fr_id}
+            with self.firewall_policy() as fwp:
+                fwp_id = fwp['firewall_policy']['id']
+                with self.firewall(firewall_policy_id=fwp_id) as fw:
+                    fw_id = fw['firewall']['id']
+                    self.plugin.insert_rule(ctx, fwp_id, rule_info)
+                    fw_rules = self.plugin._make_firewall_dict_with_rules(
+                        ctx, fw_id)
+                    self.assertEqual(1, len(fw_rules['firewall_rule_list']))
+                    self.assertEqual(fr_id,
+                                     fw_rules['firewall_rule_list'][0]['id'])
+
+    def test_remove_rule(self):
+        ctx = context.get_admin_context()
+        with self.firewall_rule() as fwr:
+            fr_id = fwr['firewall_rule']['id']
+            rule_info = {'firewall_rule_id': fr_id}
+            with self.firewall_policy(firewall_rules=[fr_id]) as fwp:
+                fwp_id = fwp['firewall_policy']['id']
+                with self.firewall(firewall_policy_id=fwp_id) as fw:
+                    fw_id = fw['firewall']['id']
+                    self.plugin.remove_rule(ctx, fwp_id, rule_info)
+                    fw_rules = self.plugin._make_firewall_dict_with_rules(
+                        ctx, fw_id)
+                    self.assertEqual([], fw_rules['firewall_rule_list'])
