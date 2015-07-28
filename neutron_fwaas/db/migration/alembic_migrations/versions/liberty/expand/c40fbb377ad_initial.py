@@ -1,4 +1,4 @@
-# Copyright ${create_date.year} <PUT YOUR NAME/COMPANY HERE>
+# Copyright 2015 Red Hat Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -13,24 +13,20 @@
 #    under the License.
 #
 
-"""${message}
+"""Initial Liberty no-op script.
 
-Revision ID: ${up_revision}
-Revises: ${down_revision}
-Create Date: ${create_date}
+Revision ID: c40fbb377ad
+Revises: None
+Create Date: 2015-07-28 22:18:13.321233
 
 """
 
 # revision identifiers, used by Alembic.
-revision = ${repr(up_revision)}
-down_revision = ${repr(down_revision)}
-% if branch_labels:
-branch_labels = ${repr(branch_labels)}
-%endif
+revision = 'c40fbb377ad'
+down_revision = None
+branch_labels = ('liberty_expand',)
+depends_on = ('kilo',)
 
-from alembic import op
-import sqlalchemy as sa
-${imports if imports else ""}
 
 def upgrade():
-    ${upgrades if upgrades else "pass"}
+    pass
