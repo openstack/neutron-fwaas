@@ -50,7 +50,3 @@ def upgrade():
     )
 
     op.execute(SQL_STATEMENT)
-
-
-def downgrade():
-    op.drop_table('firewall_router_associations')
