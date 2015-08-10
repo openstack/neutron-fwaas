@@ -44,8 +44,3 @@ def upgrade(active_plugins=None, options=None):
             ondelete='CASCADE'),
         sa.PrimaryKeyConstraint('fw_id')
     )
-
-
-def downgrade(active_plugins=None, options=None):
-
-    op.drop_table('cisco_firewall_associations')
