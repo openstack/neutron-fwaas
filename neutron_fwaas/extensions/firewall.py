@@ -137,6 +137,9 @@ class FirewallRuleInfoMissing(nexception.InvalidInput):
                 "rule operation.")
 
 
+class FirewallIpAddressConflict(nexception.InvalidInput):
+    message = _("Invalid input - IP addresses do not agree with IP Version")
+
 # TODO(dougwig) - once this exception is out of neutron, restore this
 #class FirewallInternalDriverError(nexception.NeutronException):
 #    """Fwaas exception for all driver errors.

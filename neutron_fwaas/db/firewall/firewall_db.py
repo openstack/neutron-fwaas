@@ -31,6 +31,8 @@ from sqlalchemy.ext.orderinglist import ordering_list
 from sqlalchemy import orm
 from sqlalchemy.orm import exc
 
+import netaddr
+
 from neutron_fwaas.extensions import firewall as fw_ext
 
 
@@ -288,6 +290,18 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
         if fw_tenant_id != fwp['tenant_id'] and not fwp['shared']:
             raise fw_ext.FirewallPolicyConflict(firewall_policy_id=fwp_id)
 
+    def _validate_fwr_src_dst_ip_version(self, fwr):
+        src_version = dst_version = None
+        if fwr['source_ip_address']:
+            src_version = netaddr.IPNetwork(fwr['source_ip_address']).version
+        if fwr['destination_ip_address']:
+            dst_version = netaddr.IPNetwork(
+                fwr['destination_ip_address']).version
+        rule_ip_version = fwr['ip_version']
+        if ((src_version and src_version != rule_ip_version) or
+                (dst_version and dst_version != rule_ip_version)):
+            raise fw_ext.FirewallIpAddressConflict()
+
     def _validate_fwr_port_range(self, min_port, max_port):
         if int(min_port) > int(max_port):
             port_range = '%s:%s' % (min_port, max_port)
@@ -443,6 +457,7 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
         LOG.debug("create_firewall_rule() called")
         fwr = firewall_rule['firewall_rule']
         self._validate_fwr_protocol_parameters(fwr)
+        self._validate_fwr_src_dst_ip_version(fwr)
         tenant_id = self._get_tenant_id_for_create(context, fwr)
         if not fwr['protocol'] and (fwr['source_port'] or
            fwr['destination_port']):

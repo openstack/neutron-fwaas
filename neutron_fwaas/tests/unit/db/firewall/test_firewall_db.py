@@ -713,6 +713,18 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
             for k, v in six.iteritems(attrs):
                 self.assertEqual(firewall_rule['firewall_rule'][k], v)
 
+    def test_create_firewall_without_source(self):
+        attrs = self._get_test_firewall_rule_attrs()
+        attrs['source_ip_address'] = None
+        res = self._create_firewall_rule(self.fmt, **attrs)
+        self.assertEqual(201, res.status_int)
+
+    def test_create_firewall_rule_without_destination(self):
+        attrs = self._get_test_firewall_rule_attrs()
+        attrs['destination_ip_address'] = None
+        res = self._create_firewall_rule(self.fmt, **attrs)
+        self.assertEqual(201, res.status_int)
+
     def test_create_firewall_rule_without_protocol_with_dport(self):
         attrs = self._get_test_firewall_rule_attrs()
         attrs['protocol'] = None
@@ -757,6 +769,28 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
                                        req.get_response(self.ext_api))
                 for k, v in six.iteritems(attrs):
                     self.assertEqual(res['firewall_rule'][k], v)
+
+    def test_create_firewall_rule_with_ipv6_addrs_and_wrong_ip_version(self):
+        attrs = self._get_test_firewall_rule_attrs()
+        attrs['source_ip_address'] = '::/0'
+        attrs['destination_ip_address'] = '2001:db8:3::/64'
+        attrs['ip_version'] = 4
+        res = self._create_firewall_rule(self.fmt, **attrs)
+        self.assertEqual(400, res.status_int)
+
+        attrs = self._get_test_firewall_rule_attrs()
+        attrs['source_ip_address'] = None
+        attrs['destination_ip_address'] = '2001:db8:3::/64'
+        attrs['ip_version'] = 4
+        res = self._create_firewall_rule(self.fmt, **attrs)
+        self.assertEqual(400, res.status_int)
+
+        attrs = self._get_test_firewall_rule_attrs()
+        attrs['source_ip_address'] = '::/0'
+        attrs['destination_ip_address'] = None
+        attrs['ip_version'] = 4
+        res = self._create_firewall_rule(self.fmt, **attrs)
+        self.assertEqual(400, res.status_int)
 
     def test_list_firewall_rules(self):
         with self.firewall_rule(name='fwr1') as fwr1, \
