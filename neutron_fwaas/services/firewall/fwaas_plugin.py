@@ -73,7 +73,7 @@ class FirewallCallbacks(object):
                 LOG.warn(_LW('Firewall %(fw)s unexpectedly deleted by agent, '
                              'status was %(status)s'),
                          {'fw': firewall_id, 'status': fw_db.status})
-                fw_db.status = const.ERROR
+                fw_db.update({"status": const.ERROR})
                 return False
 
     def get_firewalls_for_tenant(self, context, **kwargs):
@@ -264,7 +264,7 @@ class FirewallPlugin(
         return fw
 
     def update_firewall(self, context, id, firewall):
-        LOG.debug("update_firewall() called")
+        LOG.debug("update_firewall() called on firewall %s", id)
 
         self._ensure_update_firewall(context, id)
         # pop router_id as this goes in the router association db
@@ -311,7 +311,8 @@ class FirewallPlugin(
         # last-router drives agent to ack with status to set state to INACTIVE
         fw_with_rules['last-router'] = not fw_new_rtrs
 
-        LOG.debug("update_firewall(): Add Routers: %s, Del Routers: %s",
+        LOG.debug("update_firewall %s: Add Routers: %s, Del Routers: %s",
+            fw['id'],
             fw_with_rules['add-router-ids'],
             fw_with_rules['del-router-ids'])
 
@@ -320,12 +321,10 @@ class FirewallPlugin(
         return fw
 
     def delete_db_firewall_object(self, context, id):
-        firewall = self.get_firewall(context, id)
-        if firewall['status'] == const.PENDING_DELETE:
-            super(FirewallPlugin, self).delete_firewall(context, id)
+        super(FirewallPlugin, self).delete_firewall(context, id)
 
     def delete_firewall(self, context, id):
-        LOG.debug("delete_firewall() called")
+        LOG.debug("delete_firewall() called on firewall %s", id)
         status_update = {"firewall": {"status": const.PENDING_DELETE}}
         fw = super(FirewallPlugin, self).update_firewall(context, id,
                                                          status_update)

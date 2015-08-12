@@ -368,8 +368,10 @@ class FWaaSL3AgentRpcCallback(api.FWaaSAgentRpcCallbackMixin):
             router_info_list = self._get_router_info_list_for_tenant(
                 router_ids,
                 firewall['tenant_id'])
-            LOG.debug("Delete: Delete firewall on Router List: '%s'",
-                [ri.router['id'] for ri in router_info_list])
+            LOG.debug(
+                "Delete firewall %(fw)s on routers: '%(routers)s'"
+                % {'fw': firewall['id'],
+                   'routers': [ri.router['id'] for ri in router_info_list]})
             # call into the driver
             try:
                 self.fwaas_driver.delete_firewall(
