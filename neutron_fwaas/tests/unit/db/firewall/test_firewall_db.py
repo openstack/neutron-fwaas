@@ -246,21 +246,22 @@ class FirewallPluginDbTestCase(base.NeutronDbPluginV2TestCase):
     def _create_firewall(self, fmt, name, description, firewall_policy_id,
                          admin_state_up=True, expected_res_status=None,
                          **kwargs):
+        tenant_id = kwargs.get('tenant_id', self._tenant_id)
         if firewall_policy_id is None:
             res = self._create_firewall_policy(fmt, 'fwp',
                                                description=DESCRIPTION,
                                                shared=True,
                                                firewall_rules=[],
+                                               tenant_id=tenant_id,
                                                audited=AUDITED)
             firewall_policy = self.deserialize(fmt or self.fmt, res)
             firewall_policy_id = firewall_policy["firewall_policy"]["id"]
-        ctx = kwargs.get('context', None)
-        tenant_id = kwargs.get('tenant_id', self._tenant_id)
         data = {'firewall': {'name': name,
                              'description': description,
                              'firewall_policy_id': firewall_policy_id,
                              'admin_state_up': admin_state_up}}
-        if ctx is None:
+        ctx = kwargs.get('context', None)
+        if ctx is None or ctx.is_admin:
             data['firewall'].update({'tenant_id': tenant_id})
 
         firewall_req = self.new_create_request('firewalls', data, fmt,
@@ -979,6 +980,30 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
                                   context=ctx,
                                   expected_res_status=404)
 
+    def test_create_firewall_with_admin_and_fwp_different_tenant(self):
+        fmt = self.fmt
+        fw_name = "firewall1"
+        description = "my_firewall1"
+        with self.firewall_policy(shared=False, tenant_id='tenant2') as fwp:
+            fwp_id = fwp['firewall_policy']['id']
+            ctx = context.get_admin_context()
+            self._create_firewall(fmt, fw_name,
+                                  description, fwp_id,
+                                  tenant_id="admin-tenant",
+                                  context=ctx,
+                                  expected_res_status=409)
+
+    def test_create_firewall_with_admin_and_fwp_is_shared(self):
+        fw_name = "fw_with_shared_fwp"
+        with self.firewall_policy(tenant_id="tenantX") as fwp:
+            fwp_id = fwp['firewall_policy']['id']
+            ctx = context.get_admin_context()
+            target_tenant = 'tenant1'
+            with self.firewall(name=fw_name, firewall_policy_id=fwp_id,
+                               tenant_id=target_tenant, context=ctx,
+                               admin_state_up=ADMIN_STATE_UP) as fw:
+                self.assertEqual(fw['firewall']['tenant_id'], target_tenant)
+
     def test_show_firewall(self):
         name = "firewall1"
         attrs = self._get_test_firewall_attrs(name)
@@ -1031,6 +1056,50 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
                                        req.get_response(self.ext_api))
                 for k, v in six.iteritems(attrs):
                     self.assertEqual(res['firewall'][k], v)
+
+    def test_update_firewall_with_fwp(self):
+        ctx = context.Context('not_admin', 'tenant1')
+        with self.firewall_policy() as fwp1, \
+                self.firewall_policy(
+                    tenant_id='tenant1', shared=False) as fwp2, \
+                self.firewall(firewall_policy_id=fwp1['firewall_policy']['id'],
+                              context=ctx) as fw:
+            fw_id = fw['firewall']['id']
+            fwp2_id = fwp2['firewall_policy']['id']
+            data = {'firewall': {'firewall_policy_id': fwp2_id}}
+            req = self.new_update_request('firewalls', data, fw_id,
+                                          context=ctx)
+            res = req.get_response(self.ext_api)
+            self.assertEqual(200, res.status_int)
+
+    def test_update_firewall_with_shared_fwp(self):
+        ctx = context.Context('not_admin', 'tenant1')
+        with self.firewall_policy() as fwp1, \
+                self.firewall_policy(tenant_id='tenant2') as fwp2, \
+                self.firewall(firewall_policy_id=fwp1['firewall_policy']['id'],
+                              context=ctx) as fw:
+            fw_id = fw['firewall']['id']
+            fwp2_id = fwp2['firewall_policy']['id']
+            data = {'firewall': {'firewall_policy_id': fwp2_id}}
+            req = self.new_update_request('firewalls', data, fw_id,
+                                          context=ctx)
+            res = req.get_response(self.ext_api)
+            self.assertEqual(200, res.status_int)
+
+    def test_update_firewall_with_admin_and_fwp_different_tenant(self):
+        ctx = context.get_admin_context()
+        with self.firewall_policy() as fwp1, \
+                self.firewall_policy(
+                    tenant_id='tenant2', shared=False) as fwp2, \
+                self.firewall(firewall_policy_id=fwp1['firewall_policy']['id'],
+                              context=ctx) as fw:
+            fw_id = fw['firewall']['id']
+            fwp2_id = fwp2['firewall_policy']['id']
+            data = {'firewall': {'firewall_policy_id': fwp2_id}}
+            req = self.new_update_request('firewalls', data, fw_id,
+                                          context=ctx)
+            res = req.get_response(self.ext_api)
+            self.assertEqual(409, res.status_int)
 
     def test_update_firewall_fwp_not_found_on_different_tenant(self):
         with self.firewall_policy(name='fwp1', tenant_id='tenant1',
