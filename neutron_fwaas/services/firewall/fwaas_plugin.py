@@ -325,11 +325,8 @@ class FirewallPlugin(
 
     def delete_firewall(self, context, id):
         LOG.debug("delete_firewall() called on firewall %s", id)
-        status_update = {"firewall": {"status": const.PENDING_DELETE}}
-        fw = super(FirewallPlugin, self).update_firewall(context, id,
-                                                         status_update)
         fw_with_rules = (
-            self._make_firewall_dict_with_rules(context, fw['id']))
+            self._make_firewall_dict_with_rules(context, id))
         fw_with_rules['del-router-ids'] = self.get_firewall_routers(
             context, id)
         fw_with_rules['add-router-ids'] = []
@@ -337,6 +334,10 @@ class FirewallPlugin(
             # no routers to delete on the agent side
             self.delete_db_firewall_object(context, id)
         else:
+            status = {"firewall": {"status": const.PENDING_DELETE}}
+            super(FirewallPlugin, self).update_firewall(context, id, status)
+            # Reflect state change in fw_with_rules
+            fw_with_rules['status'] = status['firewall']['status']
             self.agent_rpc.delete_firewall(context, fw_with_rules)
 
     def update_firewall_policy(self, context, id, firewall_policy):
