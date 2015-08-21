@@ -13,14 +13,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import urllib
-
 from networking_brocade.vyatta.common import config as vyatta_config
 from networking_brocade.vyatta.vrouter import client as vyatta_client
 from neutron import context as neutron_context
 from neutron.i18n import _LW
 from novaclient import client as nova_client
 from oslo_log import log as logging
+from six.moves.urllib import parse
 
 from neutron_fwaas.services.firewall.agents.vyatta import vyatta_utils
 from neutron_fwaas.services.firewall.drivers import fwaas_base
@@ -102,13 +101,13 @@ class VyattaFirewallDriver(fwaas_base.FwaasDriverBase):
         fw_name = vyatta_utils.get_firewall_name(ri, fw)
         fw_cmd_list.append(
             vyatta_client.SetCmd(
-                FW_NAME.format(urllib.quote_plus(fw_name))))
+                FW_NAME.format(parse.quote_plus(fw_name))))
 
         if fw.get('description'):
             fw_cmd_list.append(vyatta_client.SetCmd(
                 FW_DESCRIPTION.format(
-                    urllib.quote_plus(fw_name),
-                    urllib.quote_plus(fw['description']))))
+                    parse.quote_plus(fw_name),
+                    parse.quote_plus(fw['description']))))
 
         # Set firewall state policy
         fw_cmd_list.append(vyatta_client.SetCmd(FW_ESTABLISHED_ACCEPT))
@@ -140,7 +139,7 @@ class VyattaFirewallDriver(fwaas_base.FwaasDriverBase):
         # Delete firewall
         fw_name = vyatta_utils.get_firewall_name(ri, fw)
         cmd_list.append(vyatta_client.DeleteCmd(
-            FW_NAME.format(urllib.quote_plus(fw_name))))
+            FW_NAME.format(parse.quote_plus(fw_name))))
 
         # Delete firewall state policy
         cmd_list.append(vyatta_client.DeleteCmd("firewall/state-policy"))
@@ -153,8 +152,8 @@ class VyattaFirewallDriver(fwaas_base.FwaasDriverBase):
         if 'description' in rule and len(rule['description']) > 0:
             cmd_list.append(vyatta_client.SetCmd(
                 FW_RULE_DESCRIPTION.format(
-                    urllib.quote_plus(fw_name), rule_num,
-                    urllib.quote_plus(rule['description']))))
+                    parse.quote_plus(fw_name), rule_num,
+                    parse.quote_plus(rule['description']))))
 
         rules = [
             ('protocol', FW_RULE_PROTOCOL),
@@ -173,8 +172,8 @@ class VyattaFirewallDriver(fwaas_base.FwaasDriverBase):
             # for all data retrieved from external sources.
             cmd_list.append(vyatta_client.SetCmd(
                 url.format(
-                    urllib.quote_plus(fw_name), rule_num,
-                    urllib.quote_plus(field))))
+                    parse.quote_plus(fw_name), rule_num,
+                    parse.quote_plus(field))))
 
         if 'action' in rule:
             if rule['action'] == 'allow':
@@ -183,7 +182,7 @@ class VyattaFirewallDriver(fwaas_base.FwaasDriverBase):
                 action = 'drop'
             cmd_list.append(vyatta_client.SetCmd(
                 FW_RULE_ACTION.format(
-                    urllib.quote_plus(fw_name), rule_num,
+                    parse.quote_plus(fw_name), rule_num,
                     action)))
         return cmd_list
 

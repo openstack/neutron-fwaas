@@ -14,12 +14,12 @@
 #    under the License.
 
 import sys
-import urllib
 
 import mock
 
 from neutron.common import constants as l3_constants
 from neutron.tests import base
+from six.moves.urllib import parse
 
 # Mocking imports of 3rd party vyatta library in unit tests and all modules
 # that depends on this library. Import will fail if not mocked and 3rd party
@@ -100,11 +100,11 @@ class TestVyattaUtils(base.BaseTestCase):
             vyatta_client.SetCmd(
                 vyatta_utils.ZONE_FIREWALL_CMD.format(
                     trusted_zone_name, untrusted_zone_name,
-                    urllib.quote_plus(firewall_name))),
+                    parse.quote_plus(firewall_name))),
             vyatta_client.SetCmd(
                 vyatta_utils.ZONE_FIREWALL_CMD.format(
                     untrusted_zone_name, trusted_zone_name,
-                    urllib.quote_plus(firewall_name))),
+                    parse.quote_plus(firewall_name))),
         ]
 
         self.assertEqual(cmds_expect, cmds_actual)

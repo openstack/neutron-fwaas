@@ -14,11 +14,10 @@
 #    under the License.
 #
 
-import urllib
-
 from networking_brocade.vyatta.vrouter import client as vyatta_client
 from neutron.common import constants as l3_constants
 from oslo_log import log as logging
+from six.moves.urllib import parse
 
 TRUST_ZONE = 'Internal_Trust'
 UNTRUST_ZONE = 'External_Untrust'
@@ -61,7 +60,7 @@ def get_zone_cmds(rest_api, ri, fw_name):
     trusted_zone_name = None
     # Add internal ports to trusted zone
     if l3_constants.INTERFACE_KEY in ri.router:
-        trusted_zone_name = urllib.quote_plus(get_trusted_zone_name(ri))
+        trusted_zone_name = parse.quote_plus(get_trusted_zone_name(ri))
         for port in ri.router[l3_constants.INTERFACE_KEY]:
             eth_if_id = rest_api.get_ethernet_if_id(port['mac_address'])
             cmd_list.append(vyatta_client.SetCmd(
@@ -81,11 +80,11 @@ def get_zone_cmds(rest_api, ri, fw_name):
                 cmd_list.append(vyatta_client.SetCmd(
                     ZONE_FIREWALL_CMD.format(
                         trusted_zone_name, untrusted_zone_name,
-                        urllib.quote_plus(fw_name))))
+                        parse.quote_plus(fw_name))))
 
                 cmd_list.append(vyatta_client.SetCmd(
                     ZONE_FIREWALL_CMD.format(
                         untrusted_zone_name, trusted_zone_name,
-                        urllib.quote_plus(fw_name))))
+                        parse.quote_plus(fw_name))))
 
     return cmd_list
