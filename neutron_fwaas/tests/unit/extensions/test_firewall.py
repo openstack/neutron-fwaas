@@ -16,6 +16,7 @@
 import copy
 
 import mock
+from neutron.api.v2 import attributes as attr
 from neutron.plugins.common import constants
 from neutron.tests import base
 from neutron.tests.unit.api.v2 import test_base as test_api_v2
@@ -28,6 +29,8 @@ from neutron_fwaas.extensions import firewall
 
 _uuid = uuidutils.generate_uuid
 _get_path = test_api_v2._get_path
+_long_name = 'x' * (attr.NAME_MAX_LEN + 1)
+_long_description = 'y' * (attr.DESCRIPTION_MAX_LEN + 1)
 
 
 class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
@@ -65,6 +68,32 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         res = self.deserialize(res)
         self.assertIn('firewall', res)
         self.assertEqual(res['firewall'], return_value)
+
+    def test_create_firewall_invalid_long_name(self):
+        data = {'firewall': {'description': 'descr_firewall1',
+                             'name': _long_name,
+                             'admin_state_up': True,
+                             'firewall_policy_id': _uuid(),
+                             'shared': False,
+                             'tenant_id': _uuid()}}
+        res = self.api.post(_get_path('fw/firewalls', fmt=self.fmt),
+                            self.serialize(data),
+                            content_type='application/%s' % self.fmt,
+                            status=exc.HTTPBadRequest.code)
+        self.assertTrue('Invalid input for name' in res.body)
+
+    def test_create_firewall_invalid_long_description(self):
+        data = {'firewall': {'description': _long_description,
+                             'name': 'firewall1',
+                             'admin_state_up': True,
+                             'firewall_policy_id': _uuid(),
+                             'shared': False,
+                             'tenant_id': _uuid()}}
+        res = self.api.post(_get_path('fw/firewalls', fmt=self.fmt),
+                            self.serialize(data),
+                            content_type='application/%s' % self.fmt,
+                            status=exc.HTTPBadRequest.code)
+        self.assertTrue('Invalid input for description' in res.body)
 
     def test_firewall_list(self):
         fw_id = _uuid()
@@ -164,6 +193,44 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
     def test_create_firewall_rule_with_port_range(self):
         self._test_create_firewall_rule('1:20', '30:40')
 
+    def test_create_firewall_rule_invalid_long_name(self):
+        data = {'firewall_rule': {'description': 'descr_firewall_rule1',
+                                  'name': _long_name,
+                                  'shared': False,
+                                  'protocol': 'tcp',
+                                  'ip_version': 4,
+                                  'source_ip_address': '192.168.0.1',
+                                  'destination_ip_address': '127.0.0.1',
+                                  'source_port': 1,
+                                  'destination_port': 1,
+                                  'action': 'allow',
+                                  'enabled': True,
+                                  'tenant_id': _uuid()}}
+        res = self.api.post(_get_path('fw/firewall_rules', fmt=self.fmt),
+                            self.serialize(data),
+                            content_type='application/%s' % self.fmt,
+                            status=exc.HTTPBadRequest.code)
+        self.assertTrue('Invalid input for name' in res.body)
+
+    def test_create_firewall_rule_invalid_long_description(self):
+        data = {'firewall_rule': {'description': _long_description,
+                                  'name': 'rule1',
+                                  'shared': False,
+                                  'protocol': 'tcp',
+                                  'ip_version': 4,
+                                  'source_ip_address': '192.168.0.1',
+                                  'destination_ip_address': '127.0.0.1',
+                                  'source_port': 1,
+                                  'destination_port': 1,
+                                  'action': 'allow',
+                                  'enabled': True,
+                                  'tenant_id': _uuid()}}
+        res = self.api.post(_get_path('fw/firewall_rules', fmt=self.fmt),
+                            self.serialize(data),
+                            content_type='application/%s' % self.fmt,
+                            status=exc.HTTPBadRequest.code)
+        self.assertTrue('Invalid input for description' in res.body)
+
     def test_firewall_rule_list(self):
         rule_id = _uuid()
         return_value = [{'tenant_id': _uuid(),
@@ -247,6 +314,34 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         res = self.deserialize(res)
         self.assertIn('firewall_policy', res)
         self.assertEqual(res['firewall_policy'], return_value)
+
+    def test_create_firewall_policy_invalid_long_name(self):
+        data = {'firewall_policy': {'description': 'descr_firewall_policy1',
+                                    'name': _long_name,
+                                    'shared': False,
+                                    'firewall_rules': [_uuid(), _uuid()],
+                                    'audited': False,
+                                    'tenant_id': _uuid()}}
+        res = self.api.post(_get_path('fw/firewall_policies',
+                                      fmt=self.fmt),
+                            self.serialize(data),
+                            content_type='application/%s' % self.fmt,
+                            status=exc.HTTPBadRequest.code)
+        self.assertTrue('Invalid input for name' in res.body)
+
+    def test_create_firewall_policy_invalid_long_description(self):
+        data = {'firewall_policy': {'description': _long_description,
+                                    'name': 'new_fw_policy1',
+                                    'shared': False,
+                                    'firewall_rules': [_uuid(), _uuid()],
+                                    'audited': False,
+                                    'tenant_id': _uuid()}}
+        res = self.api.post(_get_path('fw/firewall_policies',
+                                      fmt=self.fmt),
+                            self.serialize(data),
+                            content_type='application/%s' % self.fmt,
+                            status=exc.HTTPBadRequest.code)
+        self.assertTrue('Invalid input for description' in res.body)
 
     def test_firewall_policy_list(self):
         policy_id = _uuid()
