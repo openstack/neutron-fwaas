@@ -54,7 +54,8 @@ class FirewallRule(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
     source_port_range_max = sa.Column(sa.Integer)
     destination_port_range_min = sa.Column(sa.Integer)
     destination_port_range_max = sa.Column(sa.Integer)
-    action = sa.Column(sa.Enum('allow', 'deny', name='firewallrules_action'))
+    action = sa.Column(sa.Enum('allow', 'deny', 'reject',
+                               name='firewallrules_action'))
     enabled = sa.Column(sa.Boolean)
     position = sa.Column(sa.Integer)
 

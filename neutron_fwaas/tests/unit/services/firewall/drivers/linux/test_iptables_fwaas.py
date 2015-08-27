@@ -56,6 +56,11 @@ class IptablesFwaasTestCase(base.BaseTestCase):
                  'ip_version': 4,
                  'protocol': 'tcp',
                  'destination_port': '22'}
+        rule3 = {'enabled': True,
+                 'action': 'reject',
+                 'ip_version': 4,
+                 'protocol': 'tcp',
+                 'destination_port': '23'}
         ingress_chain = ('iv4%s' % fwid)[:11]
         egress_chain = ('ov4%s' % fwid)[:11]
         for router_info_inst in apply_list:
@@ -64,6 +69,7 @@ class IptablesFwaasTestCase(base.BaseTestCase):
             v4filter_inst.chains.append(egress_chain)
         rule_list.append(rule1)
         rule_list.append(rule2)
+        rule_list.append(rule3)
         return rule_list
 
     def _fake_firewall_no_rule(self):
@@ -132,6 +138,7 @@ class IptablesFwaasTestCase(base.BaseTestCase):
         est_rule = '-m state --state ESTABLISHED,RELATED -j ACCEPT'
         rule1 = '-p tcp --dport 80  -s 10.24.4.2  -j ACCEPT'
         rule2 = '-p tcp --dport 22    -j DROP'
+        rule3 = '-p tcp --dport 23    -j REJECT'
         ingress_chain = 'iv4%s' % firewall['id']
         egress_chain = 'ov4%s' % firewall['id']
         bname = fwaas.iptables_manager.binary_name
@@ -154,6 +161,8 @@ class IptablesFwaasTestCase(base.BaseTestCase):
                      mock.call.add_rule(egress_chain, rule1),
                      mock.call.add_rule(ingress_chain, rule2),
                      mock.call.add_rule(egress_chain, rule2),
+                     mock.call.add_rule(ingress_chain, rule3),
+                     mock.call.add_rule(egress_chain, rule3),
                      mock.call.add_rule('FORWARD',
                                         '-o %s -j %s' % (if_prefix,
                                         ipt_mgr_ichain)),
