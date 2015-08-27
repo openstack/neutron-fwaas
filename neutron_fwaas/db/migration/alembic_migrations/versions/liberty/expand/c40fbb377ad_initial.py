@@ -16,16 +16,18 @@
 """Initial Liberty no-op script.
 
 Revision ID: c40fbb377ad
-Revises: None
+Revises: kilo
 Create Date: 2015-07-28 22:18:13.321233
 
 """
 
+from neutron.db.migration import cli
+
+
 # revision identifiers, used by Alembic.
 revision = 'c40fbb377ad'
-down_revision = None
-branch_labels = ('liberty_expand',)
-depends_on = ('kilo',)
+down_revision = 'kilo'
+branch_labels = (cli.EXPAND_BRANCH,)
 
 
 def upgrade():
