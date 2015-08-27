@@ -168,7 +168,7 @@ class CsrAclDriver(fwaas_base.FwaasDriverBase):
             self._get_acl_l4_port('source_port', rule, l4_opt)
             self._get_acl_l4_port('destination_port', rule, l4_opt)
             if l4_opt:
-                ace_rule['L4-options'] = l4_opt
+                ace_rule['l4-options'] = l4_opt
 
             acl_rules_list.append(ace_rule)
 
