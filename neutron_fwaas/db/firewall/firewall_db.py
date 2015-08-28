@@ -332,6 +332,20 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
                 raise fw_ext.FirewallNotFound(firewall_id=id)
         return self.get_firewall(context, id)
 
+    def update_firewall_status(self, context, id, status, not_in=None):
+        """Conditionally update firewall status.
+
+        Status transition is performed only if firewall is not in the specified
+        states as defined by 'not_in' list.
+        """
+        # filter in_ wants iterable objects, None isn't.
+        not_in = not_in or []
+        with context.session.begin(subtransactions=True):
+            return (context.session.query(Firewall).
+                    filter(Firewall.id == id).
+                    filter(~Firewall.status.in_(not_in)).
+                    update({'status': status}, synchronize_session=False))
+
     def delete_firewall(self, context, id):
         LOG.debug("delete_firewall() called")
         with context.session.begin(subtransactions=True):

@@ -41,24 +41,21 @@ class FirewallCallbacks(object):
 
     def set_firewall_status(self, context, firewall_id, status, **kwargs):
         """Agent uses this to set a firewall's status."""
-        LOG.debug("set_firewall_status() called")
-        with context.session.begin(subtransactions=True):
-            fw_db = self.plugin._get_firewall(context, firewall_id)
-            # ignore changing status if firewall expects to be deleted
-            # That case means that while some pending operation has been
-            # performed on the backend, neutron server received delete request
-            # and changed firewall status to const.PENDING_DELETE
-            if fw_db.status == const.PENDING_DELETE:
-                LOG.debug("Firewall %(fw_id)s in PENDING_DELETE state, "
-                          "not changing to %(status)s",
-                          {'fw_id': firewall_id, 'status': status})
-                return False
-            if status in (const.ACTIVE, const.DOWN, const.INACTIVE):
-                fw_db.status = status
-                return True
-            else:
-                fw_db.status = const.ERROR
-                return False
+        LOG.debug("Setting firewall %s to status: %s" % (firewall_id, status))
+        # Sanitize status first
+        if status in (const.ACTIVE, const.DOWN, const.INACTIVE):
+            to_update = status
+        else:
+            to_update = const.ERROR
+        # ignore changing status if firewall expects to be deleted
+        # That case means that while some pending operation has been
+        # performed on the backend, neutron server received delete request
+        # and changed firewall status to PENDING_DELETE
+        updated = self.plugin.update_firewall_status(
+            context, firewall_id, to_update, not_in=(const.PENDING_DELETE,))
+        if updated:
+            LOG.debug("firewall %s status set: %s" % (firewall_id, to_update))
+        return updated and to_update != const.ERROR
 
     def firewall_deleted(self, context, firewall_id, **kwargs):
         """Agent uses this to indicate firewall is deleted."""
