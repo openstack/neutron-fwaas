@@ -169,7 +169,7 @@ class FirewallPlugin(
         # this is triggered on an update to fw rule or policy, no
         # change in associated routers.
         fw_with_rules['add-router-ids'] = self.get_firewall_routers(
-                context, id)
+                context, firewall_id)
         fw_with_rules['del-router-ids'] = []
         self.agent_rpc.update_firewall(context, fw_with_rules)
 
