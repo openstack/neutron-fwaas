@@ -1422,3 +1422,22 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
             kwargs = {'context': mock.ANY, 'router': mock.ANY}
             self.assertIsNone(fdb.migration_callback(
                 mock.ANY, mock.ANY, mock.ANY, **kwargs))
+
+    def test_show_firewall_rule_by_name(self):
+        with self.firewall_rule(name='firewall_Rule1') as fw_rule:
+            res = self._show('firewall_rules',
+                             fw_rule['firewall_rule']['id'])
+            self.assertEqual('firewall_Rule1', res['firewall_rule']['name'])
+
+    def test_show_firewall_policy_by_name(self):
+        with self.firewall_policy(
+            name='firewall_Policy1') as fw_policy:
+            res = self._show('firewall_policies',
+                             fw_policy['firewall_policy']['id'])
+            self.assertEqual(
+                'firewall_Policy1', res['firewall_policy']['name'])
+
+    def test_show_firewall_by_name(self):
+        with self.firewall(name='fireWall1') as fw:
+            res = self._show('firewalls', fw['firewall']['id'])
+            self.assertEqual('fireWall1', res['firewall']['name'])

@@ -40,6 +40,7 @@ LOG = logging.getLogger(__name__)
 class FirewallRule(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
     """Represents a Firewall rule."""
     __tablename__ = 'firewall_rules'
+    __table_args__ = ({'mysql_collate': 'utf8_bin'})
     name = sa.Column(sa.String(255))
     description = sa.Column(sa.String(1024))
     firewall_policy_id = sa.Column(sa.String(36),
@@ -63,6 +64,7 @@ class FirewallRule(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
 class Firewall(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
     """Represents a Firewall resource."""
     __tablename__ = 'firewalls'
+    __table_args__ = ({'mysql_collate': 'utf8_bin'})
     name = sa.Column(sa.String(255))
     description = sa.Column(sa.String(1024))
     shared = sa.Column(sa.Boolean)
@@ -76,6 +78,7 @@ class Firewall(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
 class FirewallPolicy(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
     """Represents a Firewall Policy resource."""
     __tablename__ = 'firewall_policies'
+    __table_args__ = ({'mysql_collate': 'utf8_bin'})
     name = sa.Column(sa.String(255))
     description = sa.Column(sa.String(1024))
     shared = sa.Column(sa.Boolean)
