@@ -4,4 +4,4 @@ source = neutron_fwaas
 # omit = neutron_fwaas/tests/*
 
 [report]
-ignore-errors = True
+ignore_errors = True
