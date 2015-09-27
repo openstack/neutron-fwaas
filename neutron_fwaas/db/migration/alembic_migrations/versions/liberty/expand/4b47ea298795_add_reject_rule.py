@@ -20,12 +20,18 @@ Create Date: 2015-04-15 04:19:57.324584
 
 """
 
+from alembic import op
+import sqlalchemy as sa
+
+from neutron.db import migration
+
+
 # revision identifiers, used by Alembic.
 revision = '4b47ea298795'
 down_revision = 'c40fbb377ad'
 
-from alembic import op
-import sqlalchemy as sa
+# milestone identifier, used by neutron-db-manage
+neutron_milestone = [migration.LIBERTY]
 
 
 new_action = sa.Enum('allow', 'deny', 'reject', name='firewallrules_action')
