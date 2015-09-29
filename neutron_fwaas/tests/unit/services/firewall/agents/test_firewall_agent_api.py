@@ -49,7 +49,7 @@ class TestFWaaSAgentApi(base.BaseTestCase):
             'host')
 
     def test_init(self):
-        self.assertEqual(self.api.host, 'host')
+        self.assertEqual('host', self.api.host)
 
     def _test_firewall_method(self, method_name, **kwargs):
         with mock.patch.object(self.api.client, 'call') as rpc_mock, \
