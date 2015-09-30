@@ -145,18 +145,21 @@ class FirewallPlugin(
 
     def __init__(self):
         """Do the initialization for the firewall service plugin here."""
-        self.endpoints = [FirewallCallbacks(self)]
-
-        self.conn = n_rpc.create_connection(new=True)
-        self.conn.create_consumer(
-            topics.FIREWALL_PLUGIN, self.endpoints, fanout=False)
-        self.conn.consume_in_threads()
+        self.start_rpc_listeners()
 
         self.agent_rpc = FirewallAgentApi(
             topics.L3_AGENT,
             cfg.CONF.host
         )
         firewall_db.subscribe()
+
+    def start_rpc_listeners(self):
+        self.endpoints = [FirewallCallbacks(self)]
+
+        self.conn = n_rpc.create_connection(new=True)
+        self.conn.create_consumer(
+            topics.FIREWALL_PLUGIN, self.endpoints, fanout=False)
+        return self.conn.consume_in_threads()
 
     def _rpc_update_firewall(self, context, firewall_id):
         status_update = {"firewall": {"status": const.PENDING_UPDATE}}
