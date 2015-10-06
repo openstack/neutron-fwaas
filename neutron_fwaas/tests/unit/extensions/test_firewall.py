@@ -80,7 +80,7 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
                             self.serialize(data),
                             content_type='application/%s' % self.fmt,
                             status=exc.HTTPBadRequest.code)
-        self.assertTrue('Invalid input for name' in res.body.decode('utf-8'))
+        self.assertIn('Invalid input for name', res.body.decode('utf-8'))
 
     def test_create_firewall_invalid_long_description(self):
         data = {'firewall': {'description': _long_description,
@@ -93,8 +93,8 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
                             self.serialize(data),
                             content_type='application/%s' % self.fmt,
                             status=exc.HTTPBadRequest.code)
-        self.assertTrue('Invalid input '
-                        'for description' in res.body.decode('utf-8'))
+        self.assertIn('Invalid input for description',
+                      res.body.decode('utf-8'))
 
     def test_firewall_list(self):
         fw_id = _uuid()
@@ -211,7 +211,7 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
                             self.serialize(data),
                             content_type='application/%s' % self.fmt,
                             status=exc.HTTPBadRequest.code)
-        self.assertTrue('Invalid input for name' in res.body.decode('utf-8'))
+        self.assertIn('Invalid input for name', res.body.decode('utf-8'))
 
     def test_create_firewall_rule_invalid_long_description(self):
         data = {'firewall_rule': {'description': _long_description,
@@ -230,8 +230,8 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
                             self.serialize(data),
                             content_type='application/%s' % self.fmt,
                             status=exc.HTTPBadRequest.code)
-        self.assertTrue('Invalid input '
-                        'for description' in res.body.decode('utf-8'))
+        self.assertIn('Invalid input for description',
+                      res.body.decode('utf-8'))
 
     def test_firewall_rule_list(self):
         rule_id = _uuid()
@@ -329,7 +329,7 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
                             self.serialize(data),
                             content_type='application/%s' % self.fmt,
                             status=exc.HTTPBadRequest.code)
-        self.assertTrue('Invalid input for name' in res.body.decode('utf-8'))
+        self.assertIn('Invalid input for name', res.body.decode('utf-8'))
 
     def test_create_firewall_policy_invalid_long_description(self):
         data = {'firewall_policy': {'description': _long_description,
@@ -343,8 +343,8 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
                             self.serialize(data),
                             content_type='application/%s' % self.fmt,
                             status=exc.HTTPBadRequest.code)
-        self.assertTrue('Invalid input '
-                        'for description' in res.body.decode('utf-8'))
+        self.assertIn('Invalid input for description',
+                      res.body.decode('utf-8'))
 
     def test_firewall_policy_list(self):
         policy_id = _uuid()
