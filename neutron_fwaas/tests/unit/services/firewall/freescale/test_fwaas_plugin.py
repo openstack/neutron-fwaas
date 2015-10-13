@@ -88,7 +88,7 @@ class TestFreescaleFirewallPlugin(test_db_firewall.TestFirewallDBPlugin):
                                context=ctx,
                                do_delete=False,
                                admin_state_up=True) as fw:
-                self.assertEqual(fw['firewall']['tenant_id'], target_tenant)
+                self.assertEqual(target_tenant, fw['firewall']['tenant_id'])
                 fw_id = fw['firewall']['id']
             self.plugin.delete_firewall(self.ctx, fw_id)
             self.clnt.delete_firewall.assert_called_once_with(fw_id)
@@ -268,7 +268,7 @@ class TestFreescaleFirewallPlugin(test_db_firewall.TestFirewallDBPlugin):
                 fw_id = fw['firewall']['id']
                 req = self.new_delete_request('firewall_policies', fwp_id)
                 res = req.get_response(self.ext_api)
-                self.assertEqual(res.status_int, exc.HTTPConflict.code)
+                self.assertEqual(exc.HTTPConflict.code, res.status_int)
             self.plugin.delete_firewall(self.ctx, fw_id)
             self.clnt.delete_firewall.assert_called_once_with(fw_id)
             self.callbacks.firewall_deleted(self.ctx, fw_id)
@@ -283,7 +283,7 @@ class TestFreescaleFirewallPlugin(test_db_firewall.TestFirewallDBPlugin):
                 req = self.new_update_request('firewall_policies', data,
                                               fwp['firewall_policy']['id'])
                 res = req.get_response(self.ext_api)
-                self.assertEqual(res.status_int, exc.HTTPConflict.code)
+                self.assertEqual(exc.HTTPConflict.code, res.status_int)
             self.plugin.delete_firewall(self.ctx, fw_id)
             self.clnt.delete_firewall.assert_called_once_with(fw_id)
             self.callbacks.firewall_deleted(self.ctx, fw_id)
@@ -302,7 +302,7 @@ class TestFreescaleFirewallPlugin(test_db_firewall.TestFirewallDBPlugin):
                                                       const.PENDING_DELETE)
                 req = self.new_delete_request('firewalls', fw_id)
                 res = req.get_response(self.ext_api)
-                self.assertEqual(res.status_int, exc.HTTPNoContent.code)
+                self.assertEqual(exc.HTTPNoContent.code, res.status_int)
             self.clnt.delete_firewall.assert_called_once_with(fw_id)
             self.plugin.endpoints[0].firewall_deleted(self.ctx, fw_id)
 

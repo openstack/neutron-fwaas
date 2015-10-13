@@ -149,12 +149,12 @@ class TestFirewallCallbacks(TestFirewallRouterInsertionBase):
                                                          const.ACTIVE,
                                                          host='dummy')
                 fw_db = self.plugin.get_firewall(ctx, fw_id)
-                self.assertEqual(fw_db['status'], const.ACTIVE)
+                self.assertEqual(const.ACTIVE, fw_db['status'])
                 self.assertTrue(res)
                 res = self.callbacks.set_firewall_status(ctx, fw_id,
                                                          const.ERROR)
                 fw_db = self.plugin.get_firewall(ctx, fw_id)
-                self.assertEqual(fw_db['status'], const.ERROR)
+                self.assertEqual(const.ERROR, fw_db['status'])
                 self.assertFalse(res)
 
     def test_set_firewall_status_pending_delete(self):
@@ -173,7 +173,7 @@ class TestFirewallCallbacks(TestFirewallRouterInsertionBase):
                                                          const.ACTIVE,
                                                          host='dummy')
                 fw_db = self.plugin.get_firewall(ctx, fw_id)
-                self.assertEqual(fw_db['status'], const.PENDING_DELETE)
+                self.assertEqual(const.PENDING_DELETE, fw_db['status'])
                 self.assertFalse(res)
 
     def test_firewall_deleted(self):
@@ -208,7 +208,7 @@ class TestFirewallCallbacks(TestFirewallRouterInsertionBase):
                                                       host='dummy')
                 self.assertFalse(res)
                 fw_db = self.plugin._get_firewall(ctx, fw_id)
-                self.assertEqual(fw_db['status'], const.ERROR)
+                self.assertEqual(const.ERROR, fw_db['status'])
 
     def test_get_firewall_for_tenant(self):
         tenant_id = 'test-tenant'
@@ -240,7 +240,7 @@ class TestFirewallCallbacks(TestFirewallRouterInsertionBase):
                     )
                     fw_rules['add-router-ids'] = []
                     fw_rules['del-router-ids'] = []
-                    self.assertEqual(res[0], fw_rules)
+                    self.assertEqual(fw_rules, res[0])
                     self._compare_firewall_rule_lists(
                         fwp_id, fr, res[0]['firewall_rule_list'])
 
@@ -261,7 +261,7 @@ class TestFirewallCallbacks(TestFirewallRouterInsertionBase):
                     res = f(ctx, host='dummy')
                     for fw in res:
                         del fw['shared']
-                    self.assertEqual(res, fw_list)
+                    self.assertEqual(fw_list, res)
 
 
 class TestFirewallAgentApi(base.BaseTestCase):
@@ -271,8 +271,8 @@ class TestFirewallAgentApi(base.BaseTestCase):
         self.api = fwaas_plugin.FirewallAgentApi('topic', 'host')
 
     def test_init(self):
-        self.assertEqual(self.api.client.target.topic, 'topic')
-        self.assertEqual(self.api.host, 'host')
+        self.assertEqual('topic', self.api.client.target.topic)
+        self.assertEqual('host', self.api.host)
 
     def _call_test_helper(self, method_name):
         with mock.patch.object(self.api.client, 'cast') as rpc_mock, \
@@ -391,7 +391,7 @@ class TestFirewallPluginBase(TestFirewallRouterInsertionBase,
                                                       const.PENDING_CREATE,
                                                       const.PENDING_UPDATE)
                     for k, v in six.iteritems(attrs):
-                        self.assertEqual(res['firewall'][k], v)
+                        self.assertEqual(v, res['firewall'][k])
 
     def test_update_firewall_fails_when_firewall_pending(self):
         name = "new_firewall1"
@@ -438,7 +438,7 @@ class TestFirewallPluginBase(TestFirewallRouterInsertionBase,
                                                       const.PENDING_CREATE,
                                                       const.PENDING_UPDATE)
                     for k, v in six.iteritems(attrs):
-                        self.assertEqual(res['firewall'][k], v)
+                        self.assertEqual(v, res['firewall'][k])
 
     def test_update_firewall_shared_fails_for_non_admin(self):
         ctx = context.get_admin_context()
@@ -518,7 +518,7 @@ class TestFirewallPluginBase(TestFirewallRouterInsertionBase,
                 fw_id = fw['firewall']['id']
                 req = self.new_delete_request('firewalls', fw_id)
                 res = req.get_response(self.ext_api)
-                self.assertEqual(res.status_int, exc.HTTPNoContent.code)
+                self.assertEqual(exc.HTTPNoContent.code, res.status_int)
                 self.assertRaises(firewall.FirewallNotFound,
                                   self.plugin.get_firewall,
                                   ctx, fw_id)
@@ -532,7 +532,7 @@ class TestFirewallPluginBase(TestFirewallRouterInsertionBase,
                 fw_id = fw['firewall']['id']
                 req = self.new_delete_request('firewalls', fw_id)
                 res = req.get_response(self.ext_api)
-                self.assertEqual(res.status_int, exc.HTTPNoContent.code)
+                self.assertEqual(exc.HTTPNoContent.code, res.status_int)
                 self.assertRaises(firewall.FirewallNotFound,
                                   self.plugin.get_firewall,
                                   ctx, fw_id)
@@ -563,7 +563,7 @@ class TestFirewallPluginBase(TestFirewallRouterInsertionBase,
                         self.plugin._make_firewall_dict_with_rules(ctx,
                                                                    fw_id)
                     )
-                    self.assertEqual(fw_rules['id'], fw_id)
+                    self.assertEqual(fw_id, fw_rules['id'])
                     self._compare_firewall_rule_lists(
                         fwp_id, fr, fw_rules['firewall_rule_list'])
 

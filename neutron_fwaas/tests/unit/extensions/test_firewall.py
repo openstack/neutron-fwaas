@@ -64,10 +64,10 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
                             content_type='application/%s' % self.fmt)
         instance.create_firewall.assert_called_with(mock.ANY,
                                                     firewall=data)
-        self.assertEqual(res.status_int, exc.HTTPCreated.code)
+        self.assertEqual(exc.HTTPCreated.code, res.status_int)
         res = self.deserialize(res)
         self.assertIn('firewall', res)
-        self.assertEqual(res['firewall'], return_value)
+        self.assertEqual(return_value, res['firewall'])
 
     def test_create_firewall_invalid_long_name(self):
         data = {'firewall': {'description': 'descr_firewall1',
@@ -109,7 +109,7 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         instance.get_firewalls.assert_called_with(mock.ANY,
                                                   fields=mock.ANY,
                                                   filters=mock.ANY)
-        self.assertEqual(res.status_int, exc.HTTPOk.code)
+        self.assertEqual(exc.HTTPOk.code, res.status_int)
 
     def test_firewall_get(self):
         fw_id = _uuid()
@@ -125,10 +125,10 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         instance.get_firewall.assert_called_with(mock.ANY,
                                                  fw_id,
                                                  fields=mock.ANY)
-        self.assertEqual(res.status_int, exc.HTTPOk.code)
+        self.assertEqual(exc.HTTPOk.code, res.status_int)
         res = self.deserialize(res)
         self.assertIn('firewall', res)
-        self.assertEqual(res['firewall'], return_value)
+        self.assertEqual(return_value, res['firewall'])
 
     def test_firewall_update(self):
         fw_id = _uuid()
@@ -145,10 +145,10 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
 
         instance.update_firewall.assert_called_with(mock.ANY, fw_id,
                                                     firewall=update_data)
-        self.assertEqual(res.status_int, exc.HTTPOk.code)
+        self.assertEqual(exc.HTTPOk.code, res.status_int)
         res = self.deserialize(res)
         self.assertIn('firewall', res)
-        self.assertEqual(res['firewall'], return_value)
+        self.assertEqual(return_value, res['firewall'])
 
     def test_firewall_delete(self):
         self._test_entity_delete('firewall')
@@ -180,10 +180,10 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         instance.create_firewall_rule.assert_called_with(
             mock.ANY,
             firewall_rule={'firewall_rule': expected_call_args})
-        self.assertEqual(res.status_int, exc.HTTPCreated.code)
+        self.assertEqual(exc.HTTPCreated.code, res.status_int)
         res = self.deserialize(res)
         self.assertIn('firewall_rule', res)
-        self.assertEqual(res['firewall_rule'], expected_ret_val)
+        self.assertEqual(expected_ret_val, res['firewall_rule'])
 
     def test_create_firewall_rule_with_integer_ports(self):
         self._test_create_firewall_rule(1, 10)
@@ -246,7 +246,7 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         instance.get_firewall_rules.assert_called_with(mock.ANY,
                                                        fields=mock.ANY,
                                                        filters=mock.ANY)
-        self.assertEqual(res.status_int, exc.HTTPOk.code)
+        self.assertEqual(exc.HTTPOk.code, res.status_int)
 
     def test_firewall_rule_get(self):
         rule_id = _uuid()
@@ -262,10 +262,10 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         instance.get_firewall_rule.assert_called_with(mock.ANY,
                                                       rule_id,
                                                       fields=mock.ANY)
-        self.assertEqual(res.status_int, exc.HTTPOk.code)
+        self.assertEqual(exc.HTTPOk.code, res.status_int)
         res = self.deserialize(res)
         self.assertIn('firewall_rule', res)
-        self.assertEqual(res['firewall_rule'], return_value)
+        self.assertEqual(return_value, res['firewall_rule'])
 
     def test_firewall_rule_update(self):
         rule_id = _uuid()
@@ -284,10 +284,10 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
             mock.ANY,
             rule_id,
             firewall_rule=update_data)
-        self.assertEqual(res.status_int, exc.HTTPOk.code)
+        self.assertEqual(exc.HTTPOk.code, res.status_int)
         res = self.deserialize(res)
         self.assertIn('firewall_rule', res)
-        self.assertEqual(res['firewall_rule'], return_value)
+        self.assertEqual(return_value, res['firewall_rule'])
 
     def test_firewall_rule_delete(self):
         self._test_entity_delete('firewall_rule')
@@ -312,10 +312,10 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         instance.create_firewall_policy.assert_called_with(
             mock.ANY,
             firewall_policy=data)
-        self.assertEqual(res.status_int, exc.HTTPCreated.code)
+        self.assertEqual(exc.HTTPCreated.code, res.status_int)
         res = self.deserialize(res)
         self.assertIn('firewall_policy', res)
-        self.assertEqual(res['firewall_policy'], return_value)
+        self.assertEqual(return_value, res['firewall_policy'])
 
     def test_create_firewall_policy_invalid_long_name(self):
         data = {'firewall_policy': {'description': 'descr_firewall_policy1',
@@ -360,7 +360,7 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         instance.get_firewall_policies.assert_called_with(mock.ANY,
                                                           fields=mock.ANY,
                                                           filters=mock.ANY)
-        self.assertEqual(res.status_int, exc.HTTPOk.code)
+        self.assertEqual(exc.HTTPOk.code, res.status_int)
 
     def test_firewall_policy_get(self):
         policy_id = _uuid()
@@ -376,10 +376,10 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         instance.get_firewall_policy.assert_called_with(mock.ANY,
                                                         policy_id,
                                                         fields=mock.ANY)
-        self.assertEqual(res.status_int, exc.HTTPOk.code)
+        self.assertEqual(exc.HTTPOk.code, res.status_int)
         res = self.deserialize(res)
         self.assertIn('firewall_policy', res)
-        self.assertEqual(res['firewall_policy'], return_value)
+        self.assertEqual(return_value, res['firewall_policy'])
 
     def test_firewall_policy_update(self):
         policy_id = _uuid()
@@ -399,10 +399,10 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
             mock.ANY,
             policy_id,
             firewall_policy=update_data)
-        self.assertEqual(res.status_int, exc.HTTPOk.code)
+        self.assertEqual(exc.HTTPOk.code, res.status_int)
         res = self.deserialize(res)
         self.assertIn('firewall_policy', res)
-        self.assertEqual(res['firewall_policy'], return_value)
+        self.assertEqual(return_value, res['firewall_policy'])
 
     def test_firewall_policy_update_malformed_rules(self):
         # emulating client request when no rule uuids are provided for
@@ -441,9 +441,9 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         res = self.api.put(path, self.serialize(insert_data))
         instance.insert_rule.assert_called_with(mock.ANY, firewall_policy_id,
                                                 insert_data)
-        self.assertEqual(res.status_int, exc.HTTPOk.code)
+        self.assertEqual(exc.HTTPOk.code, res.status_int)
         res = self.deserialize(res)
-        self.assertEqual(res, return_value)
+        self.assertEqual(return_value, res)
 
     def test_firewall_policy_remove_rule(self):
         firewall_policy_id = _uuid()
@@ -464,9 +464,9 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         res = self.api.put(path, self.serialize(remove_data))
         instance.remove_rule.assert_called_with(mock.ANY, firewall_policy_id,
                                                 remove_data)
-        self.assertEqual(res.status_int, exc.HTTPOk.code)
+        self.assertEqual(exc.HTTPOk.code, res.status_int)
         res = self.deserialize(res)
-        self.assertEqual(res, return_value)
+        self.assertEqual(return_value, res)
 
 
 class TestFirewallAttributeValidators(base.BaseTestCase):
@@ -482,10 +482,10 @@ class TestFirewallAttributeValidators(base.BaseTestCase):
         self.assertIsNone(msg)
 
         msg = firewall._validate_port_range(-1)
-        self.assertEqual(msg, "Invalid port '-1'")
+        self.assertEqual("Invalid port '-1'", msg)
 
         msg = firewall._validate_port_range('66000')
-        self.assertEqual(msg, "Invalid port '66000'")
+        self.assertEqual("Invalid port '66000'", msg)
 
         msg = firewall._validate_port_range('10:20')
         self.assertIsNone(msg)
@@ -494,28 +494,28 @@ class TestFirewallAttributeValidators(base.BaseTestCase):
         self.assertIsNone(msg)
 
         msg = firewall._validate_port_range('0:65535')
-        self.assertEqual(msg, "Invalid port '0'")
+        self.assertEqual("Invalid port '0'", msg)
 
         msg = firewall._validate_port_range('1:65536')
-        self.assertEqual(msg, "Invalid port '65536'")
+        self.assertEqual("Invalid port '65536'", msg)
 
         msg = firewall._validate_port_range('abc:efg')
-        self.assertEqual(msg, "Port 'abc' is not a valid number")
+        self.assertEqual("Port 'abc' is not a valid number", msg)
 
         msg = firewall._validate_port_range('1:efg')
-        self.assertEqual(msg, "Port 'efg' is not a valid number")
+        self.assertEqual("Port 'efg' is not a valid number", msg)
 
         msg = firewall._validate_port_range('-1:10')
-        self.assertEqual(msg, "Invalid port '-1'")
+        self.assertEqual("Invalid port '-1'", msg)
 
         msg = firewall._validate_port_range('66000:10')
-        self.assertEqual(msg, "Invalid port '66000'")
+        self.assertEqual("Invalid port '66000'", msg)
 
         msg = firewall._validate_port_range('10:66000')
-        self.assertEqual(msg, "Invalid port '66000'")
+        self.assertEqual("Invalid port '66000'", msg)
 
         msg = firewall._validate_port_range('1:-10')
-        self.assertEqual(msg, "Invalid port '-10'")
+        self.assertEqual("Invalid port '-10'", msg)
 
     def test_validate_ip_or_subnet_or_none(self):
         msg = firewall._validate_ip_or_subnet_or_none(None)
@@ -529,27 +529,36 @@ class TestFirewallAttributeValidators(base.BaseTestCase):
 
         ip_addr = '1111.1.1.1'
         msg = firewall._validate_ip_or_subnet_or_none(ip_addr)
-        self.assertEqual(msg, ("'%s' is not a valid IP address and "
-                               "'%s' is not a valid IP subnet") % (ip_addr,
-                                                                   ip_addr))
+        self.assertEqual(
+            ("'%s' is not a valid IP address and "
+             "'%s' is not a valid IP subnet")
+            % (ip_addr,
+               ip_addr),
+            msg)
 
         ip_addr = '1.1.1.1 has whitespace'
         msg = firewall._validate_ip_or_subnet_or_none(ip_addr)
-        self.assertEqual(msg, ("'%s' is not a valid IP address and "
-                               "'%s' is not a valid IP subnet") % (ip_addr,
-                                                                   ip_addr))
+        self.assertEqual(
+            ("'%s' is not a valid IP address and "
+             "'%s' is not a valid IP subnet") % (ip_addr,
+                                                 ip_addr),
+            msg)
 
         ip_addr = '111.1.1.1\twhitespace'
         msg = firewall._validate_ip_or_subnet_or_none(ip_addr)
-        self.assertEqual(msg, ("'%s' is not a valid IP address and "
-                               "'%s' is not a valid IP subnet") % (ip_addr,
-                                                                   ip_addr))
+        self.assertEqual(
+            ("'%s' is not a valid IP address and "
+             "'%s' is not a valid IP subnet") % (ip_addr,
+                                                 ip_addr),
+            msg)
 
         ip_addr = '111.1.1.1\nwhitespace'
         msg = firewall._validate_ip_or_subnet_or_none(ip_addr)
-        self.assertEqual(msg, ("'%s' is not a valid IP address and "
-                               "'%s' is not a valid IP subnet") % (ip_addr,
-                                                                   ip_addr))
+        self.assertEqual(
+            ("'%s' is not a valid IP address and "
+             "'%s' is not a valid IP subnet") % (ip_addr,
+                                                 ip_addr),
+            msg)
 
         # Valid - IPv4
         cidr = "10.0.2.0/24"
@@ -578,6 +587,8 @@ class TestFirewallAttributeValidators(base.BaseTestCase):
         # Invalid - Address format error
         cidr = 'invalid'
         msg = firewall._validate_ip_or_subnet_or_none(cidr, None)
-        self.assertEqual(msg, ("'%s' is not a valid IP address and "
-                               "'%s' is not a valid IP subnet") % (cidr,
-                                                                   cidr))
+        self.assertEqual(
+            ("'%s' is not a valid IP address and "
+             "'%s' is not a valid IP subnet") % (cidr,
+                                                 cidr),
+            msg)
