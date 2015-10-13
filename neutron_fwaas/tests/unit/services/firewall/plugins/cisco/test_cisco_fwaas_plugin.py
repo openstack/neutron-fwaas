@@ -252,7 +252,7 @@ class TestCiscoFirewallPlugin(CSR1kvFirewallTestCaseBase,
 
             self.assertEqual('firewall_1', fw['firewall']['name'])
             self.assertEqual(port_id, csrfw['port_id'])
-            self.assertEqual(None, csrfw['direction'])
+            self.assertIsNone(csrfw['direction'])
 
     def test_create_csr_firewall_no_port_id_no_direction_specified(self):
 
@@ -268,7 +268,7 @@ class TestCiscoFirewallPlugin(CSR1kvFirewallTestCaseBase,
                 ctx.session.flush()
 
             self.assertEqual('firewall_1', fw['firewall']['name'])
-            self.assertEqual(None, csrfw)
+            self.assertIsNone(csrfw)
 
     def test_update_csr_firewall(self):
 
@@ -412,7 +412,7 @@ class TestCiscoFirewallPlugin(CSR1kvFirewallTestCaseBase,
                 ctx = context.get_admin_context()
                 csrfw = self.lookup_firewall_csr_association(ctx,
                     fw_id)
-                self.assertNotEqual(None, csrfw)
+                self.assertIsNotNone(csrfw)
                 req = self.new_delete_request('firewalls', fw_id)
                 req.get_response(self.ext_api)
                 with ctx.session.begin(subtransactions=True):
@@ -422,7 +422,7 @@ class TestCiscoFirewallPlugin(CSR1kvFirewallTestCaseBase,
                 self.callbacks.firewall_deleted(ctx, fw_id)
                 csrfw = self.lookup_firewall_csr_association(ctx,
                     fw_id)
-                self.assertEqual(None, csrfw)
+                self.assertIsNone(csrfw)
             self._router_interface_action(
                 'remove',
                 r['router']['id'],
