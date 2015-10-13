@@ -900,7 +900,7 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
                 self.assertEqual(
                     [fwr_id],
                     res['firewall_policy']['firewall_rules'])
-                self.assertEqual(False, res['firewall_policy']['audited'])
+                self.assertFalse(res['firewall_policy']['audited'])
 
     def test_update_firewall_rule_associated_with_other_tenant_policy(self):
         with self.firewall_rule(shared=True, tenant_id='tenant1') as fwr:

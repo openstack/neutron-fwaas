@@ -122,7 +122,7 @@ class TestCsrAclDriver(base.BaseTestCase):
         if self.csr.status == requests.codes.NO_CONTENT:
             self.assertTrue(success)
         else:
-            self.assertEqual(False, success)
+            self.assertFalse(success)
 
     def test_delete_acl_error(self):
         self.csr.status = requests.codes.SERVER_ERROR
@@ -142,7 +142,7 @@ class TestCsrAclDriver(base.BaseTestCase):
         if self.csr.status == requests.codes.NO_CONTENT:
             self.assertTrue(success)
         else:
-            self.assertEqual(False, success)
+            self.assertFalse(success)
 
     def test_put_acl_error(self):
         self.csr.status = requests.codes.SERVER_ERROR
@@ -249,7 +249,7 @@ class TestCsrAclDriver(base.BaseTestCase):
         success, status = self.csracl.create_firewall(None, None, FAKE_FW)
 
         self.csracl._post_acl.assert_called_once_with(self.csr, self.acl_data)
-        self.assertEqual(False, success)
+        self.assertFalse(success)
 
     def test_create_firewall(self):
         self._set_csracl_mocks()
@@ -289,7 +289,7 @@ class TestCsrAclDriver(base.BaseTestCase):
 
         self.csracl._put_acl.assert_called_once_with(
             self.csr, FAKE_ACL_ID, acldata)
-        self.assertEqual(False, success)
+        self.assertFalse(success)
 
     def _test_update_firewall(self, admin_stat_up):
         firewall = copy.deepcopy(FAKE_FW)
@@ -338,132 +338,132 @@ class TestCsrAclDriverValidation(base.BaseTestCase):
         del self.firewall['admin_state_up']
         success, status = self.csracl.create_firewall(
             None, None, self.firewall)
-        self.assertEqual(False, success)
+        self.assertFalse(success)
 
     def test_create_firewall_no_vendor_ext(self):
         del self.firewall['vendor_ext']
         success, status = self.csracl.create_firewall(
             None, None, self.firewall)
-        self.assertEqual(False, success)
+        self.assertFalse(success)
 
     def test_create_firewall_no_host_mngt_ip(self):
         del self.firewall['vendor_ext']['host_mngt_ip']
         success, status = self.csracl.create_firewall(
             None, None, self.firewall)
-        self.assertEqual(False, success)
+        self.assertFalse(success)
 
     def test_create_firewall_no_host_usr_name(self):
         del self.firewall['vendor_ext']['host_usr_nm']
         success, status = self.csracl.create_firewall(
             None, None, self.firewall)
-        self.assertEqual(False, success)
+        self.assertFalse(success)
 
     def test_create_firewall_no_host_usr_password(self):
         del self.firewall['vendor_ext']['host_usr_pw']
         success, status = self.csracl.create_firewall(
             None, None, self.firewall)
-        self.assertEqual(False, success)
+        self.assertFalse(success)
 
     def test_create_firewall_no_if_list(self):
         del self.firewall['vendor_ext']['if_list']
         success, status = self.csracl.create_firewall(
             None, None, self.firewall)
-        self.assertEqual(False, success)
+        self.assertFalse(success)
 
     def test_create_firewall_no_direction(self):
         del self.firewall['vendor_ext']['if_list'][0]['direction']
         success, status = self.csracl.create_firewall(
             None, None, self.firewall)
-        self.assertEqual(False, success)
+        self.assertFalse(success)
 
     def test_create_firewall_invalid_direction(self):
         self.firewall['vendor_ext']['if_list'][0]['direction'] = 'dir'
         success, status = self.csracl.create_firewall(
             None, None, self.firewall)
-        self.assertEqual(False, success)
+        self.assertFalse(success)
 
     def test_create_firewall_no_port(self):
         del self.firewall['vendor_ext']['if_list'][0]['port']
         success, status = self.csracl.create_firewall(
             None, None, self.firewall)
-        self.assertEqual(False, success)
+        self.assertFalse(success)
 
     def test_create_firewall_no_host_info(self):
         del self.firewall['vendor_ext']['if_list'][0]['port']['hosting_info']
         success, status = self.csracl.create_firewall(
             None, None, self.firewall)
-        self.assertEqual(False, success)
+        self.assertFalse(success)
 
     def test_create_firewall_no_segmentation_id(self):
         del self.firewall['vendor_ext']['if_list'][0]['port']['hosting_info'][
             'segmentation_id']
         success, status = self.csracl.create_firewall(
             None, None, self.firewall)
-        self.assertEqual(False, success)
+        self.assertFalse(success)
 
     def test_create_firewall_no_host_port_name(self):
         del self.firewall['vendor_ext']['if_list'][0]['port']['hosting_info'][
             'hosting_port_name']
         success, status = self.csracl.create_firewall(
             None, None, self.firewall)
-        self.assertEqual(False, success)
+        self.assertFalse(success)
 
     def test_create_firewall_invalid_host_port_name(self):
         self.firewall['vendor_ext']['if_list'][0]['port']['hosting_info'][
             'hosting_port_name'] = 't3_p:1'
         success, status = self.csracl.create_firewall(
             None, None, self.firewall)
-        self.assertEqual(False, success)
+        self.assertFalse(success)
 
     def test_create_firewall_no_rule_list(self):
         del self.firewall['firewall_rule_list']
         success, status = self.csracl.create_firewall(
             None, None, self.firewall)
-        self.assertEqual(False, success)
+        self.assertFalse(success)
 
     def test_create_firewall_rule_no_name(self):
         del self.firewall['firewall_rule_list'][0]['name']
         success, status = self.csracl.create_firewall(
             None, None, self.firewall)
-        self.assertEqual(False, success)
+        self.assertFalse(success)
 
     def test_create_firewall_rule_no_ip_version(self):
         del self.firewall['firewall_rule_list'][0]['ip_version']
         success, status = self.csracl.create_firewall(
             None, None, self.firewall)
-        self.assertEqual(False, success)
+        self.assertFalse(success)
 
     def test_create_firewall_rule_not_ipv4(self):
         self.firewall['firewall_rule_list'][0]['ip_version'] = 6
         success, status = self.csracl.create_firewall(
             None, None, self.firewall)
-        self.assertEqual(False, success)
+        self.assertFalse(success)
 
     def test_create_firewall_rule_no_protocol(self):
         del self.firewall['firewall_rule_list'][0]['protocol']
         success, status = self.csracl.create_firewall(
             None, None, self.firewall)
-        self.assertEqual(False, success)
+        self.assertFalse(success)
 
     def test_create_firewall_rule_no_action(self):
         del self.firewall['firewall_rule_list'][0]['action']
         success, status = self.csracl.create_firewall(
             None, None, self.firewall)
-        self.assertEqual(False, success)
+        self.assertFalse(success)
 
     def test_create_firewall_rule_invalid_action(self):
         self.firewall['firewall_rule_list'][0]['action'] = 'action'
         success, status = self.csracl.create_firewall(
             None, None, self.firewall)
-        self.assertEqual(False, success)
+        self.assertFalse(success)
 
     def test_update_firewall_no_acl_id(self):
         del self.firewall['vendor_ext']['acl_id']
         success, status = self.csracl.update_firewall(
             None, None, self.firewall)
-        self.assertEqual(False, success)
+        self.assertFalse(success)
 
     def test_delete_firewall_no_acl_id(self):
         del self.firewall['vendor_ext']['acl_id']
         success = self.csracl.delete_firewall(None, None, self.firewall)
-        self.assertEqual(False, success)
+        self.assertFalse(success)

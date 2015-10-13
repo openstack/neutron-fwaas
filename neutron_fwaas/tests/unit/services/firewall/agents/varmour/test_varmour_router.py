@@ -200,4 +200,4 @@ class TestVarmourRouter(base.BaseTestCase):
         ri = self._prepare_router_data(enable_snat=True)
         router._router_added(ri.router['id'], ri.router)
         ri.router['enable_snat'] = False
-        self.assertEqual(False, ri.router['enable_snat'])
+        self.assertFalse(ri.router['enable_snat'])
