@@ -75,7 +75,7 @@ class FirewallPlugin(firewall_db.Firewall_db_mixin):
         self._client = config.get_crdclient()
         self.endpoints = [FirewallCallbacks(self)]
 
-        self.conn = rpc.create_connection(new=True)
+        self.conn = rpc.create_connection()
         self.conn.create_consumer(
             topics.FIREWALL_PLUGIN, self.endpoints, fanout=False)
         self.conn.consume_in_threads()

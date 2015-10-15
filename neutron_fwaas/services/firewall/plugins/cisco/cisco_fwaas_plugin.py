@@ -164,7 +164,7 @@ class CSRFirewallPlugin(ref_fw_plugin.FirewallPlugin,
 
         self.endpoints = [FirewallCallbacks(self)]
 
-        self.conn = n_rpc.create_connection(new=True)
+        self.conn = n_rpc.create_connection()
         self.conn.create_consumer(
             'CISCO_FW_PLUGIN', self.endpoints, fanout=False)
         self.conn.consume_in_threads()
