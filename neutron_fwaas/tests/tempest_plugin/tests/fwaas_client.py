@@ -13,9 +13,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import time
+
 from tempest_lib.common.utils import data_utils
+from tempest_lib import exceptions as lib_exc
 
 from tempest import config
+from tempest import exceptions
+
+from neutron.plugins.common import constants as p_const
 
 from neutron_fwaas.tests.tempest_plugin.services import client
 
@@ -79,6 +85,39 @@ class FWaaSClientMixin(object):
             **kwargs)
         fw = body['firewall']
         self.addCleanup(self._delete_wrapper,
-                        self.firewalls_client.delete_firewall,
+                        self.delete_firewall_and_wait,
                         fw['id'])
         return fw
+
+    def delete_firewall_and_wait(self, firewall_id):
+        self.firewalls_client.delete_firewall(firewall_id)
+        self._wait_firewall_while(firewall_id, [p_const.PENDING_DELETE],
+                                  not_found_ok=True)
+
+    def _wait_firewall_ready(self, firewall_id):
+        self._wait_firewall_while(firewall_id,
+                                  [p_const.PENDING_CREATE,
+                                   p_const.PENDING_UPDATE])
+
+    def _wait_firewall_while(self, firewall_id, statuses, not_found_ok=False):
+        start = int(time.time())
+        if not_found_ok:
+            expected_exceptions = (lib_exc.NotFound)
+        else:
+            expected_exceptions = ()
+        while True:
+            try:
+                fw = self.firewalls_client.show_firewall(firewall_id)
+            except expected_exceptions:
+                break
+            status = fw['firewall']['status']
+            if status not in statuses:
+                break
+            if int(time.time()) - start >= self.firewalls_client.build_timeout:
+                msg = ("Firewall %(firewall)s failed to reach "
+                       "non PENDING status (current %(status)s)") % {
+                    "firewall": firewall_id,
+                    "status": status,
+                }
+                raise exceptions.TimeoutException(msg)
+            time.sleep(1)
