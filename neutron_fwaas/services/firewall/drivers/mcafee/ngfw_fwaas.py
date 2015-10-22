@@ -228,7 +228,7 @@ class NgfwFwaasDriver(fwaas_base.FwaasDriverBase):
             service_dict = {"service": [srv_ref]}
 
         elif rule['protocol'] is None:
-            # protocal "ANY" is translated to accept all, no service create
+            # protocol "ANY" is translated to accept all, no service create
             # here
             # TODO(yalie): add rules for different protocol, not ignore the
             # other value like ports.

@@ -60,7 +60,7 @@ class SMCAPIConnection(object):
 
     For login/logout operation, users should set server IP, API version and
     auth key first. For get/put/delete operation, users should provide the
-    target element'path, and special json format data section followed "SMC
+    target element's path and special json format data section following "SMC
     API User's Guide".
     """
     def __init__(self, host, api_version, authentication_key):

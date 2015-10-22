@@ -20,7 +20,7 @@ from neutron.plugins.common import constants
 from neutron.tests import base
 
 # Mocking imports of 3rd party cisco library in unit tests and all modules
-# that depends on this libary.
+# that depends on this library.
 with mock.patch.dict(sys.modules, {
     'networking_cisco': mock.Mock(),
     'networking_cisco.plugins': mock.Mock().plugins,

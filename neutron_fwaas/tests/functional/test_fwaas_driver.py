@@ -21,7 +21,7 @@ from neutron.tests.functional import base
 
 class TestFWaaSDriver(base.BaseSudoTestCase):
 
-    """Test the Iptables implmentation of the FWaaS driver."""
+    """Test the iptables implementation of the FWaaS driver."""
 
     # NOTE: Tests may be added/removed/changed, when this is fleshed out
     # in future commits.
