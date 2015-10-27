@@ -24,7 +24,7 @@ from neutron.agent.linux import ip_lib
 from neutron.common import config as base_config
 from neutron import context
 from neutron.plugins.common import constants
-from neutron_fwaas.services import firewall
+
 from neutron_fwaas.services.firewall.agents import firewall_agent_api
 from neutron_fwaas.services.firewall.agents.l3reference \
     import firewall_l3_agent
@@ -63,7 +63,6 @@ class TestFwaasL3AgentRpcCallback(base.BaseTestCase):
         self.conf.register_opts(base_config.core_opts)
         self.conf.register_opts(l3_config.OPTS)
         self.conf.register_opts(ha.OPTS)
-        firewall.register_use_namespaces_opts_helper(self.conf)
         self.conf.register_opts(firewall_agent_api.FWaaSOpts, 'fwaas')
         self.api = FWaasAgent(self.conf)
         self.api.fwaas_driver = test_firewall_agent_api.NoopFwaasDriver()

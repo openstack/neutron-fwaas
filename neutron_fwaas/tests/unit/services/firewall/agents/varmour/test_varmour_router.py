@@ -23,7 +23,6 @@ from neutron.agent.l3 import router_info
 from neutron.agent.linux import interface
 from neutron.common import config as base_config
 from neutron.common import constants as l3_constants
-from neutron_fwaas.services import firewall
 from neutron_fwaas.services.firewall.agents.varmour import varmour_router
 from neutron_fwaas.tests import base
 from oslo_utils import uuidutils
@@ -44,7 +43,6 @@ class TestVarmourRouter(base.BaseTestCase):
         self.conf.register_opts(ha.OPTS)
         agent_config.register_process_monitor_opts(self.conf)
         agent_config.register_interface_driver_opts_helper(self.conf)
-        firewall.register_use_namespaces_opts_helper(self.conf)
         self.conf.register_opts(interface.OPTS)
         self.conf.set_override('interface_driver',
                                'neutron.agent.linux.interface.NullDriver')
