@@ -36,6 +36,7 @@ from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_service import service
 
+from neutron_fwaas.services import firewall
 from neutron_fwaas.services.firewall.agents.l3reference \
     import firewall_l3_agent
 from neutron_fwaas.services.firewall.agents.varmour import varmour_api
@@ -333,7 +334,7 @@ def main():
     conf.register_opts(l3_config.OPTS)
     conf.register_opts(ha.OPTS)
     config.register_interface_driver_opts_helper(conf)
-    config.register_use_namespaces_opts_helper(conf)
+    firewall.register_use_namespaces_opts_helper(conf)
     config.register_agent_state_opts_helper(conf)
     conf.register_opts(interface.OPTS)
     conf.register_opts(external_process.OPTS)
