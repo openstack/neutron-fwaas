@@ -17,7 +17,6 @@ import uuid
 import mock
 from oslo_config import cfg
 
-from neutron.agent.common import config as agent_config
 from neutron.agent.l3 import config as l3_config
 from neutron.agent.l3 import ha
 from neutron.agent.l3 import router_info
@@ -25,6 +24,7 @@ from neutron.agent.linux import ip_lib
 from neutron.common import config as base_config
 from neutron import context
 from neutron.plugins.common import constants
+from neutron_fwaas.services import firewall
 from neutron_fwaas.services.firewall.agents import firewall_agent_api
 from neutron_fwaas.services.firewall.agents.l3reference \
     import firewall_l3_agent
@@ -63,14 +63,13 @@ class TestFwaasL3AgentRpcCallback(base.BaseTestCase):
         self.conf.register_opts(base_config.core_opts)
         self.conf.register_opts(l3_config.OPTS)
         self.conf.register_opts(ha.OPTS)
-        agent_config.register_use_namespaces_opts_helper(self.conf)
+        firewall.register_use_namespaces_opts_helper(self.conf)
         self.conf.register_opts(firewall_agent_api.FWaaSOpts, 'fwaas')
         self.api = FWaasAgent(self.conf)
         self.api.fwaas_driver = test_firewall_agent_api.NoopFwaasDriver()
         self.adminContext = context.get_admin_context()
         self.router_id = str(uuid.uuid4())
         self.agent_conf = mock.Mock()
-        self.agent_conf.use_namespaces = True
         self.ri_kwargs = {'router': {'id': self.router_id,
                                      'tenant_id': str(uuid.uuid4())},
                           'agent_conf': self.agent_conf,
@@ -299,8 +298,7 @@ class TestFwaasL3AgentRpcCallback(base.BaseTestCase):
         return router_info.RouterInfo(self.router_id,
                                       **self.ri_kwargs)
 
-    def _get_router_info_list_helper(self, use_namespaces):
-        self.conf.set_override('use_namespaces', use_namespaces)
+    def test_get_router_info_list_for_tenant(self):
         ri = self._prepare_router_data()
         routers = [ri.router]
         router_ids = [router['id'] for router in routers]
@@ -311,21 +309,11 @@ class TestFwaasL3AgentRpcCallback(base.BaseTestCase):
             router_info_list = self.api._get_router_info_list_for_tenant(
                 router_ids,
                 ri.router['tenant_id'])
-        if use_namespaces:
-            mock_get_namespaces.assert_called_once_with()
-            self.assertFalse(router_info_list)
-        else:
-            self.assertEqual([ri], router_info_list)
-
-    def test_get_router_info_list_for_tenant_for_namespaces_disabled(self):
-        self._get_router_info_list_helper(use_namespaces=False)
-
-    def test_get_router_info_list_for_tenant(self):
-        self._get_router_info_list_helper(use_namespaces=True)
+        mock_get_namespaces.assert_called_once_with()
+        self.assertFalse(router_info_list)
 
     def _get_router_info_list_router_without_router_info_helper(self,
                                                                 rtr_with_ri):
-        self.conf.set_override('use_namespaces', True)
         # ri.router with associated router_info (ri)
         # rtr2 has no router_info
         ri = self._prepare_router_data()
