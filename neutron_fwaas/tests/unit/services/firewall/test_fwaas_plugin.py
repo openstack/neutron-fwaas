@@ -58,6 +58,10 @@ class TestFirewallRouterInsertionBase(
         test_db_firewall.FirewallPluginDbTestCase):
 
     def setUp(self, core_plugin=None, fw_plugin=None, ext_mgr=None):
+        # increase quota
+        cfg.CONF.set_override('quota_firewall', 3, group='QUOTAS')
+        cfg.CONF.set_override('quota_firewall_policy', 5, group='QUOTAS')
+
         self.agentapi_del_fw_p = mock.patch(test_db_firewall.DELETEFW_PATH,
             create=True, new=test_db_firewall.FakeAgentApi().delete_firewall)
         self.agentapi_del_fw_p.start()
