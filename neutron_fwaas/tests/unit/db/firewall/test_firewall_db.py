@@ -54,9 +54,6 @@ AUDITED = True
 ENABLED = True
 ADMIN_STATE_UP = True
 
-QUOTA_FW = 3
-QUOTA_FW_POLICY = 5
-
 
 class FakeAgentApi(fwaas_plugin.FirewallCallbacks):
     """
@@ -82,10 +79,6 @@ class FirewallPluginDbTestCase(base.NeutronDbPluginV2TestCase):
     )
 
     def setUp(self, core_plugin=None, fw_plugin=None, ext_mgr=None):
-        # increase quota
-        cfg.CONF.set_override('quota_firewall', 3, group='QUOTAS')
-        cfg.CONF.set_override('quota_firewall_policy', 5, group='QUOTAS')
-
         self.agentapi_delf_p = mock.patch(DELETEFW_PATH, create=True,
                                           new=FakeAgentApi().delete_firewall)
         self.agentapi_delf_p.start()
@@ -1484,34 +1477,3 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
         with self.firewall(name='fireWall1') as fw:
             res = self._show('firewalls', fw['firewall']['id'])
             self.assertEqual('fireWall1', res['firewall']['name'])
-
-    def test_quota_fw(self):
-        # no more than three firewalls
-        for i in range(-1, QUOTA_FW):
-            res = self._create_firewall(self.fmt, str(i), 'blah',
-                                        None, router_ids=[])
-        self.assertEqual(409, res.status_code)
-        self.assertEqual('OverQuota', res.json_body['NeutronError']['type'])
-
-    def test_quota_fw_policy(self):
-        # no more than five policies
-        for i in range(-1, QUOTA_FW_POLICY):
-            res = self.res = self._create_firewall_policy(
-                None, 'fwp',
-                description="firewall_policy",
-                shared=True,
-                firewall_rules=[],
-                audited=True)
-        self.assertEqual(409, res.status_code)
-        self.assertEqual('OverQuota', res.json_body['NeutronError']['type'])
-
-    def test_quota_fw_rule(self):
-        for i in range(0, 101):
-            res = self._create_firewall_rule(self.fmt, str(i),
-                                             SHARED, PROTOCOL,
-                                             IP_VERSION, SOURCE_IP_ADDRESS_RAW,
-                                             DESTINATION_IP_ADDRESS_RAW,
-                                             SOURCE_PORT, DESTINATION_PORT,
-                                             ACTION, ENABLED)
-        self.assertEqual(409, res.status_code)
-        self.assertEqual('OverQuota', res.json_body['NeutronError']['type'])
