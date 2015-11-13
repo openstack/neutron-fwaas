@@ -13,24 +13,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import os
+from tempest.api.network import base
 
-from tempest.test_discover import plugins
+from neutron_fwaas.tests.tempest_plugin.tests import fwaas_client
 
 
-class NeutronFWaaSPlugin(plugins.TempestPlugin):
-    def get_opt_lists(self):
-        return []
-
-    def load_tests(self):
-        this_dir = os.path.dirname(os.path.abspath(__file__))
-        # top_level_dir = $(this_dir)/../../..
-        d = os.path.split(this_dir)[0]
-        d = os.path.split(d)[0]
-        top_level_dir = os.path.split(d)[0]
-        test_dir = os.path.join(top_level_dir,
-            'neutron_fwaas/tests/tempest_plugin/tests')
-        return (test_dir, top_level_dir)
-
-    def register_opts(self):
-        return
+class BaseFWaaSTest(fwaas_client.FWaaSClientMixin, base.BaseNetworkTest):
+    _delete_wrapper = base.BaseNetworkTest._try_delete_resource
