@@ -32,5 +32,5 @@ class NeutronFWaaSPlugin(plugins.TempestPlugin):
             'neutron_fwaas/tests/tempest_plugin/tests')
         return (test_dir, top_level_dir)
 
-    def register_opts(self):
+    def register_opts(self, conf):
         return
