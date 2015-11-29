@@ -376,11 +376,17 @@ class FirewallPlugin(
 
     def get_firewalls(self, context, filters=None, fields=None):
         LOG.debug("fwaas get_firewalls() called")
+        has_id_field = not fields or 'id' in fields
+        if not has_id_field:
+            fields = fields + ['id']
         fw_list = super(FirewallPlugin, self).get_firewalls(
-                        context, filters, fields)
-        for fw in fw_list:
-            fw_current_rtrs = self.get_firewall_routers(context, fw['id'])
-            fw['router_ids'] = fw_current_rtrs
+            context, filters, fields)
+        if not fields or 'router_ids' in fields:
+            for fw in fw_list:
+                fw['router_ids'] = self.get_firewall_routers(context, fw['id'])
+        if not has_id_field:
+            for fw in fw_list:
+                del fw['id']
         return fw_list
 
     def get_firewall(self, context, id, fields=None):
