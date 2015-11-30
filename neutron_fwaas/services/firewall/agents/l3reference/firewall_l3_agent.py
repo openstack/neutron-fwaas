@@ -14,14 +14,14 @@
 #    under the License.
 
 from neutron.agent.linux import ip_lib
-from neutron.common import topics
 from neutron import context
 from neutron.i18n import _LE
-from neutron.plugins.common import constants
+from neutron.plugins.common import constants as n_const
 from oslo_config import cfg
 from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
 
+from neutron_fwaas.common import fwaas_constants as f_const
 from neutron_fwaas.extensions import firewall as fw_ext
 from neutron_fwaas.services.firewall.agents import firewall_agent_api as api
 from neutron_fwaas.services.firewall.agents import firewall_service
@@ -59,7 +59,7 @@ class FWaaSL3AgentRpcCallback(api.FWaaSAgentRpcCallbackMixin):
         # None means l3-agent has no information on the server
         # configuration due to the lack of RPC support.
         if self.neutron_service_plugins is not None:
-            fwaas_plugin_configured = (constants.FIREWALL
+            fwaas_plugin_configured = (n_const.FIREWALL
                                        in self.neutron_service_plugins)
             if fwaas_plugin_configured and not self.fwaas_enabled:
                 msg = _("FWaaS plugin is configured in the server side, but "
@@ -74,7 +74,7 @@ class FWaaSL3AgentRpcCallback(api.FWaaSAgentRpcCallbackMixin):
             self.fwaas_driver = self.fw_service.load_device_drivers()
         self.services_sync_needed = False
         # setup RPC to msg fwaas plugin
-        self.fwplugin_rpc = FWaaSL3PluginApi(topics.FIREWALL_PLUGIN,
+        self.fwplugin_rpc = FWaaSL3PluginApi(f_const.FIREWALL_PLUGIN,
                                              conf.host)
         super(FWaaSL3AgentRpcCallback, self).__init__(host=conf.host)
 
@@ -124,7 +124,7 @@ class FWaaSL3AgentRpcCallback(api.FWaaSAgentRpcCallbackMixin):
         update method for all other status to (re)apply on driver which is
         Idempotent.
         """
-        if fw['status'] == constants.PENDING_DELETE:
+        if fw['status'] == n_const.PENDING_DELETE:
             try:
                 self.fwaas_driver.delete_firewall(
                     self.conf.agent_mode,
@@ -140,7 +140,7 @@ class FWaaSL3AgentRpcCallback(api.FWaaSAgentRpcCallbackMixin):
                 self.fwplugin_rpc.set_firewall_status(
                     ctx,
                     fw['id'],
-                    constants.ERROR)
+                    n_const.ERROR)
         else:
             # PENDING_UPDATE, PENDING_CREATE, ...
             try:
@@ -149,14 +149,14 @@ class FWaaSL3AgentRpcCallback(api.FWaaSAgentRpcCallbackMixin):
                     router_info_list,
                     fw)
                 if fw['admin_state_up']:
-                    status = constants.ACTIVE
+                    status = n_const.ACTIVE
                 else:
-                    status = constants.DOWN
+                    status = n_const.DOWN
             except fw_ext.FirewallInternalDriverError:
                 LOG.error(_LE("Firewall Driver Error on fw state %(fwmsg)s "
                               "for fw: %(fwid)s"),
                           {'fwmsg': fw['status'], 'fwid': fw['id']})
-                status = constants.ERROR
+                status = n_const.ERROR
 
             self.fwplugin_rpc.set_firewall_status(
                 ctx,
@@ -225,10 +225,10 @@ class FWaaSL3AgentRpcCallback(api.FWaaSAgentRpcCallbackMixin):
                 ctx = context.Context('', tenant_id)
                 fw_list = self.fwplugin_rpc.get_firewalls_for_tenant(ctx)
                 for fw in fw_list:
-                    if fw['status'] == constants.PENDING_DELETE:
+                    if fw['status'] == n_const.PENDING_DELETE:
                         self.delete_firewall(ctx, fw, self.host)
                     # no need to apply sync data for ACTIVE fw
-                    elif fw['status'] != constants.ACTIVE:
+                    elif fw['status'] != n_const.ACTIVE:
                         self.update_firewall(ctx, fw, self.host)
             self.services_sync_needed = False
         except Exception:
@@ -254,14 +254,14 @@ class FWaaSL3AgentRpcCallback(api.FWaaSAgentRpcCallbackMixin):
                 router_info_list,
                 firewall)
             if firewall['admin_state_up']:
-                status = constants.ACTIVE
+                status = n_const.ACTIVE
             else:
-                status = constants.DOWN
+                status = n_const.DOWN
         except fw_ext.FirewallInternalDriverError:
             LOG.error(_LE("Firewall Driver Error for create_firewall "
                           "for firewall: %(fwid)s"),
                 {'fwid': firewall['id']})
-            status = constants.ERROR
+            status = n_const.ERROR
 
         try:
             # send status back to plugin
@@ -301,21 +301,21 @@ class FWaaSL3AgentRpcCallback(api.FWaaSAgentRpcCallbackMixin):
                         router_info_list,
                         firewall)
                     if firewall['last-router']:
-                        status = constants.INACTIVE
+                        status = n_const.INACTIVE
                     elif firewall['admin_state_up']:
-                        status = constants.ACTIVE
+                        status = n_const.ACTIVE
                     else:
-                        status = constants.DOWN
+                        status = n_const.DOWN
                 except fw_ext.FirewallInternalDriverError:
                     LOG.error(_LE("Firewall Driver Error for "
                                   "update_firewall for firewall: "
                                   "%(fwid)s"),
                         {'fwid': firewall['id']})
-                    status = constants.ERROR
+                    status = n_const.ERROR
 
         # handle the add router and/or rule, policy, firewall
         # attribute updates
-        if status not in (constants.ERROR, constants.INACTIVE):
+        if status not in (n_const.ERROR, n_const.INACTIVE):
             router_ids = self._get_router_ids_for_fw(context, firewall)
             if router_ids or firewall['router_ids']:
                 router_info_list = self._get_router_info_list_for_tenant(
@@ -330,17 +330,17 @@ class FWaaSL3AgentRpcCallback(api.FWaaSAgentRpcCallbackMixin):
                         router_info_list,
                         firewall)
                     if firewall['admin_state_up']:
-                        status = constants.ACTIVE
+                        status = n_const.ACTIVE
                     else:
-                        status = constants.DOWN
+                        status = n_const.DOWN
                 except fw_ext.FirewallInternalDriverError:
                     LOG.error(_LE("Firewall Driver Error for "
                                   "update_firewall for firewall: "
                                   "%(fwid)s"),
                         {'fwid': firewall['id']})
-                    status = constants.ERROR
+                    status = n_const.ERROR
             else:
-                status = constants.INACTIVE
+                status = n_const.INACTIVE
         try:
             # send status back to plugin
             self.fwplugin_rpc.set_firewall_status(
@@ -375,18 +375,18 @@ class FWaaSL3AgentRpcCallback(api.FWaaSAgentRpcCallbackMixin):
                     router_info_list,
                     firewall)
                 if firewall['admin_state_up']:
-                    status = constants.ACTIVE
+                    status = n_const.ACTIVE
                 else:
-                    status = constants.DOWN
+                    status = n_const.DOWN
             except fw_ext.FirewallInternalDriverError:
                 LOG.error(_LE("Firewall Driver Error for delete_firewall "
                               "for firewall: %(fwid)s"),
                     {'fwid': firewall['id']})
-                status = constants.ERROR
+                status = n_const.ERROR
 
             try:
                 # send status back to plugin
-                if status in [constants.ACTIVE, constants.DOWN]:
+                if status in [n_const.ACTIVE, n_const.DOWN]:
                     self.fwplugin_rpc.firewall_deleted(context, firewall['id'])
                 else:
                     self.fwplugin_rpc.set_firewall_status(
