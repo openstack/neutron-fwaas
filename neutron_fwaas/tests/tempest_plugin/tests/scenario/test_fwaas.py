@@ -33,15 +33,14 @@ class TestFWaaS(base.FWaaSScenarioTest):
 
     def _create_server(self, network, security_group=None):
         keys = self.create_keypair()
-        kwargs = {
-            'networks': [
-                {'uuid': network['id']},
-            ],
-            'key_name': keys['name'],
-        }
+        kwargs = {}
         if security_group is not None:
             kwargs['security_groups'] = [{'name': security_group['name']}]
-        server = self.create_server(create_kwargs=kwargs)
+        server = self.create_server(
+            key_name=keys['name'],
+            networks=[{'uuid': network['id']}],
+            wait_until='ACTIVE',
+            **kwargs)
         return server, keys
 
     def _empty_policy(self, server1_ip):
