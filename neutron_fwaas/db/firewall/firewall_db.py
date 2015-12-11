@@ -318,7 +318,7 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
     def create_firewall(self, context, firewall, status=None):
         LOG.debug("create_firewall() called")
         fw = firewall['firewall']
-        tenant_id = self._get_tenant_id_for_create(context, fw)
+        tenant_id = fw['tenant_id']
         # distributed routers may required a more complex state machine;
         # the introduction of a new 'CREATED' state allows this, whilst
         # keeping a backward compatible behavior of the logical resource.
@@ -391,10 +391,9 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
     def create_firewall_policy(self, context, firewall_policy):
         LOG.debug("create_firewall_policy() called")
         fwp = firewall_policy['firewall_policy']
-        tenant_id = self._get_tenant_id_for_create(context, fwp)
         with context.session.begin(subtransactions=True):
             fwp_db = FirewallPolicy(id=uuidutils.generate_uuid(),
-                                    tenant_id=tenant_id,
+                                    tenant_id=fwp['tenant_id'],
                                     name=fwp['name'],
                                     description=fwp['description'],
                                     shared=fwp['shared'])
@@ -458,7 +457,6 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
         fwr = firewall_rule['firewall_rule']
         self._validate_fwr_protocol_parameters(fwr)
         self._validate_fwr_src_dst_ip_version(fwr)
-        tenant_id = self._get_tenant_id_for_create(context, fwr)
         if not fwr['protocol'] and (fwr['source_port'] or
            fwr['destination_port']):
             raise fw_ext.FirewallRuleWithPortWithoutProtocolInvalid()
@@ -469,7 +467,7 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
         with context.session.begin(subtransactions=True):
             fwr_db = FirewallRule(
                 id=uuidutils.generate_uuid(),
-                tenant_id=tenant_id,
+                tenant_id=fwr['tenant_id'],
                 name=fwr['name'],
                 description=fwr['description'],
                 shared=fwr['shared'],
