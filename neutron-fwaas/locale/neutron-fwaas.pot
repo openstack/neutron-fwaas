@@ -1,0 +1,273 @@
+# Translations template for neutron-fwaas.
+# Copyright (C) 2015 ORGANIZATION
+# This file is distributed under the same license as the neutron-fwaas
+# project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2015.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: neutron-fwaas 8.0.0.0b2.dev18\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2015-12-13 05:43-0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: neutron_fwaas/extensions/firewall.py:43
+#, python-format
+msgid "Firewall %(firewall_id)s could not be found."
+msgstr ""
+
+#: neutron_fwaas/extensions/firewall.py:47
+#, python-format
+msgid "Firewall %(firewall_id)s is still active."
+msgstr ""
+
+#: neutron_fwaas/extensions/firewall.py:51
+#, python-format
+msgid ""
+"Operation cannot be performed since associated Firewall %(firewall_id)s "
+"is in %(pending_state)s."
+msgstr ""
+
+#: neutron_fwaas/extensions/firewall.py:56
+#, python-format
+msgid "Firewall Policy %(firewall_policy_id)s could not be found."
+msgstr ""
+
+#: neutron_fwaas/extensions/firewall.py:60
+#, python-format
+msgid "Firewall Policy %(firewall_policy_id)s is being used."
+msgstr ""
+
+#: neutron_fwaas/extensions/firewall.py:69
+#, python-format
+msgid ""
+"Operation cannot be performed since Firewall Policy "
+"%(firewall_policy_id)s is not shared and does not belong to your tenant."
+msgstr ""
+
+#: neutron_fwaas/extensions/firewall.py:81
+#, python-format
+msgid ""
+"Operation cannot be performed since Firewall Policy "
+"%(firewall_policy_id)s is shared but Firewall Rule %(firewall_rule_id)s "
+"is not shared"
+msgstr ""
+
+#: neutron_fwaas/extensions/firewall.py:93
+#, python-format
+msgid ""
+"Operation cannot be performed. Before sharing Firewall Policy "
+"%(firewall_policy_id)s, share associated Firewall Rule "
+"%(firewall_rule_id)s"
+msgstr ""
+
+#: neutron_fwaas/extensions/firewall.py:99
+#, python-format
+msgid "Firewall Rule %(firewall_rule_id)s could not be found."
+msgstr ""
+
+#: neutron_fwaas/extensions/firewall.py:103
+#, python-format
+msgid "Firewall Rule %(firewall_rule_id)s is being used."
+msgstr ""
+
+#: neutron_fwaas/extensions/firewall.py:107
+#, python-format
+msgid ""
+"Firewall Rule %(firewall_rule_id)s is not associated  with Firewall "
+"Policy %(firewall_policy_id)s."
+msgstr ""
+
+#: neutron_fwaas/extensions/firewall.py:112
+#, python-format
+msgid ""
+"Firewall Rule protocol %(protocol)s is not supported. Only protocol "
+"values %(values)s and their integer representation (0 to 255) are "
+"supported."
+msgstr ""
+
+#: neutron_fwaas/extensions/firewall.py:118
+#, python-format
+msgid ""
+"Firewall rule action %(action)s is not supported. Only action values "
+"%(values)s are supported."
+msgstr ""
+
+#: neutron_fwaas/extensions/firewall.py:123
+#, python-format
+msgid "%(param)s are not allowed when protocol is set to ICMP."
+msgstr ""
+
+#: neutron_fwaas/extensions/firewall.py:128
+msgid "Source/destination port requires a protocol"
+msgstr ""
+
+#: neutron_fwaas/extensions/firewall.py:132
+#, python-format
+msgid "Invalid value for port %(port)s."
+msgstr ""
+
+#: neutron_fwaas/extensions/firewall.py:136
+msgid "Missing rule info argument for insert/remove rule operation."
+msgstr ""
+
+#: neutron_fwaas/extensions/firewall.py:141
+msgid "Invalid input - IP addresses do not agree with IP Version"
+msgstr ""
+
+#: neutron_fwaas/extensions/firewall.py:162
+#, python-format
+msgid ""
+"Operation cannot be performed since Firewall Rule %(firewall_rule_id)s is"
+" not shared and belongs to another tenant %(tenant_id)s"
+msgstr ""
+
+#: neutron_fwaas/extensions/firewall.py:215
+#, python-format
+msgid "Port '%s' is not a valid number"
+msgstr ""
+
+#: neutron_fwaas/extensions/firewall.py:219
+#, python-format
+msgid "Invalid port '%s'"
+msgstr ""
+
+#: neutron_fwaas/extensions/firewall.py:233
+#, python-format
+msgid "%(msg_ip)s and %(msg_subnet)s"
+msgstr ""
+
+#: neutron_fwaas/extensions/firewall.py:357
+msgid "Number of firewalls allowed per tenant. A negative value means unlimited."
+msgstr ""
+
+#: neutron_fwaas/extensions/firewall.py:361
+msgid ""
+"Number of firewall policies allowed per tenant. A negative value means "
+"unlimited."
+msgstr ""
+
+#: neutron_fwaas/extensions/firewall.py:365
+msgid ""
+"Number of firewall rules allowed per tenant. A negative value means "
+"unlimited."
+msgstr ""
+
+#: neutron_fwaas/extensions/firewallrouterinsertion.py:25
+#, python-format
+msgid ""
+"Router(s) %(router_ids)s provided already associated with other "
+"Firewall(s). "
+msgstr ""
+
+#: neutron_fwaas/extensions/cisco/csr_firewall_insertion.py:25
+#, python-format
+msgid "Interface id %(port_id)s provided not valid for Cisco CSR Firewall"
+msgstr ""
+
+#: neutron_fwaas/extensions/cisco/csr_firewall_insertion.py:30
+#, python-format
+msgid ""
+"Port id %(port_id)s provided for Cisco CSR Firewall associated with "
+"different Router"
+msgstr ""
+
+#: neutron_fwaas/extensions/cisco/csr_firewall_insertion.py:35
+#, python-format
+msgid ""
+"Interface id %(port_id)s provided does not have Hosting Info for Cisco "
+"CSR Firewall"
+msgstr ""
+
+#: neutron_fwaas/services/firewall/agents/firewall_agent_api.py:28
+msgid "Name of the FWaaS Driver"
+msgstr ""
+
+#: neutron_fwaas/services/firewall/agents/firewall_agent_api.py:32
+msgid "Enable FWaaS"
+msgstr ""
+
+#: neutron_fwaas/services/firewall/agents/firewall_service.py:38
+#, python-format
+msgid "Error importing FWaaS device driver: %s"
+msgstr ""
+
+#: neutron_fwaas/services/firewall/agents/firewall_service.py:41
+msgid "Configuration error - no FWaaS device_driver specified"
+msgstr ""
+
+#: neutron_fwaas/services/firewall/agents/l3reference/firewall_l3_agent.py:65
+msgid ""
+"FWaaS plugin is configured in the server side, but FWaaS is disabled in "
+"L3-agent."
+msgstr ""
+
+#: neutron_fwaas/services/firewall/agents/varmour/varmour_api.py:29
+msgid "vArmour director ip"
+msgstr ""
+
+#: neutron_fwaas/services/firewall/agents/varmour/varmour_api.py:31
+msgid "vArmour director port"
+msgstr ""
+
+#: neutron_fwaas/services/firewall/agents/varmour/varmour_api.py:33
+msgid "vArmour director username"
+msgstr ""
+
+#: neutron_fwaas/services/firewall/agents/varmour/varmour_api.py:35
+msgid "vArmour director password"
+msgstr ""
+
+#: neutron_fwaas/services/firewall/agents/varmour/varmour_api.py:45
+msgid "An unknown exception."
+msgstr ""
+
+#: neutron_fwaas/services/firewall/agents/varmour/varmour_api.py:59
+msgid "Invalid login credential."
+msgstr ""
+
+#: neutron_fwaas/services/firewall/agents/varmour/varmour_router.py:103
+#, python-format
+msgid "Router port %s has no IP address"
+msgstr ""
+
+#: neutron_fwaas/services/firewall/drivers/mcafee/ngfw_fwaas.py:37
+msgid "URL to contact SMC server"
+msgstr ""
+
+#: neutron_fwaas/services/firewall/drivers/mcafee/ngfw_fwaas.py:42
+msgid "Authentication key to SMC API"
+msgstr ""
+
+#: neutron_fwaas/services/firewall/drivers/mcafee/ngfw_fwaas.py:47
+msgid "verion of SMC API"
+msgstr ""
+
+#: neutron_fwaas/services/firewall/drivers/mcafee/ngfw_fwaas.py:238
+#, python-format
+msgid "not support %s protocol now"
+msgstr ""
+
+#: neutron_fwaas/services/firewall/drivers/mcafee/ngfw_fwaas.py:282
+msgid "Unsupported IP version rule. %(version)"
+msgstr ""
+
+#: neutron_fwaas/services/firewall/drivers/mcafee/smc_api.py:88
+msgid "OPERATION failed"
+msgstr ""
+
+#: neutron_fwaas/services/firewall/drivers/mcafee/smc_api.py:95
+msgid "LOGIN failed!"
+msgstr ""
+
+#: neutron_fwaas/services/firewall/drivers/mcafee/smc_api.py:229
+msgid "Wrong initial data!"
+msgstr ""
+
