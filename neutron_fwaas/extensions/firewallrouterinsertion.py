@@ -16,9 +16,6 @@
 from neutron.api import extensions
 from neutron.api.v2 import attributes as attr
 from neutron.common import exceptions as nexception
-from oslo_log import log as logging
-
-LOG = logging.getLogger(__name__)
 
 
 class FirewallRouterInUse(nexception.InUse):
