@@ -231,11 +231,9 @@ class FirewallPlugin(
 
     def create_firewall(self, context, firewall):
         LOG.debug("create_firewall() called")
-        tenant_id = self._get_tenant_id_for_create(context,
-            firewall['firewall'])
 
         fw_new_rtrs = self._get_routers_for_create_firewall(
-            tenant_id, context, firewall)
+            firewall['firewall']['tenant_id'], context, firewall)
 
         if not fw_new_rtrs:
             # no messaging to agent needed, and fw needs to go

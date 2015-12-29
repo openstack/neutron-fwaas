@@ -242,8 +242,6 @@ class CSRFirewallPlugin(ref_fw_plugin.FirewallPlugin,
 
     @log_helpers.log_method_call
     def create_firewall(self, context, firewall):
-        tenant_id = self._get_tenant_id_for_create(context,
-                                                   firewall['firewall'])
         port_id = firewall['firewall'].pop('port_id', None)
         direction = firewall['firewall'].pop('direction', None)
 
@@ -255,7 +253,7 @@ class CSRFirewallPlugin(ref_fw_plugin.FirewallPlugin,
             # TODO(sridar): add check to see if the new port-id does not have
             # any associated firewall.
             router_id = self._validate_fw_port_and_get_router_id(context,
-                tenant_id, port_id)
+                firewall['firewall']['tenant_id'], port_id)
 
         if direction == attr.ATTR_NOT_SPECIFIED:
             direction = None
@@ -285,8 +283,6 @@ class CSRFirewallPlugin(ref_fw_plugin.FirewallPlugin,
     @log_helpers.log_method_call
     def update_firewall(self, context, fwid, firewall):
         self._ensure_update_firewall(context, fwid)
-        tenant_id = self._get_tenant_id_for_create(context,
-                                                   firewall['firewall'])
         csrfw = self.lookup_firewall_csr_association(context, fwid)
 
         port_id = firewall['firewall'].pop('port_id', None)
@@ -295,6 +291,7 @@ class CSRFirewallPlugin(ref_fw_plugin.FirewallPlugin,
         _fw = {'id': fwid}
 
         if port_id:
+            tenant_id = self.get_firewall(context, fwid)['tenant_id']
             router_id = self._validate_fw_port_and_get_router_id(context,
                 tenant_id, port_id)
             if csrfw and csrfw['port_id']:
