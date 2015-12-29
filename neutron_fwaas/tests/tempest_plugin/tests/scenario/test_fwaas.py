@@ -195,7 +195,7 @@ class TestFWaaS(base.FWaaSScenarioTest):
             confirm_allowed = self._confirm_allowed
         if confirm_blocked is None:
             confirm_blocked = self._confirm_blocked
-        ssh_login = CONF.compute.image_ssh_user
+        ssh_login = CONF.validation.image_ssh_user
         public_network_id = CONF.network.public_network_id
 
         network1, subnet1, router1 = self.create_networks()
