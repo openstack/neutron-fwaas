@@ -102,8 +102,8 @@ class vArmourL3NATAgent(agent.L3NATAgent,
         if not ips:
             raise Exception(_("Router port %s has no IP address") % port['id'])
         if len(ips) > 1:
-            LOG.warn(_LW("Ignoring multiple IPs on router port %s"),
-                     port['id'])
+            LOG.warning(_LW("Ignoring multiple IPs on router port %s"),
+                        port['id'])
         prefixlen = netaddr.IPNetwork(port['subnet']['cidr']).prefixlen
         port['ip_cidr'] = "%s/%s" % (ips[0]['ip_address'], prefixlen)
 
@@ -285,10 +285,10 @@ class vArmourL3NATAgent(agent.L3NATAgent,
             try:
                 plist = resp['body']['response']
             except ValueError:
-                LOG.warn(_LW("Unable to parse interface mapping."))
+                LOG.warning(_LW("Unable to parse interface mapping."))
                 return
         else:
-            LOG.warn(_LW("Unable to read interface mapping."))
+            LOG.warning(_LW("Unable to read interface mapping."))
             return
 
         if ri.ex_gw_port:

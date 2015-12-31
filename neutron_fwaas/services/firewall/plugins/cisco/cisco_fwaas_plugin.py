@@ -80,9 +80,9 @@ class FirewallCallbacks(object):
             if fw_db.status in (const.PENDING_DELETE, const.ERROR):
                 self.plugin.delete_db_firewall_object(context, firewall_id)
                 return True
-            LOG.warn(_LW('Firewall %(fw)s unexpectedly deleted by agent, '
-                         'status was %(status)s'),
-                {'fw': firewall_id, 'status': fw_db.status})
+            LOG.warning(_LW('Firewall %(fw)s unexpectedly deleted by agent, '
+                            'status was %(status)s'),
+                        {'fw': firewall_id, 'status': fw_db.status})
             fw_db.status = const.ERROR
         return False
 

@@ -122,7 +122,7 @@ class VyattaFirewallDriver(fwaas_base.FwaasDriverBase):
                 rule_num += 1
                 fw_cmd_list += self._set_firewall_rule(fw_name, rule_num, rule)
             else:
-                LOG.warn(_LW("IPv6 rules are not supported."))
+                LOG.warning(_LW("IPv6 rules are not supported."))
 
         # Configure router zones
         zone_cmd_list = vyatta_utils.get_zone_cmds(client, ri, fw_name)

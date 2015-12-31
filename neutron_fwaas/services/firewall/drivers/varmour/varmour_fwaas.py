@@ -110,7 +110,7 @@ class vArmourFwaasDriver(fwaas_base.FwaasDriverBase):
 
                 self.rest.commit()
             else:
-                LOG.warn(_LW("Unsupported IP version rule."))
+                LOG.warning(_LW("Unsupported IP version rule."))
 
     def _clear_policy(self, ri, fw):
         prefix = va_utils.get_firewall_object_prefix(ri, fw)
