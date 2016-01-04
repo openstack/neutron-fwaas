@@ -281,7 +281,7 @@ class SMCAPIElement(object):
         json_result = self.get_elements()
 
         if not json_result[0]['result']:
-            LOG.warn(_LW("No #{element_type} defined in SMC"))
+            LOG.warning(_LW("No #{element_type} defined in SMC"))
         else:
             for element in json_result[0]['result']:
                 href = element['href']
