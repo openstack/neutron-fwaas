@@ -16,10 +16,6 @@ from neutron.api import extensions
 from neutron.api.v2 import attributes as attr
 from neutron.common import exceptions as excp
 
-from oslo_log import log as logging
-
-LOG = logging.getLogger(__name__)
-
 
 class InvalidInterfaceForCSRFW(excp.NotFound):
     message = _("Interface id %(port_id)s provided "

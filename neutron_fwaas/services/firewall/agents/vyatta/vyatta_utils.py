@@ -16,7 +16,6 @@
 
 from networking_brocade.vyatta.vrouter import client as vyatta_client
 from neutron.common import constants as l3_constants
-from oslo_log import log as logging
 from six.moves.urllib import parse
 
 TRUST_ZONE = 'Internal_Trust'
@@ -24,8 +23,6 @@ UNTRUST_ZONE = 'External_Untrust'
 
 ZONE_INTERFACE_CMD = 'zone-policy/zone/{0}/interface/{1}'
 ZONE_FIREWALL_CMD = 'zone-policy/zone/{0}/from/{1}/firewall/name/{2}'
-
-LOG = logging.getLogger(__name__)
 
 
 def get_firewall_name(ri, fw):

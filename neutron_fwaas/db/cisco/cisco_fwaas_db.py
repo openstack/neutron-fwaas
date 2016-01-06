@@ -14,10 +14,7 @@
 
 from neutron.db import model_base
 from oslo_log import helpers as log_helpers
-from oslo_log import log as logging
 import sqlalchemy as sa
-
-LOG = logging.getLogger(__name__)
 
 
 class CiscoFirewallAssociation(model_base.BASEV2):
