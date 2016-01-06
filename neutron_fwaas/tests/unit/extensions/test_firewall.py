@@ -592,3 +592,32 @@ class TestFirewallAttributeValidators(base.BaseTestCase):
              "'%s' is not a valid IP subnet") % (cidr,
                                                  cidr),
             msg)
+
+
+class TestFirewallConvertProtocols(base.BaseTestCase):
+    def test_convert_protocol_digit(self):
+        res = firewall.convert_protocol("0")
+        self.assertEqual(0, res)
+        res = firewall.convert_protocol("255")
+        self.assertEqual(255, res)
+
+    def test_convert_protocol_invalid_digit(self):
+        res = lambda: firewall.convert_protocol("-1")
+        self.assertRaises(firewall.FirewallRuleInvalidProtocol, res)
+
+        res = lambda: firewall.convert_protocol("256")
+        self.assertRaises(firewall.FirewallRuleInvalidProtocol, res)
+
+    def test_convert_protocol_name(self):
+        res = firewall.convert_protocol("tcp")
+        self.assertEqual("tcp", res)
+
+        res = firewall.convert_protocol("UDP")
+        self.assertEqual("udp", res)
+
+        res = firewall.convert_protocol("Icmp")
+        self.assertEqual("icmp", res)
+
+    def test_convert_protocol_invalid_name(self):
+        res = lambda: firewall.convert_protocol("foo")
+        self.assertRaises(firewall.FirewallRuleInvalidProtocol, res)
