@@ -46,6 +46,15 @@ class FirewallGroupInPendingState(nexception.Conflict):
                 "%(firewall_id)s is in %(pending_state)s.")
 
 
+class FirewallGroupPortInvalidProject(nexception.Conflict):
+    message = _("Firewall Group %(port_id)s in invalid Project")
+
+
+class FirewallGroupPortInUse(nexception.InUse):
+    message = _("Port(s) %(port_ids)s provided already associated with "
+                "other Firewall Group(s). ")
+
+
 class FirewallPolicyNotFound(nexception.NotFound):
     message = _("Firewall Policy %(firewall_policy_id)s could not be found.")
 

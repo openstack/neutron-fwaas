@@ -32,14 +32,14 @@ import webob.exc
 from neutron_fwaas.db.firewall.v2 import firewall_db_v2 as fdb
 from neutron_fwaas import extensions
 from neutron_fwaas.extensions import firewall_v2 as firewall
-from neutron_fwaas.services.firewall import fwaas_plugin
+from neutron_fwaas.services.firewall import fwaas_plugin_v2
 from neutron_fwaas.tests import base
 
 DB_FW_PLUGIN_KLASS = (
     "neutron_fwaas.db.firewall.v2.firewall_db_v2.Firewall_db_mixin_v2"
 )
-FWAAS_PLUGIN = 'neutron_fwaas.services.firewall.fwaas_plugin'
-DELETEFW_PATH = FWAAS_PLUGIN + '.FirewallAgentApi.delete_firewall'
+FWAAS_PLUGIN = 'neutron_fwaas.services.firewall.fwaas_plugin_v2'
+DELETEFW_PATH = FWAAS_PLUGIN + '.FirewallAgentApi.delete_firewall_group'
 extensions_path = ':'.join(extensions.__path__ + nextensions.__path__)
 DESCRIPTION = 'default description'
 PUBLIC = True
@@ -55,7 +55,7 @@ ENABLED = True
 ADMIN_STATE_UP = True
 
 
-class FakeAgentApi(fwaas_plugin.FirewallCallbacks):
+class FakeAgentApi(fwaas_plugin_v2.FirewallCallbacks):
     """
     This class used to mock the AgentAPI delete method inherits from
     FirewallCallbacks because it needs access to the firewall_deleted method.
@@ -67,9 +67,10 @@ class FakeAgentApi(fwaas_plugin.FirewallCallbacks):
     def __init__(self):
         pass
 
-    def delete_firewall(self, context, firewall, **kwargs):
-        self.plugin = manager.NeutronManager.get_service_plugins()['FIREWALL']
-        self.firewall_deleted(context, firewall['id'], **kwargs)
+    def delete_firewall_group(self, context, firewall_group, **kwargs):
+        self.plugin = (manager.NeutronManager.
+            get_service_plugins()['FIREWALL_V2'])
+        self.firewall_group_deleted(context, firewall_group['id'], **kwargs)
 
 
 class FirewallPluginV2DbTestCase(base.NeutronDbPluginV2TestCase):
@@ -79,8 +80,9 @@ class FirewallPluginV2DbTestCase(base.NeutronDbPluginV2TestCase):
     )
 
     def setUp(self, core_plugin=None, fw_plugin=None, ext_mgr=None):
-        self.agentapi_delf_p = mock.patch(DELETEFW_PATH, create=True,
-                                          new=FakeAgentApi().delete_firewall)
+        self.agentapi_delf_p = mock.patch(
+            DELETEFW_PATH, create=True,
+            new=FakeAgentApi().delete_firewall_group)
         self.agentapi_delf_p.start()
         if not fw_plugin:
             fw_plugin = DB_FW_PLUGIN_KLASS
@@ -246,19 +248,22 @@ class FirewallPluginV2DbTestCase(base.NeutronDbPluginV2TestCase):
 
     def _create_firewall_group(self, fmt, name, description,
                                ingress_firewall_policy_id,
-                               egress_firewall_policy_id, admin_state_up=True,
+                               egress_firewall_policy_id,
+                               ports=None, admin_state_up=True,
                                expected_res_status=None, **kwargs):
         tenant_id = kwargs.get('tenant_id', self._tenant_id)
         if ingress_firewall_policy_id is None:
-            res = self._create_firewall_policy(fmt, 'fwp',
-                                               description=DESCRIPTION,
-                                               public=True,
-                                               firewall_rules=[],
-                                               tenant_id=tenant_id,
-                                               audited=AUDITED)
-            firewall_policy = self.deserialize(fmt or self.fmt, res)
-            fwp_id = firewall_policy["firewall_policy"]["id"]
-            ingress_firewall_policy_id = fwp_id
+            default_policy = kwargs.get('default_policy', True)
+            if default_policy:
+                res = self._create_firewall_policy(fmt, 'fwp',
+                                                   description=DESCRIPTION,
+                                                   public=True,
+                                                   firewall_rules=[],
+                                                   tenant_id=tenant_id,
+                                                   audited=AUDITED)
+                firewall_policy = self.deserialize(fmt or self.fmt, res)
+                fwp_id = firewall_policy["firewall_policy"]["id"]
+                ingress_firewall_policy_id = fwp_id
         data = {'firewall_group': {'name': name,
                      'description': description,
                      'ingress_firewall_policy_id': ingress_firewall_policy_id,
@@ -267,6 +272,8 @@ class FirewallPluginV2DbTestCase(base.NeutronDbPluginV2TestCase):
         ctx = kwargs.get('context', None)
         if ctx is None or ctx.is_admin:
             data['firewall_group'].update({'tenant_id': tenant_id})
+        if ports is not None:
+            data['firewall_group'].update({'ports': ports})
 
         firewall_req = self.new_create_request('firewall_groups', data, fmt,
                                                context=ctx)
@@ -281,13 +288,16 @@ class FirewallPluginV2DbTestCase(base.NeutronDbPluginV2TestCase):
                        description=DESCRIPTION,
                        ingress_firewall_policy_id=None,
                        egress_firewall_policy_id=None,
-                       admin_state_up=True, do_delete=True, **kwargs):
+                       ports=None, admin_state_up=True,
+                       do_delete=True, **kwargs):
         if not fmt:
             fmt = self.fmt
         res = self._create_firewall_group(fmt, name, description,
                                           ingress_firewall_policy_id,
                                           egress_firewall_policy_id,
-                                          admin_state_up, **kwargs)
+                                          ports=ports,
+                                          admin_state_up=admin_state_up,
+                                          **kwargs)
         if res.status_int >= 400:
             raise webob.exc.HTTPClientError(code=res.status_int)
         firewall_group = self.deserialize(fmt or self.fmt, res)
@@ -1014,7 +1024,8 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
         not_found_fwp_id = uuidutils.generate_uuid()
         self._create_firewall_group(fmt, fwg_name,
                               description, not_found_fwp_id,
-                              not_found_fwp_id, ADMIN_STATE_UP,
+                              not_found_fwp_id, ports=None,
+                              admin_state_up=ADMIN_STATE_UP,
                               expected_res_status=404)
 
     def test_create_firewall_group_with_fwp_on_different_tenant(self):
