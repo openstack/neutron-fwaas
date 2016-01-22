@@ -19,6 +19,7 @@ from neutron.api.v2 import attributes as attr
 from neutron import context
 from neutron import manager
 from neutron.plugins.common import constants as const
+from neutron.tests import fake_notifier
 from neutron.tests.unit.extensions import test_l3 as test_l3_plugin
 from oslo_config import cfg
 import six
@@ -299,6 +300,7 @@ class TestFirewallPluginBase(TestFirewallRouterInsertionBase,
 
     def setUp(self):
         super(TestFirewallPluginBase, self).setUp(fw_plugin=FW_PLUGIN_KLASS)
+        fake_notifier.reset()
 
     def tearDown(self):
         super(TestFirewallPluginBase, self).tearDown()
@@ -596,6 +598,20 @@ class TestFirewallPluginBase(TestFirewallRouterInsertionBase,
                     self.assertEqual(fr_id,
                                      fw_rules['firewall_rule_list'][0]['id'])
 
+    def test_insert_rule_notif(self):
+        ctx = context.get_admin_context()
+        with self.firewall_rule() as fwr:
+            fr_id = fwr['firewall_rule']['id']
+            rule_info = {'firewall_rule_id': fr_id}
+            with self.firewall_policy() as fwp:
+                fwp_id = fwp['firewall_policy']['id']
+                with self.firewall(firewall_policy_id=fwp_id):
+                    self.plugin.insert_rule(ctx, fwp_id, rule_info)
+            notifications = fake_notifier.NOTIFICATIONS
+            expected_event_type = 'firewall_policy.update.insert_rule'
+            event_types = [event['event_type'] for event in notifications]
+            self.assertIn(expected_event_type, event_types)
+
     def test_remove_rule(self):
         ctx = context.get_admin_context()
         with self.firewall_rule() as fwr:
@@ -624,3 +640,17 @@ class TestFirewallPluginBase(TestFirewallRouterInsertionBase,
             res = req.get_response(self.ext_api)
             self.assertIn('Quota exceeded', res.body.decode('utf-8'))
             self.assertEqual(exc.HTTPConflict.code, res.status_int)
+
+    def test_remove_rule_notif(self):
+        ctx = context.get_admin_context()
+        with self.firewall_rule() as fwr:
+            fr_id = fwr['firewall_rule']['id']
+            rule_info = {'firewall_rule_id': fr_id}
+            with self.firewall_policy(firewall_rules=[fr_id]) as fwp:
+                fwp_id = fwp['firewall_policy']['id']
+                with self.firewall(firewall_policy_id=fwp_id):
+                    self.plugin.remove_rule(ctx, fwp_id, rule_info)
+            notifications = fake_notifier.NOTIFICATIONS
+            expected_event_type = 'firewall_policy.update.remove_rule'
+            event_types = [event['event_type'] for event in notifications]
+            self.assertIn(expected_event_type, event_types)

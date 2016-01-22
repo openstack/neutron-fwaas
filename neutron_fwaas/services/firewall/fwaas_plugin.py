@@ -358,12 +358,18 @@ class FirewallPlugin(
             self._rpc_update_firewall_policy(context, firewall_policy_id)
         return fwr
 
+    def _notify_firewall_updates(self, context, resource, update_info):
+        notifier = n_rpc.get_notifier('network')
+        notifier.info(context, resource, update_info)
+
     def insert_rule(self, context, id, rule_info):
         LOG.debug("insert_rule() called")
         self._ensure_update_firewall_policy(context, id)
         fwp = super(FirewallPlugin,
                     self).insert_rule(context, id, rule_info)
         self._rpc_update_firewall_policy(context, id)
+        resource = 'firewall_policy.update.insert_rule'
+        self._notify_firewall_updates(context, resource, rule_info)
         return fwp
 
     def remove_rule(self, context, id, rule_info):
@@ -372,6 +378,8 @@ class FirewallPlugin(
         fwp = super(FirewallPlugin,
                     self).remove_rule(context, id, rule_info)
         self._rpc_update_firewall_policy(context, id)
+        resource = 'firewall_policy.update.remove_rule'
+        self._notify_firewall_updates(context, resource, rule_info)
         return fwp
 
     def get_firewalls(self, context, filters=None, fields=None):
