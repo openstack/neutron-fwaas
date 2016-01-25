@@ -621,3 +621,19 @@ class TestFirewallConvertProtocols(base.BaseTestCase):
     def test_convert_protocol_invalid_name(self):
         res = lambda: firewall.convert_protocol("foo")
         self.assertRaises(firewall.FirewallRuleInvalidProtocol, res)
+
+
+class TestConvertActionToCaseInsensitive(base.BaseTestCase):
+    def test_convert_action_to_case_insensitive_none(self):
+        res = firewall.convert_action_to_case_insensitive(None)
+        self.assertIsNone(res)
+
+    def test_convert_action_to_case_insensitive_value(self):
+        res = firewall.convert_action_to_case_insensitive("foo")
+        self.assertEqual("foo", res)
+
+        res = firewall.convert_action_to_case_insensitive("Bar")
+        self.assertEqual("bar", res)
+
+        res = firewall.convert_action_to_case_insensitive("BAZ")
+        self.assertEqual("baz", res)
