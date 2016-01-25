@@ -37,7 +37,7 @@ class FWaaSScenarioTest(fwaas_client.FWaaSClientMixin,
             msg = "ip address %s is reachable" % ip_address
         if check_icmp:
             ok = self.ping_ip_address(ip_address,
-                                      should_succeed=should_connect),
+                                      should_succeed=should_connect)
             self.assertTrue(ok, msg=msg)
         if check_ssh:
             connect_timeout = CONF.validation.connect_timeout
