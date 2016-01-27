@@ -247,6 +247,12 @@ class TestFWaaS(base.FWaaSScenarioTest):
             confirm_blocked = self._confirm_blocked
         ssh_login = CONF.validation.image_ssh_user
 
+        if self.router_insertion and CONF.network.public_router_id:
+            # NOTE(yamamoto): If public_router_id is configured
+            # router1 and router2 will be the same router.
+            msg = "This test assumes no public_router_id configured"
+            raise self.skipException(msg)
+
         server1_ip, private_key1, router1 = self._create_topology()
         server2_ip, private_key2, router2 = self._create_topology()
         if self.router_insertion:
