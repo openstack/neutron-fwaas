@@ -208,6 +208,25 @@ class TestFWaaS(base.FWaaSScenarioTest):
         self.check_connectivity(check_ssh=False, **kwargs)
 
     def _create_topology(self):
+        """Create a topology for testing
+
+        +--------+             +-----------+
+        |"server"|             | "subnet"  |
+        |   VM   +-------------+ "network" |
+        +--------+             +----+------+
+                                    |
+                                    | router interface port
+                               +----+-----+
+                               | "router" |
+                               +----+-----+
+                                    | router gateway port
+                                    |
+                                    |
+                               +----+------------------+
+                               | existing network      |
+                               | ("public_network_id") |
+                               +-----------------------+
+        """
         public_network_id = CONF.network.public_network_id
         network, subnet, router = self.create_networks()
         security_group = self._create_security_group()
