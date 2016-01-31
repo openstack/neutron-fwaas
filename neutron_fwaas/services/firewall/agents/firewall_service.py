@@ -18,6 +18,8 @@ from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_utils import importutils
 
+from neutron_fwaas._i18n import _
+
 LOG = logging.getLogger(__name__)
 
 FIREWALL_DRIVERS = 'firewall_drivers'

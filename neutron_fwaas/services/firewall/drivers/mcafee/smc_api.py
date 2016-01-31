@@ -27,10 +27,10 @@ import six
 
 from contextlib import contextmanager
 from neutron.common import exceptions as n_exc
-from neutron.i18n import _LE, _LI, _LW
 from oslo_log import log as logging
 from oslo_serialization import jsonutils
 
+from neutron_fwaas._i18n import _, _LE, _LI, _LW
 from neutron_fwaas.services.firewall.drivers.mcafee import constants as const
 
 LOG = logging.getLogger(__name__)

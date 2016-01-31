@@ -17,6 +17,8 @@ from neutron.common import rpc as n_rpc
 from oslo_config import cfg
 import oslo_messaging
 
+from neutron_fwaas._i18n import _
+
 
 FWaaSOpts = [
     cfg.StrOpt(

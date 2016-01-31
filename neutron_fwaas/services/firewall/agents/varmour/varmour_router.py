@@ -29,12 +29,12 @@ from neutron.agent.linux import interface
 from neutron.agent.linux import ip_lib
 from neutron.common import config as common_config
 from neutron.common import constants as l3_constants
-from neutron.i18n import _LW
 from neutron import service as neutron_service
 from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_service import service
 
+from neutron_fwaas._i18n import _, _LW
 from neutron_fwaas.common import fwaas_constants as f_const
 from neutron_fwaas.services.firewall.agents.l3reference \
     import firewall_l3_agent

@@ -17,9 +17,9 @@ import requests
 
 from networking_cisco.plugins.cisco.cfg_agent.device_drivers import (
     cisco_csr_rest_client)
-from neutron.i18n import _LE
 from oslo_log import log as logging
 
+from neutron_fwaas._i18n import _LE
 from neutron_fwaas.services.firewall.drivers import fwaas_base
 
 

@@ -14,9 +14,9 @@
 #    under the License.
 
 from neutron.agent.linux import iptables_manager
-from neutron.i18n import _LE
 from oslo_log import log as logging
 
+from neutron_fwaas._i18n import _LE
 from neutron_fwaas.extensions import firewall as fw_ext
 from neutron_fwaas.services.firewall.drivers import fwaas_base
 

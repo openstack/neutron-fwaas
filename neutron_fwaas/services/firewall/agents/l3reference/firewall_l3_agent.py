@@ -15,12 +15,12 @@
 
 from neutron.agent.linux import ip_lib
 from neutron import context
-from neutron.i18n import _LE
 from neutron.plugins.common import constants as n_const
 from oslo_config import cfg
 from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
 
+from neutron_fwaas._i18n import _, _LE
 from neutron_fwaas.common import fwaas_constants as f_const
 from neutron_fwaas.extensions import firewall as fw_ext
 from neutron_fwaas.services.firewall.agents import firewall_agent_api as api

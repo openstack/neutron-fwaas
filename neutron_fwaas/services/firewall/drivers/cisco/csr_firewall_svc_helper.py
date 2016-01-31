@@ -16,12 +16,12 @@ from networking_cisco.plugins.cisco.cfg_agent.service_helpers import (
     service_helper)
 from neutron.common import rpc as n_rpc
 from neutron import context as n_context
-from neutron.i18n import _LE
 from neutron.plugins.common import constants
 from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
 import oslo_messaging
 
+from neutron_fwaas._i18n import _LE
 from neutron_fwaas.services.firewall.drivers.cisco import csr_acl_driver
 
 LOG = logging.getLogger(__name__)

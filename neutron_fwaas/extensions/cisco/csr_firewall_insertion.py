@@ -16,6 +16,8 @@ from neutron.api import extensions
 from neutron.api.v2 import attributes as attr
 from neutron.common import exceptions as excp
 
+from neutron_fwaas._i18n import _
+
 
 class InvalidInterfaceForCSRFW(excp.NotFound):
     message = _("Interface id %(port_id)s provided "

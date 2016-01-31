@@ -16,13 +16,13 @@
 from neutron.api.v2 import attributes as attr
 from neutron.common import rpc as n_rpc
 from neutron import context as neutron_context
-from neutron.i18n import _LW
 from neutron import manager
 from neutron.plugins.common import constants as n_const
 from oslo_config import cfg
 from oslo_log import log as logging
 import oslo_messaging
 
+from neutron_fwaas._i18n import _LW
 from neutron_fwaas.common import fwaas_constants as f_const
 from neutron_fwaas.db.firewall import firewall_db
 from neutron_fwaas.db.firewall import firewall_router_insertion_db

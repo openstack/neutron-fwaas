@@ -17,7 +17,6 @@ from neutron.api.v2 import attributes as attr
 from neutron.common import constants as l3_const
 from neutron.common import rpc as n_rpc
 from neutron import context as neutron_context
-from neutron.i18n import _LW
 from neutron import manager
 from neutron.plugins.common import constants as const
 from oslo_config import cfg
@@ -25,6 +24,7 @@ from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
 import oslo_messaging
 
+from neutron_fwaas._i18n import _LW
 from neutron_fwaas.db.cisco import cisco_fwaas_db as csrfw_db
 import neutron_fwaas.extensions
 from neutron_fwaas.extensions.cisco import csr_firewall_insertion as csr_ext

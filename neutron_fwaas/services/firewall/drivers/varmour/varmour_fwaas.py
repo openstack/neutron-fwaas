@@ -13,9 +13,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from neutron.i18n import _LW
 from oslo_log import log as logging
 
+from neutron_fwaas._i18n import _LW
 from neutron_fwaas.services.firewall.agents.varmour import varmour_api
 from neutron_fwaas.services.firewall.agents.varmour \
     import varmour_utils as va_utils

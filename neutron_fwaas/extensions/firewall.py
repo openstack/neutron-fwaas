@@ -26,6 +26,8 @@ from oslo_config import cfg
 from oslo_log import log as logging
 import six
 
+from neutron_fwaas._i18n import _
+
 
 LOG = logging.getLogger(__name__)
 
