@@ -1,0 +1,17 @@
+---
+prelude: >
+    Enable quotas for FWaaS.
+features:
+  - The FWaaS extension can register quotas.
+    The default values for quota_firewall,
+    quota_firewall_policy, and quota_firewall_rule
+    are set to -1 (unlimited).
+issues:
+  - Tenants may receive a 409 Conflict error with a
+    message body containing a quota exceeded message
+    during resource creation if their quota is exceeded.
+other:
+  - Operators that increase the default limit for quota_routers
+    from 10 may want to bump FWaaS quotas as well, since with
+    router insertion a tenant can potentially have a unique
+    policy and firewall for each router.
