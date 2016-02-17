@@ -50,6 +50,7 @@ class FWaaSScenarioTest(fwaas_client.FWaaSClientMixin,
                                     channel_timeout=connect_timeout,
                                     **kwargs)
                 client.test_connection_auth()
+                self.assertTrue(should_connect, "Unexpectedly reachable")
             except lib_exc.SSHTimeout:
                 if should_connect:
                     raise

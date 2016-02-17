@@ -63,7 +63,7 @@ class TestFWaaS(base.FWaaSScenarioTest):
             kwargs['router_ids'] = self._router_ids
         return self.create_firewall(**kwargs)
 
-    def _empty_policy(self, server1_ip):
+    def _empty_policy(self, **kwargs):
         # NOTE(yamamoto): an empty policy would deny all
         fw_policy = self.create_firewall_policy(firewall_rules=[])
         fw = self._create_firewall(firewall_policy_id=fw_policy['id'])
@@ -73,7 +73,7 @@ class TestFWaaS(base.FWaaSScenarioTest):
             'fw_policy': fw_policy,
         }
 
-    def _all_disabled_rules(self, server1_ip):
+    def _all_disabled_rules(self, **kwargs):
         # NOTE(yamamoto): a policy whose rules are all disabled would deny all
         fw_rule = self.create_firewall_rule(action="allow", enabled=False)
         fw_policy = self.create_firewall_policy(firewall_rules=[fw_rule['id']])
@@ -85,24 +85,28 @@ class TestFWaaS(base.FWaaSScenarioTest):
             'fw_rule': fw_rule,
         }
 
-    def _block_ip(self, server1_ip):
-        # NOTE(yamamoto): this rule does NOT match with icmp packets
-        fw_rule = self.create_firewall_rule(
-            source_ip_address=server1_ip,
-            action="deny")
-        fw_rule_allow = self.create_firewall_rule(
-            action="allow")
-        fw_policy = self.create_firewall_policy(
-            firewall_rules=[fw_rule['id'], fw_rule_allow['id']])
+    def _block_ip(self, server1_fixed_ip, server2_fixed_ip, **kwargs):
+        rules = [
+            # NOTE(yamamoto): The filtering is taken place after
+            # destination ip is rewritten to fixed-ip.
+            self.create_firewall_rule(destination_ip_address=server1_fixed_ip,
+                                      action="deny"),
+            self.create_firewall_rule(destination_ip_address=server2_fixed_ip,
+                                      action="deny"),
+            self.create_firewall_rule(action="allow"),
+        ]
+        rule_ids = [r['id'] for r in rules]
+        fw_policy = self.create_firewall_policy(firewall_rules=rule_ids)
         fw = self._create_firewall(firewall_policy_id=fw_policy['id'])
         self._wait_firewall_ready(fw['id'])
         return {
             'fw': fw,
             'fw_policy': fw_policy,
-            'fw_rule': fw_rule,
+            'server1_fixed_ip': server1_fixed_ip,
+            'server2_fixed_ip': server2_fixed_ip,
         }
 
-    def _block_icmp(self, server1_ip):
+    def _block_icmp(self, **kwargs):
         fw_rule = self.create_firewall_rule(
             protocol="icmp",
             action="deny")
@@ -118,7 +122,7 @@ class TestFWaaS(base.FWaaSScenarioTest):
             'fw_rule': fw_rule,
         }
 
-    def _block_all_with_default_allow(self, server1_ip):
+    def _block_all_with_default_allow(self, **kwargs):
         fw_rule = self.create_firewall_rule(
             action="deny")
         fw_rule_allow = self.create_firewall_rule(
@@ -133,7 +137,7 @@ class TestFWaaS(base.FWaaSScenarioTest):
             'fw_rule': fw_rule,
         }
 
-    def _admin_disable(self, server1_ip):
+    def _admin_disable(self, **kwargs):
         # NOTE(yamamoto): A firewall with admin_state_up=False would block all
         fw_rule = self.create_firewall_rule(action="allow")
         fw_policy = self.create_firewall_policy(firewall_rules=[fw_rule['id']])
@@ -196,16 +200,37 @@ class TestFWaaS(base.FWaaSScenarioTest):
             enabled=False)
         self._wait_firewall_ready(ctx['fw']['id'])
 
+    def _allow_ip(self, ctx):
+        self._delete_fw(ctx)
+        server1_fixed_ip = ctx['server1_fixed_ip']
+        server2_fixed_ip = ctx['server2_fixed_ip']
+        rules = [
+            # NOTE(yamamoto): The filtering is taken place after
+            # destination ip is rewritten to fixed-ip.
+            # The return traffic should be allowed regardless
+            # of firewall rules.
+            self.create_firewall_rule(
+                destination_ip_address=server1_fixed_ip,
+                action="allow"),
+            self.create_firewall_rule(
+                destination_ip_address=server2_fixed_ip,
+                action="allow"),
+        ]
+        rule_ids = [r['id'] for r in rules]
+        fw_policy = self.create_firewall_policy(firewall_rules=rule_ids)
+        fw = self._create_firewall(firewall_policy_id=fw_policy['id'])
+        self._wait_firewall_ready(fw['id'])
+
     def _confirm_allowed(self, **kwargs):
         self.check_connectivity(**kwargs)
 
     def _confirm_blocked(self, **kwargs):
         self.check_connectivity(should_connect=False, **kwargs)
 
-    def _confirm_tcp_blocked_but_icmp(self, **kwargs):
-        self.check_connectivity(should_connect=False, check_icmp=False,
+    def _confirm_icmp_blocked_but_tcp(self, **kwargs):
+        self.check_connectivity(should_connect=False, check_ssh=False,
                                 **kwargs)
-        self.check_connectivity(check_ssh=False, **kwargs)
+        self.check_connectivity(check_icmp=False, **kwargs)
 
     def _create_topology(self):
         """Create a topology for testing
@@ -234,8 +259,9 @@ class TestFWaaS(base.FWaaSScenarioTest):
                                            security_group=security_group)
         private_key = keys['private_key']
         server_floating_ip = self.create_floating_ip(server, public_network_id)
-        server_ip = server_floating_ip.floating_ip_address
-        return server_ip, private_key, router
+        fixed_ip = server['addresses'].values()[0][0]['addr']
+        floating_ip = server_floating_ip.floating_ip_address
+        return fixed_ip, floating_ip, private_key, router
 
     def _test_firewall_basic(self, block, allow=None,
                              confirm_allowed=None, confirm_blocked=None):
@@ -253,8 +279,10 @@ class TestFWaaS(base.FWaaSScenarioTest):
             msg = "This test assumes no public_router_id configured"
             raise self.skipException(msg)
 
-        server1_ip, private_key1, router1 = self._create_topology()
-        server2_ip, private_key2, router2 = self._create_topology()
+        server1_fixed_ip, server1_floating_ip, private_key1, router1 = \
+            self._create_topology()
+        server2_fixed_ip, server2_floating_ip, private_key2, router2 = \
+            self._create_topology()
         if self.router_insertion:
             # Specify the router when creating a firewall and ensures that
             # the other router (router2) is not affected by the firewall
@@ -266,35 +294,40 @@ class TestFWaaS(base.FWaaSScenarioTest):
             # equally
             confirm_allowed2 = confirm_allowed
             confirm_blocked2 = confirm_blocked
-        confirm_allowed(ip_address=server1_ip, username=ssh_login,
+        confirm_allowed(ip_address=server1_floating_ip, username=ssh_login,
                         private_key=private_key1)
-        confirm_allowed2(ip_address=server2_ip, username=ssh_login,
+        confirm_allowed2(ip_address=server2_floating_ip, username=ssh_login,
                          private_key=private_key2)
-        ctx = block(server1_ip)
-        confirm_blocked(ip_address=server1_ip, username=ssh_login,
+        ctx = block(server1_fixed_ip=server1_fixed_ip,
+                    server1_floating_ip=server1_floating_ip,
+                    server2_fixed_ip=server2_fixed_ip,
+                    server2_floating_ip=server2_floating_ip)
+        confirm_blocked(ip_address=server1_floating_ip, username=ssh_login,
                         private_key=private_key1)
-        confirm_blocked2(ip_address=server2_ip, username=ssh_login,
+        confirm_blocked2(ip_address=server2_floating_ip, username=ssh_login,
                          private_key=private_key2)
         allow(ctx)
-        confirm_allowed(ip_address=server1_ip, username=ssh_login,
+        confirm_allowed(ip_address=server1_floating_ip, username=ssh_login,
                         private_key=private_key1)
-        confirm_allowed2(ip_address=server2_ip, username=ssh_login,
+        confirm_allowed2(ip_address=server2_floating_ip, username=ssh_login,
                          private_key=private_key2)
 
     @test.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21a8')
     def test_firewall_block_ip(self):
-        self._test_firewall_basic(
-            block=self._block_ip,
-            confirm_blocked=self._confirm_tcp_blocked_but_icmp)
+        self._test_firewall_basic(block=self._block_ip, allow=self._allow_ip)
 
     @test.idempotent_id('b985d010-994a-4055-bd5c-9e961464ccde')
     def test_firewall_block_icmp(self):
-        self._test_firewall_basic(block=self._block_icmp)
+        self._test_firewall_basic(
+            block=self._block_icmp,
+            confirm_blocked=self._confirm_icmp_blocked_but_tcp)
 
     @test.idempotent_id('ca473af0-26f9-4fad-9550-1c34371c900e')
     def test_firewall_insert_rule(self):
-        self._test_firewall_basic(block=self._block_icmp,
-                                  allow=self._allow_ssh_and_icmp)
+        self._test_firewall_basic(
+            block=self._block_icmp,
+            allow=self._allow_ssh_and_icmp,
+            confirm_blocked=self._confirm_icmp_blocked_but_tcp)
 
     @test.idempotent_id('54a937a6-cecf-444c-b3f9-b67a1c1b7411')
     def test_firewall_remove_rule(self):
