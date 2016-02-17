@@ -222,7 +222,14 @@ class TestFWaaS(base.FWaaSScenarioTest):
         self._wait_firewall_ready(fw['id'])
 
     def _confirm_allowed(self, **kwargs):
-        self.check_connectivity(**kwargs)
+        self.check_connectivity(check_reverse_icmp_ip=self._public_gateway_ip,
+                                **kwargs)
+
+    def _confirm_allowed_oneway(self, **kwargs):
+        # Can ping and ssh, but can't ping back to the public gateway.
+        # Same as _confirm_allowed if _public_gateway_ip is None.
+        self.check_connectivity(check_reverse_icmp_ip=self._public_gateway_ip,
+                                should_reverse_connect=False, **kwargs)
 
     def _confirm_blocked(self, **kwargs):
         self.check_connectivity(should_connect=False, **kwargs)
@@ -263,6 +270,20 @@ class TestFWaaS(base.FWaaSScenarioTest):
         floating_ip = server_floating_ip.floating_ip_address
         return fixed_ip, floating_ip, private_key, router
 
+    def _get_public_gateway_ip(self):
+        self._public_gateway_ip = None
+        router = self._get_router()
+        ext_gw_info = router['external_gateway_info']
+        ext_fixed_ips = ext_gw_info['external_fixed_ips']
+        for ip in ext_fixed_ips:
+            subnet_id = ip['subnet_id']
+            res = self.admin_manager.subnets_client.show_subnet(subnet_id)
+            subnet = res['subnet']
+            # REVISIT(yamamoto): IPv4 assumption
+            if subnet['ip_version'] == 4:
+                self._public_gateway_ip = subnet['gateway_ip']
+                return
+
     def _test_firewall_basic(self, block, allow=None,
                              confirm_allowed=None, confirm_blocked=None):
         if allow is None:
@@ -283,6 +304,7 @@ class TestFWaaS(base.FWaaSScenarioTest):
             self._create_topology()
         server2_fixed_ip, server2_floating_ip, private_key2, router2 = \
             self._create_topology()
+        self._get_public_gateway_ip()
         if self.router_insertion:
             # Specify the router when creating a firewall and ensures that
             # the other router (router2) is not affected by the firewall
@@ -294,10 +316,12 @@ class TestFWaaS(base.FWaaSScenarioTest):
             # equally
             confirm_allowed2 = confirm_allowed
             confirm_blocked2 = confirm_blocked
-        confirm_allowed(ip_address=server1_floating_ip, username=ssh_login,
-                        private_key=private_key1)
-        confirm_allowed2(ip_address=server2_floating_ip, username=ssh_login,
-                         private_key=private_key2)
+        self.check_connectivity(ip_address=server1_floating_ip,
+                                username=ssh_login,
+                                private_key=private_key1)
+        self.check_connectivity(ip_address=server2_floating_ip,
+                                username=ssh_login,
+                                private_key=private_key2)
         ctx = block(server1_fixed_ip=server1_fixed_ip,
                     server1_floating_ip=server1_floating_ip,
                     server2_fixed_ip=server2_fixed_ip,
@@ -314,7 +338,8 @@ class TestFWaaS(base.FWaaSScenarioTest):
 
     @test.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21a8')
     def test_firewall_block_ip(self):
-        self._test_firewall_basic(block=self._block_ip, allow=self._allow_ip)
+        self._test_firewall_basic(block=self._block_ip, allow=self._allow_ip,
+                                  confirm_allowed=self._confirm_allowed_oneway)
 
     @test.idempotent_id('b985d010-994a-4055-bd5c-9e961464ccde')
     def test_firewall_block_icmp(self):

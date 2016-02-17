@@ -30,7 +30,9 @@ class FWaaSScenarioTest(fwaas_client.FWaaSClientMixin,
 
     def check_connectivity(self, ip_address, username=None, private_key=None,
                            should_connect=True,
-                           check_icmp=True, check_ssh=True):
+                           check_icmp=True, check_ssh=True,
+                           check_reverse_icmp_ip=None,
+                           should_reverse_connect=True):
         if should_connect:
             msg = "Timed out waiting for %s to become reachable" % ip_address
         else:
@@ -51,6 +53,15 @@ class FWaaSScenarioTest(fwaas_client.FWaaSClientMixin,
                                     **kwargs)
                 client.test_connection_auth()
                 self.assertTrue(should_connect, "Unexpectedly reachable")
+                if check_reverse_icmp_ip:
+                    cmd = 'ping -c1 -w1 %s' % check_reverse_icmp_ip
+                    try:
+                        client.exec_command(cmd)
+                        self.assertTrue(should_reverse_connect,
+                                        "Unexpectedly reachable (reverse)")
+                    except lib_exc.SSHExecCommandFailed:
+                        if should_reverse_connect:
+                            raise
             except lib_exc.SSHTimeout:
                 if should_connect:
                     raise
