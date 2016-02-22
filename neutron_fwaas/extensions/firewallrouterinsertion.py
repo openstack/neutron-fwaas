@@ -15,7 +15,7 @@
 
 from neutron.api import extensions
 from neutron.api.v2 import attributes as attr
-from neutron.common import exceptions as nexception
+from neutron_lib import exceptions as nexception
 
 from neutron_fwaas._i18n import _
 
