@@ -353,13 +353,18 @@ RESOURCE_ATTRIBUTE_MAP = {
     },
 }
 
+# A tenant may have a unique firewall and policy for each router
+# when router insertion is used.
+# Set default quotas to align with default l3 quota_router of 10
+# though keep as separately controllable.
+
 firewall_quota_opts = [
     cfg.IntOpt('quota_firewall',
-               default=1,
+               default=10,
                help=_('Number of firewalls allowed per tenant. '
                       'A negative value means unlimited.')),
     cfg.IntOpt('quota_firewall_policy',
-               default=1,
+               default=10,
                help=_('Number of firewall policies allowed per tenant. '
                       'A negative value means unlimited.')),
     cfg.IntOpt('quota_firewall_rule',
@@ -403,7 +408,8 @@ class Firewall(extensions.ExtensionDescriptor):
         return resource_helper.build_resource_info(plural_mappings,
                                                    RESOURCE_ATTRIBUTE_MAP,
                                                    p_const.FIREWALL,
-                                                   action_map=action_map)
+                                                   action_map=action_map,
+                                                   register_quota=True)
 
     @classmethod
     def get_plugin_interface(cls):

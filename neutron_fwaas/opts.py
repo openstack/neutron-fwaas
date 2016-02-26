@@ -18,3 +18,10 @@ def list_agent_opts():
         ('fwaas',
          neutron_fwaas.services.firewall.agents.firewall_agent_api.FWaaSOpts)
     ]
+
+
+def list_opts():
+    return [
+        ('quotas',
+         neutron_fwaas.extensions.firewall.firewall_quota_opts)
+    ]
