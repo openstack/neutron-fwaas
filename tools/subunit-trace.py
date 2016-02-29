@@ -88,9 +88,9 @@ def cleanup_test_name(name, strip_tags=True, strip_scenarios=False):
     By default we strip out the tags in the test because they don't help us
     in identifying the test that is run to it's result.
 
-    Make it possible to strip out the testscenarios information (not to
+    Make it possible to strip out the test scenarios information (not to
     be confused with tempest scenarios) however that's often needed to
-    indentify generated negative tests.
+    identify generated negative tests.
     """
     if strip_tags:
         tags_start = name.find('[')
