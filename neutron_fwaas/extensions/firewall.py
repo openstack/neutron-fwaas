@@ -18,10 +18,10 @@ import abc
 from neutron.api import extensions
 from neutron.api.v2 import attributes as attr
 from neutron.api.v2 import resource_helper
-from neutron.common import constants
 from neutron.common import exceptions as nexception
 from neutron.plugins.common import constants as p_const
 from neutron.services import service_base
+from neutron_lib import constants
 from oslo_config import cfg
 from oslo_log import log as logging
 import six

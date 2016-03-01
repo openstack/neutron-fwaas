@@ -28,8 +28,8 @@ from neutron.agent.linux import external_process
 from neutron.agent.linux import interface
 from neutron.agent.linux import ip_lib
 from neutron.common import config as common_config
-from neutron.common import constants as l3_constants
 from neutron import service as neutron_service
+from neutron_lib import constants as l3_constants
 from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_service import service

@@ -21,7 +21,7 @@
 
 import netaddr
 
-from neutron.common import constants
+from neutron_lib import constants
 from oslo_config import cfg
 from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
