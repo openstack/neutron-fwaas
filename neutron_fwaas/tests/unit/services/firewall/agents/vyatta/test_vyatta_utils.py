@@ -17,8 +17,8 @@ import sys
 
 import mock
 
-from neutron.common import constants as l3_constants
 from neutron.tests import base
+from neutron_lib import constants as l3_constants
 from six.moves.urllib import parse
 
 # Mocking imports of 3rd party vyatta library in unit tests and all modules

@@ -15,7 +15,7 @@
 #
 
 from networking_brocade.vyatta.vrouter import client as vyatta_client
-from neutron.common import constants as l3_constants
+from neutron_lib import constants as l3_constants
 from six.moves.urllib import parse
 
 TRUST_ZONE = 'Internal_Trust'
