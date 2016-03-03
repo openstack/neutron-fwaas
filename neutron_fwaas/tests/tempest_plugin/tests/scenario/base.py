@@ -13,10 +13,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from tempest_lib.common import ssh
-from tempest_lib import exceptions as lib_exc
-
 from tempest import config
+from tempest.lib.common import ssh
+from tempest.lib import exceptions as lib_exc
 from tempest.scenario import manager
 
 from neutron_fwaas.tests.tempest_plugin.tests import fwaas_client
