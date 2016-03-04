@@ -8,23 +8,19 @@
 # from neutron master via a hard-coded URL. That last case should only
 # happen with devs running unit tests locally.
 
-# From the tox.ini config page:
-# install_command=ARGV
-# default:
-# pip install {opts} {packages}
-
 ZUUL_CLONER=/usr/zuul-env/bin/zuul-cloner
 neutron_installed=$(echo "import neutron" | python 2>/dev/null ; echo $?)
 BRANCH_NAME=master
 
 set -e
 
-install_cmd="pip install"
-if [ "$1" = "constrained" ]; then
-    install_cmd="$install_cmd $2"
-    shift
-fi
+CONSTRAINTS_FILE=$1
 shift
+
+install_cmd="pip install"
+if [ $CONSTRAINTS_FILE != "unconstrained" ]; then
+    install_cmd="$install_cmd -c$CONSTRAINTS_FILE"
+fi
 
 if [ $neutron_installed -eq 0 ]; then
     echo "ALREADY INSTALLED" > /tmp/tox_install.txt
