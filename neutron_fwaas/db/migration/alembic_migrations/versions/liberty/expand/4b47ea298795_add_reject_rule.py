@@ -31,7 +31,7 @@ revision = '4b47ea298795'
 down_revision = 'c40fbb377ad'
 
 # milestone identifier, used by neutron-db-manage
-neutron_milestone = [migration.LIBERTY]
+neutron_milestone = [migration.LIBERTY, migration.MITAKA]
 
 
 new_action = sa.Enum('allow', 'deny', 'reject', name='firewallrules_action')
