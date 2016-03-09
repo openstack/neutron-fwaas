@@ -21,11 +21,18 @@ Create Date: 2015-09-16 11:47:43.061649
 
 """
 
+from alembic import op
+
+from neutron.db import migration
+
+
 # revision identifiers, used by Alembic.
 revision = '458aa42b14b'
 down_revision = '67c8e8d61d5'
 
-from alembic import op
+# milestone identifier, used by neutron-db-manage
+neutron_milestone = [migration.MITAKA]
+
 
 FW_TAB_NAME = ['firewall_rules', 'firewall_policies', 'firewalls']
 SQL_STATEMENT_UPDATE_CMD = (
