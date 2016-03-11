@@ -1,0 +1,7 @@
+---
+prelude: >
+  - The McAfee Firewall Driver is being removed from the FwaaS repo,
+    due to lack of active maintainers.
+upgrade:
+  - The McAfee Firewall Driver will not be available for use in the
+    Newton release.
