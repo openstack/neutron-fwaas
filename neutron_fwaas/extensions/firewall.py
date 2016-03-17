@@ -18,10 +18,10 @@ import abc
 from neutron.api import extensions
 from neutron.api.v2 import attributes as attr
 from neutron.api.v2 import resource_helper
-from neutron.common import exceptions as nexception
 from neutron.plugins.common import constants as p_const
 from neutron.services import service_base
 from neutron_lib import constants
+from neutron_lib import exceptions as nexception
 from oslo_config import cfg
 from oslo_log import log as logging
 import six
@@ -142,15 +142,14 @@ class FirewallRuleInfoMissing(nexception.InvalidInput):
 class FirewallIpAddressConflict(nexception.InvalidInput):
     message = _("Invalid input - IP addresses do not agree with IP Version")
 
-# TODO(dougwig) - once this exception is out of neutron, restore this
-#class FirewallInternalDriverError(nexception.NeutronException):
-#    """Fwaas exception for all driver errors.
-#
-#    On any failure or exception in the driver, driver should log it and
-#    raise this exception to the agent
-#    """
-#    message = _("%(driver)s: Internal driver error.")
-FirewallInternalDriverError = nexception.FirewallInternalDriverError
+
+class FirewallInternalDriverError(nexception.NeutronException):
+    """Fwaas exception for all driver errors.
+
+    On any failure or exception in the driver, driver should log it and
+    raise this exception to the agent
+    """
+    message = _("%(driver)s: Internal driver error.")
 
 
 class FirewallRuleConflict(nexception.Conflict):
