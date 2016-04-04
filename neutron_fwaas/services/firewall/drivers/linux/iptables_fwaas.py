@@ -14,9 +14,11 @@
 #    under the License.
 
 from neutron.agent.linux import iptables_manager
+from neutron.agent.linux import utils as linux_utils
 from oslo_log import log as logging
 
 from neutron_fwaas._i18n import _LE
+from neutron_fwaas.common import fwaas_constants as f_const
 from neutron_fwaas.extensions import firewall as fw_ext
 from neutron_fwaas.services.firewall.drivers import fwaas_base
 
@@ -53,6 +55,7 @@ class IptablesFwaasDriver(fwaas_base.FwaasDriverBase):
 
     def __init__(self):
         LOG.debug("Initializing fwaas iptables driver")
+        self.pre_firewall = None
 
     def create_firewall(self, agent_mode, apply_list, firewall):
         LOG.debug('Creating firewall %(fw_id)s for tenant %(tid)s',
@@ -60,6 +63,9 @@ class IptablesFwaasDriver(fwaas_base.FwaasDriverBase):
         try:
             if firewall['admin_state_up']:
                 self._setup_firewall(agent_mode, apply_list, firewall)
+                self._remove_conntrack_new_firewall(agent_mode,
+                                                    apply_list, firewall)
+                self.pre_firewall = dict(firewall)
             else:
                 self.apply_default_policy(agent_mode, apply_list, firewall)
         except (LookupError, RuntimeError):
@@ -106,6 +112,7 @@ class IptablesFwaasDriver(fwaas_base.FwaasDriverBase):
                     self._remove_default_chains(ipt_mgr)
                     # apply the changes immediately (no defer in firewall path)
                     ipt_mgr.defer_apply_off()
+            self.pre_firewall = None
         except (LookupError, RuntimeError):
             # catch known library exceptions and raise Fwaas generic exception
             LOG.exception(_LE("Failed to delete firewall: %s"), fwid)
@@ -116,9 +123,16 @@ class IptablesFwaasDriver(fwaas_base.FwaasDriverBase):
                   {'fw_id': firewall['id'], 'tid': firewall['tenant_id']})
         try:
             if firewall['admin_state_up']:
+                if self.pre_firewall:
+                    self._remove_conntrack_updated_firewall(agent_mode,
+                                    apply_list, self.pre_firewall, firewall)
+                else:
+                    self._remove_conntrack_new_firewall(agent_mode,
+                                                    apply_list, firewall)
                 self._setup_firewall(agent_mode, apply_list, firewall)
             else:
                 self.apply_default_policy(agent_mode, apply_list, firewall)
+            self.pre_firewall = dict(firewall)
         except (LookupError, RuntimeError):
             # catch known library exceptions and raise Fwaas generic exception
             LOG.exception(_LE("Failed to update firewall: %s"), firewall['id'])
@@ -212,6 +226,103 @@ class IptablesFwaasDriver(fwaas_base.FwaasDriverBase):
             table.add_rule(ichain_name, iptbl_rule)
             table.add_rule(ochain_name, iptbl_rule)
         self._enable_policy_chain(fwid, ipt_if_prefix)
+
+    def _find_changed_rules(self, pre_firewall, firewall):
+        """Find the rules changed between the current firewall
+        and the updating rule
+        """
+        changed_rules = []
+        fw_rules_list = firewall[f_const.FIREWALL_RULE_LIST]
+        pre_fw_rules_list = pre_firewall[f_const.FIREWALL_RULE_LIST]
+        for pre_fw_rule in pre_fw_rules_list:
+            for fw_rule in fw_rules_list:
+                if (pre_fw_rule.get('id') == fw_rule.get('id') and
+                    pre_fw_rule != fw_rule):
+                    changed_rules.append(pre_fw_rule)
+                    changed_rules.append(fw_rule)
+        return changed_rules
+
+    def _find_removed_rules(self, pre_firewall, firewall):
+        removed_rules = []
+        fw_rules_list = firewall[f_const.FIREWALL_RULE_LIST]
+        pre_fw_rules_list = pre_firewall[f_const.FIREWALL_RULE_LIST]
+        fw_rule_ids = []
+        for fw_rule in fw_rules_list:
+            fw_rule_ids.append(fw_rule.get('id'))
+        for pre_fw_rule in pre_fw_rules_list:
+            if pre_fw_rule.get('id') not in fw_rule_ids:
+                removed_rules.append(pre_fw_rule)
+        return removed_rules
+
+    def _find_new_rules(self, pre_firewall, firewall):
+        return self._find_removed_rules(firewall, pre_firewall)
+
+    def _get_conntrack_cmd_from_rule(self, ipt_mgr, rule=None):
+        prefixcmd = ['ip', 'netns', 'exec'] + [ipt_mgr.namespace]
+        cmd = ['conntrack', '-D']
+        if rule:
+            conntrack_filter = self._get_conntrack_filter_from_rule(rule)
+            exec_cmd = prefixcmd + cmd + conntrack_filter
+        else:
+            exec_cmd = prefixcmd + cmd
+        return exec_cmd
+
+    def _remove_conntrack_by_cmd(self, cmd):
+        if cmd:
+            try:
+                linux_utils.execute(cmd, run_as_root=True,
+                             check_exit_code=True,
+                             extra_ok_codes=[1])
+            except RuntimeError:
+                LOG.exception(
+                        _LE("Failed execute conntrack command %s"), str(cmd))
+
+    def _remove_conntrack_new_firewall(self, agent_mode, apply_list, firewall):
+        """Remove conntrack when create new firewall"""
+        routers_list = list(set(apply_list))
+        for router_info in routers_list:
+            ipt_if_prefix_list = self._get_ipt_mgrs_with_if_prefix(
+                agent_mode, router_info)
+            for ipt_if_prefix in ipt_if_prefix_list:
+                ipt_mgr = ipt_if_prefix['ipt']
+                cmd = self._get_conntrack_cmd_from_rule(ipt_mgr)
+                self._remove_conntrack_by_cmd(cmd)
+
+    def _remove_conntrack_updated_firewall(self, agent_mode,
+                                           apply_list, pre_firewall, firewall):
+        """Remove conntrack when updated firewall"""
+        router_list = list(set(apply_list))
+        for router_info in router_list:
+            ipt_if_prefix_list = self._get_ipt_mgrs_with_if_prefix(
+                agent_mode, router_info)
+            for ipt_if_prefix in ipt_if_prefix_list:
+                ipt_mgr = ipt_if_prefix['ipt']
+                ch_rules = self._find_changed_rules(pre_firewall,
+                                                    firewall)
+                i_rules = self._find_new_rules(pre_firewall, firewall)
+                r_rules = self._find_removed_rules(pre_firewall, firewall)
+                removed_conntrack_rules_list = ch_rules + i_rules + r_rules
+                for rule in removed_conntrack_rules_list:
+                    cmd = self._get_conntrack_cmd_from_rule(ipt_mgr, rule)
+                    self._remove_conntrack_by_cmd(cmd)
+
+    def _get_conntrack_filter_from_rule(self, rule):
+        """Get conntrack filter from rule.
+        The key for get conntrack filter is protocol, destination_port
+        and source_port. If we want to take more keys, add to the list.
+        """
+        conntrack_filter = []
+        keys = [['-p', 'protocol'], ['-f', 'ip_version'],
+                ['--dport', 'destination_port'], ['--sport', 'source_port']]
+        for key in keys:
+            if rule.get(key[1]):
+                if key[1] == 'ip_version':
+                    conntrack_filter.append(key[0])
+                    conntrack_filter.append('ipv' + str(rule.get(key[1])))
+                else:
+                    conntrack_filter.append(key[0])
+                    conntrack_filter.append(rule.get(key[1]))
+        return conntrack_filter
 
     def _remove_default_chains(self, nsid):
         """Remove fwaas default policy chain."""

@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
 import mock
 from oslo_config import cfg
 
@@ -29,6 +30,7 @@ FAKE_PROTOCOL = 'tcp'
 FAKE_SRC_PORT = 5000
 FAKE_DST_PORT = 22
 FAKE_FW_ID = 'fake-fw-uuid'
+FW_LEGACY = 'legacy'
 
 
 class IptablesFwaasTestCase(base.BaseTestCase):
@@ -50,17 +52,20 @@ class IptablesFwaasTestCase(base.BaseTestCase):
                  'ip_version': 4,
                  'protocol': 'tcp',
                  'destination_port': '80',
-                 'source_ip_address': '10.24.4.2'}
+                 'source_ip_address': '10.24.4.2',
+                 'id': 'fake-fw-rule1'}
         rule2 = {'enabled': True,
                  'action': 'deny',
                  'ip_version': 4,
                  'protocol': 'tcp',
-                 'destination_port': '22'}
+                 'destination_port': '22',
+                 'id': 'fake-fw-rule2'}
         rule3 = {'enabled': True,
                  'action': 'reject',
                  'ip_version': 4,
                  'protocol': 'tcp',
-                 'destination_port': '23'}
+                 'destination_port': '23',
+                 'id': 'fake-fw-rule3'}
         ingress_chain = ('iv4%s' % fwid)[:11]
         egress_chain = ('ov4%s' % fwid)[:11]
         for router_info_inst in apply_list:
@@ -81,10 +86,13 @@ class IptablesFwaasTestCase(base.BaseTestCase):
         return fw_inst
 
     def _fake_firewall(self, rule_list):
+        _rule_list = copy.deepcopy(rule_list)
+        for rule in _rule_list:
+            rule['position'] = str(_rule_list.index(rule))
         fw_inst = {'id': FAKE_FW_ID,
                    'admin_state_up': True,
                    'tenant_id': 'tenant-uuid',
-                   'firewall_rule_list': rule_list}
+                   'firewall_rule_list': _rule_list}
         return fw_inst
 
     def _fake_firewall_with_admin_down(self, rule_list):
@@ -184,7 +192,6 @@ class IptablesFwaasTestCase(base.BaseTestCase):
         invalid_rule = '-m state --state INVALID -j DROP'
         est_rule = '-m state --state ESTABLISHED,RELATED -j ACCEPT'
         bname = fwaas.iptables_manager.binary_name
-
         for ip_version in (4, 6):
             ingress_chain = ('iv%s%s' % (ip_version, firewall['id']))
             egress_chain = ('ov%s%s' % (ip_version, firewall['id']))
@@ -274,3 +281,91 @@ class IptablesFwaasTestCase(base.BaseTestCase):
     def test_update_firewall_with_rules_dvr(self):
         self._setup_firewall_with_rules(self.firewall.update_firewall,
             distributed=True, distributed_mode='dvr')
+
+    def test_remove_conntrack_new_firewall(self):
+        apply_list = self._fake_apply_list()
+        firewall = self._fake_firewall_no_rule()
+        self.firewall.create_firewall(FW_LEGACY, apply_list, firewall)
+        for router_info_inst in apply_list:
+            namespace = router_info_inst.iptables_manager.namespace
+            cmd = ['ip', 'netns', 'exec', namespace, 'conntrack', '-D']
+            calls = [
+                mock.call(cmd, run_as_root=True, check_exit_code=True,
+                      extra_ok_codes=[1])]
+            self.utils_exec.assert_has_calls(calls)
+
+    def test_remove_conntrack_inserted_rule(self):
+        apply_list = self._fake_apply_list()
+        rule_list = self._fake_rules_v4(FAKE_FW_ID, apply_list)
+        firewall = self._fake_firewall(rule_list)
+        self.firewall.create_firewall(FW_LEGACY, apply_list, firewall)
+        self.firewall.pre_firewall = dict(firewall)
+        insert_rule = {'enabled': True,
+                 'action': 'deny',
+                 'ip_version': 4,
+                 'protocol': 'icmp',
+                 'id': 'fake-fw-rule'}
+        rule_list.insert(2, insert_rule)
+        firewall = self._fake_firewall(rule_list)
+        self.firewall.update_firewall(FW_LEGACY, apply_list, firewall)
+        for router_info_inst in apply_list:
+            namespace = router_info_inst.iptables_manager.namespace
+            cmd1 = ['ip', 'netns', 'exec', namespace, 'conntrack',
+                    '-D', '-p', 'tcp', '-f', 'ipv4', '--dport', '23']
+            cmd2 = ['ip', 'netns', 'exec', namespace, 'conntrack',
+                    '-D', '-p', 'icmp', '-f', 'ipv4']
+            calls = [
+                mock.call(cmd1, run_as_root=True, check_exit_code=True,
+                      extra_ok_codes=[1]),
+                mock.call(cmd2, run_as_root=True, check_exit_code=True,
+                      extra_ok_codes=[1])]
+            self.utils_exec.assert_has_calls(calls)
+
+    def test_remove_conntrack_removed_rule(self):
+        apply_list = self._fake_apply_list()
+        rule_list = self._fake_rules_v4(FAKE_FW_ID, apply_list)
+        firewall = self._fake_firewall(rule_list)
+        self.firewall.create_firewall(FW_LEGACY, apply_list, firewall)
+        self.firewall.pre_firewall = dict(firewall)
+        remove_rule = rule_list[1]
+        rule_list.remove(remove_rule)
+        firewall = self._fake_firewall(rule_list)
+        self.firewall.update_firewall(FW_LEGACY, apply_list, firewall)
+        for router_info_inst in apply_list:
+            namespace = router_info_inst.iptables_manager.namespace
+            cmd1 = ['ip', 'netns', 'exec', namespace, 'conntrack',
+                    '-D', '-p', 'tcp', '-f', 'ipv4', '--dport', '23']
+            cmd2 = ['ip', 'netns', 'exec', namespace, 'conntrack',
+                    '-D', '-p', 'tcp', '-f', 'ipv4', '--dport', '22']
+            calls = [
+                mock.call(cmd1, run_as_root=True, check_exit_code=True,
+                      extra_ok_codes=[1]),
+                mock.call(cmd2, run_as_root=True, check_exit_code=True,
+                      extra_ok_codes=[1])]
+            self.utils_exec.assert_has_calls(calls)
+
+    def test_remove_conntrack_changed_rule(self):
+        apply_list = self._fake_apply_list()
+        rule_list = self._fake_rules_v4(FAKE_FW_ID, apply_list)
+        firewall = self._fake_firewall(rule_list)
+        self.firewall.create_firewall(FW_LEGACY, apply_list, firewall)
+        income_rule = {'enabled': True,
+                 'action': 'deny',
+                 'ip_version': 4,
+                 'protocol': 'icmp',
+                 'id': 'fake-fw-rule2'}
+        rule_list[1] = income_rule
+        firewall = self._fake_firewall(rule_list)
+        self.firewall.update_firewall(FW_LEGACY, apply_list, firewall)
+        for router_info_inst in apply_list:
+            namespace = router_info_inst.iptables_manager.namespace
+            cmd1 = ['ip', 'netns', 'exec', namespace, 'conntrack', '-D',
+                    '-p', 'tcp', '-f', 'ipv4', '--dport', '22']
+            cmd2 = ['ip', 'netns', 'exec', namespace, 'conntrack', '-D',
+                    '-p', 'icmp', '-f', 'ipv4']
+            calls = [
+                mock.call(cmd1, run_as_root=True, check_exit_code=True,
+                      extra_ok_codes=[1]),
+                mock.call(cmd2, run_as_root=True, check_exit_code=True,
+                      extra_ok_codes=[1])]
+            self.utils_exec.assert_has_calls(calls)
