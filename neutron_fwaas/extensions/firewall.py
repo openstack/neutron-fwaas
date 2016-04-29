@@ -237,8 +237,9 @@ def _validate_ip_or_subnet_or_none(data, valid_values=None):
                                                  'msg_subnet': msg_subnet}
 
 
-attr.validators['type:port_range'] = _validate_port_range
-attr.validators['type:ip_or_subnet_or_none'] = _validate_ip_or_subnet_or_none
+validators.validators['type:port_range'] = _validate_port_range
+validators.validators['type:ip_or_subnet_or_none'] = \
+    _validate_ip_or_subnet_or_none
 
 
 RESOURCE_ATTRIBUTE_MAP = {
