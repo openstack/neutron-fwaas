@@ -353,15 +353,15 @@ RESOURCE_ATTRIBUTE_MAP = {
 
 firewall_quota_opts = [
     cfg.IntOpt('quota_firewall',
-               default=1,
+               default=-1,
                help=_('Number of firewalls allowed per tenant. '
                       'A negative value means unlimited.')),
     cfg.IntOpt('quota_firewall_policy',
-               default=1,
+               default=-1,
                help=_('Number of firewall policies allowed per tenant. '
                       'A negative value means unlimited.')),
     cfg.IntOpt('quota_firewall_rule',
-               default=100,
+               default=-1,
                help=_('Number of firewall rules allowed per tenant. '
                       'A negative value means unlimited.')),
 ]
@@ -401,7 +401,8 @@ class Firewall(extensions.ExtensionDescriptor):
         return resource_helper.build_resource_info(plural_mappings,
                                                    RESOURCE_ATTRIBUTE_MAP,
                                                    p_const.FIREWALL,
-                                                   action_map=action_map)
+                                                   action_map=action_map,
+                                                   register_quota=True)
 
     @classmethod
     def get_plugin_interface(cls):

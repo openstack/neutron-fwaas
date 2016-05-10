@@ -62,10 +62,8 @@ class TestFirewallRouterInsertionBase(
             create=True, new=test_db_firewall.FakeAgentApi().delete_firewall)
         self.agentapi_del_fw_p.start()
 
-        plugin = None
         # the plugin without L3 support
-        if not plugin:
-            plugin = 'neutron.tests.unit.extensions.test_l3.TestNoL3NatPlugin'
+        plugin = 'neutron.tests.unit.extensions.test_l3.TestNoL3NatPlugin'
         # the L3 service plugin
         l3_plugin = ('neutron.tests.unit.extensions.test_l3.'
                      'TestL3NatServicePlugin')
@@ -611,3 +609,18 @@ class TestFirewallPluginBase(TestFirewallRouterInsertionBase,
                     fw_rules = self.plugin._make_firewall_dict_with_rules(
                         ctx, fw_id)
                     self.assertEqual([], fw_rules['firewall_rule_list'])
+
+    def test_firewall_quota_lower(self):
+        """Test quota using overridden value."""
+        cfg.CONF.set_override('quota_firewall', 3, group='QUOTAS')
+        with self.firewall(name='quota1'), \
+                self.firewall(name='quota2'), \
+                self.firewall(name='quota3'):
+            data = {'firewall': {'name': 'quota4',
+                                 'firewall_policy_id': None,
+                                 'tenant_id': self._tenant_id,
+                                 'shared': False}}
+            req = self.new_create_request('firewalls', data, 'json')
+            res = req.get_response(self.ext_api)
+            self.assertIn('Quota exceeded', res.body.decode('utf-8'))
+            self.assertEqual(exc.HTTPConflict.code, res.status_int)
