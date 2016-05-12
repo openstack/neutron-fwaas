@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from neutron.agent.l3 import agent
 from neutron.agent.linux import ip_lib
 from neutron import context
 from neutron.plugins.common import constants as n_const
@@ -51,8 +52,9 @@ class FWaaSL3PluginApi(api.FWaaSPluginApiMixin):
 class FWaaSL3AgentRpcCallback(api.FWaaSAgentRpcCallbackMixin):
     """FWaaS Agent support to be used by Neutron L3 agent."""
 
-    def __init__(self, conf):
+    def __init__(self, host, conf):
         LOG.debug("Initializing firewall agent")
+        self.neutron_service_plugins = None
         self.conf = conf
         self.fwaas_enabled = cfg.CONF.fwaas.enabled
 
@@ -399,3 +401,13 @@ class FWaaSL3AgentRpcCallback(api.FWaaSAgentRpcCallbackMixin):
                         "for firewall: %(fwid)s"),
                     {'fwid': firewall['id']})
                 self.services_sync_needed = True
+
+
+class L3WithFWaaS(FWaaSL3AgentRpcCallback, agent.L3NATAgentWithStateReport):
+
+    def __init__(self, host, conf=None):
+        if conf:
+            self.conf = conf
+        else:
+            self.conf = cfg.CONF
+        super(L3WithFWaaS, self).__init__(host=self.conf.host, conf=self.conf)

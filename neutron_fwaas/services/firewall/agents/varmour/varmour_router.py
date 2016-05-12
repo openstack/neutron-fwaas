@@ -46,8 +46,8 @@ from neutron_fwaas.services.firewall.agents.varmour \
 LOG = logging.getLogger(__name__)
 
 
-class vArmourL3NATAgent(agent.L3NATAgent,
-                        firewall_l3_agent.FWaaSL3AgentRpcCallback):
+class vArmourL3NATAgent(firewall_l3_agent.FWaaSL3AgentRpcCallback,
+                        agent.L3NATAgent):
     def __init__(self, host, conf=None):
         LOG.debug('vArmourL3NATAgent: __init__')
         self.rest = varmour_api.vArmourRestAPI()
