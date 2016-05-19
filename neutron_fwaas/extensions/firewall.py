@@ -20,6 +20,7 @@ from neutron.api.v2 import attributes as attr
 from neutron.api.v2 import resource_helper
 from neutron.plugins.common import constants as p_const
 from neutron.services import service_base
+from neutron_lib.api import validators
 from neutron_lib import constants
 from neutron_lib import exceptions as nexception
 from oslo_config import cfg
@@ -225,10 +226,10 @@ def _validate_port_range(data, key_specs=None):
 def _validate_ip_or_subnet_or_none(data, valid_values=None):
     if data is None:
         return None
-    msg_ip = attr._validate_ip_address(data, valid_values)
+    msg_ip = validators.validate_ip_address(data, valid_values)
     if not msg_ip:
         return
-    msg_subnet = attr._validate_subnet(data, valid_values)
+    msg_subnet = validators.validate_subnet(data, valid_values)
     if not msg_subnet:
         return
     return _("%(msg_ip)s and %(msg_subnet)s") % {'msg_ip': msg_ip,
