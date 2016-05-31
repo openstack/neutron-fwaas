@@ -402,12 +402,21 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
 
         # Get the list of in-namespace ports from which to delete the firewall
         # group.
-        ports_for_fwg = self._get_firewall_group_ports(context, firewall_group,
-                to_delete=True, require_new_plugin=True)
+        del_fwg_ports = self._get_firewall_group_ports(
+            context, firewall_group, to_delete=True, require_new_plugin=True)
+        add_fwg_ports = self._get_firewall_group_ports(context, firewall_group)
+
+        port_ids = (firewall_group.get('del-port-ids') +
+                    firewall_group.get('add-port-ids'))
+
+        if port_ids and not (del_fwg_ports or add_fwg_ports):
+            LOG.debug("All ports are not router port."
+                      "No need to update firewall driver.")
+            return
 
         # Remove firewall group from ports if requested.
-        if ports_for_fwg:
-            fw_ports = [p for ri_ports in ports_for_fwg for p in ri_ports[1]]
+        if del_fwg_ports:
+            fw_ports = [p for ri_port in del_fwg_ports for p in ri_port[1]]
             LOG.debug("Update (delete) firewall group %(fwg_id)s on ports: "
                       "%(ports)s",
                       {'fwg_id': firewall_group['id'],
@@ -426,7 +435,7 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
             # Call the driver.
             try:
                 self.fwaas_driver.delete_firewall_group(self.conf.agent_mode,
-                                                        ports_for_fwg,
+                                                        del_fwg_ports,
                                                         firewall_group)
             except fw_ext.FirewallInternalDriverError:
                 msg = ("FWaaS driver error in update_firewall_group "
@@ -437,11 +446,9 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
         # Handle the add router and/or rule, policy, firewall group attribute
         # updates.
         if status not in (nl_constants.ERROR, nl_constants.INACTIVE):
-            ports_for_fwg = self._get_firewall_group_ports(context,
-                    firewall_group)
-            if ports_for_fwg:
-                fw_ports = [p for ri_ports in ports_for_fwg
-                            for p in ri_ports[1]]
+            if add_fwg_ports:
+                fw_ports = [p for ri_port in add_fwg_ports
+                            for p in ri_port[1]]
                 LOG.debug("Update (create) firewall group %(fwg_id)s on "
                           "ports: %(ports)s",
                           {'fwg_id': firewall_group['id'],
@@ -457,7 +464,7 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
                 # Call the driver.
                 try:
                     self.fwaas_driver.update_firewall_group(
-                            self.conf.agent_mode, ports_for_fwg,
+                            self.conf.agent_mode, add_fwg_ports,
                             firewall_group)
                 except fw_ext.FirewallInternalDriverError:
                     msg = ("FWaaS driver error in update_firewall_group "

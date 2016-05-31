@@ -22,7 +22,7 @@ from neutron_fwaas._i18n import _
 
 FWAAS_V1 = "v1"
 FWAAS_V2 = "v2"
-
+FW_L2_NOOP_DRIVER = 'noop'
 
 FWaaSOpts = [
     cfg.StrOpt(
@@ -35,12 +35,17 @@ FWaaSOpts = [
         help=_("Enable FWaaS")),
     cfg.StrOpt(
         'agent_version',
-        default=FWAAS_V1,
+        default=FWAAS_V2,
         help=_("Firewall agent class")),
     cfg.StrOpt(
         'conntrack_driver',
         default='conntrack',
         help=_("Name of the FWaaS Conntrack Driver")),
+    cfg.StrOpt(
+        'firewall_l2_driver',
+        default=FW_L2_NOOP_DRIVER,
+        help=_("Name of the firewall l2 driver")
+    )
 ]
 cfg.CONF.register_opts(FWaaSOpts, 'fwaas')
 

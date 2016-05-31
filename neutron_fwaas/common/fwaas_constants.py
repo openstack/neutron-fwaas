@@ -25,3 +25,12 @@ FIREWALL_RULE_LIST = 'firewall_rule_list'
 DEFAULT_FWG = 'default'
 DEFAULT_FWP_INGRESS = 'default ingress'
 DEFAULT_FWP_EGRESS = 'default egress'
+
+# Firewall group events for agent-side
+DELETE_FWG = 'delete_firewall_group'
+UPDATE_FWG = 'update_firewall_group'
+CREATE_FWG = 'create_firewall_group'
+
+# Port events for L2 agent extension
+HANDLE_PORT = 'handle_port'
+DELETE_PORT = 'delete_port'

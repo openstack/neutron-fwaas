@@ -1079,3 +1079,16 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
         return self._get_collection(context, FirewallGroup,
                                     self._make_firewall_group_dict,
                                     filters=filters, fields=fields)
+
+    def get_firewall_group_for_port(self, context, port_id):
+        """Get firewall group is associated with a port
+
+        :param context: context object
+        :param port_id: Port ID.
+        """
+        filters = {'port_id': [port_id]}
+        fwg_port_binding = self._get_collection_query(
+            context, FirewallGroupPortAssociation, filters=filters).first()
+        if fwg_port_binding:
+            fwg_id = fwg_port_binding['firewall_group_id']
+            return self._make_firewall_group_dict_with_rules(context, fwg_id)

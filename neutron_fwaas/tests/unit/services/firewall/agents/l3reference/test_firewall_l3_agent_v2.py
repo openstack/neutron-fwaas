@@ -59,6 +59,7 @@ def _setup_test_agent_class(service_plugins):
         def __init__(self, conf):
             self.event_observers = mock.Mock()
             self.conf = conf
+            firewall_agent_api._check_required_agent_extension = mock.Mock()
             super(FWaasTestAgent, self).__init__(conf)
 
         def delete_router(self, context, data):
@@ -141,6 +142,7 @@ class TestFWaaSL3AgentExtension(base.BaseTestCase):
     def test_update_firewall_group_with_ports_added_and_deleted(self):
         firewall_group = {'id': 0, 'project_id': 1,
                           'admin_state_up': True,
+                          'ports': [1, 2, 3, 4],
                           'add-port-ids': [1, 2],
                           'del-port-ids': [3, 4],
                           'router_ids': [],
@@ -180,6 +182,7 @@ class TestFWaaSL3AgentExtension(base.BaseTestCase):
     def test_update_firewall_group_with_ports_added_and_admin_state_down(self):
         firewall_group = {'id': 0, 'project_id': 1,
                           'admin_state_up': False,
+                          'ports': [1, 2],
                           'add-port-ids': [1, 2],
                           'del-port-ids': [],
                           'router_ids': [],
@@ -210,6 +213,7 @@ class TestFWaaSL3AgentExtension(base.BaseTestCase):
     def test_update_firewall_group_with_all_ports_deleted(self):
         firewall_group = {'id': 0, 'project_id': 1,
                           'admin_state_up': True,
+                          'ports': [3, 4],
                           'add-port-ids': [],
                           'del-port-ids': [3, 4],
                           'last-port': True}
@@ -230,9 +234,14 @@ class TestFWaaSL3AgentExtension(base.BaseTestCase):
 
             self.api.update_firewall_group(self.context, firewall_group,
                     host='host')
-
-            mock_get_firewall_group_ports.assert_called_once_with(self.context,
-                    firewall_group, require_new_plugin=True, to_delete=True)
+            calls = [
+                mock.call._get_firewall_group_ports(
+                    self.context, firewall_group, require_new_plugin=True,
+                    to_delete=True),
+                mock.call._get_firewall_group_ports(
+                    self.context, firewall_group)
+            ]
+            mock_get_firewall_group_ports.assert_has_calls(calls)
             mock_get_in_ns_ports.assert_called
             mock_set_firewall_group_status.assert_called_once_with(
                     self.context, firewall_group['id'], 'INACTIVE')
@@ -240,6 +249,7 @@ class TestFWaaSL3AgentExtension(base.BaseTestCase):
     def test_update_firewall_group_with_no_ports_added_or_deleted(self):
         firewall_group = {'id': 0, 'project_id': 1,
                           'admin_state_up': True,
+                          'ports': [],
                           'add-port-ids': [],
                           'del-port-ids': [],
                           'router_ids': []}
@@ -262,6 +272,7 @@ class TestFWaaSL3AgentExtension(base.BaseTestCase):
         # This test is for bug/1634114
         firewall_group = {'id': 0, 'project_id': 1,
                           'admin_state_up': True,
+                          'ports': [1, 2],
                           'add-port-ids': ['1', '2'],
                           'del-port-ids': [],
                           'last-port': False
@@ -272,6 +283,7 @@ class TestFWaaSL3AgentExtension(base.BaseTestCase):
     def test_delete_firewall_group(self):
         firewall_group = {'id': 0, 'project_id': 1,
                           'admin_state_up': True,
+                          'ports': [3, 4],
                           'add-port-ids': [],
                           'del-port-ids': [3, 4],
                           'last-port': False}
@@ -357,6 +369,7 @@ class TestFWaaSL3AgentExtension(base.BaseTestCase):
             'status': 'ACTIVE',
             'admin_state_up': True,
             'tenant_id': 'demo_tenant_id',
+            'ports': [1],
             'del-port-ids': [],
             'add-port-ids': ['1'],
             'id': '2932b3d9-3a7b-48a1-a16c-bf9f7b2751a5'

@@ -16,6 +16,7 @@ from neutron.common import rpc as n_rpc
 from neutron.db import servicetype_db as st_db
 from neutron.services import provider_configuration as provider_conf
 from neutron_lib.api.definitions import firewall_v2
+from neutron_lib.api.definitions import portbindings as pb_def
 from neutron_lib import constants as nl_constants
 from neutron_lib import context as neutron_context
 from neutron_lib.exceptions import firewall_v2 as f_exc
@@ -27,7 +28,6 @@ import oslo_messaging
 
 from neutron_fwaas.common import fwaas_constants
 from neutron_fwaas.db.firewall.v2 import firewall_db_v2
-
 
 LOG = logging.getLogger(__name__)
 
@@ -142,6 +142,13 @@ class FirewallCallbacks(object):
         fwg_project_list = list(set(fwg['tenant_id'] for fwg in fwg_list))
         return fwg_project_list
 
+    def get_firewall_group_for_port(self, context, **kwargs):
+        """Get firewall_group is associated  with a port."""
+        LOG.debug("get_firewall_group_for_port() called")
+        ctx = context.elevated()
+        return self.plugin.get_firewall_group_for_port(
+            ctx, kwargs.get('port_id'))
+
 
 class FirewallPluginV2(
     firewall_db_v2.Firewall_db_mixin_v2):
@@ -190,6 +197,8 @@ class FirewallPluginV2(
         fwg_with_rules['add-port-ids'] = self._get_ports_in_firewall_group(
                 context, fwg_id)
         fwg_with_rules['del-port-ids'] = []
+        fwg_with_rules['port_details'] = self._get_fwg_port_details(
+            context, fwg_with_rules['add-port-ids'])
         self.agent_rpc.update_firewall_group(context, fwg_with_rules)
 
     def _rpc_update_firewall_policy(self, context, firewall_policy_id):
@@ -226,12 +235,14 @@ class FirewallPluginV2(
         # TODO(sridar): elevated context and do we want to use public ?
         for port_id in fwg_ports:
             port_db = self._core_plugin._get_port(context, port_id)
-            if port_db['device_owner'] != "network:router_interface":
-                raise f_exc.FirewallGroupPortInvalid(port_id=port_id)
             if port_db['tenant_id'] != tenant_id:
                 raise f_exc.FirewallGroupPortInvalidProject(
                     port_id=port_id, project_id=port_db['tenant_id'])
-        return
+            device_owner = port_db.get('device_owner', '')
+            if (device_owner not in [nl_constants.DEVICE_OWNER_ROUTER_INTF]
+                and not device_owner.startswith(
+                    nl_constants.DEVICE_OWNER_COMPUTE_PREFIX)):
+                raise f_exc.FirewallGroupPortInvalid(port_id=port_id)
 
     def _check_no_need_pending(self, context, fwg_id, fwg_body):
         fwg_db = self._get_firewall_group(context, fwg_id)
@@ -244,6 +255,34 @@ class FirewallPluginV2(
                     fwp_req_eg is fwg_db.ingress_firewall_policy_id)):
             return True
         return False
+
+    def _get_fwg_port_details(self, context, fwg_ports):
+        """Returns a dictionary list of port details. """
+        port_details = {}
+        for port_id in fwg_ports:
+            port_db = self._core_plugin.get_port(context, port_id)
+            # Add more parameters below based on requirement.
+            device_owner = port_db['device_owner']
+            port_details[port_id] = {
+                'device_owner': device_owner,
+                'device': port_db['id'],
+                'network_id': port_db['network_id'],
+                'fixed_ips': port_db['fixed_ips'],
+                'allowed_address_pairs':
+                    port_db.get('allowed_address_pairs', []),
+                'port_security_enabled':
+                    port_db.get('port_security_enabled', True),
+                'id': port_db['id']
+            }
+            if device_owner.startswith(
+                nl_constants.DEVICE_OWNER_COMPUTE_PREFIX):
+                port_details[port_id].update(
+                    {'host': port_db[pb_def.HOST_ID]})
+        return port_details
+
+    def get_project_id_from_port_id(self, context, port_id):
+        """Returns an ID of project for specified port_id. """
+        return self._core_plugin.get_port(context, port_id)['project_id']
 
     def create_firewall_group(self, context, firewall_group):
         LOG.debug("create_firewall_group() called")
@@ -280,6 +319,8 @@ class FirewallPluginV2(
 
         fwg_with_rules['add-port-ids'] = fwg_ports
         fwg_with_rules['del-ports-ids'] = []
+        fwg_with_rules['port_details'] = self._get_fwg_port_details(
+            context, fwg_ports)
 
         self.agent_rpc.create_firewall_group(context, fwg_with_rules)
 
@@ -337,6 +378,10 @@ class FirewallPluginV2(
             fwg_with_rules['add-port-ids'],
             fwg_with_rules['del-port-ids'])
 
+        fwg_with_rules['port_details'] = self._get_fwg_port_details(
+            context, fwg_with_rules['del-port-ids'])
+        fwg_with_rules['port_details'].update(self._get_fwg_port_details(
+            context, fwg_with_rules['add-port-ids']))
         self.agent_rpc.update_firewall_group(context, fwg_with_rules)
 
         return fwg
@@ -346,12 +391,18 @@ class FirewallPluginV2(
 
     def delete_firewall_group(self, context, id):
         LOG.debug("delete_firewall_group() called on firewall_group %s", id)
-        fw_with_rules = (
+
+        fwg_db = self._get_firewall_group(context, id)
+
+        if fwg_db['status'] == nl_constants.ACTIVE:
+            raise f_exc.FirewallGroupInUse(firewall_id=id)
+
+        fwg_with_rules = (
             self._make_firewall_group_dict_with_rules(context, id))
-        fw_with_rules['del-port-ids'] = self._get_ports_in_firewall_group(
+        fwg_with_rules['del-port-ids'] = self._get_ports_in_firewall_group(
             context, id)
-        fw_with_rules['add-port-ids'] = []
-        if not fw_with_rules['del-port-ids']:
+        fwg_with_rules['add-port-ids'] = []
+        if not fwg_with_rules['del-port-ids']:
             # no ports, no need to talk to the agent
             self.delete_db_firewall_group_object(context, id)
         else:
@@ -359,9 +410,11 @@ class FirewallPluginV2(
                                          nl_constants.PENDING_DELETE}}
             super(FirewallPluginV2, self).update_firewall_group(
                 context, id, status)
-            # Reflect state change in fw_with_rules
-            fw_with_rules['status'] = status['firewall_group']['status']
-            self.agent_rpc.delete_firewall_group(context, fw_with_rules)
+            # Reflect state change in fwg_with_rules
+            fwg_with_rules['status'] = status['firewall_group']['status']
+            fwg_with_rules['port_details'] = self._get_fwg_port_details(
+                context, fwg_with_rules['del-port-ids'])
+            self.agent_rpc.delete_firewall_group(context, fwg_with_rules)
 
     def update_firewall_policy(self, context, id, firewall_policy):
         LOG.debug("update_firewall_policy() called")
@@ -381,18 +434,16 @@ class FirewallPluginV2(
             self._rpc_update_firewall_policy(context, fwp_id)
         return fwr
 
-    def insert_rule(self, context, policy_id, rule_info):
-        LOG.debug("insert_rule() called for policy %s ", policy_id)
-        self._ensure_update_firewall_policy(context, policy_id)
-        fwp = super(FirewallPluginV2, self).insert_rule(context, policy_id,
-                                                        rule_info)
-        self._rpc_update_firewall_policy(context, policy_id)
+    def insert_rule(self, context, id, rule_info):
+        LOG.debug("insert_rule() called")
+        self._ensure_update_firewall_policy(context, id)
+        fwp = super(FirewallPluginV2, self).insert_rule(context, id, rule_info)
+        self._rpc_update_firewall_policy(context, id)
         return fwp
 
-    def remove_rule(self, context, policy_id, rule_info):
-        LOG.debug("remove_rule() called for policy %s ", policy_id)
-        self._ensure_update_firewall_policy(context, policy_id)
-        fwp = super(FirewallPluginV2, self).remove_rule(context, policy_id,
-                                                        rule_info)
-        self._rpc_update_firewall_policy(context, policy_id)
+    def remove_rule(self, context, id, rule_info):
+        LOG.debug("remove_rule() called")
+        self._ensure_update_firewall_policy(context, id)
+        fwp = super(FirewallPluginV2, self).remove_rule(context, id, rule_info)
+        self._rpc_update_firewall_policy(context, id)
         return fwp

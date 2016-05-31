@@ -122,8 +122,7 @@ class TestFirewallRouterPortBase(
 class TestFirewallCallbacks(TestFirewallRouterPortBase):
 
     def setUp(self):
-        super(TestFirewallCallbacks,
-              self).setUp(fw_plugin=FW_PLUGIN_KLASS)
+        super(TestFirewallCallbacks, self).setUp(fw_plugin=FW_PLUGIN_KLASS)
         self.callbacks = self.plugin.endpoints[0]
 
     def test_set_firewall_group_status(self):
@@ -229,7 +228,7 @@ class TestFirewallCallbacks(TestFirewallRouterPortBase):
 
 
 class TestFirewallPluginBasev2(TestFirewallRouterPortBase,
-                             test_l3_plugin.L3NatTestCaseMixin):
+                               test_l3_plugin.L3NatTestCaseMixin):
 
     def setUp(self):
         super(TestFirewallPluginBasev2, self).setUp(fw_plugin=FW_PLUGIN_KLASS)

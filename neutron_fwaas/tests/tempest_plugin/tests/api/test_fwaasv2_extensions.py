@@ -272,7 +272,6 @@ class FWaaSv2ExtensionTestJSON(v2_base.BaseFWaaSTest):
             ports=[intf_1['port_id'], intf_2['port_id']])
         created_firewall_group = body['firewall_group']
         fwg_id = created_firewall_group['id']
-        self.addCleanup(self._try_delete_firewall_group, fwg_id)
 
         # Wait for the firewall resource to become ready
         self._wait_until_ready(fwg_id)
@@ -299,6 +298,8 @@ class FWaaSv2ExtensionTestJSON(v2_base.BaseFWaaSTest):
                         m['ingress_firewall_policy_id'],
                         m['egress_firewall_policy_id']) for m in fwgs])
 
+        # Disassociate all port with this firewall group
+        self.firewall_groups_client.update_firewall_group(fwg_id, ports=[])
         # Delete firewall_group
         self.firewall_groups_client.delete_firewall_group(fwg_id)
 

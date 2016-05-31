@@ -22,7 +22,7 @@ import six
 class FirewallL2DriverBase(object):
     """Abstract firewall L2 driver base"""
 
-    def __init__(self, integration_bridge):
+    def __init__(self, integration_bridge, sg_enabled=False):
         pass
 
     def filter_defer_apply_on(self):
