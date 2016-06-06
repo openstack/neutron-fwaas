@@ -18,6 +18,7 @@ import time
 from tempest import config
 from tempest import exceptions
 from tempest.lib.common.utils import data_utils
+from tempest.lib.common.utils import test_utils
 from tempest.lib import exceptions as lib_exc
 
 from neutron.plugins.common import constants as p_const
@@ -63,7 +64,7 @@ class FWaaSClientMixin(object):
             name=data_utils.rand_name("fw-rule"),
             **kwargs)
         fw_rule = body['firewall_rule']
-        self.addCleanup(self._delete_wrapper,
+        self.addCleanup(test_utils.call_and_ignore_notfound_exc,
                         self.firewall_rules_client.delete_firewall_rule,
                         fw_rule['id'])
         return fw_rule
@@ -73,7 +74,7 @@ class FWaaSClientMixin(object):
             name=data_utils.rand_name("fw-policy"),
             **kwargs)
         fw_policy = body['firewall_policy']
-        self.addCleanup(self._delete_wrapper,
+        self.addCleanup(test_utils.call_and_ignore_notfound_exc,
                         self.firewall_policies_client.delete_firewall_policy,
                         fw_policy['id'])
         return fw_policy
@@ -83,7 +84,7 @@ class FWaaSClientMixin(object):
             name=data_utils.rand_name("fw"),
             **kwargs)
         fw = body['firewall']
-        self.addCleanup(self._delete_wrapper,
+        self.addCleanup(test_utils.call_and_ignore_notfound_exc,
                         self.delete_firewall_and_wait,
                         fw['id'])
         return fw
