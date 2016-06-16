@@ -13,11 +13,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from neutron.api.v2 import attributes as attr
 from neutron.common import rpc as n_rpc
 from neutron import context as neutron_context
 from neutron import manager
 from neutron.plugins.common import constants as n_const
+from neutron_lib import constants
 from oslo_config import cfg
 from oslo_log import log as logging
 import oslo_messaging
@@ -205,7 +205,7 @@ class FirewallPlugin(
         # pop router_id as this goes in the router association db
         # and not firewall db
         router_ids = firewall['firewall'].pop('router_ids', None)
-        if router_ids == attr.ATTR_NOT_SPECIFIED:
+        if router_ids == constants.ATTR_NOT_SPECIFIED:
             # old semantics router-ids keyword not specified pick up
             # all routers on tenant.
             l3_plugin = manager.NeutronManager.get_service_plugins().get(

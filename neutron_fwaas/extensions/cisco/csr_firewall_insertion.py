@@ -13,7 +13,7 @@
 #    under the License.
 
 from neutron.api import extensions
-from neutron.api.v2 import attributes as attr
+from neutron_lib import constants
 from neutron_lib import exceptions as excp
 
 from neutron_fwaas._i18n import _
@@ -40,10 +40,12 @@ EXTENDED_ATTRIBUTES_2_0 = {
     'firewalls': {
         'port_id': {'allow_post': True, 'allow_put': True,
                     'validate': {'type:uuid': None},
-                    'is_visible': True, 'default': attr.ATTR_NOT_SPECIFIED},
+                    'is_visible': True,
+                    'default': constants.ATTR_NOT_SPECIFIED},
         'direction': {'allow_post': True, 'allow_put': True,
                       'validate': {'type:values': csr_firewall_direction},
-                      'is_visible': True, 'default': attr.ATTR_NOT_SPECIFIED},
+                      'is_visible': True,
+                      'default': constants.ATTR_NOT_SPECIFIED},
     }
 }
 
