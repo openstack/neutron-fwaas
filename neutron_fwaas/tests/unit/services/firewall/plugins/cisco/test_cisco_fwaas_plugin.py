@@ -19,6 +19,7 @@ from neutron.api.v2 import attributes as attr
 from neutron import context
 from neutron import manager
 from neutron.plugins.common import constants as const
+from neutron.tests.unit.db import test_db_base_plugin_v2
 from neutron.tests.unit.extensions import test_l3 as test_l3_plugin
 import six
 
@@ -303,7 +304,7 @@ class TestCiscoFirewallPlugin(CSR1kvFirewallTestCaseBase,
                 req = self.new_update_request('firewalls', data,
                     fw['firewall']['id'])
                 req.environ['neutron.context'] = context.Context(
-                    '', 'test-tenant')
+                    '', test_db_base_plugin_v2.TEST_TENANT_ID)
                 res = self.deserialize(self.fmt,
                 req.get_response(self.ext_api))
 
@@ -364,7 +365,7 @@ class TestCiscoFirewallPlugin(CSR1kvFirewallTestCaseBase,
                 req = self.new_update_request('firewalls', data,
                     fw['firewall']['id'])
                 req.environ['neutron.context'] = context.Context(
-                    '', 'test-tenant')
+                    '', test_db_base_plugin_v2.TEST_TENANT_ID)
                 res = self.deserialize(self.fmt,
                 req.get_response(self.ext_api))
 
