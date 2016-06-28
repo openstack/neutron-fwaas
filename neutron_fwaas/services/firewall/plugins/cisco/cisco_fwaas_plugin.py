@@ -13,7 +13,6 @@
 #    under the License.
 #
 
-from neutron.api.v2 import attributes as attr
 from neutron.common import rpc as n_rpc
 from neutron import context as neutron_context
 from neutron import manager
@@ -245,7 +244,7 @@ class CSRFirewallPlugin(ref_fw_plugin.FirewallPlugin,
         port_id = firewall['firewall'].pop('port_id', None)
         direction = firewall['firewall'].pop('direction', None)
 
-        if port_id == attr.ATTR_NOT_SPECIFIED:
+        if port_id == l3_const.ATTR_NOT_SPECIFIED:
             LOG.debug("create_firewall() called")
             port_id = None
             router_id = None
@@ -255,7 +254,7 @@ class CSRFirewallPlugin(ref_fw_plugin.FirewallPlugin,
             router_id = self._validate_fw_port_and_get_router_id(context,
                 firewall['firewall']['tenant_id'], port_id)
 
-        if direction == attr.ATTR_NOT_SPECIFIED:
+        if direction == l3_const.ATTR_NOT_SPECIFIED:
             direction = None
 
         firewall['firewall']['status'] = const.PENDING_CREATE

@@ -14,7 +14,7 @@
 #    under the License.
 
 from neutron.api import extensions
-from neutron.api.v2 import attributes as attr
+from neutron_lib import constants
 from neutron_lib import exceptions as nexception
 
 from neutron_fwaas._i18n import _
@@ -29,7 +29,7 @@ EXTENDED_ATTRIBUTES_2_0 = {
     'firewalls': {
         'router_ids': {'allow_post': True, 'allow_put': True,
             'validate': {'type:uuid_list': None},
-            'is_visible': True, 'default': attr.ATTR_NOT_SPECIFIED},
+            'is_visible': True, 'default': constants.ATTR_NOT_SPECIFIED},
     }
 }
 
