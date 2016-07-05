@@ -26,12 +26,13 @@ from neutron.common import config as common_config
 from neutron.common import topics
 from neutron.conf.agent.l3 import config as l3_config
 from neutron import service as neutron_service
+from neutron_fwaas.services.firewall.agents import firewall_agent_api as fwa
 
 
-FWAAS_AGENT = (
-    'neutron_fwaas.services.firewall.agents.'
-    'l3reference.firewall_l3_agent.L3WithFWaaS'
-)
+FWAAS_AGENTS = {fwa.FWAAS_V1: ('neutron_fwaas.services.firewall.agents.'
+    'l3reference.firewall_l3_agent.L3WithFWaaS'),
+                fwa.FWAAS_V2: ('neutron_fwaas.services.firewall.agents.'
+    'l3reference.firewall_l3_agent_v2.L3WithFWaaS')}
 
 
 def register_opts(conf):
@@ -48,10 +49,11 @@ def register_opts(conf):
     config.register_availability_zone_opts_helper(conf)
 
 
-def main(manager=FWAAS_AGENT):
+def main():
     register_opts(cfg.CONF)
     common_config.init(sys.argv[1:])
     config.setup_logging()
+    manager = FWAAS_AGENTS[cfg.CONF.fwaas.agent_version]
     server = neutron_service.Service.create(
         binary='neutron-l3-agent',
         topic=topics.L3_AGENT,

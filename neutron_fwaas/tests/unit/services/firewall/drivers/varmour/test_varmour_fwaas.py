@@ -17,11 +17,10 @@
 import mock
 
 from neutron.agent.common import config as agent_config
+from neutron.agent.l3 import config as l3_config
 from neutron.agent.l3 import ha
 from neutron.agent.l3 import router_info
 from neutron.agent.linux import interface
-from neutron.conf.agent.l3 import config as l3_config
-from neutron.conf import common as base_config
 from neutron.tests import base
 from neutron_lib import constants as l3_constants
 from oslo_utils import uuidutils
@@ -39,7 +38,6 @@ class TestBasicRouterOperations(base.BaseTestCase):
     def setUp(self):
         super(TestBasicRouterOperations, self).setUp()
         self.conf = agent_config.setup_conf()
-        self.conf.register_opts(base_config.core_opts)
         self.conf.register_opts(l3_config.OPTS)
         self.conf.register_opts(ha.OPTS)
         agent_config.register_process_monitor_opts(self.conf)

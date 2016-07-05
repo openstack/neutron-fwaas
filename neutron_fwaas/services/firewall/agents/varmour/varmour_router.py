@@ -21,13 +21,13 @@ eventlet.monkey_patch()
 import netaddr
 from neutron.agent.common import config
 from neutron.agent.l3 import agent
+from neutron.agent.l3 import config as l3_config
 from neutron.agent.l3 import ha
 from neutron.agent.l3 import router_info
 from neutron.agent.linux import external_process
 from neutron.agent.linux import interface
 from neutron.agent.linux import ip_lib
 from neutron.common import config as common_config
-from neutron.conf.agent.l3 import config as l3_config
 from neutron import service as neutron_service
 from neutron_lib import constants as l3_constants
 from oslo_config import cfg

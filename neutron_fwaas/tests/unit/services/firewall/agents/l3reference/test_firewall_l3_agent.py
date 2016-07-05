@@ -17,10 +17,10 @@ import uuid
 import mock
 from oslo_config import cfg
 
+from neutron.agent.l3 import config as l3_config
 from neutron.agent.l3 import ha
 from neutron.agent.l3 import router_info
 from neutron.agent.linux import ip_lib
-from neutron.conf.agent.l3 import config as l3_config
 from neutron.conf import common as base_config
 from neutron import context
 from neutron.plugins.common import constants
@@ -50,7 +50,7 @@ def _setup_test_agent_class(service_plugins):
         def __init__(self, conf):
             self.event_observers = mock.Mock()
             self.conf = conf
-            super(FWaasTestAgent, self).__init__('myhost', conf)
+            super(FWaasTestAgent, self).__init__("myhost", conf)
 
     return FWaasTestAgent
 
@@ -64,7 +64,7 @@ class TestFwaasL3AgentRpcCallback(base.BaseTestCase):
         self.conf.register_opts(l3_config.OPTS)
         self.conf.register_opts(ha.OPTS)
         self.conf.register_opts(firewall_agent_api.FWaaSOpts, 'fwaas')
-        self.api = FWaasAgent('myhost', self.conf)
+        self.api = FWaasAgent("myhost", self.conf)
         self.api.fwaas_driver = test_firewall_agent_api.NoopFwaasDriver()
         self.adminContext = context.get_admin_context()
         self.router_id = str(uuid.uuid4())

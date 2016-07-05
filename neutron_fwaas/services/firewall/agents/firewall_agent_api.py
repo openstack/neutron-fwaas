@@ -20,6 +20,10 @@ import oslo_messaging
 from neutron_fwaas._i18n import _
 
 
+FWAAS_V1 = "v1"
+FWAAS_V2 = "v2"
+
+
 FWaaSOpts = [
     cfg.StrOpt(
         'driver',
@@ -29,6 +33,10 @@ FWaaSOpts = [
         'enabled',
         default=False,
         help=_("Enable FWaaS")),
+    cfg.StrOpt(
+        'agent_version',
+        default=FWAAS_V1,
+        help=_("Firewall agent class")),
 ]
 cfg.CONF.register_opts(FWaaSOpts, 'fwaas')
 
