@@ -267,7 +267,7 @@ class TestFWaaS(base.FWaaSScenarioTest):
         private_key = keys['private_key']
         server_floating_ip = self.create_floating_ip(server, public_network_id)
         fixed_ip = server['addresses'].values()[0][0]['addr']
-        floating_ip = server_floating_ip.floating_ip_address
+        floating_ip = server_floating_ip['floating_ip_address']
         return fixed_ip, floating_ip, private_key, router
 
     def _get_public_gateway_ip(self):
