@@ -16,7 +16,6 @@ from oslo_config import cfg
 from oslo_service import service
 
 from neutron.agent.common import config
-from neutron.agent.l3 import config as l3_config
 from neutron.agent.l3 import ha
 from neutron.agent.linux import external_process
 from neutron.agent.linux import interface
@@ -25,6 +24,7 @@ from neutron.agent.linux import ra
 from neutron.agent.metadata import config as metadata_config
 from neutron.common import config as common_config
 from neutron.common import topics
+from neutron.conf.agent.l3 import config as l3_config
 from neutron import service as neutron_service
 
 
