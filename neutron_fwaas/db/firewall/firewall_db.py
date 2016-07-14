@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from neutron.api.v2 import attributes as attr
 from neutron.callbacks import events
 from neutron.callbacks import registry
 from neutron.callbacks import resources
@@ -27,6 +28,7 @@ from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_utils import uuidutils
 import sqlalchemy as sa
+from sqlalchemy.ext import declarative
 from sqlalchemy.ext.orderinglist import ordering_list
 from sqlalchemy import orm
 from sqlalchemy.orm import exc
@@ -39,7 +41,30 @@ from neutron_fwaas.extensions import firewall as fw_ext
 LOG = logging.getLogger(__name__)
 
 
-class FirewallRule(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
+class HasTenant(object):
+    # NOTE(HenryG): Temporary solution!
+    # Remove when I87a8ef342ccea004731ba0192b23a8e79bc382dc is merged.
+
+    project_id = sa.Column(sa.String(attr.TENANT_ID_MAX_LEN), index=True)
+
+    def __init__(self, *args, **kwargs):
+        # NOTE(HenryG): debtcollector requires init in class
+        super(HasTenant, self).__init__(*args, **kwargs)
+
+    def get_tenant_id(self):
+        return self.project_id
+
+    def set_tenant_id(self, value):
+        self.project_id = value
+
+    @declarative.declared_attr
+    def tenant_id(cls):
+        return orm.synonym(
+            'project_id',
+            descriptor=property(cls.get_tenant_id, cls.set_tenant_id))
+
+
+class FirewallRule(model_base.BASEV2, models_v2.HasId, HasTenant):
     """Represents a Firewall rule."""
     __tablename__ = 'firewall_rules'
     __table_args__ = ({'mysql_collate': 'utf8_bin'})
@@ -63,7 +88,7 @@ class FirewallRule(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
     position = sa.Column(sa.Integer)
 
 
-class Firewall(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
+class Firewall(model_base.BASEV2, models_v2.HasId, HasTenant):
     """Represents a Firewall resource."""
     __tablename__ = 'firewalls'
     __table_args__ = ({'mysql_collate': 'utf8_bin'})
@@ -77,7 +102,7 @@ class Firewall(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
                                    nullable=True)
 
 
-class FirewallPolicy(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
+class FirewallPolicy(model_base.BASEV2, models_v2.HasId, HasTenant):
     """Represents a Firewall Policy resource."""
     __tablename__ = 'firewall_policies'
     __table_args__ = ({'mysql_collate': 'utf8_bin'})

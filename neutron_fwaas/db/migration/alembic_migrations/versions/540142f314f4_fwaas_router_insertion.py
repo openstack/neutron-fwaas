@@ -26,6 +26,7 @@ revision = '540142f314f4'
 down_revision = '4202e3047e47'
 
 from alembic import op
+from oslo_db import exception
 import sqlalchemy as sa
 
 SQL_STATEMENT = (
@@ -34,7 +35,7 @@ SQL_STATEMENT = (
     "f.id as fw_id, r.id as router_id "
     "from firewalls f, routers r "
     "where "
-    "f.tenant_id=r.tenant_id"
+    "f.tenant_id=r.%s"
 )
 
 
@@ -49,4 +50,10 @@ def upgrade():
         sa.PrimaryKeyConstraint('fw_id', 'router_id'),
     )
 
-    op.execute(SQL_STATEMENT)
+    # Depending on when neutron-fwaas is installed with neutron, this script
+    # may be run before or after the neutron core tables have had their
+    # tenant_id columns renamed to project_id. Account for both scenarios.
+    try:
+        op.execute(SQL_STATEMENT % 'tenant_id')
+    except exception.DBError:
+        op.execute(SQL_STATEMENT % 'project_id')
