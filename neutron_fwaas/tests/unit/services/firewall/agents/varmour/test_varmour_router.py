@@ -21,7 +21,7 @@ from neutron.agent.l3 import config as l3_config
 from neutron.agent.l3 import ha
 from neutron.agent.l3 import router_info
 from neutron.agent.linux import interface
-from neutron.common import config as base_config
+from neutron.conf import common as base_config
 from neutron_fwaas.services.firewall.agents.varmour import varmour_router
 from neutron_fwaas.tests import base
 from neutron_lib import constants as l3_constants
