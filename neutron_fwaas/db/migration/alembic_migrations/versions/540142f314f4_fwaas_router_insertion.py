@@ -26,8 +26,8 @@ revision = '540142f314f4'
 down_revision = '4202e3047e47'
 
 from alembic import op
-from oslo_db import exception
 import sqlalchemy as sa
+from sqlalchemy.engine import reflection
 
 SQL_STATEMENT = (
     "insert into firewall_router_associations "
@@ -53,7 +53,10 @@ def upgrade():
     # Depending on when neutron-fwaas is installed with neutron, this script
     # may be run before or after the neutron core tables have had their
     # tenant_id columns renamed to project_id. Account for both scenarios.
-    try:
+    bind = op.get_bind()
+    insp = reflection.Inspector.from_engine(bind)
+    columns = insp.get_columns('firewall_router_associations')
+    if 'tenant_id' in [c['name'] for c in columns]:
         op.execute(SQL_STATEMENT % 'tenant_id')
-    except exception.DBError:
+    else:
         op.execute(SQL_STATEMENT % 'project_id')
