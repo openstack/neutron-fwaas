@@ -13,8 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from neutron.agent.l3 import agent
-from neutron.agent.linux import ip_lib
+from neutron.agent.l3 import l3_agent_extension
+from neutron.common import rpc as n_rpc
 from neutron import context
 from neutron.plugins.common import constants as n_const
 from oslo_config import cfg
@@ -23,11 +23,15 @@ from oslo_log import log as logging
 
 from neutron_fwaas._i18n import _, _LE
 from neutron_fwaas.common import fwaas_constants as f_const
+from neutron_fwaas.common import resources as f_resources
 from neutron_fwaas.extensions import firewall as fw_ext
 from neutron_fwaas.services.firewall.agents import firewall_agent_api as api
 from neutron_fwaas.services.firewall.agents import firewall_service
 
 LOG = logging.getLogger(__name__)
+
+#TODO(njohnston): There needs to be some extrapolation of the common code
+# between this module and firewall_l3_agent_v2.py.
 
 
 class FWaaSL3PluginApi(api.FWaaSPluginApiMixin):
@@ -49,14 +53,39 @@ class FWaaSL3PluginApi(api.FWaaSPluginApiMixin):
                           'get_tenants_with_firewalls', host=self.host)
 
 
-class FWaaSL3AgentRpcCallback(api.FWaaSAgentRpcCallbackMixin):
+class FWaaSL3AgentExtension(l3_agent_extension.L3AgentCoreResourceExtension):
     """FWaaS Agent support to be used by Neutron L3 agent."""
+
+    SUPPORTED_RESOURCE_TYPES = [f_resources.FIREWALL_GROUP,
+                                f_resources.FIREWALL_POLICY,
+                                f_resources.FIREWALL_RULE]
+
+    def initialize(self, connection, driver_type):
+        self._register_rpc_consumers(connection)
+
+    def consume_api(self, agent_api):
+        LOG.debug("FWaaS consume_api call occurred with %s" % agent_api)
+        self.agent_api = agent_api
+
+    def _register_rpc_consumers(self, connection):
+        #TODO(njohnston): Add RPC consumer connection loading here.
+        pass
+
+    def start_rpc_listeners(self, conf):
+        self.endpoints = [self]
+
+        self.conn = n_rpc.create_connection()
+        self.conn.create_consumer(
+            f_const.FW_AGENT, self.endpoints, fanout=False)
+        return self.conn.consume_in_threads()
 
     def __init__(self, host, conf):
         LOG.debug("Initializing firewall agent")
+        self.agent_api = None
         self.neutron_service_plugins = None
         self.conf = conf
         self.fwaas_enabled = cfg.CONF.fwaas.enabled
+        self.start_rpc_listeners(conf)
 
         # None means l3-agent has no information on the server
         # configuration due to the lack of RPC support.
@@ -77,8 +106,7 @@ class FWaaSL3AgentRpcCallback(api.FWaaSAgentRpcCallbackMixin):
         self.services_sync_needed = False
         # setup RPC to msg fwaas plugin
         self.fwplugin_rpc = FWaaSL3PluginApi(f_const.FIREWALL_PLUGIN,
-                                             conf.host)
-        super(FWaaSL3AgentRpcCallback, self).__init__(host=conf.host)
+                                             host)
 
     def _has_router_insertion_fields(self, fw):
         return 'add-router-ids' in fw
@@ -90,36 +118,24 @@ class FWaaSL3AgentRpcCallback(api.FWaaSAgentRpcCallbackMixin):
             return (fw['del-router-ids'] if to_delete
                     else fw['add-router-ids'])
         else:
-            # we are in a upgrade and msg from older version of plugin
-            try:
-                routers = self.plugin_rpc.get_routers(context)
-            except Exception:
-                LOG.exception(
-                    _LE("FWaaS RPC failure in _get_router_ids_for_fw "
-                        "for firewall: %(fwid)s"),
-                    {'fwid': fw['id']})
-                self.services_sync_needed = True
-            return [
-                router['id']
-                for router in routers
-                if router['tenant_id'] == fw['tenant_id']]
+            return [router['id'] for router in
+                self.agent_api.get_routers_in_project(fw['tenant_id'])]
+
+    def _get_routers_in_project(self, project_id):
+        if self.agent_api is None:
+            LOG.exception(_LE("FWaaS RPC call failed; L3 agent_api failure"))
+        router_info = self.agent_api._router_info
+        if project_id:
+            return [ri for ri in router_info.values()
+                    if ri.router['tenant_id'] == project_id]
+        else:
+            return []
 
     def _get_router_info_list_for_tenant(self, router_ids, tenant_id):
         """Returns the list of router info objects on which to apply the fw."""
-        root_ip = ip_lib.IPWrapper()
-        local_ns_list = root_ip.get_namespaces()
-
-        router_info_list = []
-        # Pick up namespaces for Tenant Routers
-        for rid in router_ids:
-            # for routers without an interface - get_routers returns
-            # the router - but this is not yet populated in router_info
-            if rid not in self.router_info:
-                continue
-            router_ns = self.router_info[rid].ns_name
-            if router_ns in local_ns_list:
-                router_info_list.append(self.router_info[rid])
-        return router_info_list
+        return [ri for ri in self._get_routers_in_project(tenant_id)
+                if ri.router_id in router_ids and
+                self.agent_api.is_router_in_namespace(ri.router_id)]
 
     def _invoke_driver_for_sync_from_plugin(self, ctx, router_info_list, fw):
         """Invoke the delete driver method for status of PENDING_DELETE and
@@ -165,17 +181,17 @@ class FWaaSL3AgentRpcCallback(api.FWaaSAgentRpcCallbackMixin):
                 fw['id'],
                 status)
 
-    def _process_router_add(self, ri):
+    def _process_router_add(self, router):
         """On router add, get fw with rules from plugin and update driver."""
-        LOG.debug("Process router add, router_id: '%s'", ri.router['id'])
-        router_ids = ri.router['id']
+        LOG.debug("Process router add, router_id: '%s'", router['id'])
+        router_ids = router['id']
         router_info_list = self._get_router_info_list_for_tenant(
             [router_ids],
-            ri.router['tenant_id'])
+            router['tenant_id'])
         if router_info_list:
             # Get the firewall with rules
             # for the tenant the router is on.
-            ctx = context.Context('', ri.router['tenant_id'])
+            ctx = context.Context('', router['tenant_id'])
             fw_list = self.fwplugin_rpc.get_firewalls_for_tenant(ctx)
             for fw in fw_list:
                 if self._has_router_insertion_fields(fw):
@@ -190,7 +206,7 @@ class FWaaSL3AgentRpcCallback(api.FWaaSAgentRpcCallbackMixin):
                 # router can be present only on one fw
                 return
 
-    def process_router_add(self, ri):
+    def add_router(self, context, new_router):
         """On router add, get fw with rules from plugin and update driver.
 
         Handles agent restart, when a router is added, query the plugin to
@@ -201,14 +217,25 @@ class FWaaSL3AgentRpcCallback(api.FWaaSAgentRpcCallbackMixin):
         if not self.fwaas_enabled:
             return
         try:
-            # TODO(sridar): as per discussion with pc_m, we may want to hook
-            # this up to the l3 agent observer notification
-            self._process_router_add(ri)
+            self._process_router_add(new_router)
         except Exception:
             LOG.exception(
                 _LE("FWaaS RPC info call failed for '%s'."),
-                ri.router['id'])
+                new_router['id'])
             self.services_sync_needed = True
+
+    def update_router(self, context, updated_router):
+        """The update_router method is just a synonym for add_router"""
+        self.add_router(context, updated_router)
+
+    def delete_router(self, context, new_router):
+        """Handles router deletion. There is basically nothing to do for this
+        in the context of FWaaS with an IPTables driver; the namespace will
+        already have been deleted, taking the IPTables rules with it.
+        """
+        #TODO(njohnston): When another firewall driver is implemented, look at
+        # expanding this out so that the driver can handle deletion calls.
+        pass
 
     def process_services_sync(self, ctx):
         if not self.services_sync_needed:
@@ -403,9 +430,9 @@ class FWaaSL3AgentRpcCallback(api.FWaaSAgentRpcCallbackMixin):
                 self.services_sync_needed = True
 
 
-class L3WithFWaaS(FWaaSL3AgentRpcCallback, agent.L3NATAgentWithStateReport):
+class L3WithFWaaS(FWaaSL3AgentExtension):
 
-    def __init__(self, host, conf=None):
+    def __init__(self, conf=None):
         if conf:
             self.conf = conf
         else:

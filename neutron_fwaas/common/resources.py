@@ -10,6 +10,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from neutron.common import eventlet_utils
+from neutron_fwaas.db.firewall.v2 import firewall_db_v2
 
-eventlet_utils.monkey_patch()
+FIREWALL_GROUP = firewall_db_v2.FirewallGroup
+FIREWALL_POLICY = firewall_db_v2.FirewallPolicy
+FIREWALL_RULE = firewall_db_v2.FirewallRuleV2

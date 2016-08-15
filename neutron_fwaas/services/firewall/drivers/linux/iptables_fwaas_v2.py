@@ -58,6 +58,9 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
         LOG.debug("Initializing fwaas iptables driver")
         self.pre_firewall = None
 
+    def initialize(self):
+        pass
+
     def _get_intf_name(self, if_prefix, port_id):
         _name = "%s%s" % (if_prefix, port_id)
         return _name[:MAX_INTF_NAME_LEN]
@@ -78,7 +81,7 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
             LOG.exception(_LE("Failed to create firewall: %s"), firewall['id'])
             raise fw_ext.FirewallInternalDriverError(driver=FWAAS_DRIVER_NAME)
 
-    def _get_ipt_mgrs_with_if_prefix(self, agent_mode, router_info):
+    def _get_ipt_mgrs_with_if_prefix(self, agent_mode, ri):
         """Gets the iptables manager along with the if prefix to apply rules.
 
         With DVR we can have differing namespaces depending on which agent
@@ -88,18 +91,18 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
         namespace and a fip so this is provided back as a list - so in that
         scenario rules can be applied on both.
         """
-        if not router_info.router.get('distributed'):
-            return [{'ipt': router_info.iptables_manager,
+        if not ri.router.get('distributed'):
+            return [{'ipt': ri.iptables_manager,
                      'if_prefix': INTERNAL_DEV_PREFIX}]
         ipt_mgrs = []
         # TODO(sridar): refactor to get strings to a common location.
         if agent_mode == 'dvr_snat':
-            if router_info.snat_iptables_manager:
-                ipt_mgrs.append({'ipt': router_info.snat_iptables_manager,
+            if ri.snat_iptables_manager:
+                ipt_mgrs.append({'ipt': ri.snat_iptables_manager,
                                  'if_prefix': SNAT_INT_DEV_PREFIX})
-        if router_info.dist_fip_count:
+        if ri.dist_fip_count:
             # handle the fip case on n/w or compute node.
-            ipt_mgrs.append({'ipt': router_info.iptables_manager,
+            ipt_mgrs.append({'ipt': ri.iptables_manager,
                              'if_prefix': ROUTER_2_FIP_DEV_PREFIX})
         return ipt_mgrs
 
@@ -108,9 +111,9 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
                   {'fw_id': firewall['id'], 'tid': firewall['tenant_id']})
         fwid = firewall['id']
         try:
-            for router_info, router_fw_ports in apply_list:
+            for ri, router_fw_ports in apply_list:
                 ipt_if_prefix_list = self._get_ipt_mgrs_with_if_prefix(
-                    agent_mode, router_info)
+                    agent_mode, ri)
                 for ipt_if_prefix in ipt_if_prefix_list:
                     ipt_mgr = ipt_if_prefix['ipt']
                     self._remove_chains(fwid, ipt_mgr)
@@ -148,9 +151,9 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
                   {'fw_id': firewall['id'], 'tid': firewall['tenant_id']})
         fwid = firewall['id']
         try:
-            for router_info, router_fw_ports in apply_list:
+            for ri, router_fw_ports in apply_list:
                 ipt_if_prefix_list = self._get_ipt_mgrs_with_if_prefix(
-                    agent_mode, router_info)
+                    agent_mode, ri)
                 for ipt_if_prefix in ipt_if_prefix_list:
                     # the following only updates local memory; no hole in FW
                     ipt_mgr = ipt_if_prefix['ipt']
@@ -172,9 +175,9 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
 
     def _setup_firewall(self, agent_mode, apply_list, firewall):
         fwid = firewall['id']
-        for router_info, router_fw_ports in apply_list:
+        for ri, router_fw_ports in apply_list:
             ipt_if_prefix_list = self._get_ipt_mgrs_with_if_prefix(
-                agent_mode, router_info)
+                agent_mode, ri)
             for ipt_if_prefix in ipt_if_prefix_list:
                 ipt_mgr = ipt_if_prefix['ipt']
                 # the following only updates local memory; no hole in FW
@@ -298,9 +301,9 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
     def _remove_conntrack_new_firewall(self, agent_mode, apply_list, firewall):
         """Remove conntrack when create new firewall"""
         routers_list = list(set([apply_info[0] for apply_info in apply_list]))
-        for router_info in routers_list:
+        for ri in routers_list:
             ipt_if_prefix_list = self._get_ipt_mgrs_with_if_prefix(
-                agent_mode, router_info)
+                agent_mode, ri)
             for ipt_if_prefix in ipt_if_prefix_list:
                 ipt_mgr = ipt_if_prefix['ipt']
                 cmd = self._get_conntrack_cmd_from_rule(ipt_mgr)
@@ -310,9 +313,9 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
                                            apply_list, pre_firewall, firewall):
         """Remove conntrack when updated firewall"""
         routers_list = list(set([apply_info[0] for apply_info in apply_list]))
-        for router_info in routers_list:
+        for ri in routers_list:
             ipt_if_prefix_list = self._get_ipt_mgrs_with_if_prefix(
-                agent_mode, router_info)
+                agent_mode, ri)
             for ipt_if_prefix in ipt_if_prefix_list:
                 ipt_mgr = ipt_if_prefix['ipt']
                 ch_rules = self._find_changed_rules(pre_firewall,
@@ -391,7 +394,7 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
                         jump_rule = ['%s %s -j %s-%s' % (
                             IPTABLES_DIR[direction], intf_name,
                             bname, chain_name)]
-                    self._add_rules_to_chain(ipt_mgr, ver,
+                        self._add_rules_to_chain(ipt_mgr, ver,
                                              'FORWARD', jump_rule)
 
         # jump to DROP_ALL policy

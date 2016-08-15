@@ -12,13 +12,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import mock
+import testtools
 import uuid
 
-import mock
 from oslo_config import cfg
 
 from neutron.agent.l3 import config as l3_config
 from neutron.agent.l3 import ha
+from neutron.agent.l3 import l3_agent_extension_api as l3_agent_api
 from neutron.agent.l3 import router_info
 from neutron.agent.linux import ip_lib
 from neutron.conf import common as base_config
@@ -38,12 +40,12 @@ class FWaasHelper(object):
         pass
 
 
-class FWaasAgent(firewall_l3_agent.FWaaSL3AgentRpcCallback, FWaasHelper):
+class FWaasAgent(firewall_l3_agent.FWaaSL3AgentExtension, FWaasHelper):
     neutron_service_plugins = []
 
 
 def _setup_test_agent_class(service_plugins):
-    class FWaasTestAgent(firewall_l3_agent.FWaaSL3AgentRpcCallback,
+    class FWaasTestAgent(firewall_l3_agent.FWaaSL3AgentExtension,
                          FWaasHelper):
         neutron_service_plugins = service_plugins
 
@@ -64,13 +66,15 @@ class TestFwaasL3AgentRpcCallback(base.BaseTestCase):
         self.conf.register_opts(l3_config.OPTS)
         self.conf.register_opts(ha.OPTS)
         self.conf.register_opts(firewall_agent_api.FWaaSOpts, 'fwaas')
-        self.api = FWaasAgent("myhost", self.conf)
+        self.api = FWaasAgent(host=None, conf=self.conf)
         self.api.fwaas_driver = test_firewall_agent_api.NoopFwaasDriver()
         self.adminContext = context.get_admin_context()
         self.router_id = str(uuid.uuid4())
         self.agent_conf = mock.Mock()
+        project_id = str(uuid.uuid4())  # For 'tenant_id' and 'project_id' keys
         self.ri_kwargs = {'router': {'id': self.router_id,
-                                     'tenant_id': str(uuid.uuid4())},
+                                     'tenant_id': project_id,
+                                     'project_id': project_id},
                           'agent_conf': self.agent_conf,
                           'interface_driver': mock.ANY,
                           'use_ipv6': mock.ANY,
@@ -82,8 +86,8 @@ class TestFwaasL3AgentRpcCallback(base.BaseTestCase):
         with mock.patch('oslo_utils.importutils.import_object'):
             test_agent_class(cfg.CONF)
 
+    @testtools.skip('needs to be refactored for fwaas v2')
     def test_fw_config_mismatch_plugin_enabled_agent_disabled(self):
-        self.skipTest('this is broken')
         test_agent_class = _setup_test_agent_class([constants.FIREWALL])
         cfg.CONF.set_override('enabled', False, 'fwaas')
         self.assertRaises(SystemExit, test_agent_class, cfg.CONF)
@@ -300,9 +304,15 @@ class TestFwaasL3AgentRpcCallback(base.BaseTestCase):
 
     def test_get_router_info_list_for_tenant(self):
         ri = self._prepare_router_data()
+        router_info = {ri.router_id: ri}
+        self.api.router_info = router_info
+
+        api_object = l3_agent_api.L3AgentExtensionAPI(router_info)
+        self.api.consume_api(api_object)
+
         routers = [ri.router]
         router_ids = [router['id'] for router in routers]
-        self.api.router_info = {ri.router_id: ri}
+
         with mock.patch.object(ip_lib.IPWrapper,
                                'get_namespaces') as mock_get_namespaces:
             mock_get_namespaces.return_value = []
@@ -316,19 +326,27 @@ class TestFwaasL3AgentRpcCallback(base.BaseTestCase):
                                                                 rtr_with_ri):
         # ri.router with associated router_info (ri)
         # rtr2 has no router_info
+
         ri = self._prepare_router_data()
         rtr2 = {'id': str(uuid.uuid4()), 'tenant_id': ri.router['tenant_id']}
+
         routers = [rtr2]
-        self.api.router_info = {}
+        router_info = {}
         ri_expected = []
+
         if rtr_with_ri:
-            self.api.router_info[ri.router_id] = ri
+            router_info[ri.router_id] = ri
             routers.append(ri.router)
             ri_expected.append(ri)
+
+        self.api.router_info = router_info
         router_ids = [router['id'] for router in routers]
+
         with mock.patch.object(ip_lib.IPWrapper,
                                'get_namespaces') as mock_get_namespaces:
-            mock_get_namespaces.return_value = ri.ns_name
+            mock_get_namespaces.return_value = [ri.ns_name]
+            api_object = l3_agent_api.L3AgentExtensionAPI(router_info)
+            self.api.consume_api(api_object)
             router_info_list = self.api._get_router_info_list_for_tenant(
                 router_ids,
                 ri.router['tenant_id'])

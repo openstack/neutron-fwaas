@@ -181,11 +181,14 @@ class IptablesFwaasTestCase(base.BaseTestCase):
                      mock.call.add_rule(egress_chain, rule2),
                      mock.call.add_rule(egress_chain, rule3)]
 
-            intf_name = self._get_intf_name(if_prefix, FAKE_PORT_IDS[-1])
-            calls.append(mock.call.add_rule('FORWARD',
-                    '-o %s -j %s' % (intf_name, ipt_mgr_ichain)))
-            calls.append(mock.call.add_rule('FORWARD',
-                    '-i %s -j %s' % (intf_name, ipt_mgr_echain)))
+            for port in FAKE_PORT_IDS:
+                intf_name = self._get_intf_name(if_prefix, port)
+                calls.append(mock.call.add_rule('FORWARD',
+                        '-o %s -j %s' % (intf_name, ipt_mgr_ichain)))
+            for port in FAKE_PORT_IDS:
+                intf_name = self._get_intf_name(if_prefix, port)
+                calls.append(mock.call.add_rule('FORWARD',
+                        '-i %s -j %s' % (intf_name, ipt_mgr_echain)))
 
             for direction in ['o', 'i']:
                 for port_id in FAKE_PORT_IDS:

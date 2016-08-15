@@ -46,6 +46,10 @@ class FirewallGroupInPendingState(nexception.Conflict):
                 "%(firewall_id)s is in %(pending_state)s.")
 
 
+class FirewallGroupPortInvalid(nexception.Conflict):
+    message = _("Firewall Group Port %(port_id)s is invalid")
+
+
 class FirewallGroupPortInvalidProject(nexception.Conflict):
     message = _("Firewall Group %(port_id)s in invalid Project")
 

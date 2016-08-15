@@ -35,6 +35,7 @@ function install_fwaas() {
 
 function configure_fwaas() {
     neutron_fwaas_configure_driver
+    iniset_multiline $Q_L3_CONF_FILE AGENT extensions fwaas
 }
 
 function init_fwaas() {

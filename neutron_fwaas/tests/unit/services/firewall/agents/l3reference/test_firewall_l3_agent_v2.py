@@ -19,6 +19,7 @@ import mock
 from oslo_config import cfg
 
 from neutron.agent.l3 import config as l3_config
+from neutron.agent.l3 import l3_agent_extension_api as l3_agent_api
 from neutron.agent.l3 import router_info
 from neutron.agent.linux import ip_lib
 from neutron import context
@@ -33,35 +34,54 @@ from neutron_fwaas.tests.unit.services.firewall.agents \
 
 
 class FWaasHelper(object):
-    def __init__(self, host):
+    def __init__(self):
         pass
 
 
-class FWaasAgent(firewall_l3_agent_v2.FWaaSL3AgentRpcCallback, FWaasHelper):
+class FWaasAgent(firewall_l3_agent_v2.L3WithFWaaS, FWaasHelper):
     neutron_service_plugins = []
+
+    def add_router(self, context, data):
+        pass
+
+    def delete_router(self, context, data):
+        pass
+
+    def update_router(self, context, data):
+        pass
 
 
 def _setup_test_agent_class(service_plugins):
-    class FWaasTestAgent(firewall_l3_agent_v2.FWaaSL3AgentRpcCallback,
+    class FWaasTestAgent(firewall_l3_agent_v2.L3WithFWaaS,
                          FWaasHelper):
         neutron_service_plugins = service_plugins
 
         def __init__(self, conf):
             self.event_observers = mock.Mock()
             self.conf = conf
-            super(FWaasTestAgent, self).__init__('myhost', conf)
+            super(FWaasTestAgent, self).__init__(conf)
+
+        def add_router(self, context, data):
+            pass
+
+        def delete_router(self, context, data):
+            pass
+
+        def update_router(self, context, data):
+            pass
 
     return FWaasTestAgent
 
 
-class TestFwaasL3AgentRpcCallback(base.BaseTestCase):
+class TestFWaaSL3AgentExtension(base.BaseTestCase):
     def setUp(self):
-        super(TestFwaasL3AgentRpcCallback, self).setUp()
+        super(TestFWaaSL3AgentExtension, self).setUp()
 
         self.conf = cfg.ConfigOpts()
         self.conf.register_opts(l3_config.OPTS)
         self.conf.register_opts(firewall_agent_api.FWaaSOpts, 'fwaas')
-        self.api = FWaasAgent('myhost', self.conf)
+        self.conf.host = 'myhost'
+        self.api = FWaasAgent(self.conf)
         self.api.fwaas_driver = test_firewall_agent_api.NoopFwaasDriverV2()
         self.adminContext = context.get_admin_context()
         self.context = mock.sentinel.context
@@ -279,7 +299,9 @@ class TestFwaasL3AgentRpcCallback(base.BaseTestCase):
         ports = [{'id': pid} for pid in port_ids]
         ri = self._prepare_router_data()
         ri.internal_ports = ports
-        self.api.router_info = {ri.router_id: ri}
+        router_info = {ri.router_id: ri}
+        api_object = l3_agent_api.L3AgentExtensionAPI(router_info)
+        self.api.consume_api(api_object)
         fw_port_ids = port_ids
 
         with mock.patch.object(ip_lib.IPWrapper,
@@ -288,7 +310,7 @@ class TestFwaasL3AgentRpcCallback(base.BaseTestCase):
             mock_get_namespaces.return_value = []
             ports_for_fw_list = self.api._get_in_ns_ports(fw_port_ids)
 
-        mock_get_namespaces.assert_called_once_with()
+        mock_get_namespaces.assert_called_with()
         self.assertFalse(ports_for_fw_list)
 
     def test_get_in_ns_ports_for_fw(self):
@@ -296,8 +318,10 @@ class TestFwaasL3AgentRpcCallback(base.BaseTestCase):
         ports = [{'id': pid} for pid in port_ids]
         ri = self._prepare_router_data()
         ri.internal_ports = ports
-        self.api.router_info = {}
-        self.api.router_info[ri.router_id] = ri
+        router_info = {}
+        router_info[ri.router_id] = ri
+        api_object = l3_agent_api.L3AgentExtensionAPI(router_info)
+        self.api.consume_api(api_object)
         fw_port_ids = port_ids
         ports_for_fw_expected = [(ri, port_ids)]
 
@@ -306,3 +330,5 @@ class TestFwaasL3AgentRpcCallback(base.BaseTestCase):
             mock_get_namespaces.return_value = [ri.ns_name]
             ports_for_fw_actual = self.api._get_in_ns_ports(fw_port_ids)
             self.assertEqual(ports_for_fw_expected, ports_for_fw_actual)
+
+    #TODO(Margaret) Add test for add_router method.

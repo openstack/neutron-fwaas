@@ -16,4 +16,5 @@
 # Constants for "topics"
 FIREWALL_PLUGIN = 'q-firewall-plugin'
 L3_AGENT = 'l3_agent'
+FW_AGENT = 'firewall_agent'
 FIREWALL_RULE_LIST = 'firewall_rule_list'

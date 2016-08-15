@@ -148,7 +148,7 @@ class FirewallPlugin(
         self.start_rpc_listeners()
 
         self.agent_rpc = FirewallAgentApi(
-            f_const.L3_AGENT,
+            f_const.FW_AGENT,
             cfg.CONF.host
         )
         firewall_db.subscribe()

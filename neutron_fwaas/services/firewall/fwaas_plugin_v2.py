@@ -107,11 +107,11 @@ class FirewallCallbacks(object):
             if fwg['status'] == n_const.PENDING_DELETE:
                 fwg_with_rules['add-port-ids'] = []
                 fwg_with_rules['del-port-ids'] = (
-                    self.plugin._get_ports_for_firewall_group(context,
+                    self.plugin._get_ports_in_firewall_group(context,
                         fwg['id']))
             else:
                 fwg_with_rules['add-port-ids'] = (
-                    self.plugin._get_ports_for_firewall_group(context,
+                    self.plugin._get_ports_in_firewall_group(context,
                         fwg['id']))
                 fwg_with_rules['del-port-ids'] = []
             fwg_list.append(fwg_with_rules)
@@ -142,7 +142,7 @@ class FirewallPluginV2(
         self.start_rpc_listeners()
 
         self.agent_rpc = FirewallAgentApi(
-            f_const.L3_AGENT,
+            f_const.FW_AGENT,
             cfg.CONF.host
         )
 
@@ -205,6 +205,8 @@ class FirewallPluginV2(
         # TODO(sridar): elevated context and do we want to use public ?
         for port_id in fwg_ports:
             port_db = self._core_plugin._get_port(context, port_id)
+            if port_db['device_owner'] != "network:router_interface":
+                raise fw_ext.FirewallGroupPortInvalid(port_id=port_id)
             if port_db['tenant_id'] != tenant_id:
                 raise fw_ext.FirewallGroupPortInvalidProject(port_id=port_id)
         return

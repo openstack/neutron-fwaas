@@ -13,8 +13,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from neutron.agent.l3 import agent
+from neutron.agent.l3 import l3_agent_extension
 from neutron.agent.linux import ip_lib
+from neutron.common import rpc as n_rpc
 from neutron import context
 from neutron.plugins.common import constants as n_const
 from neutron_fwaas.common import fwaas_constants as f_const
@@ -23,6 +24,7 @@ from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
 
 from neutron_fwaas._i18n import _, _LE
+from neutron_fwaas.common import resources as f_resources
 from neutron_fwaas.extensions import firewall as fw_ext
 from neutron_fwaas.services.firewall.agents import firewall_agent_api as api
 from neutron_fwaas.services.firewall.agents import firewall_service
@@ -67,15 +69,40 @@ class FWaaSL3PluginApi(api.FWaaSPluginApiMixin):
                 fwg_id=fwg_id, status=status, host=self.host)
 
 
-class FWaaSL3AgentRpcCallback(api.FWaaSAgentRpcCallbackMixin):
-    """FWaaS agent support to be used by neutron's L3 agent."""
+class FWaaSL3AgentExtension(l3_agent_extension.L3AgentCoreResourceExtension):
+    """FWaaS agent extension."""
+
+    SUPPORTED_RESOURCE_TYPES = [f_resources.FIREWALL_GROUP,
+                                f_resources.FIREWALL_POLICY,
+                                f_resources.FIREWALL_RULE]
+
+    def initialize(self, connection, driver_type):
+        self._register_rpc_consumers(connection)
+
+    def consume_api(self, agent_api):
+        LOG.debug("FWaaS consume_api call occurred with %s" % agent_api)
+        self.agent_api = agent_api
+
+    def _register_rpc_consumers(self, connection):
+        #TODO(njohnston): Add RPC consumer connection loading here.
+        pass
+
+    def start_rpc_listeners(self, host, conf):
+        self.endpoints = [self]
+
+        self.conn = n_rpc.create_connection()
+        self.conn.create_consumer(
+            f_const.FW_AGENT, self.endpoints, fanout=False)
+        return self.conn.consume_in_threads()
 
     def __init__(self, host, conf):
         LOG.debug("Initializing firewall group agent")
+        self.agent_api = None
         self.neutron_service_plugins = None
         self.conf = conf
         self.fwaas_enabled = cfg.CONF.fwaas.enabled
 
+        self.start_rpc_listeners(host, conf)
         # None means l3-agent has no information on the server
         # configuration due to the lack of RPC support.
         if self.neutron_service_plugins is not None:
@@ -96,7 +123,7 @@ class FWaaSL3AgentRpcCallback(api.FWaaSAgentRpcCallbackMixin):
         self.services_sync_needed = False
         self.fwplugin_rpc = FWaaSL3PluginApi(f_const.FIREWALL_PLUGIN,
                                              host)
-        super(FWaaSL3AgentRpcCallback, self).__init__(host=host)
+        super(FWaaSL3AgentExtension, self).__init__()
 
     @property
     def _local_namespaces(self):
@@ -127,7 +154,8 @@ class FWaaSL3AgentRpcCallback(api.FWaaSAgentRpcCallbackMixin):
             else:
                 fwg_port_ids = firewall_group['add-port-ids']
         elif not require_new_plugin:
-            routers = [self.router_info[rid] for rid in self.router_info]
+            routers = self.agent_api.get_routers_in_project(
+                    firewall_group['tenant_id'])
             for router in routers:
                 if router.router['tenant_id'] == firewall_group['tenant_id']:
                     fwg_port_ids.extend([p['id'] for p in
@@ -140,21 +168,17 @@ class FWaaSL3AgentRpcCallback(api.FWaaSAgentRpcCallbackMixin):
         """Returns port objects in the local namespace, along with their
            router_info.
         """
-        in_ns_ports = []
-        if port_ids:
-            for router_id in self.router_info:
-                # For routers without an interface - get_routers returns
-                # the router - but this is not yet populated in router_info
-                router_info = self.router_info[router_id]
-                if router_info.ns_name not in self._local_namespaces:
-                    continue
-                in_ns_router_port_ids = []
-                for port in router_info.internal_ports:
-                    if port['id'] in port_ids:
-                        in_ns_router_port_ids.append(port['id'])
-                if in_ns_router_port_ids:
-                    in_ns_ports.append((router_info, in_ns_router_port_ids))
-        return in_ns_ports
+        in_ns_ports = {}  # This will be converted to a list later.
+        if port_ids and self.agent_api:
+            for port_id in port_ids:
+                # This fetched router_info is guaranteed to be in_namespace.
+                router_info = self.agent_api.get_router_hosting_port(port_id)
+                if router_info:
+                    if router_info in in_ns_ports:
+                        in_ns_ports[router_info].append(port_id)
+                    else:
+                        in_ns_ports[router_info] = [port_id]
+        return list(in_ns_ports.items())
 
     def _invoke_driver_for_sync_from_plugin(self, ctx, port, firewall_group):
         """Calls the FWaaS driver's delete_firewall_group method if firewall
@@ -200,29 +224,27 @@ class FWaaSL3AgentRpcCallback(api.FWaaSAgentRpcCallbackMixin):
             self.fwplugin_rpc.set_firewall_group_status(
                 ctx, firewall_group['id'], status)
 
-    def _process_router_add(self, new_router):
-        """If the new router is in the local namespace, queries the plugin to
-           get the firewall groups for the project in question and then sees if
-           the router has any ports for any firewall group that is configured
-           for that project. If so, installs firewall group rules on the
-           requested ports on this router.
+    def _process_router_update(self, updated_router):
+        """If a new or existing router in the local namespace is updated,
+        queries the plugin to get the firewall groups for the project in
+        question and then sees if the router has any ports for any firewall
+        group that is configured for that project. If so, installs firewall
+        group rules on the requested ports on this router.
         """
-        LOG.debug("Process router add, router_id: %s.",
-                  new_router.router['id'])
-        router_id = new_router.router['id']
-        if router_id not in self.router_info or \
-                self.router_info[router_id].ns_name not in \
-                self._local_namespaces:
+        LOG.debug("Process router update, router_id: %s  tenant: %s.",
+                  updated_router['id'], updated_router['tenant_id'])
+        router_id = updated_router['id']
+        if not self.agent_api.is_router_in_namespace(router_id):
             return
 
         # Get the firewall groups for the new router's project.
         # NOTE: Vernacular move from "tenant" to "project" doesn't yet appear
         # as a key in router or firewall group objects.
-        ctx = context.Context('', new_router.router['tenant_id'])
+        ctx = context.Context('', updated_router['tenant_id'])
         fwg_list = self.fwplugin_rpc.get_firewall_groups_for_project(ctx)
 
         # Apply a firewall group, as requested, to ports on the new router.
-        for port in new_router.router.internal_ports:
+        for port in updated_router['_interfaces']:
             for firewall_group in fwg_list:
                 if (self._has_port_insertion_fields(firewall_group) and
                         (port['id'] in firewall_group['add-port-ids'] or
@@ -232,7 +254,7 @@ class FWaaSL3AgentRpcCallback(api.FWaaSAgentRpcCallbackMixin):
                     # A port can have at most one firewall group.
                     break
 
-    def process_router_add(self, new_router):
+    def add_router(self, context, new_router):
         """Handles agent restart and router add. Fetches firewall groups from
         plugin and updates driver.
         """
@@ -240,11 +262,36 @@ class FWaaSL3AgentRpcCallback(api.FWaaSAgentRpcCallbackMixin):
             return
 
         try:
-            self._process_router_add(new_router)
+            self._process_router_update(new_router)
         except Exception:
-            LOG.exception(_LE("FWaaS RPC info call failed for %s"),
-                    new_router.router['id'])
+            LOG.exception(_LE("FWaaS router add RPC info call failed for %s"),
+                    new_router['id'])
             self.services_sync_needed = True
+
+    def update_router(self, context, updated_router):
+        """Handles agent restart and router add. Fetches firewall groups from
+        plugin and updates driver.
+        """
+        if not self.fwaas_enabled:
+            return
+
+        try:
+            self._process_router_update(updated_router)
+        except Exception:
+            #TODO(njohnston): This repr should be replaced.
+            LOG.exception(
+                    _LE("FWaaS router update RPC info call failed for %s"),
+                    repr(updated_router))
+            self.services_sync_needed = True
+
+    def delete_router(self, context, new_router):
+        """Handles router deletion. There is basically nothing to do for this
+        in the context of FWaaS with an IPTables driver; the namespace will
+        already have been deleted, taking the IPTables rules with it.
+        """
+        #TODO(njohnston): When another firewall driver is implemented, look at
+        # expanding this out so that the driver can handle deletion calls.
+        pass
 
     def process_services_sync(self, ctx):
         """Syncs with plugin and applies the sync data.
@@ -283,7 +330,6 @@ class FWaaSL3AgentRpcCallback(api.FWaaSAgentRpcCallbackMixin):
 
         # Get the in-namespace ports to which to add the firewall group.
         ports_for_fwg = self._get_firewall_group_ports(context, firewall_group)
-
         if not ports_for_fwg:
             return
 
@@ -451,9 +497,9 @@ class FWaaSL3AgentRpcCallback(api.FWaaSAgentRpcCallbackMixin):
             self.services_sync_needed = True
 
 
-class L3WithFWaaS(FWaaSL3AgentRpcCallback, agent.L3NATAgentWithStateReport):
+class L3WithFWaaS(FWaaSL3AgentExtension):
 
-    def __init__(self, host, conf=None):
+    def __init__(self, conf=None):
         if conf:
             self.conf = conf
         else:
