@@ -55,7 +55,7 @@ def upgrade():
     # tenant_id columns renamed to project_id. Account for both scenarios.
     bind = op.get_bind()
     insp = reflection.Inspector.from_engine(bind)
-    columns = insp.get_columns('firewall_router_associations')
+    columns = insp.get_columns('routers')
     if 'tenant_id' in [c['name'] for c in columns]:
         op.execute(SQL_STATEMENT % 'tenant_id')
     else:
