@@ -19,7 +19,6 @@ from neutron.api.v2 import resource_helper
 from neutron.services import service_base
 from neutron_lib.api import converters
 from neutron_lib import exceptions as nexception
-from oslo_log import log as logging
 import six
 
 from neutron_fwaas._i18n import _
@@ -27,8 +26,6 @@ from neutron_fwaas._i18n import _
 # Import firewall v1 API to get the validators
 # TODO(shpadubi): pull the validators out of fwaas v1 into a separate file
 from neutron_fwaas.extensions import firewall as fwaas_v1
-
-LOG = logging.getLogger(__name__)
 
 FIREWALL_PREFIX = '/fwaas'
 
@@ -59,31 +56,35 @@ class FirewallPolicyInUse(nexception.InUse):
 
 class FirewallPolicyConflict(nexception.Conflict):
     """FWaaS exception for firewall policy
+
     Occurs when admin policy tries to use another tenant's policy that
     is not public.
     """
+
     message = _("Operation cannot be performed since Firewall Policy "
                 "%(firewall_policy_id)s is not public and does not belong to "
                 "your tenant.")
 
 
 class FirewallRuleSharingConflict(nexception.Conflict):
-
     """FWaaS exception for firewall rules
+
     This exception will be raised when a public policy is created or
     updated with rules that are not public.
     """
+
     message = _("Operation cannot be performed since Firewall Policy "
                 "%(firewall_policy_id)s is public but Firewall Rule "
                 "%(firewall_rule_id)s is not public")
 
 
 class FirewallPolicySharingConflict(nexception.Conflict):
-
     """FWaaS exception for firewall policy
+
     When a policy is public without sharing its associated rules,
     this exception will be raised.
     """
+
     message = _("Operation cannot be performed. Before sharing Firewall "
                 "Policy %(firewall_policy_id)s, share associated Firewall "
                 "Rule %(firewall_rule_id)s")
@@ -137,15 +138,17 @@ class FirewallIpAddressConflict(nexception.InvalidInput):
 
 class FirewallInternalDriverError(nexception.NeutronException):
     """Fwaas exception for all driver errors.
+
     On any failure or exception in the driver, driver should log it and
     raise this exception to the agent
     """
+
     message = _("%(driver)s: Internal driver error.")
 
 
 class FirewallRuleConflict(nexception.Conflict):
-
     """Firewall rule conflict exception.
+
     Occurs when admin policy tries to use another tenant's rule that is
     not public
     """
@@ -162,6 +165,7 @@ RESOURCE_ATTRIBUTE_MAP = {
                'is_visible': True, 'primary_key': True},
         'tenant_id': {'allow_post': True, 'allow_put': False,
                       'required_by_policy': True,
+                      'validate': {'type:string': attr.TENANT_ID_MAX_LEN},
                       'is_visible': True},
         'name': {'allow_post': True, 'allow_put': True,
                  'validate': {'type:string': attr.NAME_MAX_LEN},
@@ -239,6 +243,7 @@ RESOURCE_ATTRIBUTE_MAP = {
                   'default': None, 'is_visible': True},
         'tenant_id': {'allow_post': True, 'allow_put': False,
                       'required_by_policy': True,
+                      'validate': {'type:string': attr.TENANT_ID_MAX_LEN},
                       'is_visible': True},
         'ingress_firewall_policy_id': {'allow_post': True,
                                        'allow_put': True,
@@ -258,6 +263,7 @@ RESOURCE_ATTRIBUTE_MAP = {
                'primary_key': True},
         'tenant_id': {'allow_post': True, 'allow_put': False,
                       'required_by_policy': True,
+                      'validate': {'type:string': attr.TENANT_ID_MAX_LEN},
                       'is_visible': True},
         'name': {'allow_post': True, 'allow_put': True,
                  'validate': {'type:string': attr.NAME_MAX_LEN},
