@@ -29,6 +29,7 @@ _uuid = uuidutils.generate_uuid
 _get_path = test_api_v2._get_path
 _long_name = 'x' * (attr.NAME_MAX_LEN + 1)
 _long_description = 'y' * (attr.DESCRIPTION_MAX_LEN + 1)
+_long_tenant = 'z' * (attr.TENANT_ID_MAX_LEN + 1)
 
 FIREWALL_CONST = 'FIREWALL_V2'
 
@@ -123,6 +124,25 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
                             status=exc.HTTPBadRequest.code)
         self.assertIn('Invalid input for description',
                       res.body.decode('utf-8'))
+
+    def test_create_firewall_rule_invalid_long_tenant_id(self):
+        data = {'firewall_rule': {'description': 'desc',
+                                  'name': 'rule1',
+                                  'public': False,
+                                  'protocol': 'tcp',
+                                  'ip_version': 4,
+                                  'source_ip_address': '192.168.0.1',
+                                  'destination_ip_address': '127.0.0.1',
+                                  'source_port': 1,
+                                  'destination_port': 1,
+                                  'action': 'allow',
+                                  'enabled': True,
+                                  'tenant_id': _long_tenant}}
+        res = self.api.post(_get_path('fwaas/firewall_rules', fmt=self.fmt),
+                            self.serialize(data),
+                            content_type='application/%s' % self.fmt,
+                            status=exc.HTTPBadRequest.code)
+        self.assertIn('Invalid input for tenant_id', res.body.decode('utf-8'))
 
     def test_firewall_rule_list(self):
         rule_id = _uuid()
@@ -236,6 +256,20 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
                             status=exc.HTTPBadRequest.code)
         self.assertIn('Invalid input for description',
                       res.body.decode('utf-8'))
+
+    def test_create_firewall_policy_invalid_long_tenant_id(self):
+        data = {'firewall_policy': {'description': 'desc',
+                                    'name': 'new_fw_policy1',
+                                    'public': False,
+                                    'firewall_rules': [_uuid(), _uuid()],
+                                    'audited': False,
+                                    'tenant_id': _long_tenant}}
+        res = self.api.post(_get_path('fwaas/firewall_policies',
+                                      fmt=self.fmt),
+                            self.serialize(data),
+                            content_type='application/%s' % self.fmt,
+                            status=exc.HTTPBadRequest.code)
+        self.assertIn('Invalid input for tenant_id', res.body.decode('utf-8'))
 
     def test_firewall_policy_list(self):
         policy_id = _uuid()
@@ -358,3 +392,26 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         self.assertEqual(exc.HTTPOk.code, res.status_int)
         res = self.deserialize(res)
         self.assertEqual(return_value, res)
+
+    def test_create_firewall_group_invalid_long_attributes(self):
+        long_targets = [{'name': _long_name},
+                        {'description': _long_description},
+                        {'tenant_id': _long_tenant}]
+
+        for target in long_targets:
+            data = {'firewall_group': {'description': 'fake_description',
+                                       'name': 'fake_name',
+                                       'tenant_id': 'fake-tenant_id',
+                                       'public': False,
+                                       'ingress_firewall_policy_id': None,
+                                       'egress_firewall_policy_id': None,
+                                       'admin_state_up': True,
+                                       'ports': []}}
+            data['firewall_group'].update(target)
+            res = self.api.post(_get_path('fwaas/firewall_groups',
+                                fmt=self.fmt),
+                                self.serialize(data),
+                                content_type='application/%s' % self.fmt,
+                                status=exc.HTTPBadRequest.code)
+            self.assertIn('Invalid input for %s' % list(target)[0],
+                          res.body.decode('utf-8'))
