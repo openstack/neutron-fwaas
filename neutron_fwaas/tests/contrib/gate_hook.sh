@@ -4,7 +4,7 @@ set -ex
 
 # Below variables are set to exceute this script
 IS_GATE=${IS_GATE:-False}
-INSTALL_MYSQL_ONLY=${INSTALL_MYSQL_ONLY:-True}
+INSTALL_MYSQL_ONLY=${INSTALL_MYSQL_ONLY:-False}
 
 CONTRIB_DIR="$BASE/new/neutron-fwaas/neutron_fwaas/tests/contrib"
 
