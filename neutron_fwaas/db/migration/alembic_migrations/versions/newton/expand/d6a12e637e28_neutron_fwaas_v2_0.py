@@ -36,7 +36,7 @@ def upgrade():
         sa.Column('id', sa.String(length=36), primary_key=True),
         sa.Column('name', sa.String(length=255)),
         sa.Column('description', sa.String(length=1024)),
-        sa.Column('project_id', sa.String(length=36), index=True),
+        sa.Column('project_id', sa.String(length=255), index=True),
         sa.Column('audited', sa.Boolean),
         sa.Column('public', sa.Boolean),
         sa.Column('rule_count', sa.Integer))
@@ -46,9 +46,9 @@ def upgrade():
         sa.Column('id', sa.String(length=36), primary_key=True),
         sa.Column('name', sa.String(length=255)),
         sa.Column('description', sa.String(length=1024)),
-        sa.Column('project_id', sa.String(length=36), index=True),
+        sa.Column('project_id', sa.String(length=255), index=True),
         sa.Column('protocol', sa.String(length=40)),
-        sa.Column('ip_version', sa.Integer, nullable=False),
+        sa.Column('ip_version', sa.Integer),
         sa.Column('source_ip_address', sa.String(length=46)),
         sa.Column('destination_ip_address', sa.String(length=46)),
         sa.Column('source_port_range_min', sa.Integer),
@@ -65,21 +65,22 @@ def upgrade():
         sa.Column('id', sa.String(length=36), primary_key=True),
         sa.Column('name', sa.String(length=255)),
         sa.Column('description', sa.String(length=1024)),
-        sa.Column('project_id', sa.String(length=36), index=True),
-        sa.Column('status', sa.String(length=255)),
+        sa.Column('project_id', sa.String(length=255), index=True),
+        sa.Column('status', sa.String(length=16)),
         sa.Column('admin_state_up', sa.Boolean),
         sa.Column('public', sa.Boolean),
-        sa.Column('egress_firewall_policy_id', sa.String(length=36)),
-        sa.Column('ingress_firewall_policy_id', sa.String(length=36)))
+        sa.Column('egress_firewall_policy_id', sa.String(length=36),
+                  sa.ForeignKey('firewall_policies_v2.id')),
+        sa.Column('ingress_firewall_policy_id', sa.String(length=36),
+                  sa.ForeignKey('firewall_policies_v2.id')))
 
     op.create_table(
         'firewall_group_port_associations_v2',
         sa.Column('firewall_group_id', sa.String(length=36),
-                  sa.ForeignKey('firewall_groups_v2.id', ondelete='CASCADE'),
-                  nullable=False, unique=True),
+                  sa.ForeignKey('firewall_groups_v2.id', ondelete='CASCADE')),
         sa.Column('port_id', sa.String(length=36),
-                  sa.ForeignKey('ports.id', ondelete='CASCADE'),
-                  nullable=False, unique=True))
+                  sa.ForeignKey('ports.id', ondelete='CASCADE'))
+    )
 
     op.create_table(
         'firewall_policy_rule_associations_v2',

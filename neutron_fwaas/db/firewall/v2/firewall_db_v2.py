@@ -81,10 +81,11 @@ class FirewallGroup(model_base.BASEV2, models_v2.HasId, HasName,
 class FirewallGroupPortAssociation(model_base.BASEV2):
     __tablename__ = 'firewall_group_port_associations_v2'
     firewall_group_id = sa.Column(sa.String(36),
-                                  sa.ForeignKey('firewall_groups_v2.id'),
+                                  sa.ForeignKey('firewall_groups_v2.id',
+                                                ondelete="CASCADE"),
                                   primary_key=True)
     port_id = sa.Column(sa.String(36),
-                     sa.ForeignKey('ports.id'),
+                     sa.ForeignKey('ports.id', ondelete="CASCADE"),
                      primary_key=True)
 
 
