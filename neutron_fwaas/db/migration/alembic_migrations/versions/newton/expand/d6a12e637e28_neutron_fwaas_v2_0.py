@@ -16,14 +16,14 @@
 """neutron-fwaas v2.0
 
 Revision ID: d6a12e637e28
-Revises: kilo
+Revises: 4b47ea298795
 Create Date: 2016-06-08 19:57:13.848855
 
 """
 
 # revision identifiers, used by Alembic.
 revision = 'd6a12e637e28'
-down_revision = 'kilo'
+down_revision = '4b47ea298795'
 
 from alembic import op
 import sqlalchemy as sa
