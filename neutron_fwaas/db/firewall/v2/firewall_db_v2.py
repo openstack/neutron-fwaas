@@ -432,6 +432,18 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
                         firewall_rule_id=fwr_db['id'],
                         firewall_policy_id=fwp_db['id'])
 
+    def _get_fwgs_with_policy(self, context, fwp_id):
+        with context.session.begin(subtransactions=True):
+            fwg_ing_pol_qry = context.session.query(
+                FirewallGroup).filter_by(
+                ingress_firewall_policy_id=fwp_id)
+            ing_fwg_ids = [entry.id for entry in fwg_ing_pol_qry]
+            fwg_eg_pol_qry = context.session.query(
+                FirewallGroup).filter_by(
+                egress_firewall_policy_id=fwp_id)
+            eg_fwg_ids = [entry.id for entry in fwg_eg_pol_qry]
+        return ing_fwg_ids, eg_fwg_ids
+
     def _check_fwgs_associated_with_policy_in_same_project(self, context,
                                                            fwp_id,
                                                            fwp_tenant_id):
@@ -563,8 +575,18 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
             for port_id in port_id_list:
                 fwg_port_db = FirewallGroupPortAssociation(
                     firewall_group_id=fwg_db['id'],
-                    port=port_id)
+                    port_id=port_id)
                 context.session.add(fwg_port_db)
+
+    def _get_ports_in_firewall_group(self, context, firewall_group_id):
+        """Get the Ports associated with the  firewall group."""
+        with context.session.begin(subtransactions=True):
+            fw_group_port_qry = context.session.query(
+                FirewallGroupPortAssociation)
+            fw_group_port_rows = fw_group_port_qry.filter_by(
+                firewall_group_id=firewall_group_id)
+            fw_ports = [entry.port_id for entry in fw_group_port_rows]
+        return fw_ports
 
     def _delete_ports_in_firewall_group(self, context, firewall_group_id):
         """Delete the Ports associated with the  firewall group."""
@@ -574,6 +596,21 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
             fw_group_port_qry.filter_by(
                 firewall_group_id=firewall_group_id).delete()
         return
+
+    def _validate_if_firewall_group_on_ports(
+            self, context, port_ids, fwg_id=None):
+        """Validate if ports are not associated with any firewall_group.
+        If any of the ports in the list is already associated with
+        a firewall_group, raise an exception else just return.
+        """
+        fwg_port_qry = context.session.query(
+            FirewallGroupPortAssociation.port_id)
+        fwg_ports = fwg_port_qry.filter(
+            FirewallGroupPortAssociation.port_id.in_(port_ids),
+            FirewallGroupPortAssociation.firewall_group_id != fwg_id).all()
+        if fwg_ports:
+            port_ids = [entry.port_id for entry in fwg_ports]
+            raise fw_ext.FirewallGroupPortInUse(port_ids=port_ids)
 
     def create_firewall_group(self, context, firewall_group, status=None):
         fwg = firewall_group['firewall_group']
@@ -611,6 +648,19 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
             if not count:
                 raise fw_ext.FirewallNotFound(firewall_id=id)
         return self.get_firewall_group(context, id)
+
+    def update_firewall_group_status(self, context, id, status, not_in=None):
+        """Conditionally update firewall_group status.
+        Status transition is performed only if firewall is not in the specified
+        states as defined by 'not_in' list.
+        """
+        # filter in_ wants iterable objects, None isn't.
+        not_in = not_in or []
+        with context.session.begin(subtransactions=True):
+            return (context.session.query(FirewallGroup).
+                    filter(FirewallGroup.id == id).
+                    filter(~FirewallGroup.status.in_(not_in)).
+                    update({'status': status}, synchronize_session=False))
 
     def delete_firewall_group(self, context, id):
         LOG.debug("delete_firewall() called")
