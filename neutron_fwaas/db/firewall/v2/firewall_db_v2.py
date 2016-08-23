@@ -85,8 +85,8 @@ class FirewallGroupPortAssociation(model_base.BASEV2):
                                                 ondelete="CASCADE"),
                                   primary_key=True)
     port_id = sa.Column(sa.String(36),
-                     sa.ForeignKey('ports.id', ondelete="CASCADE"),
-                     primary_key=True)
+                        sa.ForeignKey('ports.id', ondelete="CASCADE"),
+                        primary_key=True)
 
 
 class FirewallPolicyRuleAssociation(model_base.BASEV2):
@@ -96,12 +96,15 @@ class FirewallPolicyRuleAssociation(model_base.BASEV2):
     __tablename__ = 'firewall_policy_rule_associations_v2'
 
     firewall_policy_id = sa.Column(sa.String(36),
-        sa.ForeignKey('firewall_policies_v2.id', ondelete="CASCADE"),
-        primary_key=True)
+                                   sa.ForeignKey('firewall_policies_v2.id',
+                                                 ondelete="CASCADE"),
+                                   primary_key=True)
     firewall_rule_id = sa.Column(sa.String(36),
-        sa.ForeignKey('firewall_rules_v2.id', ondelete="CASCADE"),
-        primary_key=True)
+                                 sa.ForeignKey('firewall_rules_v2.id',
+                                               ondelete="CASCADE"),
+                                 primary_key=True)
     position = sa.Column(sa.Integer)
+    firewall_rule = orm.relationship('FirewallRuleV2')
 
 
 class FirewallPolicy(model_base.BASEV2, models_v2.HasId, HasName,
@@ -112,7 +115,7 @@ class FirewallPolicy(model_base.BASEV2, models_v2.HasId, HasName,
     public = sa.Column(sa.Boolean)
     rule_count = sa.Column(sa.Integer)
     audited = sa.Column(sa.Boolean)
-    firewall_rules = orm.relationship(
+    rule_associations = orm.relationship(
         FirewallPolicyRuleAssociation,
         backref=orm.backref('firewall_policies_v2', cascade='all, delete'),
         order_by='FirewallPolicyRuleAssociation.position',
@@ -205,8 +208,9 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
         return self._fields(res, fields)
 
     def _make_firewall_policy_dict(self, firewall_policy, fields=None):
-        fw_rules = [rule.firewall_rule_id
-                    for rule in firewall_policy['firewall_rules']]
+        fw_rules = [
+            rule_association.firewall_rule_id
+            for rule_association in firewall_policy['rule_associations']]
         res = {'id': firewall_policy['id'],
                'tenant_id': firewall_policy['tenant_id'],
                'name': firewall_policy['name'],
@@ -254,6 +258,64 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
         else:
             firewall_group['egress_rule_list'] = []
         return firewall_group
+
+    def _check_firewall_rule_conflict(self, fwr_db, fwp_db):
+        if not fwr_db['public']:
+            if fwr_db['tenant_id'] != fwp_db['tenant_id']:
+                raise fw_ext.FirewallRuleConflict(
+                    firewall_rule_id=fwr_db['id'],
+                    tenant_id=fwr_db['tenant_id'])
+
+    def _process_rule_for_policy(self, context, firewall_policy_id,
+                                 firewall_rule_id, position, association_db):
+        with context.session.begin(subtransactions=True):
+            fwp_query = context.session.query(
+                FirewallPolicy).with_lockmode('update')
+            fwp_db = fwp_query.filter_by(id=firewall_policy_id).one()
+            if position:
+                # Note that although position numbering starts at 1,
+                # internal ordering of the list starts at 0, so we compensate.
+                fwp_db.rule_associations.insert(
+                    position - 1,
+                    FirewallPolicyRuleAssociation(
+                        firewall_rule_id=firewall_rule_id))
+            else:
+                fwp_db.rule_associations.remove(association_db)
+                context.session.delete(association_db)
+            fwp_db.rule_associations.reorder()
+            fwp_db.audited = False
+        return self._make_firewall_policy_dict(fwp_db)
+
+    def _get_policy_rule_association_query(self, context, firewall_policy_id,
+                                           firewall_rule_id):
+        fwpra_query = context.session.query(FirewallPolicyRuleAssociation)
+        return fwpra_query.filter_by(firewall_policy_id=firewall_policy_id,
+                                     firewall_rule_id=firewall_rule_id)
+
+    def _ensure_rule_not_already_associated(self, context, firewall_policy_id,
+                                            firewall_rule_id):
+        """Checks that a rule is not already associated with a particular
+        policy. If it is the function will throw an exception.
+        """
+        try:
+            self._get_policy_rule_association_query(
+                context, firewall_policy_id, firewall_rule_id).one()
+            raise fw_ext.FirewallRuleAlreadyAssociated(
+                firewall_rule_id=firewall_rule_id, firewall_policy_id=id)
+        except exc.NoResultFound:
+            return
+
+    def _get_policy_rule_association(self, context, firewall_policy_id,
+                                     firewall_rule_id):
+        """Returns the association between a firewall rule and a firewall
+        policy. Throws an exception if the assocaition does not exist.
+        """
+        try:
+            return self._get_policy_rule_association_query(
+                context, firewall_policy_id, firewall_rule_id).one()
+        except exc.NoResultFound:
+            raise fw_ext.FirewallRuleNotAssociatedWithPolicy(
+                firewall_rule_id=firewall_rule_id, firewall_policy_id=id)
 
     def create_firewall_rule(self, context, firewall_rule):
         LOG.debug("create_firewall_rule() called")
@@ -330,12 +392,59 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
             context.session.delete(fwr)
 
     def insert_rule(self, context, id, rule_info):
-        # TODO(sridar)
-        pass
+        LOG.debug("insert_rule() called")
+        self._validate_insert_remove_rule_request(id, rule_info)
+        firewall_rule_id = rule_info['firewall_rule_id']
+        # ensure rule is not already assigned to the policy
+        self._ensure_rule_not_already_associated(context, id, firewall_rule_id)
+        insert_before = True
+        ref_firewall_rule_id = None
+        if not firewall_rule_id:
+            raise fw_ext.FirewallRuleNotFound(firewall_rule_id=None)
+        if 'insert_before' in rule_info:
+            ref_firewall_rule_id = rule_info['insert_before']
+        if not ref_firewall_rule_id and 'insert_after' in rule_info:
+            # If insert_before is set, we will ignore insert_after.
+            ref_firewall_rule_id = rule_info['insert_after']
+            insert_before = False
+        with context.session.begin(subtransactions=True):
+            fwr_db = self._get_firewall_rule(context, firewall_rule_id)
+            fwp_db = self._get_firewall_policy(context, id)
+            self._check_firewall_rule_conflict(fwr_db, fwp_db)
+            if ref_firewall_rule_id:
+                # If reference_firewall_rule_id is set, the new rule
+                # is inserted depending on the value of insert_before.
+                # If insert_before is set, the new rule is inserted before
+                # reference_firewall_rule_id, and if it is not set the new
+                # rule is inserted after reference_firewall_rule_id.
+                fwpra_db = self._get_policy_rule_association(
+                    context, id, ref_firewall_rule_id)
+                if insert_before:
+                    position = fwpra_db.position
+                else:
+                    position = fwpra_db.position + 1
+            else:
+                # If reference_firewall_rule_id is not set, it is assumed
+                # that the new rule needs to be inserted at the top.
+                # insert_before field is ignored.
+                # So default insertion is always at the top.
+                # Also note that position numbering starts at 1.
+                position = 1
+            return self._process_rule_for_policy(context, id, firewall_rule_id,
+                                                 position, None)
 
     def remove_rule(self, context, id, rule_info):
-        # TODO(sridar)
-        pass
+        LOG.debug("remove_rule() called")
+        self._validate_insert_remove_rule_request(id, rule_info)
+        firewall_rule_id = rule_info['firewall_rule_id']
+        if not firewall_rule_id:
+            raise fw_ext.FirewallRuleNotFound(firewall_rule_id=None)
+        with context.session.begin(subtransactions=True):
+            self._get_firewall_rule(context, firewall_rule_id)
+            fwpra_db = self._get_policy_rule_association(context, id,
+                                                         firewall_rule_id)
+            return self._process_rule_for_policy(context, id, firewall_rule_id,
+                                                 None, fwpra_db)
 
     def get_firewall_rule(self, context, id, fields=None):
         LOG.debug("get_firewall_rule() called")
@@ -347,6 +456,10 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
         return self._get_collection(context, FirewallRuleV2,
                                     self._make_firewall_rule_dict,
                                     filters=filters, fields=fields)
+
+    def _validate_insert_remove_rule_request(self, id, rule_info):
+        if not rule_info or 'firewall_rule_id' not in rule_info:
+            raise fw_ext.FirewallRuleInfoMissing()
 
     def _delete_rules_in_policy(self, context, firewall_policy_id):
         """Delete the rules in the  firewall policy."""
@@ -423,10 +536,10 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
 
     def _check_if_rules_public_for_policy_public(self, context, fwp_db, fwp):
         if fwp['public']:
-            rules_in_db = fwp_db['firewall_rules']
+            rules_in_db = fwp_db.rule_associations
             for entry in rules_in_db:
                 fwr_db = self._get_firewall_rule(context,
-                    entry.firewall_rule_id)
+                                                 entry.firewall_rule_id)
                 if not fwr_db['public']:
                     raise fw_ext.FirewallPolicySharingConflict(
                         firewall_rule_id=fwr_db['id'],
@@ -464,7 +577,7 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
         fwp_db = firewall_policy_db
         with context.session.begin(subtransactions=True):
             if not rule_id_list:
-                fwp_db.firewall_rules = []
+                fwp_db.rule_associations = []
                 return
             # We will first check if the new list of rules is valid
             filters = {'firewall_rule_id': [r_id for r_id in rule_id_list]}
@@ -481,10 +594,10 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
                 filters=filters)
             rules_dict = dict((fpol_rul_db['firewall_rule_id'], fpol_rul_db)
                              for fpol_rul_db in rules_in_fpol_rul_db)
-            fwp_db.firewall_rules = []
+            fwp_db.rule_associations = []
             for fwrule_id in rule_id_list:
-                fwp_db.firewall_rules.append(rules_dict[fwrule_id])
-            fwp_db.firewall_rules.reorder()
+                fwp_db.rule_associations.append(rules_dict[fwrule_id])
+            fwp_db.rule_associations.reorder()
 
     def create_firewall_policy(self, context, firewall_policy):
         LOG.debug("create_firewall_policy() called")

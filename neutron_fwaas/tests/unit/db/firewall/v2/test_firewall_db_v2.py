@@ -1216,6 +1216,278 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
                                   self.plugin.get_firewall_group,
                                   ctx, fw_id)
 
+    def test_insert_rule_in_policy_with_prior_rules_added_via_update(self):
+        attrs = self._get_test_firewall_policy_attrs()
+        attrs['audited'] = False
+        with self.firewall_rule(name='fwr1') as fwr1, \
+                self.firewall_rule(name='fwr2') as fwr2, \
+                self.firewall_rule(name='fwr3') as fwr3:
+            frs = [fwr1, fwr2, fwr3]
+            fr1 = frs[0:2]
+            fwr3 = frs[2]
+            with self.firewall_policy() as fwp:
+                fwp_id = fwp['firewall_policy']['id']
+                attrs['id'] = fwp_id
+                fw_rule_ids = [r['firewall_rule']['id'] for r in fr1]
+                attrs['firewall_rules'] = fw_rule_ids[:]
+                data = {'firewall_policy': {'firewall_rules': fw_rule_ids}}
+                req = self.new_update_request('firewall_policies', data,
+                                              fwp_id)
+                req.get_response(self.ext_api)
+                self._rule_action('insert', fwp_id, fw_rule_ids[0],
+                                  insert_before=fw_rule_ids[0],
+                                  insert_after=None,
+                                  expected_code=webob.exc.HTTPConflict.code,
+                                  expected_body=None)
+                fwr3_id = fwr3['firewall_rule']['id']
+                attrs['firewall_rules'].insert(0, fwr3_id)
+                self._rule_action('insert', fwp_id, fwr3_id,
+                                  insert_before=fw_rule_ids[0],
+                                  insert_after=None,
+                                  expected_code=webob.exc.HTTPOk.code,
+                                  expected_body=attrs)
+
+    def test_insert_rule_in_policy_failures(self):
+        with self.firewall_rule(name='fwr1') as fr1:
+            with self.firewall_policy() as fwp:
+                fwp_id = fwp['firewall_policy']['id']
+                fr1_id = fr1['firewall_rule']['id']
+                fw_rule_ids = [fr1_id]
+                data = {'firewall_policy':
+                        {'firewall_rules': fw_rule_ids}}
+                req = self.new_update_request('firewall_policies', data,
+                                              fwp_id)
+                req.get_response(self.ext_api)
+                # test inserting with empty request body
+                self._rule_action('insert', fwp_id, '123',
+                                  expected_code=webob.exc.HTTPBadRequest.code,
+                                  expected_body=None, body_data={})
+                # test inserting when firewall_rule_id is missing in
+                # request body
+                insert_data = {'insert_before': '123',
+                               'insert_after': '456'}
+                self._rule_action('insert', fwp_id, '123',
+                                  expected_code=webob.exc.HTTPBadRequest.code,
+                                  expected_body=None,
+                                  body_data=insert_data)
+                # test inserting when firewall_rule_id is None
+                insert_data = {'firewall_rule_id': None,
+                               'insert_before': '123',
+                               'insert_after': '456'}
+                self._rule_action('insert', fwp_id, '123',
+                                  expected_code=webob.exc.HTTPNotFound.code,
+                                  expected_body=None,
+                                  body_data=insert_data)
+                # test inserting when firewall_policy_id is incorrect
+                self._rule_action('insert', '123', fr1_id,
+                                  expected_code=webob.exc.HTTPNotFound.code,
+                                  expected_body=None)
+                # test inserting when firewall_policy_id is None
+                self._rule_action('insert', None, fr1_id,
+                                  expected_code=webob.exc.HTTPBadRequest.code,
+                                  expected_body=None)
+
+    def test_insert_rule_for_previously_associated_rule(self):
+        with self.firewall_rule() as fwr:
+            fwr_id = fwr['firewall_rule']['id']
+            fw_rule_ids = [fwr_id]
+            with self.firewall_policy(firewall_rules=fw_rule_ids):
+                with self.firewall_policy(name='firewall_policy2') as fwp:
+                    fwp_id = fwp['firewall_policy']['id']
+                    insert_data = {'firewall_rule_id': fwr_id}
+                    self._rule_action(
+                        'insert', fwp_id, fwr_id, insert_before=None,
+                        insert_after=None,
+                        expected_code=webob.exc.HTTPOk.code,
+                        expected_body=None, body_data=insert_data)
+
+    def test_insert_rule_for_previously_associated_rule_other_tenant(self):
+        with self.firewall_rule(tenant_id='tenant-2') as fwr:
+            fwr_id = fwr['firewall_rule']['id']
+            fw_rule_ids = [fwr_id]
+            with self.firewall_policy(tenant_id='tenant-2',
+                                      firewall_rules=fw_rule_ids):
+                with self.firewall_policy(name='firewall_policy2') as fwp:
+                    fwp_id = fwp['firewall_policy']['id']
+                    insert_data = {'firewall_rule_id': fwr_id}
+                    self._rule_action(
+                        'insert', fwp_id, fwr_id, insert_before=None,
+                        insert_after=None,
+                        expected_code=webob.exc.HTTPOk.code,
+                        expected_body=None, body_data=insert_data)
+
+    def test_insert_rule_for_prev_associated_ref_rule(self):
+        with self.firewall_rule(name='fwr0') as fwr0, \
+                self.firewall_rule(name='fwr1') as fwr1:
+            fwr = [fwr0, fwr1]
+            fwr0_id = fwr[0]['firewall_rule']['id']
+            fwr1_id = fwr[1]['firewall_rule']['id']
+            with self.firewall_policy(name='fwp0') as fwp0, \
+                    self.firewall_policy(name='fwp1',
+                                         firewall_rules=[fwr1_id]) as fwp1:
+                fwp = [fwp0, fwp1]
+                fwp0_id = fwp[0]['firewall_policy']['id']
+                # test inserting before a rule which
+                # is associated with different policy
+                self._rule_action('insert', fwp0_id, fwr0_id,
+                                  insert_before=fwr1_id,
+                                  expected_code=webob.exc.HTTPBadRequest.code,
+                                  expected_body=None)
+                # test inserting  after a rule which
+                # is associated with different policy
+                self._rule_action('insert', fwp0_id, fwr0_id,
+                                  insert_after=fwr1_id,
+                                  expected_code=webob.exc.HTTPBadRequest.code,
+                                  expected_body=None)
+
+    def test_insert_rule_for_policy_of_other_tenant(self):
+        with self.firewall_rule(tenant_id='tenant-2', public=False) as fwr:
+            fwr_id = fwr['firewall_rule']['id']
+            with self.firewall_policy(name='firewall_policy') as fwp:
+                fwp_id = fwp['firewall_policy']['id']
+                insert_data = {'firewall_rule_id': fwr_id}
+                self._rule_action(
+                    'insert', fwp_id, fwr_id, insert_before=None,
+                    insert_after=None,
+                    expected_code=webob.exc.HTTPConflict.code,
+                    expected_body=None, body_data=insert_data)
+
+    def test_insert_rule_in_policy(self):
+        attrs = self._get_test_firewall_policy_attrs()
+        attrs['audited'] = False
+        with self.firewall_rule(name='fwr0') as fwr0, \
+                self.firewall_rule(name='fwr1') as fwr1, \
+                self.firewall_rule(name='fwr2') as fwr2, \
+                self.firewall_rule(name='fwr3') as fwr3, \
+                self.firewall_rule(name='fwr4') as fwr4, \
+                self.firewall_rule(name='fwr5') as fwr5, \
+                self.firewall_rule(name='fwr6') as fwr6:
+            fwr = [fwr0, fwr1, fwr2, fwr3, fwr4, fwr5, fwr6]
+            with self.firewall_policy() as fwp:
+                fwp_id = fwp['firewall_policy']['id']
+                attrs['id'] = fwp_id
+                # test insert when rule list is empty
+                fwr0_id = fwr[0]['firewall_rule']['id']
+                attrs['firewall_rules'].insert(0, fwr0_id)
+                self._rule_action('insert', fwp_id, fwr0_id,
+                                  insert_before=None,
+                                  insert_after=None,
+                                  expected_code=webob.exc.HTTPOk.code,
+                                  expected_body=attrs)
+                # test insert at top of rule list, insert_before and
+                # insert_after not provided
+                fwr1_id = fwr[1]['firewall_rule']['id']
+                attrs['firewall_rules'].insert(0, fwr1_id)
+                insert_data = {'firewall_rule_id': fwr1_id}
+                self._rule_action('insert', fwp_id, fwr0_id,
+                                  expected_code=webob.exc.HTTPOk.code,
+                                  expected_body=attrs, body_data=insert_data)
+                # test insert at top of list above existing rule
+                fwr2_id = fwr[2]['firewall_rule']['id']
+                attrs['firewall_rules'].insert(0, fwr2_id)
+                self._rule_action('insert', fwp_id, fwr2_id,
+                                  insert_before=fwr1_id,
+                                  insert_after=None,
+                                  expected_code=webob.exc.HTTPOk.code,
+                                  expected_body=attrs)
+                # test insert at bottom of list
+                fwr3_id = fwr[3]['firewall_rule']['id']
+                attrs['firewall_rules'].append(fwr3_id)
+                self._rule_action('insert', fwp_id, fwr3_id,
+                                  insert_before=None,
+                                  insert_after=fwr0_id,
+                                  expected_code=webob.exc.HTTPOk.code,
+                                  expected_body=attrs)
+                # test insert in the middle of the list using
+                # insert_before
+                fwr4_id = fwr[4]['firewall_rule']['id']
+                attrs['firewall_rules'].insert(1, fwr4_id)
+                self._rule_action('insert', fwp_id, fwr4_id,
+                                  insert_before=fwr1_id,
+                                  insert_after=None,
+                                  expected_code=webob.exc.HTTPOk.code,
+                                  expected_body=attrs)
+                # test insert in the middle of the list using
+                # insert_after
+                fwr5_id = fwr[5]['firewall_rule']['id']
+                attrs['firewall_rules'].insert(1, fwr5_id)
+                self._rule_action('insert', fwp_id, fwr5_id,
+                                  insert_before=None,
+                                  insert_after=fwr2_id,
+                                  expected_code=webob.exc.HTTPOk.code,
+                                  expected_body=attrs)
+                # test insert when both insert_before and
+                # insert_after are set
+                fwr6_id = fwr[6]['firewall_rule']['id']
+                attrs['firewall_rules'].insert(1, fwr6_id)
+                self._rule_action('insert', fwp_id, fwr6_id,
+                                  insert_before=fwr5_id,
+                                  insert_after=fwr5_id,
+                                  expected_code=webob.exc.HTTPOk.code,
+                                  expected_body=attrs)
+
+    def test_remove_rule_from_policy(self):
+        attrs = self._get_test_firewall_policy_attrs()
+        attrs['audited'] = False
+        with self.firewall_rule(name='fwr1') as fwr1, \
+                self.firewall_rule(name='fwr2') as fwr2, \
+                self.firewall_rule(name='fwr3') as fwr3:
+            fr1 = [fwr1, fwr2, fwr3]
+            with self.firewall_policy() as fwp:
+                fwp_id = fwp['firewall_policy']['id']
+                attrs['id'] = fwp_id
+                fw_rule_ids = [r['firewall_rule']['id'] for r in fr1]
+                attrs['firewall_rules'] = fw_rule_ids[:]
+                data = {'firewall_policy':
+                        {'firewall_rules': fw_rule_ids}}
+                req = self.new_update_request('firewall_policies', data,
+                                              fwp_id)
+                req.get_response(self.ext_api)
+                # test removing a rule from a policy that does not exist
+                self._rule_action('remove', '123', fw_rule_ids[1],
+                                  expected_code=webob.exc.HTTPNotFound.code,
+                                  expected_body=None)
+                # test removing a rule in the middle of the list
+                attrs['firewall_rules'].remove(fw_rule_ids[1])
+                self._rule_action('remove', fwp_id, fw_rule_ids[1],
+                                  expected_body=attrs)
+                # test removing a rule at the top of the list
+                attrs['firewall_rules'].remove(fw_rule_ids[0])
+                self._rule_action('remove', fwp_id, fw_rule_ids[0],
+                                  expected_body=attrs)
+                # test removing remaining rule in the list
+                attrs['firewall_rules'].remove(fw_rule_ids[2])
+                self._rule_action('remove', fwp_id, fw_rule_ids[2],
+                                  expected_body=attrs)
+                # test removing rule that is not associated with the policy
+                self._rule_action('remove', fwp_id, fw_rule_ids[2],
+                                  expected_code=webob.exc.HTTPBadRequest.code,
+                                  expected_body=None)
+
+    def test_remove_rule_from_policy_failures(self):
+        with self.firewall_rule(name='fwr1') as fr1:
+            with self.firewall_policy() as fwp:
+                fwp_id = fwp['firewall_policy']['id']
+                fw_rule_ids = [fr1['firewall_rule']['id']]
+                data = {'firewall_policy':
+                        {'firewall_rules': fw_rule_ids}}
+                req = self.new_update_request('firewall_policies', data,
+                                              fwp_id)
+                req.get_response(self.ext_api)
+                # test removing rule that does not exist
+                self._rule_action('remove', fwp_id, '123',
+                                  expected_code=webob.exc.HTTPNotFound.code,
+                                  expected_body=None)
+                # test removing rule with bad request
+                self._rule_action('remove', fwp_id, '123',
+                                  expected_code=webob.exc.HTTPBadRequest.code,
+                                  expected_body=None, body_data={})
+                # test removing rule with firewall_rule_id set to None
+                self._rule_action('remove', fwp_id, '123',
+                                  expected_code=webob.exc.HTTPNotFound.code,
+                                  expected_body=None,
+                                  body_data={'firewall_rule_id': None})
+
     def test_show_firewall_rule_by_name(self):
         with self.firewall_rule(name='firewall_Rule1') as fw_rule:
             res = self._show('firewall_rules',

@@ -167,6 +167,18 @@ class FirewallRuleConflict(nexception.Conflict):
                 "another tenant %(tenant_id)s")
 
 
+class FirewallRuleAlreadyAssociated(nexception.Conflict):
+    """Firewall rule conflict exception.
+
+    Occurs when there is an attempt to assign a rule to a policy that
+    the rule is already associated with.
+    """
+
+    message = _("Operation cannot be performed since Firewall Rule "
+                "%(firewall_rule_id)s is already associated with Firewall"
+                "Policy %(firewall_policy_id)s")
+
+
 RESOURCE_ATTRIBUTE_MAP = {
     'firewall_rules': {
         'id': {'allow_post': False, 'allow_put': False,
