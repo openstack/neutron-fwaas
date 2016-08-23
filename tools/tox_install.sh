@@ -14,13 +14,8 @@ BRANCH_NAME=master
 
 set -e
 
-CONSTRAINTS_FILE=$1
+install_cmd="pip install -c$1"
 shift
-
-install_cmd="pip install"
-if [ $CONSTRAINTS_FILE != "unconstrained" ]; then
-    install_cmd="$install_cmd -c$CONSTRAINTS_FILE"
-fi
 
 if [ $neutron_installed -eq 0 ]; then
     echo "ALREADY INSTALLED" > /tmp/tox_install.txt
