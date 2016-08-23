@@ -27,6 +27,21 @@ down_revision = '4b47ea298795'
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
+
+
+def get_enum():
+    engine = op.get_bind().engine
+    # In PostgreSQL types created separately, so if type was already created in
+    # 4b47ea298795_add_reject_rule it should be created one time.
+    # Use parameter create_type=False for that.
+    if engine.name == 'postgresql':
+        return postgresql.ENUM('allow', 'deny', 'reject',
+                               name='firewallrules_action',
+                               create_type=False)
+    else:
+        return sa.Enum('allow', 'deny', 'reject',
+                       name='firewallrules_action')
 
 
 def upgrade():
@@ -55,8 +70,7 @@ def upgrade():
         sa.Column('source_port_range_max', sa.Integer),
         sa.Column('destination_port_range_min', sa.Integer),
         sa.Column('destination_port_range_max', sa.Integer),
-        sa.Column('action', sa.Enum('allow', 'deny', 'reject',
-                                    name='firewallrules_action')),
+        sa.Column('action', get_enum()),
         sa.Column('public', sa.Boolean),
         sa.Column('enabled', sa.Boolean))
 
