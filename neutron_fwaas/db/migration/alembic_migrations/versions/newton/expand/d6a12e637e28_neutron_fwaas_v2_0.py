@@ -86,8 +86,8 @@ def upgrade():
         'firewall_policy_rule_associations_v2',
         sa.Column('firewall_policy_id', sa.String(length=36),
                   sa.ForeignKey('firewall_policies_v2.id', ondelete='CASCADE'),
-                  nullable=False, unique=True, primary_key=True),
+                  nullable=False, primary_key=True),
         sa.Column('firewall_rule_id', sa.String(length=36),
                   sa.ForeignKey('firewall_rules_v2.id', ondelete='CASCADE'),
-                  nullable=False, unique=True, primary_key=True),
+                  nullable=False, primary_key=True),
         sa.Column('position', sa.Integer))
