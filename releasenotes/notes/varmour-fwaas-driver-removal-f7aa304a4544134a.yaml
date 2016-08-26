@@ -1,0 +1,7 @@
+---
+prelude: >
+  - The vArmour Firewall Driver is being removed from the FwaaS repo,
+    as per decision to remove vendor drivers from the community repo.
+upgrade:
+  - The vArmour Firewall Driver will not be available for use in the
+    Newton release.
