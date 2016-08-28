@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 # Many of neutron's repos suffer from the problem of depending on neutron,
 # but it not existing on pypi.
@@ -8,9 +8,14 @@
 # from neutron master via a hard-coded URL. That last case should only
 # happen with devs running unit tests locally.
 
+# From the tox.ini config page:
+# install_command=ARGV
+# default:
+# pip install {opts} {packages}
+
 ZUUL_CLONER=/usr/zuul-env/bin/zuul-cloner
-neutron_installed=$(echo "import neutron" | python 2>/dev/null ; echo $?)
 BRANCH_NAME=master
+neutron_installed=$(echo "import neutron" | python 2>/dev/null ; echo $?)
 
 set -e
 
@@ -22,8 +27,12 @@ if [ $neutron_installed -eq 0 ]; then
     echo "Neutron already installed; using existing package"
 elif [ -x "$ZUUL_CLONER" ]; then
     echo "ZUUL CLONER" > /tmp/tox_install.txt
-    cwd=$(/bin/pwd)
-    cd /tmp
+    # Make this relative to current working directory so that
+    # git clean can remove it. We cannot remove the directory directly
+    # since it is reference after $install_cmd -e.
+    mkdir -p .tmp
+    NEUTRON_DIR=$(/bin/mktemp -d -p $(pwd)/.tmp)
+    pushd $NEUTRON_DIR
     $ZUUL_CLONER --cache-dir \
         /opt/git \
         --branch $BRANCH_NAME \
@@ -31,10 +40,13 @@ elif [ -x "$ZUUL_CLONER" ]; then
         openstack/neutron
     cd openstack/neutron
     $install_cmd -e .
-    cd "$cwd"
+    popd
 else
     echo "PIP HARDCODE" > /tmp/tox_install.txt
-    $install_cmd -U -egit+https://git.openstack.org/openstack/neutron@$BRANCH_NAME#egg=neutron
+    if [ -z "$NEUTRON_PIP_LOCATION" ]; then
+        NEUTRON_PIP_LOCATION="git+https://git.openstack.org/openstack/neutron@$BRANCH_NAME#egg=neutron"
+    fi
+    $install_cmd -U -e ${NEUTRON_PIP_LOCATION}
 fi
 
 $install_cmd -U $*
