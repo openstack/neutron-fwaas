@@ -1,0 +1,11 @@
+---
+prelude: >
+    The Cisco Firewall Driver is being moved from the
+    FWaaS repo to the Cisco specific repo:
+    https://github.com/openstack/networking-cisco
+upgrade:
+  - The Cisco FWaaS driver will not be available from
+    the neutron-fwaas repo in Newton.  For the Cisco
+    FWaaS driver, refer to the openstack/networking-cisco
+    repo.
+
