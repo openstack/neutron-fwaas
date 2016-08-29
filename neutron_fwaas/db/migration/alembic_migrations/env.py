@@ -15,7 +15,7 @@
 from logging import config as logging_config
 
 from alembic import context
-from neutron.db import model_base
+from neutron_lib.db import model_base
 from oslo_config import cfg
 from oslo_db.sqlalchemy import session
 import sqlalchemy as sa

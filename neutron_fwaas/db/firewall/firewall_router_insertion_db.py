@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from neutron.db import model_base
+from neutron_lib.db import model_base
 from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
 import sqlalchemy as sa

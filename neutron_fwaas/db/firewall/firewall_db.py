@@ -17,11 +17,11 @@ from neutron.callbacks import events
 from neutron.callbacks import registry
 from neutron.callbacks import resources
 from neutron.db import common_db_mixin as base_db
-from neutron.db import model_base
 from neutron.extensions import l3
 from neutron import manager
 from neutron.plugins.common import constants as p_const
 from neutron_lib import constants
+from neutron_lib.db import model_base
 from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_utils import uuidutils
@@ -38,7 +38,7 @@ from neutron_fwaas.extensions import firewall as fw_ext
 LOG = logging.getLogger(__name__)
 
 
-class FirewallRule(model_base.BASEV2, model_base.HasId, model_base.HasTenant):
+class FirewallRule(model_base.BASEV2, model_base.HasId, model_base.HasProject):
     """Represents a Firewall rule."""
     __tablename__ = 'firewall_rules'
     __table_args__ = ({'mysql_collate': 'utf8_bin'})
@@ -62,7 +62,7 @@ class FirewallRule(model_base.BASEV2, model_base.HasId, model_base.HasTenant):
     position = sa.Column(sa.Integer)
 
 
-class Firewall(model_base.BASEV2, model_base.HasId, model_base.HasTenant):
+class Firewall(model_base.BASEV2, model_base.HasId, model_base.HasProject):
     """Represents a Firewall resource."""
     __tablename__ = 'firewalls'
     __table_args__ = ({'mysql_collate': 'utf8_bin'})
@@ -77,7 +77,7 @@ class Firewall(model_base.BASEV2, model_base.HasId, model_base.HasTenant):
 
 
 class FirewallPolicy(model_base.BASEV2, model_base.HasId,
-                     model_base.HasTenant):
+                     model_base.HasProject):
     """Represents a Firewall Policy resource."""
     __tablename__ = 'firewall_policies'
     __table_args__ = ({'mysql_collate': 'utf8_bin'})
