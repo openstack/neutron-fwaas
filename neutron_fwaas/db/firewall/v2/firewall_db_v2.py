@@ -14,10 +14,9 @@
 #    under the License.
 
 from neutron.db import common_db_mixin as base_db
-from neutron.db import model_base
-from neutron.db import models_v2
 from neutron.plugins.common import constants as p_const
 import neutron_lib.constants as libconstants
+from neutron_lib.db import model_base
 from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_utils import uuidutils
@@ -41,7 +40,7 @@ class HasDescription(object):
     description = sa.Column(sa.String(1024))
 
 
-class FirewallRuleV2(model_base.BASEV2, models_v2.HasId, HasName,
+class FirewallRuleV2(model_base.BASEV2, model_base.HasId, HasName,
                      HasDescription, model_base.HasProject):
     __tablename__ = "firewall_rules_v2"
     public = sa.Column(sa.Boolean)
@@ -58,7 +57,7 @@ class FirewallRuleV2(model_base.BASEV2, models_v2.HasId, HasName,
     enabled = sa.Column(sa.Boolean)
 
 
-class FirewallGroup(model_base.BASEV2, models_v2.HasId, HasName,
+class FirewallGroup(model_base.BASEV2, model_base.HasId, HasName,
                     HasDescription, model_base.HasProject):
     __tablename__ = 'firewall_groups_v2'
     ports = orm.relationship(
@@ -107,7 +106,7 @@ class FirewallPolicyRuleAssociation(model_base.BASEV2):
     firewall_rule = orm.relationship('FirewallRuleV2')
 
 
-class FirewallPolicy(model_base.BASEV2, models_v2.HasId, HasName,
+class FirewallPolicy(model_base.BASEV2, model_base.HasId, HasName,
                      HasDescription, model_base.HasProject):
     __tablename__ = 'firewall_policies_v2'
     name = sa.Column(sa.String(255))
