@@ -14,6 +14,7 @@
 #  under the License.
 
 import mock
+import testtools
 
 from neutron.api.v2 import attributes as attr
 from neutron import context
@@ -440,6 +441,7 @@ class TestFirewallPluginBase(TestFirewallRouterInsertionBase,
                     for k, v in six.iteritems(attrs):
                         self.assertEqual(v, res['firewall'][k])
 
+    @testtools.skip('bug/1622694')
     def test_update_firewall_shared_fails_for_non_admin(self):
         ctx = context.get_admin_context()
         with self.router(name='router1', admin_state_up=True,
