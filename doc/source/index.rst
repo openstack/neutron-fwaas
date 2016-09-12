@@ -1,14 +1,25 @@
 .. documentation master file
 
-====
-Main
-====
+
+Developer documentation for neutron-fwaas
+=========================================
+
+General Information and Other Project References:
 
 .. toctree::
    :glob:
    :maxdepth: 1
 
-   main/*
+   fwaas_v2
+   contributing
+
+Testing and Usage Information:
+
+.. toctree::
+   :glob:
+   :maxdepth: 1
+
+   devstack
 
 ==================
 Indices and tables
