@@ -121,6 +121,7 @@ class FirewallPluginDbTestCase(base.NeutronDbPluginV2TestCase):
     def _get_test_firewall_rule_attrs(self, name='firewall_rule1'):
         attrs = {'name': name,
                  'tenant_id': self._tenant_id,
+                 'project_id': self._tenant_id,
                  'shared': SHARED,
                  'protocol': PROTOCOL,
                  'ip_version': IP_VERSION,
@@ -137,6 +138,7 @@ class FirewallPluginDbTestCase(base.NeutronDbPluginV2TestCase):
         attrs = {'name': name,
                  'description': DESCRIPTION,
                  'tenant_id': self._tenant_id,
+                 'project_id': self._tenant_id,
                  'shared': SHARED,
                  'firewall_rules': [],
                  'audited': audited}
@@ -146,6 +148,7 @@ class FirewallPluginDbTestCase(base.NeutronDbPluginV2TestCase):
                                  status='PENDING_CREATE'):
         attrs = {'name': name,
                  'tenant_id': self._tenant_id,
+                 'project_id': self._tenant_id,
                  'admin_state_up': ADMIN_STATE_UP,
                  'status': status}
 
@@ -158,6 +161,7 @@ class FirewallPluginDbTestCase(base.NeutronDbPluginV2TestCase):
         data = {'firewall_policy': {'name': name,
                                     'description': description,
                                     'tenant_id': tenant_id,
+                                    'project_id': tenant_id,
                                     'shared': shared,
                                     'firewall_rules': firewall_rules,
                                     'audited': audited}}
@@ -202,6 +206,7 @@ class FirewallPluginDbTestCase(base.NeutronDbPluginV2TestCase):
         tenant_id = kwargs.get('tenant_id', self._tenant_id)
         data = {'firewall_rule': {'name': name,
                                   'tenant_id': tenant_id,
+                                  'project_id': tenant_id,
                                   'shared': shared,
                                   'protocol': protocol,
                                   'ip_version': ip_version,
@@ -264,6 +269,7 @@ class FirewallPluginDbTestCase(base.NeutronDbPluginV2TestCase):
         ctx = kwargs.get('context', None)
         if ctx is None or ctx.is_admin:
             data['firewall'].update({'tenant_id': tenant_id})
+            data['firewall'].update({'project_id': tenant_id})
 
         firewall_req = self.new_create_request('firewalls', data, fmt,
                                                context=ctx)

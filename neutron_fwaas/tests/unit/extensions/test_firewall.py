@@ -46,12 +46,14 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
 
     def test_create_firewall(self):
         fw_id = _uuid()
+        project_id = _uuid()
         data = {'firewall': {'description': 'descr_firewall1',
                              'name': 'firewall1',
                              'admin_state_up': True,
                              'firewall_policy_id': _uuid(),
                              'shared': False,
-                             'tenant_id': _uuid()}}
+                             'project_id': project_id,
+                             'tenant_id': project_id}}
         return_value = copy.copy(data['firewall'])
         return_value.update({'id': fw_id})
         # since 'shared' is hidden
@@ -70,12 +72,14 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         self.assertEqual(return_value, res['firewall'])
 
     def test_create_firewall_invalid_long_name(self):
+        project_id = _uuid()
         data = {'firewall': {'description': 'descr_firewall1',
                              'name': _long_name,
                              'admin_state_up': True,
                              'firewall_policy_id': _uuid(),
                              'shared': False,
-                             'tenant_id': _uuid()}}
+                             'project_id': project_id,
+                             'tenant_id': project_id}}
         res = self.api.post(_get_path('fw/firewalls', fmt=self.fmt),
                             self.serialize(data),
                             content_type='application/%s' % self.fmt,
@@ -83,12 +87,14 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         self.assertIn('Invalid input for name', res.body.decode('utf-8'))
 
     def test_create_firewall_invalid_long_description(self):
+        project_id = _uuid()
         data = {'firewall': {'description': _long_description,
                              'name': 'firewall1',
                              'admin_state_up': True,
                              'firewall_policy_id': _uuid(),
                              'shared': False,
-                             'tenant_id': _uuid()}}
+                             'project_id': project_id,
+                             'tenant_id': project_id}}
         res = self.api.post(_get_path('fw/firewalls', fmt=self.fmt),
                             self.serialize(data),
                             content_type='application/%s' % self.fmt,
@@ -155,6 +161,7 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
 
     def _test_create_firewall_rule(self, src_port, dst_port):
         rule_id = _uuid()
+        project_id = _uuid()
         data = {'firewall_rule': {'description': 'descr_firewall_rule1',
                                   'name': 'rule1',
                                   'shared': False,
@@ -166,7 +173,8 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
                                   'destination_port': dst_port,
                                   'action': 'allow',
                                   'enabled': True,
-                                  'tenant_id': _uuid()}}
+                                  'project_id': project_id,
+                                  'tenant_id': project_id}}
         expected_ret_val = copy.copy(data['firewall_rule'])
         expected_ret_val['source_port'] = str(src_port)
         expected_ret_val['destination_port'] = str(dst_port)
@@ -195,6 +203,7 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         self._test_create_firewall_rule('1:20', '30:40')
 
     def test_create_firewall_rule_invalid_long_name(self):
+        project_id = _uuid()
         data = {'firewall_rule': {'description': 'descr_firewall_rule1',
                                   'name': _long_name,
                                   'shared': False,
@@ -206,7 +215,8 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
                                   'destination_port': 1,
                                   'action': 'allow',
                                   'enabled': True,
-                                  'tenant_id': _uuid()}}
+                                  'project_id': project_id,
+                                  'tenant_id': project_id}}
         res = self.api.post(_get_path('fw/firewall_rules', fmt=self.fmt),
                             self.serialize(data),
                             content_type='application/%s' % self.fmt,
@@ -214,6 +224,7 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         self.assertIn('Invalid input for name', res.body.decode('utf-8'))
 
     def test_create_firewall_rule_invalid_long_description(self):
+        project_id = _uuid()
         data = {'firewall_rule': {'description': _long_description,
                                   'name': 'rule1',
                                   'shared': False,
@@ -225,7 +236,8 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
                                   'destination_port': 1,
                                   'action': 'allow',
                                   'enabled': True,
-                                  'tenant_id': _uuid()}}
+                                  'project_id': project_id,
+                                  'tenant_id': project_id}}
         res = self.api.post(_get_path('fw/firewall_rules', fmt=self.fmt),
                             self.serialize(data),
                             content_type='application/%s' % self.fmt,
@@ -294,12 +306,14 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
 
     def test_create_firewall_policy(self):
         policy_id = _uuid()
+        project_id = _uuid()
         data = {'firewall_policy': {'description': 'descr_firewall_policy1',
                                     'name': 'new_fw_policy1',
                                     'shared': False,
                                     'firewall_rules': [_uuid(), _uuid()],
                                     'audited': False,
-                                    'tenant_id': _uuid()}}
+                                    'project_id': project_id,
+                                    'tenant_id': project_id}}
         return_value = copy.copy(data['firewall_policy'])
         return_value.update({'id': policy_id})
 
@@ -318,12 +332,14 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         self.assertEqual(return_value, res['firewall_policy'])
 
     def test_create_firewall_policy_invalid_long_name(self):
+        project_id = _uuid()
         data = {'firewall_policy': {'description': 'descr_firewall_policy1',
                                     'name': _long_name,
                                     'shared': False,
                                     'firewall_rules': [_uuid(), _uuid()],
                                     'audited': False,
-                                    'tenant_id': _uuid()}}
+                                    'project_id': project_id,
+                                    'tenant_id': project_id}}
         res = self.api.post(_get_path('fw/firewall_policies',
                                       fmt=self.fmt),
                             self.serialize(data),
@@ -332,12 +348,14 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         self.assertIn('Invalid input for name', res.body.decode('utf-8'))
 
     def test_create_firewall_policy_invalid_long_description(self):
+        project_id = _uuid()
         data = {'firewall_policy': {'description': _long_description,
                                     'name': 'new_fw_policy1',
                                     'shared': False,
                                     'firewall_rules': [_uuid(), _uuid()],
                                     'audited': False,
-                                    'tenant_id': _uuid()}}
+                                    'project_id': project_id,
+                                    'tenant_id': project_id}}
         res = self.api.post(_get_path('fw/firewall_policies',
                                       fmt=self.fmt),
                             self.serialize(data),

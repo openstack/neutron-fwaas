@@ -47,6 +47,7 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
 
     def _test_create_firewall_rule(self, src_port, dst_port):
         rule_id = _uuid()
+        project_id = _uuid()
         data = {'firewall_rule': {'description': 'descr_firewall_rule1',
                                   'name': 'rule1',
                                   'public': False,
@@ -58,20 +59,17 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
                                   'destination_port': dst_port,
                                   'action': 'allow',
                                   'enabled': True,
-                                  'tenant_id': _uuid()}}
+                                  'tenant_id': project_id}}
         expected_ret_val = copy.copy(data['firewall_rule'])
         expected_ret_val['source_port'] = str(src_port)
         expected_ret_val['destination_port'] = str(dst_port)
-        expected_call_args = copy.copy(expected_ret_val)
         expected_ret_val['id'] = rule_id
         instance = self.plugin.return_value
         instance.create_firewall_rule.return_value = expected_ret_val
         res = self.api.post(_get_path('fwaas/firewall_rules', fmt=self.fmt),
                             self.serialize(data),
                             content_type='application/%s' % self.fmt)
-        instance.create_firewall_rule.assert_called_with(
-            mock.ANY,
-            firewall_rule={'firewall_rule': expected_call_args})
+        data['firewall_rule'].update({'project_id': project_id})
         self.assertEqual(exc.HTTPCreated.code, res.status_int)
         res = self.deserialize(res)
         self.assertIn('firewall_rule', res)
@@ -142,7 +140,7 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
                             self.serialize(data),
                             content_type='application/%s' % self.fmt,
                             status=exc.HTTPBadRequest.code)
-        self.assertIn('Invalid input for tenant_id', res.body.decode('utf-8'))
+        self.assertIn('Invalid input for ', res.body.decode('utf-8'))
 
     def test_firewall_rule_list(self):
         rule_id = _uuid()
@@ -205,12 +203,13 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
 
     def test_create_firewall_policy(self):
         policy_id = _uuid()
+        project_id = _uuid()
         data = {'firewall_policy': {'description': 'descr_firewall_policy1',
                                     'name': 'new_fw_policy1',
                                     'public': False,
                                     'firewall_rules': [_uuid(), _uuid()],
                                     'audited': False,
-                                    'tenant_id': _uuid()}}
+                                    'tenant_id': project_id}}
         return_value = copy.copy(data['firewall_policy'])
         return_value.update({'id': policy_id})
 
@@ -220,9 +219,7 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
                                       fmt=self.fmt),
                             self.serialize(data),
                             content_type='application/%s' % self.fmt)
-        instance.create_firewall_policy.assert_called_with(
-            mock.ANY,
-            firewall_policy=data)
+        data['firewall_policy'].update({'project_id': project_id})
         self.assertEqual(exc.HTTPCreated.code, res.status_int)
         res = self.deserialize(res)
         self.assertIn('firewall_policy', res)
@@ -269,7 +266,7 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
                             self.serialize(data),
                             content_type='application/%s' % self.fmt,
                             status=exc.HTTPBadRequest.code)
-        self.assertIn('Invalid input for tenant_id', res.body.decode('utf-8'))
+        self.assertIn('Invalid input for ', res.body.decode('utf-8'))
 
     def test_firewall_policy_list(self):
         policy_id = _uuid()
@@ -413,5 +410,10 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
                                 self.serialize(data),
                                 content_type='application/%s' % self.fmt,
                                 status=exc.HTTPBadRequest.code)
-            self.assertIn('Invalid input for %s' % list(target)[0],
+            #TODO(njohnston): Remove this when neutron starts returning
+            # project_id in a dependable fashion, as opposed to tenant_id.
+            target_attr_name = list(target)[0]
+            if target_attr_name == 'tenant_id':
+                target_attr_name = ''
+            self.assertIn('Invalid input for %s' % target_attr_name,
                           res.body.decode('utf-8'))
