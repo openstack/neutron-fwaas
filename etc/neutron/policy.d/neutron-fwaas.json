@@ -31,5 +31,5 @@
     "get_firewall_group:public": "rule:admin_only",
     "update_firewall_group": "rule:admin_or_owner",
     "update_firewall_group:public": "rule:admin_only",
-    "delete_firewall_group": "rule:admin_or_owner",
+    "delete_firewall_group": "rule:admin_or_owner"
 }
