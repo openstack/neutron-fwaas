@@ -21,6 +21,11 @@
 XTRACE=$(set +o | grep xtrace)
 set +o xtrace
 
+# Source in L2 and L3 agent extension management
+LIBDIR=$DEST/neutron-fwaas/devstack/lib
+source $LIBDIR/l2_agent
+source $LIBDIR/l3_agent
+
 function pre_install_fwaas() {
     # Install OS packages if necessary with "install_package ...".
     :
@@ -33,14 +38,23 @@ function install_fwaas() {
     setup_develop $DEST/neutron-fwaas
 }
 
-function configure_fwaas() {
-    neutron_fwaas_configure_driver
-    iniset_multiline $Q_L3_CONF_FILE AGENT extensions fwaas
+function configure_fwaas_v1() {
+    neutron_fwaas_configure_driver fwaas
+    iniset_multiline $Q_L3_CONF_FILE fwaas agent_version v1
+}
+
+function configure_fwaas_v2() {
+    neutron_fwaas_configure_driver fwaas_v2
+    iniset_multiline $Q_L3_CONF_FILE fwaas agent_version v2
 }
 
 function init_fwaas() {
     # Initialize and start the service.
     :
+    if [ ! -d /etc/neutron/policy.d ]; then
+        mkdir /etc/neutron/policy.d
+    fi
+    cp $DEST/neutron-fwaas/etc/neutron/policy.d/neutron-fwaas.json /etc/neutron/policy.d/neutron-fwaas.json
 }
 
 function shutdown_fwaas() {
@@ -54,16 +68,24 @@ function cleanup_fwaas() {
 }
 
 function neutron_fwaas_configure_common {
-    _neutron_service_plugin_class_add $FWAAS_PLUGIN
+    if is_service_enabled q-fwaas-v1; then
+        _neutron_service_plugin_class_add $FWAAS_PLUGIN_V1
+    elif is_service_enabled q-fwaas-v2; then
+        _neutron_service_plugin_class_add $FWAAS_PLUGIN_V2
+    else
+        _neutron_service_plugin_class_add $FWAAS_PLUGIN_V1
+    fi
 }
 
 function neutron_fwaas_configure_driver {
+    plugin_agent_add_l3_agent_extension $1
+    configure_l3_agent
     iniset_multiline $Q_L3_CONF_FILE fwaas enabled True
     iniset_multiline $Q_L3_CONF_FILE fwaas driver $FWAAS_DRIVER
 }
 
 # check for service enabled
-if is_service_enabled q-svc && is_service_enabled q-fwaas; then
+if is_service_enabled q-svc && ( is_service_enabled q-fwaas || is_service_enabled q-fwaas-v1 || is_service_enabled q-fwaas-v2 ) then
 
     if [[ "$1" == "stack" && "$2" == "pre-install" ]]; then
         # Set up system services
@@ -77,8 +99,16 @@ if is_service_enabled q-svc && is_service_enabled q-fwaas; then
 
     elif [[ "$1" == "stack" && "$2" == "post-config" ]]; then
         # Configure after the other layer 1 and 2 services have been configured
-        echo_summary "Configuring q-fwaas"
-        configure_fwaas
+        if is_service_enabled q-fwaas-v1; then
+            echo_summary "Configuring q-fwaas for FWaaS v1"
+            configure_fwaas_v1
+        elif is_service_enabled q-fwaas-v2; then
+            echo_summary "Configuring q-fwaas for FWaaS v2"
+            configure_fwaas_v2
+        else
+            echo_summary "Configuring q-fwaas for FWaaS v1"
+            configure_fwaas_v1
+        fi
 
     elif [[ "$1" == "stack" && "$2" == "extra" ]]; then
         # Initialize and start the q-fwaas service
