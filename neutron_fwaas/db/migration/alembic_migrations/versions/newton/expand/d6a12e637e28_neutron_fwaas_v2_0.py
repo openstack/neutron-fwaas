@@ -21,13 +21,19 @@ Create Date: 2016-06-08 19:57:13.848855
 
 """
 
+from alembic import op
+import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
+
+from neutron.db import migration
+
+
 # revision identifiers, used by Alembic.
 revision = 'd6a12e637e28'
 down_revision = '4b47ea298795'
 
-from alembic import op
-import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
+# milestone identifier, used by neutron-db-manage
+neutron_milestone = [migration.NEWTON]
 
 
 def get_enum():
