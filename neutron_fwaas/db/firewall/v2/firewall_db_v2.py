@@ -187,7 +187,8 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
         self._validate_fwr_port_range(min_port, max_port)
         return '%s:%s' % (min_port, max_port)
 
-    def _make_firewall_rule_dict(self, firewall_rule, fields=None):
+    def _make_firewall_rule_dict(self, firewall_rule, fields=None,
+                                 policies=None):
         src_port_range = self._get_port_range_from_min_max_ports(
             firewall_rule['source_port_range_min'],
             firewall_rule['source_port_range_max'])
@@ -199,6 +200,7 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
                'name': firewall_rule['name'],
                'description': firewall_rule['description'],
                'protocol': firewall_rule['protocol'],
+               'firewall_policy_id': policies,
                'ip_version': firewall_rule['ip_version'],
                'source_ip_address': firewall_rule['source_ip_address'],
                'destination_ip_address':
@@ -459,7 +461,8 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
     def get_firewall_rule(self, context, id, fields=None):
         LOG.debug("get_firewall_rule() called")
         fwr = self._get_firewall_rule(context, id)
-        return self._make_firewall_rule_dict(fwr, fields)
+        policies = self._get_policies_with_rule(context, id) or None
+        return self._make_firewall_rule_dict(fwr, fields, policies=policies)
 
     def get_firewall_rules(self, context, filters=None, fields=None):
         LOG.debug("get_firewall_rules() called")
