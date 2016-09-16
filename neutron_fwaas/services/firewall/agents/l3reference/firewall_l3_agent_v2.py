@@ -19,6 +19,7 @@ from neutron.common import rpc as n_rpc
 from neutron import context
 from neutron.plugins.common import constants as n_const
 from neutron_fwaas.common import fwaas_constants as f_const
+from neutron_lib import constants as lib_constants
 from oslo_config import cfg
 from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
@@ -244,15 +245,16 @@ class FWaaSL3AgentExtension(l3_agent_extension.L3AgentCoreResourceExtension):
         fwg_list = self.fwplugin_rpc.get_firewall_groups_for_project(ctx)
 
         # Apply a firewall group, as requested, to ports on the new router.
-        for port in updated_router['_interfaces']:
-            for firewall_group in fwg_list:
-                if (self._has_port_insertion_fields(firewall_group) and
-                        (port['id'] in firewall_group['add-port-ids'] or
-                        port['id'] in firewall_group['del-port-ids'])):
-                    self._invoke_driver_for_sync_from_plugin(ctx, port,
-                            firewall_group)
-                    # A port can have at most one firewall group.
-                    break
+        if lib_constants.INTERFACE_KEY in updated_router:
+            for port in updated_router[lib_constants.INTERFACE_KEY]:
+                for firewall_group in fwg_list:
+                    if (self._has_port_insertion_fields(firewall_group) and
+                            (port['id'] in firewall_group['add-port-ids'] or
+                            port['id'] in firewall_group['del-port-ids'])):
+                        self._invoke_driver_for_sync_from_plugin(ctx, port,
+                                firewall_group)
+                        # A port can have at most one firewall group.
+                        break
 
     def add_router(self, context, new_router):
         """Handles agent restart and router add. Fetches firewall groups from
