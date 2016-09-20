@@ -5,7 +5,7 @@ pbr>=1.6 # Apache-2.0
 
 eventlet!=0.18.3,>=0.18.2 # MIT
 httplib2>=0.7.5 # MIT
-netaddr!=0.7.16,>=0.7.12 # BSD
+netaddr!=0.7.16,>=0.7.13 # BSD
 SQLAlchemy<1.1.0,>=1.0.10 # MIT
 alembic>=0.8.4 # MIT
 six>=1.9.0 # MIT
