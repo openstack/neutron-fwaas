@@ -25,6 +25,7 @@ from neutron.plugins.common import constants
 from oslo_config import cfg
 from oslo_utils import importutils
 from oslo_utils import uuidutils
+
 import six
 import testtools
 import webob.exc
@@ -1280,7 +1281,7 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
                 insert_data = {'firewall_rule_id': None,
                                'insert_before': '123',
                                'insert_after': '456'}
-                self._rule_action('insert', fwp_id, '123',
+                self._rule_action('insert', fwp_id, None,
                                   expected_code=webob.exc.HTTPNotFound.code,
                                   expected_body=None,
                                   body_data=insert_data)
@@ -1292,6 +1293,22 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
                 self._rule_action('insert', None, fr1_id,
                                   expected_code=webob.exc.HTTPBadRequest.code,
                                   expected_body=None)
+
+    def test_insert_rule_and_already_associated(self):
+        with self.firewall_rule() as fwr:
+            fwr_id = fwr['firewall_rule']['id']
+            with self.firewall_policy(firewall_rules=[fwr_id]) as fwp:
+                fwp_id = fwp['firewall_policy']['id']
+                msg = "Operation cannot be performed since Firewall Rule " \
+                      "{0} is already associated with FirewallPolicy " \
+                      "{1}".format(fwr_id, fwp_id)
+                result = self._rule_action(
+                    'insert', fwp_id, fwr_id,
+                    insert_before=None,
+                    insert_after=None,
+                    expected_code=webob.exc.HTTPConflict.code,
+                    body_data={'firewall_rule_id': fwr_id})
+                self.assertEqual(msg, result['NeutronError']['message'])
 
     def test_insert_rule_for_previously_associated_rule(self):
         with self.firewall_rule() as fwr:
@@ -1431,6 +1448,21 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
                                   insert_after=fwr5_id,
                                   expected_code=webob.exc.HTTPOk.code,
                                   expected_body=attrs)
+
+    def test_remove_rule_and_not_associated(self):
+        with self.firewall_rule(name='fwr0') as fwr:
+            with self.firewall_policy(name='firewall_policy2') as fwp:
+                fwp_id = fwp['firewall_policy']['id']
+                fwr_id = fwr['firewall_rule']['id']
+                msg = "Firewall Rule {0} is not associated with " \
+                      "Firewall Policy {1}.".format(fwr_id, fwp_id)
+                result = self._rule_action(
+                    'remove', fwp_id, fwr_id,
+                    insert_before=None,
+                    insert_after=None,
+                    expected_code=webob.exc.HTTPBadRequest.code,
+                    body_data={'firewall_rule_id': fwr_id})
+                self.assertEqual(msg, result['NeutronError']['message'])
 
     def test_remove_rule_from_policy(self):
         attrs = self._get_test_firewall_policy_attrs()

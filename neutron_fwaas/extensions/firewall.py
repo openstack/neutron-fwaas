@@ -109,7 +109,7 @@ class FirewallRuleInUse(nexception.InUse):
 
 class FirewallRuleNotAssociatedWithPolicy(nexception.InvalidInput):
     message = _("Firewall Rule %(firewall_rule_id)s is not associated "
-                " with Firewall Policy %(firewall_policy_id)s.")
+                "with Firewall Policy %(firewall_policy_id)s.")
 
 
 class FirewallRuleInvalidProtocol(nexception.InvalidInput):
