@@ -1,2 +1,3 @@
 FWAAS_DRIVER=${FWAAS_DRIVER:-iptables}
-FWAAS_PLUGIN=${FWAAS_PLUGIN:-firewall}
+FWAAS_PLUGIN_V1=${FWAAS_PLUGIN:-neutron_fwaas.services.firewall.fwaas_plugin.FirewallPlugin}
+FWAAS_PLUGIN_V2=${FWAAS_PLUGIN:-neutron_fwaas.services.firewall.fwaas_plugin_v2.FirewallPluginV2}
