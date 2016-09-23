@@ -80,5 +80,7 @@ EOF
 if [[ "$IS_GATE" != "True" ]]; then
     if [[ "$INSTALL_MYSQL_ONLY" == "True" ]]; then
         _install_databases nopg
+    else
+        _install_databases
     fi
 fi
