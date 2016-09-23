@@ -758,7 +758,7 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
             count = context.session.query(
                 FirewallGroup).filter_by(id=id).update(fwg)
             if not count:
-                raise fw_ext.FirewallNotFound(firewall_id=id)
+                raise fw_ext.FirewallGroupNotFound(firewall_id=id)
         return self.get_firewall_group(context, id)
 
     def update_firewall_group_status(self, context, id, status, not_in=None):
@@ -782,7 +782,7 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
             count = context.session.query(
                 FirewallGroup).filter_by(id=id).delete()
             if not count:
-                raise fw_ext.FirewallNotFound(firewall_id=id)
+                raise fw_ext.FirewallGroupNotFound(firewall_id=id)
 
     def get_firewall_group(self, context, id, fields=None):
         LOG.debug("get_firewall_group() called")

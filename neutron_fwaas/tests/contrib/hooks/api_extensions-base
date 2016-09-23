@@ -1,0 +1,1 @@
+NETWORK_API_EXTENSIONS=agent,binding,dhcp_agent_scheduler,external-net,ext-gw-mode,extra_dhcp_opts,quotas,router,security-group,subnet_allocation,network-ip-availability,auto-allocated-topology,timestamp_core,tag,service-type,rbac-policies,standard-attr-description,pagination,sorting,project-id
