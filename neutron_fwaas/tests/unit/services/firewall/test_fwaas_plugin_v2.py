@@ -487,3 +487,80 @@ class TestFirewallPluginBasev2(TestFirewallRouterPortBase,
                 r['router']['id'],
                 s2['subnet']['id'],
                 None)
+
+    def test_update_firewall_rule_on_active_fwg(self):
+        name = "new_firewall_rule1"
+        attrs = self._get_test_firewall_rule_attrs(name)
+        with self.router(name='router1', admin_state_up=True,
+            tenant_id=self._tenant_id) as r, \
+                self.subnet() as s1:
+
+            body = self._router_interface_action(
+                'add',
+                r['router']['id'],
+                s1['subnet']['id'],
+                None)
+            port_id1 = body['port_id']
+            with self.firewall_rule() as fwr:
+                with self.firewall_policy(
+                    firewall_rules=[fwr['firewall_rule']['id']]) as fwp:
+                    fwp_id = fwp['firewall_policy']['id']
+                    with self.firewall_group(
+                        name='test',
+                        ingress_firewall_policy_id=fwp_id,
+                        egress_firewall_policy_id=fwp_id, ports=[port_id1],
+                        admin_state_up=True) as fwg1:
+                        self.assertEqual(const.PENDING_CREATE,
+                             fwg1['firewall_group']['status'])
+
+                        ctx = context.get_admin_context()
+                        self.callbacks.set_firewall_group_status(ctx,
+                            fwg1['firewall_group']['id'], const.ACTIVE)
+                        data = {'firewall_rule': {'name': name}}
+                        req = self.new_update_request('firewall_rules', data,
+                            fwr['firewall_rule']['id'])
+                        res = self.deserialize(self.fmt,
+                                               req.get_response(self.ext_api))
+                        for k, v in six.iteritems(attrs):
+                            self.assertEqual(v, res['firewall_rule'][k])
+
+            self._router_interface_action('remove',
+                r['router']['id'],
+                s1['subnet']['id'],
+                None)
+
+    def test_update_firewall_rule_on_pending_create_fwg(self):
+        """update should fail"""
+        name = "new_firewall_rule1"
+        with self.router(name='router1', admin_state_up=True,
+            tenant_id=self._tenant_id) as r, \
+                self.subnet() as s1:
+
+            body = self._router_interface_action(
+                'add',
+                r['router']['id'],
+                s1['subnet']['id'],
+                None)
+            port_id1 = body['port_id']
+            with self.firewall_rule() as fwr:
+                with self.firewall_policy(
+                    firewall_rules=[fwr['firewall_rule']['id']]) as fwp:
+                    fwp_id = fwp['firewall_policy']['id']
+                    with self.firewall_group(
+                        name='test',
+                        ingress_firewall_policy_id=fwp_id,
+                        egress_firewall_policy_id=fwp_id, ports=[port_id1],
+                        admin_state_up=True) as fwg1:
+                        self.assertEqual(const.PENDING_CREATE,
+                             fwg1['firewall_group']['status'])
+
+                        data = {'firewall_rule': {'name': name}}
+                        req = self.new_update_request('firewall_rules', data,
+                            fwr['firewall_rule']['id'])
+                        res = req.get_response(self.ext_api)
+                        self.assertEqual(409, res.status_int)
+
+            self._router_interface_action('remove',
+                r['router']['id'],
+                s1['subnet']['id'],
+                None)

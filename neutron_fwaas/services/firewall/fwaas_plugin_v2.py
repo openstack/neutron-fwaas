@@ -189,7 +189,7 @@ class FirewallPluginV2(
 
     def _ensure_update_firewall_policy(self, context, firewall_policy_id):
         firewall_policy = self.get_firewall_policy(context, firewall_policy_id)
-        if firewall_policy and 'firewall_list' in firewall_policy:
+        if firewall_policy:
             ing_fwg_ids, eg_fwg_ids = self._get_fwgs_with_policy(context,
                 firewall_policy_id)
             for fwg_id in list(set(ing_fwg_ids + eg_fwg_ids)):
@@ -341,7 +341,7 @@ class FirewallPluginV2(
         self._ensure_update_firewall_rule(context, id)
         fwr = super(FirewallPluginV2,
                     self).update_firewall_rule(context, id, firewall_rule)
-        firewall_policy_id = fwr['firewall_policy_id']
-        if firewall_policy_id:
-            self._rpc_update_firewall_policy(context, firewall_policy_id)
+        fwp_ids = self._get_policies_with_rule(context, id)
+        for fwp_id in fwp_ids:
+            self._rpc_update_firewall_policy(context, fwp_id)
         return fwr
