@@ -2,8 +2,7 @@ Welcome!
 ========
 
 This package contains the code for the Neutron Firewall as a Service
-(FWaaS) service. This includes third-party drivers. This package
-requires Neutron to run.
+(FWaaS) service. This package requires Neutron to run.
 
 External Resources:
 ===================
