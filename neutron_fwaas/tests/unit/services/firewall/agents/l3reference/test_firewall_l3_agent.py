@@ -18,11 +18,11 @@ import uuid
 
 from oslo_config import cfg
 
-from neutron.agent.l3 import config as l3_config
 from neutron.agent.l3 import ha
 from neutron.agent.l3 import l3_agent_extension_api as l3_agent_api
 from neutron.agent.l3 import router_info
 from neutron.agent.linux import ip_lib
+from neutron.conf.agent.l3 import config as l3_config
 from neutron.conf import common as base_config
 from neutron import context
 from neutron.plugins.common import constants
