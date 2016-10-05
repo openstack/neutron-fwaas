@@ -1378,6 +1378,24 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
                                   expected_code=webob.exc.HTTPOk.code,
                                   expected_body=attrs)
 
+    def test_remove_rule_and_not_associated(self):
+        with self.firewall_rule(name='fwr0') as fwr1, \
+            self.firewall_rule(name='fwr2') as fwr2:
+            associated = fwr1['firewall_rule']['id']
+            with self.firewall_policy(
+                name='firewall_policy2', firewall_rules=[associated]) as fwp:
+                fwp_id = fwp['firewall_policy']['id']
+                not_associated = fwr2['firewall_rule']['id']
+                msg = "Firewall Rule {0} is not associated with " \
+                      "Firewall Policy {1}.".format(not_associated, fwp_id)
+                result = self._rule_action(
+                    'remove', fwp_id, not_associated,
+                    insert_before=None,
+                    insert_after=None,
+                    expected_code=webob.exc.HTTPBadRequest.code,
+                    body_data={'firewall_rule_id': not_associated})
+                self.assertEqual(msg, result['NeutronError']['message'])
+
     def test_remove_rule_from_policy(self):
         attrs = self._get_test_firewall_policy_attrs()
         attrs['audited'] = False

@@ -300,7 +300,8 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
             self._get_policy_rule_association_query(
                 context, firewall_policy_id, firewall_rule_id).one()
             raise fw_ext.FirewallRuleAlreadyAssociated(
-                firewall_rule_id=firewall_rule_id, firewall_policy_id=id)
+                firewall_rule_id=firewall_rule_id,
+                firewall_policy_id=firewall_policy_id)
         except exc.NoResultFound:
             return
 
@@ -314,7 +315,8 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
                 context, firewall_policy_id, firewall_rule_id).one()
         except exc.NoResultFound:
             raise fw_ext.FirewallRuleNotAssociatedWithPolicy(
-                firewall_rule_id=firewall_rule_id, firewall_policy_id=id)
+                firewall_rule_id=firewall_rule_id,
+                firewall_policy_id=firewall_policy_id)
 
     def create_firewall_rule(self, context, firewall_rule):
         LOG.debug("create_firewall_rule() called")
