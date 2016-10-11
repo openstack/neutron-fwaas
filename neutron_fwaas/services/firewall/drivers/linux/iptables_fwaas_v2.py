@@ -451,7 +451,8 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
     def _port_arg(self, direction, protocol, port):
         if not (protocol in ['udp', 'tcp'] and port):
             return ''
-        return '--%s %s' % (direction, port)
+        # iptables adds '-m protocol' when the port number is specified
+        return '-m %s --%s %s' % (protocol, direction, port)
 
     def _ip_prefix_arg(self, direction, ip_prefix):
         if ip_prefix:
