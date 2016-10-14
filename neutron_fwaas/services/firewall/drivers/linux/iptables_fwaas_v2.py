@@ -418,16 +418,28 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
     def _convert_fwaas_to_iptables_rule(self, rule):
         action = FWAAS_TO_IPTABLE_ACTION_MAP[rule.get('action')]
 
-        args = [self._protocol_arg(rule.get('protocol')),
-                self._port_arg('dport',
+        args = []
+
+        args += self._protocol_arg(rule.get('protocol'))
+
+        # iptables adds '-m protocol' when any source
+        # or destination port number is specified
+        if not((rule.get('source_port') is None)
+           and (rule.get('destination_port') is None)):
+                args += self._match_arg(rule.get('protocol'))
+
+        args += self._port_arg('dport',
                                rule.get('protocol'),
-                               rule.get('destination_port')),
-                self._port_arg('sport',
+                               rule.get('destination_port'))
+
+        args += self._port_arg('sport',
                                rule.get('protocol'),
-                               rule.get('source_port')),
-                self._ip_prefix_arg('s', rule.get('source_ip_address')),
-                self._ip_prefix_arg('d', rule.get('destination_ip_address')),
-                self._action_arg(action)]
+                               rule.get('source_port'))
+
+        args += self._ip_prefix_arg('s', rule.get('source_ip_address'))
+        args += self._ip_prefix_arg('d', rule.get('destination_ip_address'))
+
+        args += self._action_arg(action)
 
         iptables_rule = ' '.join(args)
         return iptables_rule
@@ -439,22 +451,45 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
         return '-m state --state ESTABLISHED,RELATED -j ACCEPT'
 
     def _action_arg(self, action):
-        if action:
-            return '-j %s' % action
-        return ''
+        if not action:
+            return []
+
+        args = ['-j', action]
+
+        return args
 
     def _protocol_arg(self, protocol):
-        if protocol:
-            return '-p %s' % protocol
-        return ''
+        if not protocol:
+            return []
+
+        args = ['-p', protocol]
+
+        return args
+
+    def _match_arg(self, protocol):
+        if not protocol:
+            return []
+
+        protocol_modules = {'udp': 'udp', 'tcp': 'tcp',
+                           'icmp': 'icmp', 'ipv6-icmp': 'icmp6'}
+        # iptables adds '-m protocol' when the port number is specified
+        args = ['-m', protocol_modules[protocol]]
+
+        return args
 
     def _port_arg(self, direction, protocol, port):
-        if not (protocol in ['udp', 'tcp'] and port):
-            return ''
-        # iptables adds '-m protocol' when the port number is specified
-        return '-m %s --%s %s' % (protocol, direction, port)
+        if (protocol not in ['udp', 'tcp']
+            or port is None):
+            return []
+
+        args = ['--%s' % direction, '%s' % port]
+
+        return args
 
     def _ip_prefix_arg(self, direction, ip_prefix):
-        if ip_prefix:
-            return '-%s %s' % (direction, ip_prefix)
-        return ''
+
+        if not(ip_prefix):
+            return []
+
+        args = ['-%s' % direction, '%s' % ip_prefix]
+        return args

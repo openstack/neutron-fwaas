@@ -153,9 +153,9 @@ class IptablesFwaasTestCase(base.BaseTestCase):
         func(distributed_mode, apply_list, firewall)
         invalid_rule = '-m state --state INVALID -j DROP'
         est_rule = '-m state --state ESTABLISHED,RELATED -j ACCEPT'
-        rule1 = '-p tcp -m tcp --dport 80  -s 10.24.4.2  -j ACCEPT'
-        rule2 = '-p tcp -m tcp --dport 22    -j DROP'
-        rule3 = '-p tcp -m tcp --dport 23    -j REJECT'
+        rule1 = '-p tcp -m tcp --dport 80 -s 10.24.4.2 -j ACCEPT'
+        rule2 = '-p tcp -m tcp --dport 22 -j DROP'
+        rule3 = '-p tcp -m tcp --dport 23 -j REJECT'
         ingress_chain = 'iv4%s' % firewall['id']
         egress_chain = 'ov4%s' % firewall['id']
         bname = fwaas.iptables_manager.binary_name
