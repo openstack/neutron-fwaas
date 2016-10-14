@@ -20,7 +20,7 @@ from neutron.db import common_db_mixin as base_db
 from neutron.extensions import l3
 from neutron import manager
 from neutron.plugins.common import constants as p_const
-from neutron_lib import constants
+from neutron_lib import constants as nl_constants
 from neutron_lib.db import model_base
 from oslo_config import cfg
 from oslo_log import log as logging
@@ -309,8 +309,8 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
 
     def _validate_fwr_protocol_parameters(self, fwr):
         protocol = fwr['protocol']
-        if protocol not in (constants.PROTO_NAME_TCP,
-                            constants.PROTO_NAME_UDP):
+        if protocol not in (nl_constants.PROTO_NAME_TCP,
+                            nl_constants.PROTO_NAME_UDP):
             if fwr['source_port'] or fwr['destination_port']:
                 raise fw_ext.FirewallRuleInvalidICMPParameter(
                     param="Source, destination port")
@@ -323,8 +323,8 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
         # the introduction of a new 'CREATED' state allows this, whilst
         # keeping a backward compatible behavior of the logical resource.
         if not status:
-            status = (p_const.CREATED if cfg.CONF.router_distributed
-                      else p_const.PENDING_CREATE)
+            status = (nl_constants.CREATED if cfg.CONF.router_distributed
+                      else nl_constants.PENDING_CREATE)
         with context.session.begin(subtransactions=True):
             self._validate_fw_parameters(context, fw, tenant_id)
             firewall_db = Firewall(

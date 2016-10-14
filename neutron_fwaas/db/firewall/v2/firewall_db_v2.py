@@ -14,8 +14,7 @@
 #    under the License.
 
 from neutron.db import common_db_mixin as base_db
-from neutron.plugins.common import constants as p_const
-import neutron_lib.constants as libconstants
+from neutron_lib import constants as nl_constants
 from neutron_lib.db import model_base
 from oslo_config import cfg
 from oslo_log import log as logging
@@ -143,8 +142,8 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
 
     def _validate_fwr_protocol_parameters(self, fwr):
         protocol = fwr['protocol']
-        if protocol not in (libconstants.PROTO_NAME_TCP,
-                            libconstants.PROTO_NAME_UDP):
+        if protocol not in (nl_constants.PROTO_NAME_TCP,
+                            nl_constants.PROTO_NAME_UDP):
             if fwr['source_port'] or fwr['destination_port']:
                 raise fw_ext.FirewallRuleInvalidICMPParameter(
                     param="Source, destination port")
@@ -729,8 +728,8 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
     def create_firewall_group(self, context, firewall_group, status=None):
         fwg = firewall_group['firewall_group']
         if not status:
-            status = (p_const.CREATED if cfg.CONF.router_distributed
-                      else p_const.PENDING_CREATE)
+            status = (nl_constants.CREATED if cfg.CONF.router_distributed
+                      else nl_constants.PENDING_CREATE)
         with context.session.begin(subtransactions=True):
             self._validate_fwg_parameters(context, fwg, fwg['tenant_id'])
             fwg_db = FirewallGroup(id=uuidutils.generate_uuid(),

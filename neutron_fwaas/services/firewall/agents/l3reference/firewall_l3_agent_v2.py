@@ -18,8 +18,8 @@ from neutron.agent.linux import ip_lib
 from neutron.common import rpc as n_rpc
 from neutron import context
 from neutron.plugins.common import constants as n_const
-from neutron_fwaas.common import fwaas_constants as f_const
-from neutron_lib import constants as lib_constants
+from neutron_fwaas.common import fwaas_constants
+from neutron_lib import constants as nl_constants
 from oslo_config import cfg
 from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
@@ -93,7 +93,7 @@ class FWaaSL3AgentExtension(l3_agent_extension.L3AgentCoreResourceExtension):
 
         self.conn = n_rpc.create_connection()
         self.conn.create_consumer(
-            f_const.FW_AGENT, self.endpoints, fanout=False)
+            fwaas_constants.FW_AGENT, self.endpoints, fanout=False)
         return self.conn.consume_in_threads()
 
     def __init__(self, host, conf):
@@ -122,7 +122,7 @@ class FWaaSL3AgentExtension(l3_agent_extension.L3AgentCoreResourceExtension):
             self.fwaas_driver = self.fw_service.load_device_drivers()
 
         self.services_sync_needed = False
-        self.fwplugin_rpc = FWaaSL3PluginApi(f_const.FIREWALL_PLUGIN,
+        self.fwplugin_rpc = FWaaSL3PluginApi(fwaas_constants.FIREWALL_PLUGIN,
                                              host)
         super(FWaaSL3AgentExtension, self).__init__()
 
@@ -187,7 +187,7 @@ class FWaaSL3AgentExtension(l3_agent_extension.L3AgentCoreResourceExtension):
            update_firewall_group method for all other statuses. Both of these
            methods are idempotent.
         """
-        if firewall_group['status'] == n_const.PENDING_DELETE:
+        if firewall_group['status'] == nl_constants.PENDING_DELETE:
             try:
                 self.fwaas_driver.delete_firewall_group(
                         self.conf.agent_mode, [port], firewall_group)
@@ -199,15 +199,15 @@ class FWaaSL3AgentExtension(l3_agent_extension.L3AgentCoreResourceExtension):
                 LOG.exception(msg, {'status': firewall_group['status'],
                                     'fwg_id': firewall_group['id']})
                 self.fwplugin_rpc.set_firewall_group_status(
-                        ctx, firewall_group['id'], n_const.ERROR)
+                        ctx, firewall_group['id'], nl_constants.ERROR)
         else:  # PENDING_UPDATE, PENDING_CREATE, ...
 
             # Prepare firewall group status to return to plugin; may be
             # overwritten if call to driver fails.
             if firewall_group['admin_state_up']:
-                status = n_const.ACTIVE
+                status = nl_constants.ACTIVE
             else:
-                status = n_const.DOWN
+                status = nl_constants.DOWN
 
             # Call the driver.
             try:
@@ -219,7 +219,7 @@ class FWaaSL3AgentExtension(l3_agent_extension.L3AgentCoreResourceExtension):
                       "%(fwg_id)s")
                 LOG.exception(msg, {'status': firewall_group['status'],
                                     'fwg_id': firewall_group['id']})
-                status = n_const.ERROR
+                status = nl_constants.ERROR
 
             # Notify the plugin of firewall group's status.
             self.fwplugin_rpc.set_firewall_group_status(
@@ -245,8 +245,8 @@ class FWaaSL3AgentExtension(l3_agent_extension.L3AgentCoreResourceExtension):
         fwg_list = self.fwplugin_rpc.get_firewall_groups_for_project(ctx)
 
         # Apply a firewall group, as requested, to ports on the new router.
-        if lib_constants.INTERFACE_KEY in updated_router:
-            for port in updated_router[lib_constants.INTERFACE_KEY]:
+        if nl_constants.INTERFACE_KEY in updated_router:
+            for port in updated_router[nl_constants.INTERFACE_KEY]:
                 for firewall_group in fwg_list:
                     if (self._has_port_insertion_fields(firewall_group) and
                             (port['id'] in firewall_group['add-port-ids'] or
@@ -313,11 +313,11 @@ class FWaaSL3AgentExtension(l3_agent_extension.L3AgentCoreResourceExtension):
                 fwg_list = \
                     self.fwplugin_rpc.get_firewall_groups_for_project(ctx)
                 for firewall_group in fwg_list:
-                    if firewall_group['status'] == n_const.PENDING_DELETE:
+                    if firewall_group['status'] == nl_constants.PENDING_DELETE:
                         self.delete_firewall_group(ctx, firewall_group,
                                                    self.host)
                     # No need to apply sync data for ACTIVE firewall group.
-                    elif firewall_group['status'] != n_const.ACTIVE:
+                    elif firewall_group['status'] != nl_constants.ACTIVE:
                         self.update_firewall_group(ctx, firewall_group,
                                                    self.host)
             self.services_sync_needed = False
@@ -343,9 +343,9 @@ class FWaaSL3AgentExtension(l3_agent_extension.L3AgentCoreResourceExtension):
         # Set firewall group status; will be overwritten if call to driver
         # fails.
         if firewall_group['admin_state_up']:
-            status = n_const.ACTIVE
+            status = nl_constants.ACTIVE
         else:
-            status = n_const.DOWN
+            status = nl_constants.DOWN
 
         # Call the driver.
         try:
@@ -356,7 +356,7 @@ class FWaaSL3AgentExtension(l3_agent_extension.L3AgentCoreResourceExtension):
             msg = _LE("FWaaS driver error in create_firewall_group "
                       "for firewall group: %(fwg_id)s")
             LOG.exception(msg, {'fwg_id': firewall_group['id']})
-            status = n_const.ERROR
+            status = nl_constants.ERROR
 
         # Send firewall group's status to plugin.
         try:
@@ -392,11 +392,11 @@ class FWaaSL3AgentExtension(l3_agent_extension.L3AgentCoreResourceExtension):
             # driver fails.
 
             if firewall_group['admin_state_up']:
-                status = n_const.ACTIVE
+                status = nl_constants.ACTIVE
                 if firewall_group['last-port']:
-                    status = n_const.INACTIVE
+                    status = nl_constants.INACTIVE
             else:
-                status = n_const.DOWN
+                status = nl_constants.DOWN
 
             # Call the driver.
             try:
@@ -407,11 +407,11 @@ class FWaaSL3AgentExtension(l3_agent_extension.L3AgentCoreResourceExtension):
                 msg = _LE("FWaaS driver error in update_firewall_group "
                           "(add) for firewall group: %s")
                 LOG.exception(msg, firewall_group['id'])
-                status = n_const.ERROR
+                status = nl_constants.ERROR
 
         # Handle the add router and/or rule, policy, firewall group attribute
         # updates.
-        if status not in (n_const.ERROR, n_const.INACTIVE):
+        if status not in (nl_constants.ERROR, nl_constants.INACTIVE):
             ports_for_fwg = self._get_firewall_group_ports(context,
                     firewall_group)
             if ports_for_fwg:
@@ -424,9 +424,9 @@ class FWaaSL3AgentExtension(l3_agent_extension.L3AgentCoreResourceExtension):
                 # Set firewall group status, which will be overwritten if call
                 # to driver fails.
                 if firewall_group['admin_state_up']:
-                    status = n_const.ACTIVE
+                    status = nl_constants.ACTIVE
                 else:
-                    status = n_const.DOWN
+                    status = nl_constants.DOWN
 
                 # Call the driver.
                 try:
@@ -437,9 +437,9 @@ class FWaaSL3AgentExtension(l3_agent_extension.L3AgentCoreResourceExtension):
                     msg = _LE("FWaaS driver error in update_firewall_group "
                               "for firewall group: %s")
                     LOG.exception(msg, firewall_group['id'])
-                    status = n_const.ERROR
+                    status = nl_constants.ERROR
             else:
-                status = n_const.INACTIVE
+                status = nl_constants.INACTIVE
 
         # Return status to plugin.
         try:
@@ -470,9 +470,9 @@ class FWaaSL3AgentExtension(l3_agent_extension.L3AgentCoreResourceExtension):
         # Set the firewall group's status to return to plugin; status may be
         # overwritten if call to driver fails.
         if firewall_group['admin_state_up']:
-            status = n_const.ACTIVE
+            status = nl_constants.ACTIVE
         else:
-            status = n_const.DOWN
+            status = nl_constants.DOWN
         try:
             self.fwaas_driver.delete_firewall_group(self.conf.agent_mode,
                                                     ports_for_fwg,
@@ -482,12 +482,12 @@ class FWaaSL3AgentExtension(l3_agent_extension.L3AgentCoreResourceExtension):
             LOG.exception(_LE("FWaaS driver error in delete_firewall_group "
                           "for firewall group: %(fwg_id)s"),
                       {'fwg_id': firewall_group['id']})
-            status = n_const.ERROR
+            status = nl_constants.ERROR
 
         # Notify plugin of deletion or return firewall group's status to
         # plugin, as appopriate.
         try:
-            if status in [n_const.ACTIVE, n_const.DOWN]:
+            if status in [nl_constants.ACTIVE, nl_constants.DOWN]:
                 self.fwplugin_rpc.firewall_group_deleted(context,
                                                          firewall_group['id'])
             else:

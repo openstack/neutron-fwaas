@@ -33,6 +33,7 @@ from neutron_fwaas.services.firewall import fwaas_plugin
 from neutron_fwaas.tests import base
 from neutron_fwaas.tests.unit.db.firewall import (
     test_firewall_db as test_db_firewall)
+from neutron_lib import constants as nl_constants
 
 extensions_path = neutron_fwaas.extensions.__path__[0]
 
@@ -146,15 +147,15 @@ class TestFirewallCallbacks(TestFirewallRouterInsertionBase):
             ) as fw:
                 fw_id = fw['firewall']['id']
                 res = self.callbacks.set_firewall_status(ctx, fw_id,
-                                                         const.ACTIVE,
+                                                         nl_constants.ACTIVE,
                                                          host='dummy')
                 fw_db = self.plugin.get_firewall(ctx, fw_id)
-                self.assertEqual(const.ACTIVE, fw_db['status'])
+                self.assertEqual(nl_constants.ACTIVE, fw_db['status'])
                 self.assertTrue(res)
                 res = self.callbacks.set_firewall_status(ctx, fw_id,
-                                                         const.ERROR)
+                                                         nl_constants.ERROR)
                 fw_db = self.plugin.get_firewall(ctx, fw_id)
-                self.assertEqual(const.ERROR, fw_db['status'])
+                self.assertEqual(nl_constants.ERROR, fw_db['status'])
                 self.assertFalse(res)
 
     def test_set_firewall_status_pending_delete(self):
@@ -167,13 +168,13 @@ class TestFirewallCallbacks(TestFirewallRouterInsertionBase):
             ) as fw:
                 fw_id = fw['firewall']['id']
                 fw_db = self.plugin._get_firewall(ctx, fw_id)
-                fw_db['status'] = const.PENDING_DELETE
+                fw_db['status'] = nl_constants.PENDING_DELETE
                 ctx.session.flush()
                 res = self.callbacks.set_firewall_status(ctx, fw_id,
-                                                         const.ACTIVE,
+                                                         nl_constants.ACTIVE,
                                                          host='dummy')
                 fw_db = self.plugin.get_firewall(ctx, fw_id)
-                self.assertEqual(const.PENDING_DELETE, fw_db['status'])
+                self.assertEqual(nl_constants.PENDING_DELETE, fw_db['status'])
                 self.assertFalse(res)
 
     def test_firewall_deleted(self):
@@ -186,7 +187,7 @@ class TestFirewallCallbacks(TestFirewallRouterInsertionBase):
                 fw_id = fw['firewall']['id']
                 with ctx.session.begin(subtransactions=True):
                     fw_db = self.plugin._get_firewall(ctx, fw_id)
-                    fw_db['status'] = const.PENDING_DELETE
+                    fw_db['status'] = nl_constants.PENDING_DELETE
                     ctx.session.flush()
                     res = self.callbacks.firewall_deleted(ctx, fw_id,
                                                           host='dummy')
@@ -208,7 +209,7 @@ class TestFirewallCallbacks(TestFirewallRouterInsertionBase):
                                                       host='dummy')
                 self.assertFalse(res)
                 fw_db = self.plugin._get_firewall(ctx, fw_id)
-                self.assertEqual(const.ERROR, fw_db['status'])
+                self.assertEqual(nl_constants.ERROR, fw_db['status'])
 
     def test_get_firewall_for_tenant(self):
         tenant_id = 'test-tenant'
@@ -313,7 +314,7 @@ class TestFirewallPluginBase(TestFirewallRouterInsertionBase,
             with self.router(name='router2', admin_state_up=True,
                 tenant_id=self._tenant_id):
                 with self.firewall() as fw1:
-                    self.assertEqual(const.PENDING_CREATE,
+                    self.assertEqual(nl_constants.PENDING_CREATE,
                         fw1['firewall']['status'])
 
     def test_create_firewall_routers_specified(self):
@@ -324,7 +325,7 @@ class TestFirewallPluginBase(TestFirewallRouterInsertionBase,
                 tenant_id=self._tenant_id) as router2:
                 router_ids = [router1['router']['id'], router2['router']['id']]
                 with self.firewall(router_ids=router_ids) as fw1:
-                    self.assertEqual(const.PENDING_CREATE,
+                    self.assertEqual(nl_constants.PENDING_CREATE,
                         fw1['firewall']['status'])
 
     def test_create_firewall_routers_present_empty_list_specified(self):
@@ -335,14 +336,14 @@ class TestFirewallPluginBase(TestFirewallRouterInsertionBase,
                 tenant_id=self._tenant_id):
                 router_ids = []
                 with self.firewall(router_ids=router_ids) as fw1:
-                    self.assertEqual(const.INACTIVE,
+                    self.assertEqual(nl_constants.INACTIVE,
                         fw1['firewall']['status'])
 
     def test_create_firewall_no_routers_empty_list_specified(self):
         """neutron firewall-create test-policy --router-ids "" """
         router_ids = []
         with self.firewall(router_ids=router_ids) as fw1:
-            self.assertEqual(const.INACTIVE,
+            self.assertEqual(nl_constants.INACTIVE,
                 fw1['firewall']['status'])
 
     def test_create_second_firewall_on_same_tenant(self):
@@ -354,9 +355,9 @@ class TestFirewallPluginBase(TestFirewallRouterInsertionBase,
                 router_ids = []
                 with self.firewall() as fw1:
                     with self.firewall(router_ids=router_ids) as fw2:
-                        self.assertEqual(const.PENDING_CREATE,
+                        self.assertEqual(nl_constants.PENDING_CREATE,
                             fw1['firewall']['status'])
-                        self.assertEqual(const.INACTIVE,
+                        self.assertEqual(nl_constants.INACTIVE,
                             fw2['firewall']['status'])
 
     def test_create_firewall_admin_not_affected_by_other_tenant(self):
@@ -383,14 +384,16 @@ class TestFirewallPluginBase(TestFirewallRouterInsertionBase,
                 ) as firewall:
                     fw_id = firewall['firewall']['id']
                     res = self.callbacks.set_firewall_status(ctx, fw_id,
-                                                         const.ACTIVE)
+                                                         nl_constants.ACTIVE)
                     data = {'firewall': {'name': name}}
                     req = self.new_update_request('firewalls', data, fw_id)
                     res = self.deserialize(self.fmt,
                                        req.get_response(self.ext_api))
                     attrs = self._replace_firewall_status(attrs,
-                                                      const.PENDING_CREATE,
-                                                      const.PENDING_UPDATE)
+                                                          nl_constants.
+                                                          PENDING_CREATE,
+                                                          nl_constants.
+                                                          PENDING_UPDATE)
                     for k, v in six.iteritems(attrs):
                         self.assertEqual(v, res['firewall'][k])
 
@@ -436,8 +439,10 @@ class TestFirewallPluginBase(TestFirewallRouterInsertionBase,
                     res = self.deserialize(self.fmt,
                                        req.get_response(self.ext_api))
                     attrs = self._replace_firewall_status(attrs,
-                                                      const.PENDING_CREATE,
-                                                      const.PENDING_UPDATE)
+                                                      nl_constants.
+                                                      PENDING_CREATE,
+                                                      nl_constants.
+                                                      PENDING_UPDATE)
                     for k, v in six.iteritems(attrs):
                         self.assertEqual(v, res['firewall'][k])
 
@@ -456,7 +461,7 @@ class TestFirewallPluginBase(TestFirewallRouterInsertionBase,
                 ) as firewall:
                     fw_id = firewall['firewall']['id']
                     self.callbacks.set_firewall_status(ctx, fw_id,
-                                                   const.ACTIVE)
+                                                   nl_constants.ACTIVE)
                     data = {'firewall': {'shared': True}}
                     req = self.new_update_request(
                         'firewalls', data, fw_id,

@@ -22,11 +22,12 @@ from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
 
 from neutron_fwaas._i18n import _, _LE
-from neutron_fwaas.common import fwaas_constants as f_const
+from neutron_fwaas.common import fwaas_constants
 from neutron_fwaas.common import resources as f_resources
 from neutron_fwaas.extensions import firewall as fw_ext
 from neutron_fwaas.services.firewall.agents import firewall_agent_api as api
 from neutron_fwaas.services.firewall.agents import firewall_service
+from neutron_lib import constants as nl_constants
 
 LOG = logging.getLogger(__name__)
 
@@ -76,7 +77,7 @@ class FWaaSL3AgentExtension(l3_agent_extension.L3AgentCoreResourceExtension):
 
         self.conn = n_rpc.create_connection()
         self.conn.create_consumer(
-            f_const.FW_AGENT, self.endpoints, fanout=False)
+            fwaas_constants.FW_AGENT, self.endpoints, fanout=False)
         return self.conn.consume_in_threads()
 
     def __init__(self, host, conf):
@@ -105,7 +106,7 @@ class FWaaSL3AgentExtension(l3_agent_extension.L3AgentCoreResourceExtension):
             self.fwaas_driver = self.fw_service.load_device_drivers()
         self.services_sync_needed = False
         # setup RPC to msg fwaas plugin
-        self.fwplugin_rpc = FWaaSL3PluginApi(f_const.FIREWALL_PLUGIN,
+        self.fwplugin_rpc = FWaaSL3PluginApi(fwaas_constants.FIREWALL_PLUGIN,
                                              host)
 
     def _has_router_insertion_fields(self, fw):
@@ -142,7 +143,7 @@ class FWaaSL3AgentExtension(l3_agent_extension.L3AgentCoreResourceExtension):
         update method for all other status to (re)apply on driver which is
         Idempotent.
         """
-        if fw['status'] == n_const.PENDING_DELETE:
+        if fw['status'] == nl_constants.PENDING_DELETE:
             try:
                 self.fwaas_driver.delete_firewall(
                     self.conf.agent_mode,
@@ -158,7 +159,7 @@ class FWaaSL3AgentExtension(l3_agent_extension.L3AgentCoreResourceExtension):
                 self.fwplugin_rpc.set_firewall_status(
                     ctx,
                     fw['id'],
-                    n_const.ERROR)
+                    nl_constants.ERROR)
         else:
             # PENDING_UPDATE, PENDING_CREATE, ...
             try:
@@ -167,14 +168,14 @@ class FWaaSL3AgentExtension(l3_agent_extension.L3AgentCoreResourceExtension):
                     router_info_list,
                     fw)
                 if fw['admin_state_up']:
-                    status = n_const.ACTIVE
+                    status = nl_constants.ACTIVE
                 else:
-                    status = n_const.DOWN
+                    status = nl_constants.DOWN
             except fw_ext.FirewallInternalDriverError:
                 LOG.error(_LE("Firewall Driver Error on fw state %(fwmsg)s "
                               "for fw: %(fwid)s"),
                           {'fwmsg': fw['status'], 'fwid': fw['id']})
-                status = n_const.ERROR
+                status = nl_constants.ERROR
 
             self.fwplugin_rpc.set_firewall_status(
                 ctx,
@@ -254,10 +255,10 @@ class FWaaSL3AgentExtension(l3_agent_extension.L3AgentCoreResourceExtension):
                 ctx = context.Context('', tenant_id)
                 fw_list = self.fwplugin_rpc.get_firewalls_for_tenant(ctx)
                 for fw in fw_list:
-                    if fw['status'] == n_const.PENDING_DELETE:
+                    if fw['status'] == nl_constants.PENDING_DELETE:
                         self.delete_firewall(ctx, fw, self.host)
                     # no need to apply sync data for ACTIVE fw
-                    elif fw['status'] != n_const.ACTIVE:
+                    elif fw['status'] != nl_constants.ACTIVE:
                         self.update_firewall(ctx, fw, self.host)
             self.services_sync_needed = False
         except Exception:
@@ -283,14 +284,14 @@ class FWaaSL3AgentExtension(l3_agent_extension.L3AgentCoreResourceExtension):
                 router_info_list,
                 firewall)
             if firewall['admin_state_up']:
-                status = n_const.ACTIVE
+                status = nl_constants.ACTIVE
             else:
-                status = n_const.DOWN
+                status = nl_constants.DOWN
         except fw_ext.FirewallInternalDriverError:
             LOG.error(_LE("Firewall Driver Error for create_firewall "
                           "for firewall: %(fwid)s"),
                 {'fwid': firewall['id']})
-            status = n_const.ERROR
+            status = nl_constants.ERROR
 
         try:
             # send status back to plugin
@@ -330,21 +331,21 @@ class FWaaSL3AgentExtension(l3_agent_extension.L3AgentCoreResourceExtension):
                         router_info_list,
                         firewall)
                     if firewall['last-router']:
-                        status = n_const.INACTIVE
+                        status = nl_constants.INACTIVE
                     elif firewall['admin_state_up']:
-                        status = n_const.ACTIVE
+                        status = nl_constants.ACTIVE
                     else:
-                        status = n_const.DOWN
+                        status = nl_constants.DOWN
                 except fw_ext.FirewallInternalDriverError:
                     LOG.error(_LE("Firewall Driver Error for "
                                   "update_firewall for firewall: "
                                   "%(fwid)s"),
                         {'fwid': firewall['id']})
-                    status = n_const.ERROR
+                    status = nl_constants.ERROR
 
         # handle the add router and/or rule, policy, firewall
         # attribute updates
-        if status not in (n_const.ERROR, n_const.INACTIVE):
+        if status not in (nl_constants.ERROR, nl_constants.INACTIVE):
             router_ids = self._get_router_ids_for_fw(context, firewall)
             if router_ids or firewall['router_ids']:
                 router_info_list = self._get_router_info_list_for_tenant(
@@ -359,17 +360,17 @@ class FWaaSL3AgentExtension(l3_agent_extension.L3AgentCoreResourceExtension):
                         router_info_list,
                         firewall)
                     if firewall['admin_state_up']:
-                        status = n_const.ACTIVE
+                        status = nl_constants.ACTIVE
                     else:
-                        status = n_const.DOWN
+                        status = nl_constants.DOWN
                 except fw_ext.FirewallInternalDriverError:
                     LOG.error(_LE("Firewall Driver Error for "
                                   "update_firewall for firewall: "
                                   "%(fwid)s"),
                         {'fwid': firewall['id']})
-                    status = n_const.ERROR
+                    status = nl_constants.ERROR
             else:
-                status = n_const.INACTIVE
+                status = nl_constants.INACTIVE
         try:
             # send status back to plugin
             self.fwplugin_rpc.set_firewall_status(
@@ -404,18 +405,18 @@ class FWaaSL3AgentExtension(l3_agent_extension.L3AgentCoreResourceExtension):
                     router_info_list,
                     firewall)
                 if firewall['admin_state_up']:
-                    status = n_const.ACTIVE
+                    status = nl_constants.ACTIVE
                 else:
-                    status = n_const.DOWN
+                    status = nl_constants.DOWN
             except fw_ext.FirewallInternalDriverError:
                 LOG.error(_LE("Firewall Driver Error for delete_firewall "
                               "for firewall: %(fwid)s"),
                     {'fwid': firewall['id']})
-                status = n_const.ERROR
+                status = nl_constants.ERROR
 
             try:
                 # send status back to plugin
-                if status in [n_const.ACTIVE, n_const.DOWN]:
+                if status in [nl_constants.ACTIVE, nl_constants.DOWN]:
                     self.fwplugin_rpc.firewall_deleted(context, firewall['id'])
                 else:
                     self.fwplugin_rpc.set_firewall_status(

@@ -15,12 +15,12 @@
 from neutron.common import rpc as n_rpc
 from neutron import context as neutron_context
 from neutron import manager
-from neutron.plugins.common import constants as n_const
+from neutron_lib import constants as nl_constants
 from oslo_config import cfg
 from oslo_log import log as logging
 import oslo_messaging
 
-from neutron_fwaas.common import fwaas_constants as f_const
+from neutron_fwaas.common import fwaas_constants
 from neutron_fwaas.db.firewall.v2 import firewall_db_v2
 from neutron_fwaas.extensions import firewall_v2 as fw_ext
 
@@ -67,19 +67,20 @@ class FirewallCallbacks(object):
         LOG.debug("Setting firewall_group %s to status: %s" % (
             fwg_id, status))
         # Sanitize status first
-        if status in (n_const.ACTIVE, n_const.DOWN, n_const.INACTIVE):
+        if status in (nl_constants.ACTIVE, nl_constants.DOWN,
+                      nl_constants.INACTIVE):
             to_update = status
         else:
-            to_update = n_const.ERROR
+            to_update = nl_constants.ERROR
         # ignore changing status if firewall_group expects to be deleted
         # That case means that while some pending operation has been
         # performed on the backend, neutron server received delete request
         # and changed firewall status to PENDING_DELETE
         updated = self.plugin.update_firewall_group_status(
-            context, fwg_id, to_update, not_in=(n_const.PENDING_DELETE,))
+            context, fwg_id, to_update, not_in=(nl_constants.PENDING_DELETE,))
         if updated:
             LOG.debug("firewall %s status set: %s" % (fwg_id, to_update))
-        return updated and to_update != n_const.ERROR
+        return updated and to_update != nl_constants.ERROR
 
     def firewall_group_deleted(self, context, fwg_id, **kwargs):
         """Agent uses this to indicate firewall is deleted."""
@@ -87,14 +88,15 @@ class FirewallCallbacks(object):
         with context.session.begin(subtransactions=True):
             fwg_db = self.plugin._get_firewall_group(context, fwg_id)
             # allow to delete firewalls in ERROR state
-            if fwg_db.status in (n_const.PENDING_DELETE, n_const.ERROR):
+            if fwg_db.status in (nl_constants.PENDING_DELETE,
+                                 nl_constants.ERROR):
                 self.plugin.delete_db_firewall_group_object(context, fwg_id)
                 return True
             else:
                 LOG.warning(('Firewall %(fw)s unexpectedly deleted by '
                              'agent, status was %(status)s'),
                             {'fwg': fwg_id, 'status': fwg_db.status})
-                fwg_db.update({"status": n_const.ERROR})
+                fwg_db.update({"status": nl_constants.ERROR})
                 return False
 
     def get_firewall_groups_for_project(self, context, **kwargs):
@@ -104,7 +106,7 @@ class FirewallCallbacks(object):
         for fwg in self.plugin.get_firewall_groups(context):
             fwg_with_rules = self.plugin._make_firewall_group_dict_with_rules(
                 context, fwg['id'])
-            if fwg['status'] == n_const.PENDING_DELETE:
+            if fwg['status'] == nl_constants.PENDING_DELETE:
                 fwg_with_rules['add-port-ids'] = []
                 fwg_with_rules['del-port-ids'] = (
                     self.plugin._get_ports_in_firewall_group(context,
@@ -142,7 +144,7 @@ class FirewallPluginV2(
         self.start_rpc_listeners()
 
         self.agent_rpc = FirewallAgentApi(
-            f_const.FW_AGENT,
+            fwaas_constants.FW_AGENT,
             cfg.CONF.host
         )
 
@@ -155,11 +157,12 @@ class FirewallPluginV2(
 
         self.conn = n_rpc.create_connection()
         self.conn.create_consumer(
-            f_const.FIREWALL_PLUGIN, self.endpoints, fanout=False)
+            fwaas_constants.FIREWALL_PLUGIN, self.endpoints, fanout=False)
         return self.conn.consume_in_threads()
 
     def _rpc_update_firewall_group(self, context, fwg_id):
-        status_update = {"firewall_group": {"status": n_const.PENDING_UPDATE}}
+        status_update = {"firewall_group": {"status":
+                         nl_constants.PENDING_UPDATE}}
         super(FirewallPluginV2, self).update_firewall_group(
             context, fwg_id, status_update)
         fwg_with_rules = self._make_firewall_group_dict_with_rules(context,
@@ -181,9 +184,9 @@ class FirewallPluginV2(
 
     def _ensure_update_firewall_group(self, context, fwg_id):
         fwg = self.get_firewall_group(context, fwg_id)
-        if fwg['status'] in [n_const.PENDING_CREATE,
-                             n_const.PENDING_UPDATE,
-                             n_const.PENDING_DELETE]:
+        if fwg['status'] in [nl_constants.PENDING_CREATE,
+                             nl_constants.PENDING_UPDATE,
+                             nl_constants.PENDING_DELETE]:
             raise fw_ext.FirewallGroupInPendingState(firewall_id=fwg_id,
                                                 pending_state=fwg['status'])
 
@@ -218,7 +221,7 @@ class FirewallPluginV2(
         if not fwg_ports:
             # no messaging to agent needed, and fw needs to go
             # to INACTIVE(no associated ports) state.
-            status = n_const.INACTIVE
+            status = nl_constants.INACTIVE
             fwg = super(FirewallPluginV2, self).create_firewall_group(
                 context, firewall_group, status)
             fwg['ports'] = []
@@ -233,7 +236,7 @@ class FirewallPluginV2(
             if (not fwgrp['ingress_firewall_policy_id'] and
                 not fwgrp['egress_firewall_policy_id']):
                 # No policy configured
-                status = n_const.INACTIVE
+                status = nl_constants.INACTIVE
                 fwg = super(FirewallPluginV2, self).create_firewall_group(
                     context, firewall_group, status)
                 return fwg
@@ -276,13 +279,14 @@ class FirewallPluginV2(
         if not fwg_new_ports and not fwg_current_ports:
             # no messaging to agent needed, and we need to continue
             # in INACTIVE state
-            firewall_group['firewall_group']['status'] = n_const.INACTIVE
+            firewall_group['firewall_group']['status'] = nl_constants.INACTIVE
             fwg = super(FirewallPluginV2, self).update_firewall_group(
                 context, id, firewall_group)
             fwg['ports'] = []
             return fwg
         else:
-            firewall_group['firewall_group']['status'] = n_const.PENDING_UPDATE
+            firewall_group['firewall_group']['status'] = (nl_constants.
+                                                          PENDING_UPDATE)
             fwg = super(FirewallPluginV2, self).update_firewall_group(
                 context, id, firewall_group)
             fwg['ports'] = fwg_new_ports
@@ -321,7 +325,8 @@ class FirewallPluginV2(
             # no ports, no need to talk to the agent
             self.delete_db_firewall_group_object(context, id)
         else:
-            status = {"firewall_group": {"status": n_const.PENDING_DELETE}}
+            status = {"firewall_group":
+                     {"status": nl_constants.PENDING_DELETE}}
             super(FirewallPluginV2, self).update_firewall_group(
                 context, id, status)
             # Reflect state change in fw_with_rules

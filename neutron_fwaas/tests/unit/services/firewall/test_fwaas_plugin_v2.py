@@ -29,6 +29,7 @@ from neutron_fwaas.services.firewall import fwaas_plugin_v2
 from neutron_fwaas.tests import base
 from neutron_fwaas.tests.unit.db.firewall.v2 import (
     test_firewall_db_v2 as test_db_firewall)
+from neutron_lib import constants as nl_constants
 
 extensions_path = neutron_fwaas.extensions.__path__[0]
 
@@ -146,15 +147,15 @@ class TestFirewallCallbacks(TestFirewallRouterPortBase):
             ) as fwg:
                 fwg_id = fwg['firewall_group']['id']
                 res = self.callbacks.set_firewall_group_status(ctx, fwg_id,
-                                                         const.ACTIVE,
+                                                         nl_constants.ACTIVE,
                                                          host='dummy')
                 fwg_db = self.plugin.get_firewall_group(ctx, fwg_id)
-                self.assertEqual(const.ACTIVE, fwg_db['status'])
+                self.assertEqual(nl_constants.ACTIVE, fwg_db['status'])
                 self.assertTrue(res)
                 res = self.callbacks.set_firewall_group_status(ctx, fwg_id,
-                                                         const.ERROR)
+                                                         nl_constants.ERROR)
                 fwg_db = self.plugin.get_firewall_group(ctx, fwg_id)
-                self.assertEqual(const.ERROR, fwg_db['status'])
+                self.assertEqual(nl_constants.ERROR, fwg_db['status'])
                 self.assertFalse(res)
 
 
@@ -177,7 +178,7 @@ class TestFirewallPluginBasev2(TestFirewallRouterPortBase,
                 ingress_firewall_policy_id=fwp_id,
                 egress_firewall_policy_id=fwp_id,
                 admin_state_up=True) as fwg1:
-                self.assertEqual(const.INACTIVE,
+                self.assertEqual(nl_constants.INACTIVE,
                     fwg1['firewall_group']['status'])
 
     def test_create_firewall_group_with_ports(self):
@@ -208,7 +209,7 @@ class TestFirewallPluginBasev2(TestFirewallRouterPortBase,
                     ingress_firewall_policy_id=fwp_id,
                     egress_firewall_policy_id=fwp_id, ports=fwg_ports,
                     admin_state_up=True) as fwg1:
-                    self.assertEqual(const.PENDING_CREATE,
+                    self.assertEqual(nl_constants.PENDING_CREATE,
                          fwg1['firewall_group']['status'])
 
             self._router_interface_action('remove',
@@ -260,7 +261,7 @@ class TestFirewallPluginBasev2(TestFirewallRouterPortBase,
                         egress_firewall_policy_id=fwp_id,
                         ports=fwg_ports,
                         admin_state_up=True) as fwg1:
-                        self.assertEqual(const.PENDING_CREATE,
+                        self.assertEqual(nl_constants.PENDING_CREATE,
                             fwg1['firewall_group']['status'])
 
                 self._router_interface_action('remove',
@@ -304,7 +305,7 @@ class TestFirewallPluginBasev2(TestFirewallRouterPortBase,
                 default_policy=False,
                 ports=fwg_ports,
                 admin_state_up=True) as fwg1:
-                self.assertEqual(const.INACTIVE,
+                self.assertEqual(nl_constants.INACTIVE,
                      fwg1['firewall_group']['status'])
 
             self._router_interface_action('remove',
@@ -352,7 +353,7 @@ class TestFirewallPluginBasev2(TestFirewallRouterPortBase,
                 default_policy=False,
                 ports=fwg_ports,
                 admin_state_up=True) as fwg1:
-                self.assertEqual(const.INACTIVE,
+                self.assertEqual(nl_constants.INACTIVE,
                      fwg1['firewall_group']['status'])
                 data = {'firewall_group': {'ports': [port_id2, port_id3]}}
                 req = self.new_update_request('firewall_groups', data,
@@ -410,7 +411,7 @@ class TestFirewallPluginBasev2(TestFirewallRouterPortBase,
                     ingress_firewall_policy_id=fwp_id,
                     egress_firewall_policy_id=fwp_id, ports=fwg_ports,
                     admin_state_up=True) as fwg1:
-                    self.assertEqual(const.PENDING_CREATE,
+                    self.assertEqual(nl_constants.PENDING_CREATE,
                          fwg1['firewall_group']['status'])
                     data = {'firewall_group': {'ports': [port_id2, port_id3]}}
                     req = self.new_update_request('firewall_groups', data,
@@ -464,12 +465,12 @@ class TestFirewallPluginBasev2(TestFirewallRouterPortBase,
                     ingress_firewall_policy_id=fwp_id,
                     egress_firewall_policy_id=fwp_id, ports=fwg_ports,
                     admin_state_up=True) as fwg1:
-                    self.assertEqual(const.PENDING_CREATE,
+                    self.assertEqual(nl_constants.PENDING_CREATE,
                          fwg1['firewall_group']['status'])
 
                     ctx = context.get_admin_context()
                     self.callbacks.set_firewall_group_status(ctx,
-                        fwg1['firewall_group']['id'], const.ACTIVE)
+                        fwg1['firewall_group']['id'], nl_constants.ACTIVE)
                     data = {'firewall_group': {'ports': [port_id2, port_id3]}}
                     req = self.new_update_request('firewall_groups', data,
                                                   fwg1['firewall_group']['id'])
@@ -510,12 +511,12 @@ class TestFirewallPluginBasev2(TestFirewallRouterPortBase,
                         ingress_firewall_policy_id=fwp_id,
                         egress_firewall_policy_id=fwp_id, ports=[port_id1],
                         admin_state_up=True) as fwg1:
-                        self.assertEqual(const.PENDING_CREATE,
+                        self.assertEqual(nl_constants.PENDING_CREATE,
                              fwg1['firewall_group']['status'])
 
                         ctx = context.get_admin_context()
                         self.callbacks.set_firewall_group_status(ctx,
-                            fwg1['firewall_group']['id'], const.ACTIVE)
+                            fwg1['firewall_group']['id'], nl_constants.ACTIVE)
                         data = {'firewall_rule': {'name': name}}
                         req = self.new_update_request('firewall_rules', data,
                             fwr['firewall_rule']['id'])
@@ -551,7 +552,7 @@ class TestFirewallPluginBasev2(TestFirewallRouterPortBase,
                         ingress_firewall_policy_id=fwp_id,
                         egress_firewall_policy_id=fwp_id, ports=[port_id1],
                         admin_state_up=True) as fwg1:
-                        self.assertEqual(const.PENDING_CREATE,
+                        self.assertEqual(nl_constants.PENDING_CREATE,
                              fwg1['firewall_group']['status'])
 
                         data = {'firewall_rule': {'name': name}}

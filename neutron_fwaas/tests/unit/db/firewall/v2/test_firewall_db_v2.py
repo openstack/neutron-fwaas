@@ -35,6 +35,7 @@ from neutron_fwaas import extensions
 from neutron_fwaas.extensions import firewall_v2 as firewall
 from neutron_fwaas.services.firewall import fwaas_plugin_v2
 from neutron_fwaas.tests import base
+from neutron_lib import constants as nl_constants
 
 DB_FW_PLUGIN_KLASS = (
     "neutron_fwaas.db.firewall.v2.firewall_db_v2.Firewall_db_mixin_v2"
@@ -1200,7 +1201,7 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
                                context=ctx) as firewall:
                 fw_id = firewall['firewall_group']['id']
                 fw_db = self.plugin._get_firewall_group(ctx, fw_id)
-                fw_db['status'] = constants.ACTIVE
+                fw_db['status'] = nl_constants.ACTIVE
                 # update firewall from fwp1 to fwp2(different tenant)
                 data = {'firewall_group':
                         {'ingress_firewall_policy_id': fwp2_id}}

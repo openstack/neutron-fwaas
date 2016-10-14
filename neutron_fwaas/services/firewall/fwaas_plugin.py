@@ -17,7 +17,7 @@ from neutron.common import rpc as n_rpc
 from neutron import context as neutron_context
 from neutron import manager
 from neutron.plugins.common import constants as n_const
-from neutron_lib import constants
+from neutron_lib import constants as nl_constants
 from oslo_config import cfg
 from oslo_log import log as logging
 import oslo_messaging
@@ -43,19 +43,21 @@ class FirewallCallbacks(object):
         """Agent uses this to set a firewall's status."""
         LOG.debug("Setting firewall %s to status: %s" % (firewall_id, status))
         # Sanitize status first
-        if status in (n_const.ACTIVE, n_const.DOWN, n_const.INACTIVE):
+        if status in (nl_constants.ACTIVE, nl_constants.DOWN,
+                      nl_constants.INACTIVE):
             to_update = status
         else:
-            to_update = n_const.ERROR
+            to_update = nl_constants.ERROR
         # ignore changing status if firewall expects to be deleted
         # That case means that while some pending operation has been
         # performed on the backend, neutron server received delete request
         # and changed firewall status to PENDING_DELETE
         updated = self.plugin.update_firewall_status(
-            context, firewall_id, to_update, not_in=(n_const.PENDING_DELETE,))
+            context, firewall_id, to_update,
+            not_in=(nl_constants.PENDING_DELETE,))
         if updated:
             LOG.debug("firewall %s status set: %s" % (firewall_id, to_update))
-        return updated and to_update != n_const.ERROR
+        return updated and to_update != nl_constants.ERROR
 
     def firewall_deleted(self, context, firewall_id, **kwargs):
         """Agent uses this to indicate firewall is deleted."""
@@ -63,14 +65,15 @@ class FirewallCallbacks(object):
         with context.session.begin(subtransactions=True):
             fw_db = self.plugin._get_firewall(context, firewall_id)
             # allow to delete firewalls in ERROR state
-            if fw_db.status in (n_const.PENDING_DELETE, n_const.ERROR):
+            if fw_db.status in (nl_constants.PENDING_DELETE,
+                                nl_constants.ERROR):
                 self.plugin.delete_db_firewall_object(context, firewall_id)
                 return True
             else:
                 LOG.warning(_LW('Firewall %(fw)s unexpectedly deleted by '
                                 'agent, status was %(status)s'),
                             {'fw': firewall_id, 'status': fw_db.status})
-                fw_db.update({"status": n_const.ERROR})
+                fw_db.update({"status": nl_constants.ERROR})
                 return False
 
     def get_firewalls_for_tenant(self, context, **kwargs):
@@ -80,7 +83,7 @@ class FirewallCallbacks(object):
         for fw in self.plugin.get_firewalls(context):
             fw_with_rules = self.plugin._make_firewall_dict_with_rules(
                 context, fw['id'])
-            if fw['status'] == n_const.PENDING_DELETE:
+            if fw['status'] == nl_constants.PENDING_DELETE:
                 fw_with_rules['add-router-ids'] = []
                 fw_with_rules['del-router-ids'] = (
                     self.plugin.get_firewall_routers(context, fw['id']))
@@ -162,7 +165,7 @@ class FirewallPlugin(
         return self.conn.consume_in_threads()
 
     def _rpc_update_firewall(self, context, firewall_id):
-        status_update = {"firewall": {"status": n_const.PENDING_UPDATE}}
+        status_update = {"firewall": {"status": nl_constants.PENDING_UPDATE}}
         super(FirewallPlugin, self).update_firewall(context, firewall_id,
                                                     status_update)
         fw_with_rules = self._make_firewall_dict_with_rules(context,
@@ -182,9 +185,9 @@ class FirewallPlugin(
 
     def _ensure_update_firewall(self, context, firewall_id):
         fwall = self.get_firewall(context, firewall_id)
-        if fwall['status'] in [n_const.PENDING_CREATE,
-                               n_const.PENDING_UPDATE,
-                               n_const.PENDING_DELETE]:
+        if fwall['status'] in [nl_constants.PENDING_CREATE,
+                               nl_constants.PENDING_UPDATE,
+                               nl_constants.PENDING_DELETE]:
             raise fw_ext.FirewallInPendingState(firewall_id=firewall_id,
                                                 pending_state=fwall['status'])
 
@@ -201,11 +204,10 @@ class FirewallPlugin(
                                                 fw_rule['firewall_policy_id'])
 
     def _get_routers_for_create_firewall(self, tenant_id, context, firewall):
-
         # pop router_id as this goes in the router association db
         # and not firewall db
         router_ids = firewall['firewall'].pop('router_ids', None)
-        if router_ids == constants.ATTR_NOT_SPECIFIED:
+        if router_ids == nl_constants.ATTR_NOT_SPECIFIED:
             # old semantics router-ids keyword not specified pick up
             # all routers on tenant.
             l3_plugin = manager.NeutronManager.get_service_plugins().get(
@@ -238,7 +240,7 @@ class FirewallPlugin(
         if not fw_new_rtrs:
             # no messaging to agent needed, and fw needs to go
             # to INACTIVE(no associated rtrs) state.
-            status = n_const.INACTIVE
+            status = nl_constants.INACTIVE
             fw = super(FirewallPlugin, self).create_firewall(
                 context, firewall, status)
             fw['router_ids'] = []
@@ -287,13 +289,13 @@ class FirewallPlugin(
         if not fw_new_rtrs and not fw_current_rtrs:
             # no messaging to agent needed, and we need to continue
             # in INACTIVE state
-            firewall['firewall']['status'] = n_const.INACTIVE
+            firewall['firewall']['status'] = nl_constants.INACTIVE
             fw = super(FirewallPlugin, self).update_firewall(
                 context, id, firewall)
             fw['router_ids'] = []
             return fw
         else:
-            firewall['firewall']['status'] = n_const.PENDING_UPDATE
+            firewall['firewall']['status'] = nl_constants.PENDING_UPDATE
             fw = super(FirewallPlugin, self).update_firewall(
                 context, id, firewall)
             fw['router_ids'] = fw_new_rtrs
@@ -332,7 +334,7 @@ class FirewallPlugin(
             # no routers to delete on the agent side
             self.delete_db_firewall_object(context, id)
         else:
-            status = {"firewall": {"status": n_const.PENDING_DELETE}}
+            status = {"firewall": {"status": nl_constants.PENDING_DELETE}}
             super(FirewallPlugin, self).update_firewall(context, id, status)
             # Reflect state change in fw_with_rules
             fw_with_rules['status'] = status['firewall']['status']
