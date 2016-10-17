@@ -169,6 +169,10 @@ class TestFirewallPluginBasev2(TestFirewallRouterPortBase,
     def tearDown(self):
         super(TestFirewallPluginBasev2, self).tearDown()
 
+    @property
+    def _self_context(self):
+        return context.Context('', self._tenant_id)
+
     def test_create_firewall_group_ports_not_specified(self):
         """neutron firewall-create test-policy """
         with self.firewall_policy() as fwp:
@@ -357,7 +361,8 @@ class TestFirewallPluginBasev2(TestFirewallRouterPortBase,
                      fwg1['firewall_group']['status'])
                 data = {'firewall_group': {'ports': [port_id2, port_id3]}}
                 req = self.new_update_request('firewall_groups', data,
-                                              fwg1['firewall_group']['id'])
+                                              fwg1['firewall_group']['id'],
+                                              context=self._self_context)
                 res = self.deserialize(self.fmt,
                                        req.get_response(self.ext_api))
 
@@ -473,7 +478,8 @@ class TestFirewallPluginBasev2(TestFirewallRouterPortBase,
                         fwg1['firewall_group']['id'], nl_constants.ACTIVE)
                     data = {'firewall_group': {'ports': [port_id2, port_id3]}}
                     req = self.new_update_request('firewall_groups', data,
-                                                  fwg1['firewall_group']['id'])
+                                                  fwg1['firewall_group']['id'],
+                                                  context=self._self_context)
                     res = self.deserialize(self.fmt,
                                            req.get_response(self.ext_api))
                     self.assertEqual(sorted([port_id2, port_id3]),
@@ -565,3 +571,36 @@ class TestFirewallPluginBasev2(TestFirewallRouterPortBase,
                 r['router']['id'],
                 s1['subnet']['id'],
                 None)
+
+    def test_update_firewall_group_with_non_exist_ports(self):
+        """neutron firewall_group create test-policy """
+        with self.router(name='router1', admin_state_up=True,
+                         tenant_id=self._tenant_id) as r, \
+                self.subnet(cidr='30.0.0.0/24') as s:
+            body = self._router_interface_action(
+                'add',
+                r['router']['id'],
+                s['subnet']['id'],
+                None)
+            port_id1 = body['port_id']
+            foo_port_id = 'caef152d-b118-4b9b-bc77-800661bf082d'
+            fwg_ports = [port_id1]
+            with self.firewall_group(
+                    name='test',
+                    default_policy=False,
+                    ports=fwg_ports,
+                    admin_state_up=True) as fwg1:
+                self.assertEqual(const.INACTIVE,
+                                 fwg1['firewall_group']['status'])
+                data = {'firewall_group': {'ports': [foo_port_id]}}
+                req = self.new_update_request('firewall_groups', data,
+                                              fwg1['firewall_group']['id'])
+                res = self.deserialize(self.fmt,
+                                       req.get_response(self.ext_api))
+                self.assertEqual('PortNotFound',
+                                 res['NeutronError']['type'])
+
+            self._router_interface_action('remove',
+                                          r['router']['id'],
+                                          s['subnet']['id'],
+                                          None)

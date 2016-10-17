@@ -268,6 +268,8 @@ class FirewallPluginV2(
                 # This indicates that user is indicating no ports.
                 fwg_new_ports = []
             else:
+                self._validate_ports_for_firewall_group(
+                    context, context.tenant_id, fwg_ports)
                 self._validate_if_firewall_group_on_ports(
                     context, fwg_ports, id)
                 fwg_new_ports = fwg_ports
