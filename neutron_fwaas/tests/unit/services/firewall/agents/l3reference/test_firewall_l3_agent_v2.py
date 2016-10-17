@@ -82,6 +82,7 @@ class TestFWaaSL3AgentExtension(base.BaseTestCase):
         self.conf.register_opts(firewall_agent_api.FWaaSOpts, 'fwaas')
         self.conf.host = 'myhost'
         self.api = FWaasAgent(self.conf)
+        self.api.agent_api = mock.Mock()
         self.api.fwaas_driver = test_firewall_agent_api.NoopFwaasDriverV2()
         self.adminContext = context.get_admin_context()
         self.context = mock.sentinel.context
@@ -259,6 +260,17 @@ class TestFWaaSL3AgentExtension(base.BaseTestCase):
                     host='host')
             mock_set_firewall_group_status.assert_called_once_with(
                     self.context, firewall_group['id'], 'INACTIVE')
+
+    def test_update_firewall_group_with_only_ports_added(self):
+        # This test is for bug/1634114
+        firewall_group = {'id': 0, 'project_id': 1,
+                          'admin_state_up': True,
+                          'add-port-ids': ['1', '2'],
+                          'del-port-ids': [],
+                          'last-port': False
+                          }
+        self.api.update_firewall_group(self.context, firewall_group,
+                                       host='host')
 
     def test_delete_firewall_group(self):
         firewall_group = {'id': 0, 'project_id': 1,
