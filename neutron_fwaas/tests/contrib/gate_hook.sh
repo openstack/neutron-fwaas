@@ -2,7 +2,7 @@
 
 set -ex
 
-# Below variables are set to exceute this script
+# Below variables are set to execute this script
 IS_GATE=${IS_GATE:-False}
 INSTALL_MYSQL_ONLY=${INSTALL_MYSQL_ONLY:-False}
 
