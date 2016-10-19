@@ -415,7 +415,8 @@ class FWaaSL3AgentExtension(l3_agent_extension.L3AgentCoreResourceExtension):
             ports_for_fwg = self._get_firewall_group_ports(context,
                     firewall_group)
             if ports_for_fwg:
-
+                fw_ports = [p for ri_ports in ports_for_fwg
+                            for p in ri_ports[1]]
                 LOG.debug("Update (create) firewall group %(fwg_id)s on "
                           "ports: %(ports)s" % {'fwg_id': firewall_group['id'],
                                        'ports': ', '.join(fw_ports)})
