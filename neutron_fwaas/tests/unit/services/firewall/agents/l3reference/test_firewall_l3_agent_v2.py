@@ -28,6 +28,8 @@ from neutron.plugins.common import constants
 from neutron_fwaas.services.firewall.agents import firewall_agent_api
 from neutron_fwaas.services.firewall.agents.l3reference \
     import firewall_l3_agent_v2
+from neutron_fwaas.services.firewall.drivers.linux \
+    import iptables_fwaas_v2
 from neutron_fwaas.tests import base
 from neutron_fwaas.tests.unit.services.firewall.agents \
     import test_firewall_agent_api
@@ -60,9 +62,6 @@ def _setup_test_agent_class(service_plugins):
             self.event_observers = mock.Mock()
             self.conf = conf
             super(FWaasTestAgent, self).__init__(conf)
-
-        def add_router(self, context, data):
-            pass
 
         def delete_router(self, context, data):
             pass
@@ -342,5 +341,47 @@ class TestFWaaSL3AgentExtension(base.BaseTestCase):
             mock_get_namespaces.return_value = [ri.ns_name]
             ports_for_fw_actual = self.api._get_in_ns_ports(fw_port_ids)
             self.assertEqual(ports_for_fw_expected, ports_for_fw_actual)
+
+    def test_add_router_for_check_input(self):
+        fw_agent = _setup_test_agent_class([constants.FIREWALL])
+        cfg.CONF.set_override('enabled', True, 'fwaas')
+        updated_router = {
+            '_interfaces': [{
+                'device_owner': 'network: router_interface',
+                'id': '1',
+                'tenant_id': 'demo_tenant_id',
+            }],
+            'tenant_id': 'demo_tenant_id',
+            'id': '0b109a4e-d228-479d-ad43-08bf3245adbb',
+            'name': 'demo_router'
+        }
+        fwg = {
+            'status': 'ACTIVE',
+            'admin_state_up': True,
+            'tenant_id': 'demo_tenant_id',
+            'del-port-ids': [],
+            'add-port-ids': ['1'],
+            'id': '2932b3d9-3a7b-48a1-a16c-bf9f7b2751a5'
+        }
+        with mock.patch('oslo_utils.importutils.import_object'):
+            agent = fw_agent(cfg.CONF)
+            agent.agent_api = mock.Mock()
+            agent.fwplugin_rpc = mock.Mock()
+            agent.conf.agent_mode = mock.Mock()
+            agent.fwaas_driver = iptables_fwaas_v2.IptablesFwaasDriver()
+            with mock.patch.object(agent.fwplugin_rpc,
+                                   'get_firewall_groups_for_project'
+                                   ) as mock_get_firewall_groups_for_project, \
+                    mock.patch.object(agent.agent_api,
+                                      'get_router_hosting_port'
+                                      ) as mock_get_router_hosting_port, \
+                    mock.patch.object(agent.fwaas_driver,
+                                      '_get_ipt_mgrs_with_if_prefix'
+                                      ) as mock_get_ipt_mgrs_with_if_prefix:
+                mock_get_firewall_groups_for_project.return_value = [fwg]
+                mock_get_router_hosting_port.return_value = mock.Mock()
+                agent.add_router(self.context, updated_router)
+                mock_get_ipt_mgrs_with_if_prefix.assert_any_call(
+                    agent.conf.agent_mode, mock.ANY)
 
     #TODO(Margaret) Add test for add_router method.
