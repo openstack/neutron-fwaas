@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from neutron.agent.common import config
 from neutron.common import rpc as n_rpc
 from neutron import context
 from oslo_config import cfg
@@ -61,6 +62,7 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
                                 f_resources.FIREWALL_RULE]
 
     def initialize(self, connection, driver_type):
+        config.setup_privsep()
         self._register_rpc_consumers(connection)
 
     def consume_api(self, agent_api):
