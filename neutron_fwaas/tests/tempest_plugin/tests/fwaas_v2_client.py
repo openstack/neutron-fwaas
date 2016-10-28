@@ -84,7 +84,7 @@ class FWaaSClientMixin(object):
             **kwargs)
         fwg = body['firewall_group']
         self.addCleanup(test_utils.call_and_ignore_notfound_exc,
-                        self.delete_firewall_and_wait,
+                        self.delete_firewall_group_and_wait,
                         fwg['id'])
         return fwg
 
@@ -115,7 +115,8 @@ class FWaaSClientMixin(object):
             status = fwg['firewall_group']['status']
             if status not in statuses:
                 break
-            if int(time.time()) - start >= self.firewalls_client.build_timeout:
+            if (int(time.time()) - start >=
+                self.firewall_groups_client.build_timeout):
                 msg = ("Firewall Group %(firewall_group)s failed to reach "
                        "non PENDING status (current %(status)s)") % {
                     "firewall_group": firewall_group_id,
