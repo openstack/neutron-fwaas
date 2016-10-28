@@ -10,6 +10,7 @@ General Information and Other Project References:
    :glob:
    :maxdepth: 1
 
+   installation
    fwaas_v2
    contributing
 
