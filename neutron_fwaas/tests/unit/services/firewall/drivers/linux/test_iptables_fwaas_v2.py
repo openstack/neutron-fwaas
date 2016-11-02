@@ -15,9 +15,7 @@
 
 import copy
 import mock
-from oslo_config import cfg
 
-from neutron.agent.common import config as a_cfg
 from neutron.tests import base
 from neutron.tests.unit.api.v2 import test_base as test_api_v2
 import neutron_fwaas.services.firewall.drivers.linux.iptables_fwaas_v2 as fwaas
@@ -38,7 +36,6 @@ MAX_INTF_NAME_LEN = 14
 class IptablesFwaasTestCase(base.BaseTestCase):
     def setUp(self):
         super(IptablesFwaasTestCase, self).setUp()
-        cfg.CONF.register_opts(a_cfg.ROOT_HELPER_OPTS, 'AGENT')
         self.utils_exec_p = mock.patch(
             'neutron.agent.linux.utils.execute')
         self.utils_exec = self.utils_exec_p.start()
