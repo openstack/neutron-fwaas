@@ -187,10 +187,11 @@ class FWaaSL3AgentExtension(l3_agent_extension.L3AgentCoreResourceExtension):
            update_firewall_group method for all other statuses. Both of these
            methods are idempotent.
         """
+        port_list = self._get_in_ns_ports([port['id']])
         if firewall_group['status'] == nl_constants.PENDING_DELETE:
             try:
                 self.fwaas_driver.delete_firewall_group(
-                        self.conf.agent_mode, [port], firewall_group)
+                    self.conf.agent_mode, port_list, firewall_group)
                 self.fwplugin_rpc.firewall_group_deleted(
                     ctx, firewall_group['id'])
             except fw_ext.FirewallInternalDriverError:
@@ -199,7 +200,7 @@ class FWaaSL3AgentExtension(l3_agent_extension.L3AgentCoreResourceExtension):
                 LOG.exception(msg, {'status': firewall_group['status'],
                                     'fwg_id': firewall_group['id']})
                 self.fwplugin_rpc.set_firewall_group_status(
-                        ctx, firewall_group['id'], nl_constants.ERROR)
+                    ctx, firewall_group['id'], nl_constants.ERROR)
         else:  # PENDING_UPDATE, PENDING_CREATE, ...
 
             # Prepare firewall group status to return to plugin; may be
@@ -212,7 +213,7 @@ class FWaaSL3AgentExtension(l3_agent_extension.L3AgentCoreResourceExtension):
             # Call the driver.
             try:
                 self.fwaas_driver.update_firewall_group(
-                    self.conf.agent_mode, [port], firewall_group)
+                    self.conf.agent_mode, port_list, firewall_group)
             except fw_ext.FirewallInternalDriverError:
                 msg = _LE("FWaaS driver error on %(status)s for firewall "
                           "group: "
