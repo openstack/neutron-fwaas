@@ -18,7 +18,6 @@ import uuid
 
 from oslo_config import cfg
 
-from neutron.agent.l3 import ha
 from neutron.agent.l3 import l3_agent_extension_api as l3_agent_api
 from neutron.agent.l3 import router_info
 from neutron.agent.linux import ip_lib
@@ -64,7 +63,6 @@ class TestFwaasL3AgentRpcCallback(base.BaseTestCase):
         self.conf = cfg.ConfigOpts()
         self.conf.register_opts(base_config.core_opts)
         self.conf.register_opts(l3_config.OPTS)
-        self.conf.register_opts(ha.OPTS)
         self.conf.register_opts(firewall_agent_api.FWaaSOpts, 'fwaas')
         self.api = FWaasAgent(host=None, conf=self.conf)
         self.api.fwaas_driver = test_firewall_agent_api.NoopFwaasDriver()
