@@ -14,9 +14,9 @@
 
 import mock
 import testtools
-import uuid
 
 from oslo_config import cfg
+from oslo_utils import uuidutils
 
 from neutron.agent.l3 import l3_agent_extension_api as l3_agent_api
 from neutron.agent.l3 import router_info
@@ -67,9 +67,10 @@ class TestFwaasL3AgentRpcCallback(base.BaseTestCase):
         self.api = FWaasAgent(host=None, conf=self.conf)
         self.api.fwaas_driver = test_firewall_agent_api.NoopFwaasDriver()
         self.adminContext = context.get_admin_context()
-        self.router_id = str(uuid.uuid4())
+        self.router_id = uuidutils.generate_uuid()
         self.agent_conf = mock.Mock()
-        project_id = str(uuid.uuid4())  # For 'tenant_id' and 'project_id' keys
+        # For 'tenant_id' and 'project_id' keys
+        project_id = uuidutils.generate_uuid()
         self.ri_kwargs = {'router': {'id': self.router_id,
                                      'tenant_id': project_id,
                                      'project_id': project_id},
@@ -326,7 +327,8 @@ class TestFwaasL3AgentRpcCallback(base.BaseTestCase):
         # rtr2 has no router_info
 
         ri = self._prepare_router_data()
-        rtr2 = {'id': str(uuid.uuid4()), 'tenant_id': ri.router['tenant_id']}
+        rtr2 = {'id': uuidutils.generate_uuid(),
+                'tenant_id': ri.router['tenant_id']}
 
         routers = [rtr2]
         router_info = {}
