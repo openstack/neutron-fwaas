@@ -1,6 +1,25 @@
 Contributing to neutron-fwaas
 =============================
 
+If you would like to contribute to the development of OpenStack, you must
+follow the steps documented at:
+
+    http://docs.openstack.org/infra/manual/developers.html
+
+Once those steps have been completed, changes to OpenStack should be submitted
+for review via the Gerrit tool, following the workflow documented at:
+
+    http://docs.openstack.org/infra/manual/developers.html#development-workflow
+
+Pull requests submitted through GitHub will be ignored.
+
+Bugs should be filed on Launchpad in the 'neutron' project:
+
+    https://bugs.launchpad.net/neutron
+
+Getting in touch with the neutron-fwaas community
+==============================================
+
 To contribute to the neutron-fwaas project, look at the following resources:
 
 - Join the #openstack-fwaas IRC channel on Freenode.  This is where the
