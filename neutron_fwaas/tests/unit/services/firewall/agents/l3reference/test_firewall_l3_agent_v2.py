@@ -13,10 +13,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import uuid
-
 import mock
 from oslo_config import cfg
+from oslo_utils import uuidutils
 
 from neutron.agent.l3 import l3_agent_extension_api as l3_agent_api
 from neutron.agent.l3 import router_info
@@ -85,10 +84,10 @@ class TestFWaaSL3AgentExtension(base.BaseTestCase):
         self.api.fwaas_driver = test_firewall_agent_api.NoopFwaasDriverV2()
         self.adminContext = context.get_admin_context()
         self.context = mock.sentinel.context
-        self.router_id = str(uuid.uuid4())
+        self.router_id = uuidutils.generate_uuid()
         self.agent_conf = mock.Mock()
         self.ri_kwargs = {'router': {'id': self.router_id,
-                                     'project_id': str(uuid.uuid4())},
+                                     'project_id': uuidutils.generate_uuid()},
                           'agent_conf': self.agent_conf,
                           'interface_driver': mock.ANY,
                           'use_ipv6': mock.ANY
