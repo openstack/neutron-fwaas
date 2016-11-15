@@ -15,7 +15,6 @@
 import six
 
 from tempest import config
-from tempest import exceptions
 from tempest.lib.common.utils import data_utils
 from tempest.lib import exceptions as lib_exc
 from tempest import test
@@ -103,7 +102,7 @@ class FWaaSExtensionTestJSON(base.BaseFWaaSTest):
                                     CONF.network.build_interval):
             m = ("Timed out waiting for firewall %s to reach %s state(s)" %
                  (fw_id, target_states))
-            raise exceptions.TimeoutException(m)
+            raise lib_exc.TimeoutException(m)
 
     @test.idempotent_id('1b84cf01-9c09-4ce7-bc72-b15e39076468')
     @test.attr(type='smoke')
