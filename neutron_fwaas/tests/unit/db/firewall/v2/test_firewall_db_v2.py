@@ -19,8 +19,6 @@ import mock
 from neutron.api import extensions as api_ext
 from neutron.common import config
 from neutron import context
-from neutron import manager
-from neutron.plugins.common import constants
 from oslo_config import cfg
 from oslo_utils import importutils
 from oslo_utils import uuidutils
@@ -35,6 +33,7 @@ from neutron_fwaas.extensions import firewall_v2 as firewall
 from neutron_fwaas.services.firewall import fwaas_plugin_v2
 from neutron_fwaas.tests import base
 from neutron_lib import constants as nl_constants
+from neutron_lib.plugins import directory
 
 DB_FW_PLUGIN_KLASS = (
     "neutron_fwaas.db.firewall.v2.firewall_db_v2.Firewall_db_mixin_v2"
@@ -69,8 +68,7 @@ class FakeAgentApi(fwaas_plugin_v2.FirewallCallbacks):
         pass
 
     def delete_firewall_group(self, context, firewall_group, **kwargs):
-        self.plugin = (manager.NeutronManager.
-            get_service_plugins()['FIREWALL_V2'])
+        self.plugin = directory.get_plugin('FIREWALL_V2')
         self.firewall_group_deleted(context, firewall_group['id'], **kwargs)
 
 
@@ -100,7 +98,7 @@ class FirewallPluginV2DbTestCase(base.NeutronDbPluginV2TestCase):
             self.plugin = importutils.import_object(fw_plugin)
             ext_mgr = api_ext.PluginAwareExtensionManager(
                 extensions_path,
-                {constants.FIREWALL: self.plugin}
+                {'FIREWALL': self.plugin}
             )
             app = config.load_paste_app('extensions_test_app')
             self.ext_api = api_ext.ExtensionMiddleware(app, ext_mgr=ext_mgr)

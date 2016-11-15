@@ -20,8 +20,6 @@ from neutron.api import extensions as api_ext
 from neutron.common import config
 from neutron import context
 from neutron.extensions import l3
-from neutron import manager
-from neutron.plugins.common import constants
 from oslo_config import cfg
 from oslo_utils import importutils
 from oslo_utils import uuidutils
@@ -34,6 +32,7 @@ from neutron_fwaas.extensions import firewall
 from neutron_fwaas.services.firewall import fwaas_plugin
 from neutron_fwaas.tests import base
 from neutron_lib import constants as nl_constants
+from neutron_lib.plugins import directory
 
 DB_FW_PLUGIN_KLASS = (
     "neutron_fwaas.db.firewall.firewall_db.Firewall_db_mixin"
@@ -68,7 +67,7 @@ class FakeAgentApi(fwaas_plugin.FirewallCallbacks):
         pass
 
     def delete_firewall(self, context, firewall, **kwargs):
-        self.plugin = manager.NeutronManager.get_service_plugins()['FIREWALL']
+        self.plugin = directory.get_plugin('FIREWALL')
         self.firewall_deleted(context, firewall['id'], **kwargs)
 
 
@@ -97,7 +96,7 @@ class FirewallPluginDbTestCase(base.NeutronDbPluginV2TestCase):
             self.plugin = importutils.import_object(fw_plugin)
             ext_mgr = api_ext.PluginAwareExtensionManager(
                 extensions_path,
-                {constants.FIREWALL: self.plugin}
+                {'FIREWALL': self.plugin}
             )
             app = config.load_paste_app('extensions_test_app')
             self.ext_api = api_ext.ExtensionMiddleware(app, ext_mgr=ext_mgr)
@@ -1460,25 +1459,21 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
                                   body_data={'firewall_rule_id': None})
 
     def test_check_router_has_no_firewall_raises(self):
-        with mock.patch.object(
-            manager.NeutronManager, 'get_service_plugins') as sp:
-            fw_plugin = mock.Mock()
-            sp.return_value = {'FIREWALL': fw_plugin}
-            fw_plugin.get_firewalls.return_value = [mock.ANY]
-            kwargs = {
-                'context': mock.ANY,
-                'router': {'id': 'foo_id', 'tenant_id': 'foo_tenant'}
-            }
-            self.assertRaises(
-                l3.RouterInUse,
-                fdb.migration_callback,
-                'router', 'before_event', mock.ANY,
-                **kwargs)
+        fw_plugin = mock.Mock()
+        directory.add_plugin('FIREWALL', fw_plugin)
+        fw_plugin.get_firewalls.return_value = [mock.ANY]
+        kwargs = {
+            'context': mock.ANY,
+            'router': {'id': 'foo_id', 'tenant_id': 'foo_tenant'}
+        }
+        self.assertRaises(
+            l3.RouterInUse,
+            fdb.migration_callback,
+            'router', 'before_event', mock.ANY,
+            **kwargs)
 
     def test_check_router_has_no_firewall_passes(self):
-        with mock.patch.object(manager.NeutronManager,
-                               'get_service_plugins',
-                               return_value={}):
+        with mock.patch.object(directory, 'get_plugin', return_value=None):
             kwargs = {'context': mock.ANY, 'router': mock.ANY}
             self.assertIsNone(fdb.migration_callback(
                 mock.ANY, mock.ANY, mock.ANY, **kwargs))

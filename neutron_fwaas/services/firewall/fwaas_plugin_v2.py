@@ -12,9 +12,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from neutron_lib.plugins import directory
+
 from neutron.common import rpc as n_rpc
 from neutron import context as neutron_context
-from neutron import manager
 from neutron_lib import constants as nl_constants
 from oslo_config import cfg
 from oslo_log import log as logging
@@ -150,7 +151,7 @@ class FirewallPluginV2(
 
     @property
     def _core_plugin(self):
-        return manager.NeutronManager.get_plugin()
+        return directory.get_plugin()
 
     def start_rpc_listeners(self):
         self.endpoints = [FirewallCallbacks(self)]

@@ -13,12 +13,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from neutron_lib.plugins import directory
+
 from neutron.callbacks import events
 from neutron.callbacks import registry
 from neutron.callbacks import resources
 from neutron.db import common_db_mixin as base_db
 from neutron.extensions import l3
-from neutron import manager
 from neutron.plugins.common import constants as p_const
 from neutron_lib import constants as nl_constants
 from neutron_lib.db import model_base
@@ -98,7 +99,7 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
 
     @property
     def _core_plugin(self):
-        return manager.NeutronManager.get_plugin()
+        return directory.get_plugin()
 
     def _get_firewall(self, context, id):
         try:
@@ -612,8 +613,7 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
 def migration_callback(resource, event, trigger, **kwargs):
     context = kwargs['context']
     router = kwargs['router']
-    fw_plugin = manager.NeutronManager.get_service_plugins().get(
-        p_const.FIREWALL)
+    fw_plugin = directory.get_plugin(p_const.FIREWALL)
     if fw_plugin:
         tenant_firewalls = fw_plugin.get_firewalls(
             context, filters={'tenant_id': [router['tenant_id']]})
