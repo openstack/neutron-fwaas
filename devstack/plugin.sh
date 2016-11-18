@@ -39,13 +39,17 @@ function install_fwaas() {
 }
 
 function configure_fwaas_v1() {
+    echo_summary "Configuring q-fwaas for FWaaS v1"
     neutron_fwaas_configure_driver fwaas
     iniset_multiline $Q_L3_CONF_FILE fwaas agent_version v1
+    NETWORK_API_EXTENSIONS+=,fwaas,fwaasrouterinsertion
 }
 
 function configure_fwaas_v2() {
+    echo_summary "Configuring q-fwaas for FWaaS v2"
     neutron_fwaas_configure_driver fwaas_v2
     iniset_multiline $Q_L3_CONF_FILE fwaas agent_version v2
+    NETWORK_API_EXTENSIONS+=,fwaas_v2
 }
 
 function init_fwaas() {
@@ -100,13 +104,10 @@ if is_service_enabled q-svc && ( is_service_enabled q-fwaas || is_service_enable
     elif [[ "$1" == "stack" && "$2" == "post-config" ]]; then
         # Configure after the other layer 1 and 2 services have been configured
         if is_service_enabled q-fwaas-v1; then
-            echo_summary "Configuring q-fwaas for FWaaS v1"
             configure_fwaas_v1
         elif is_service_enabled q-fwaas-v2; then
-            echo_summary "Configuring q-fwaas for FWaaS v2"
             configure_fwaas_v2
         else
-            echo_summary "Configuring q-fwaas for FWaaS v1"
             configure_fwaas_v1
         fi
 

@@ -1,3 +1,13 @@
 FWAAS_DRIVER=${FWAAS_DRIVER:-iptables}
 FWAAS_PLUGIN_V1=${FWAAS_PLUGIN:-neutron_fwaas.services.firewall.fwaas_plugin.FirewallPlugin}
 FWAAS_PLUGIN_V2=${FWAAS_PLUGIN:-neutron_fwaas.services.firewall.fwaas_plugin_v2.FirewallPluginV2}
+
+NETWORK_API_EXTENSIONS=agent,binding,dhcp_agent_scheduler,external-net
+NETWORK_API_EXTENSIONS+=,ext-gw-mode,extra_dhcp_opts,quotas,router
+NETWORK_API_EXTENSIONS+=,security-group,subnet_allocation
+NETWORK_API_EXTENSIONS+=,network-ip-availability,auto-allocated-topology
+NETWORK_API_EXTENSIONS+=,timestamp_core,tag,service-type,rbac-policies
+NETWORK_API_EXTENSIONS+=,standard-attr-description
+NETWORK_API_EXTENSIONS+=,pagination
+NETWORK_API_EXTENSIONS+=,sorting
+NETWORK_API_EXTENSIONS+=,project-id
