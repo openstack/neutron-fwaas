@@ -55,6 +55,7 @@ class FWaaSv2ExtensionTestJSON(v2_base.BaseFWaaSTest):
 
     @classmethod
     def resource_setup(cls):
+        raise cls.skipException("bug 1643844")
         super(FWaaSv2ExtensionTestJSON, cls).resource_setup()
         if not test.is_extension_enabled('fwaas_v2', 'network'):
             msg = "FWaaS v2  Extension not enabled."
