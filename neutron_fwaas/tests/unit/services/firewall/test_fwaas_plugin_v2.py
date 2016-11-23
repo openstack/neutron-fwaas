@@ -16,7 +16,6 @@
 import mock
 from neutron.api.v2 import attributes as attr
 from neutron import context
-from neutron import manager
 from neutron.plugins.common import constants as const
 from neutron.tests import fake_notifier
 from neutron.tests.unit.extensions import test_l3 as test_l3_plugin
@@ -30,6 +29,7 @@ from neutron_fwaas.tests import base
 from neutron_fwaas.tests.unit.db.firewall.v2 import (
     test_firewall_db_v2 as test_db_firewall)
 from neutron_lib import constants as nl_constants
+from neutron_lib.plugins import directory
 
 extensions_path = neutron_fwaas.extensions.__path__[0]
 
@@ -115,10 +115,8 @@ class TestFirewallRouterPortBase(
 
         self.setup_notification_driver()
 
-        self.l3_plugin = manager.NeutronManager.get_service_plugins().get(
-            const.L3_ROUTER_NAT)
-        self.plugin = manager.NeutronManager.get_service_plugins().get(
-            'FIREWALL_V2')
+        self.l3_plugin = directory.get_plugin(nl_constants.L3)
+        self.plugin = directory.get_plugin('FIREWALL_V2')
         self.callbacks = self.plugin.endpoints[0]
 
     def restore_attribute_map(self):
