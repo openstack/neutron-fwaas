@@ -586,6 +586,23 @@ class TestFirewallPluginBase(TestFirewallRouterInsertionBase,
                 self._test_list_resources('firewall', [fwalls],
                                           query_params='description=fw')
 
+    def test_list_firewalls_with_filtering(self):
+        with self.router(name='my_router', admin_state_up=True,
+                         tenant_id=self._tenant_id) as router:
+            router_id = router['router']['id']
+            with self.firewall_policy() as fwp:
+                fwp_id = fwp['firewall_policy']['id']
+                with self.firewall(name='fw1', firewall_policy_id=fwp_id,
+                                   description='fw',
+                                   router_ids=[router_id]) as fwalls:
+                    filter_pattern = None
+                    fw = fwalls['firewall']
+                    for filter_pattern in fw:
+                        query_params = 'fields=%s' % filter_pattern
+                        expect = [{filter_pattern: fw[filter_pattern]}]
+                        self._test_list_resources('firewall', expect,
+                                                  query_params=query_params)
+
     def test_insert_rule(self):
         ctx = context.get_admin_context()
         with self.firewall_rule() as fwr:

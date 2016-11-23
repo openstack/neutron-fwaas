@@ -113,9 +113,14 @@ class FirewallPluginDbTestCase(base.NeutronDbPluginV2TestCase):
                          neutron_context=neutron_context,
                          query_params=query_params)
         resource = resource.replace('-', '_')
-        self.assertEqual(
-            sorted([i[resource]['id'] for i in items]),
-            sorted([i['id'] for i in res[resource_plural]]))
+        if query_params is None or ('fields' not in query_params):
+            self.assertEqual(
+                sorted([i[resource]['id'] for i in items]),
+                sorted([i['id'] for i in res[resource_plural]]))
+        else:
+            self.assertEqual(
+                sorted([i for i in items]),
+                sorted([i for i in res[resource_plural]]))
 
     def _get_test_firewall_rule_attrs(self, name='firewall_rule1'):
         attrs = {'name': name,
