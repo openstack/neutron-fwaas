@@ -15,11 +15,11 @@
 
 import abc
 
-from neutron.api import extensions
 from neutron.api.v2 import resource_helper
 from neutron.plugins.common import constants as p_const
 from neutron.services import service_base
 from neutron_lib.api import converters
+from neutron_lib.api import extensions
 from neutron_lib.api import validators
 from neutron_lib import constants
 from neutron_lib.db import constants as db_const

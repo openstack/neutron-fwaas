@@ -13,10 +13,10 @@
 # under the License.
 
 import abc
-from neutron.api import extensions
 from neutron.api.v2 import resource_helper
 from neutron.services import service_base
 from neutron_lib.api import converters
+from neutron_lib.api import extensions
 from neutron_lib.db import constants as nl_db_constants
 from neutron_lib import exceptions as nexception
 import six
