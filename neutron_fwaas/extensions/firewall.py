@@ -404,7 +404,6 @@ class Firewall(extensions.ExtensionDescriptor):
         special_mappings = {'firewall_policies': 'firewall_policy'}
         plural_mappings = resource_helper.build_plural_mappings(
             special_mappings, RESOURCE_ATTRIBUTE_MAP)
-        attr.PLURALS.update(plural_mappings)
         action_map = {'firewall_policy': {'insert_rule': 'PUT',
                                           'remove_rule': 'PUT'}}
         return resource_helper.build_resource_info(plural_mappings,

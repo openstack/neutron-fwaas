@@ -14,7 +14,6 @@
 
 import abc
 from neutron.api import extensions
-from neutron.api.v2 import attributes as attr
 from neutron.api.v2 import resource_helper
 from neutron.services import service_base
 from neutron_lib.api import converters
@@ -340,7 +339,6 @@ class Firewall_v2(extensions.ExtensionDescriptor):
         special_mappings = {'firewall_policies': 'firewall_policy'}
         plural_mappings = resource_helper.build_plural_mappings(
             special_mappings, RESOURCE_ATTRIBUTE_MAP)
-        attr.PLURALS.update(plural_mappings)
         action_map = {'firewall_policy': {'insert_rule': 'PUT',
                                           'remove_rule': 'PUT'}}
         return resource_helper.build_resource_info(plural_mappings,
