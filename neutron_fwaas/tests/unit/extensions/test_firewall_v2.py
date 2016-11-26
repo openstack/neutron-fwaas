@@ -16,9 +16,9 @@
 import copy
 
 import mock
-from neutron.api.v2 import attributes as attr
 from neutron.tests.unit.api.v2 import test_base as test_api_v2
 from neutron.tests.unit.extensions import base as test_api_v2_extension
+from neutron_lib.db import constants as db_const
 from oslo_utils import uuidutils
 from webob import exc
 import webtest
@@ -27,9 +27,9 @@ from neutron_fwaas.extensions import firewall_v2
 
 _uuid = uuidutils.generate_uuid
 _get_path = test_api_v2._get_path
-_long_name = 'x' * (attr.NAME_MAX_LEN + 1)
-_long_description = 'y' * (attr.DESCRIPTION_MAX_LEN + 1)
-_long_tenant = 'z' * (attr.TENANT_ID_MAX_LEN + 1)
+_long_name = 'x' * (db_const.NAME_FIELD_SIZE + 1)
+_long_description = 'y' * (db_const.DESCRIPTION_FIELD_SIZE + 1)
+_long_tenant = 'z' * (db_const.PROJECT_ID_FIELD_SIZE + 1)
 
 FIREWALL_CONST = 'FIREWALL_V2'
 

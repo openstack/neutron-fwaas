@@ -16,13 +16,13 @@
 import abc
 
 from neutron.api import extensions
-from neutron.api.v2 import attributes as attr
 from neutron.api.v2 import resource_helper
 from neutron.plugins.common import constants as p_const
 from neutron.services import service_base
 from neutron_lib.api import converters
 from neutron_lib.api import validators
 from neutron_lib import constants
+from neutron_lib.db import constants as db_const
 from neutron_lib import exceptions as nexception
 from oslo_config import cfg
 from oslo_log import log as logging
@@ -251,11 +251,11 @@ RESOURCE_ATTRIBUTE_MAP = {
                       'required_by_policy': True,
                       'is_visible': True},
         'name': {'allow_post': True, 'allow_put': True,
-                 'validate': {'type:string': attr.NAME_MAX_LEN},
+                 'validate': {'type:string': db_const.NAME_FIELD_SIZE},
                  'is_visible': True, 'default': ''},
         'description': {'allow_post': True, 'allow_put': True,
                         'validate': {'type:string':
-                                     attr.DESCRIPTION_MAX_LEN},
+                                     db_const.DESCRIPTION_FIELD_SIZE},
                         'is_visible': True, 'default': ''},
         'firewall_policy_id': {'allow_post': False, 'allow_put': False,
                                'validate': {'type:uuid_or_none': None},
@@ -307,11 +307,11 @@ RESOURCE_ATTRIBUTE_MAP = {
                       'required_by_policy': True,
                       'is_visible': True},
         'name': {'allow_post': True, 'allow_put': True,
-                 'validate': {'type:string': attr.NAME_MAX_LEN},
+                 'validate': {'type:string': db_const.NAME_FIELD_SIZE},
                  'is_visible': True, 'default': ''},
         'description': {'allow_post': True, 'allow_put': True,
                         'validate': {'type:string':
-                                     attr.DESCRIPTION_MAX_LEN},
+                                     db_const.DESCRIPTION_FIELD_SIZE},
                         'is_visible': True, 'default': ''},
         'shared': {'allow_post': True, 'allow_put': True,
                    'default': False, 'enforce_policy': True,
@@ -334,11 +334,11 @@ RESOURCE_ATTRIBUTE_MAP = {
                       'required_by_policy': True,
                       'is_visible': True},
         'name': {'allow_post': True, 'allow_put': True,
-                 'validate': {'type:string': attr.NAME_MAX_LEN},
+                 'validate': {'type:string': db_const.NAME_FIELD_SIZE},
                  'is_visible': True, 'default': ''},
         'description': {'allow_post': True, 'allow_put': True,
                         'validate': {'type:string':
-                                     attr.DESCRIPTION_MAX_LEN},
+                                     db_const.DESCRIPTION_FIELD_SIZE},
                         'is_visible': True, 'default': ''},
         'admin_state_up': {'allow_post': True, 'allow_put': True,
                            'default': True, 'is_visible': True,
