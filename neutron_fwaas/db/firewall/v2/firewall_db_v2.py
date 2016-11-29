@@ -577,6 +577,12 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
         fwp_db = firewall_policy_db
         with context.session.begin(subtransactions=True):
             if not rule_id_list:
+                for rule_id in [rule_assoc.firewall_rule_id
+                    for rule_assoc in fwp_db['rule_associations']]:
+                    fwpra_db = self._get_policy_rule_association(
+                        context, fwp_db['id'], rule_id)
+                    fwp_db.rule_associations.remove(fwpra_db)
+                    context.session.delete(fwpra_db)
                 fwp_db.rule_associations = []
                 return
             # We will first check if the new list of rules is valid
