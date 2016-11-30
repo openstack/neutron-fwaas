@@ -24,8 +24,8 @@ from neutron.agent.linux import ip_lib
 from neutron.conf.agent.l3 import config as l3_config
 from neutron.conf import common as base_config
 from neutron import context
-from neutron.plugins.common import constants
 
+from neutron_fwaas.common import fwaas_constants
 from neutron_fwaas.services.firewall.agents import firewall_agent_api
 from neutron_fwaas.services.firewall.agents.l3reference \
     import firewall_l3_agent
@@ -80,14 +80,14 @@ class TestFwaasL3AgentRpcCallback(base.BaseTestCase):
                           }
 
     def test_fw_config_match(self):
-        test_agent_class = _setup_test_agent_class([constants.FIREWALL])
+        test_agent_class = _setup_test_agent_class([fwaas_constants.FIREWALL])
         cfg.CONF.set_override('enabled', True, 'fwaas')
         with mock.patch('oslo_utils.importutils.import_object'):
             test_agent_class(cfg.CONF)
 
     @testtools.skip('needs to be refactored for fwaas v2')
     def test_fw_config_mismatch_plugin_enabled_agent_disabled(self):
-        test_agent_class = _setup_test_agent_class([constants.FIREWALL])
+        test_agent_class = _setup_test_agent_class([fwaas_constants.FIREWALL])
         cfg.CONF.set_override('enabled', False, 'fwaas')
         self.assertRaises(SystemExit, test_agent_class, cfg.CONF)
 

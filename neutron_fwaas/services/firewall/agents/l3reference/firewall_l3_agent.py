@@ -16,7 +16,6 @@
 from neutron.agent.l3 import l3_agent_extension
 from neutron.common import rpc as n_rpc
 from neutron import context
-from neutron.plugins.common import constants as n_const
 from oslo_config import cfg
 from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
@@ -91,7 +90,7 @@ class FWaaSL3AgentExtension(l3_agent_extension.L3AgentCoreResourceExtension):
         # None means l3-agent has no information on the server
         # configuration due to the lack of RPC support.
         if self.neutron_service_plugins is not None:
-            fwaas_plugin_configured = (n_const.FIREWALL
+            fwaas_plugin_configured = (fwaas_constants.FIREWALL
                                        in self.neutron_service_plugins)
             if fwaas_plugin_configured and not self.fwaas_enabled:
                 msg = _("FWaaS plugin is configured in the server side, but "

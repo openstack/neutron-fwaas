@@ -16,7 +16,6 @@
 import abc
 
 from neutron.api.v2 import resource_helper
-from neutron.plugins.common import constants as p_const
 from neutron.services import service_base
 from neutron_lib.api import converters
 from neutron_lib.api import extensions
@@ -29,6 +28,7 @@ from oslo_log import log as logging
 import six
 
 from neutron_fwaas._i18n import _
+from neutron_fwaas.common import fwaas_constants
 
 
 LOG = logging.getLogger(__name__)
@@ -408,7 +408,7 @@ class Firewall(extensions.ExtensionDescriptor):
                                           'remove_rule': 'PUT'}}
         return resource_helper.build_resource_info(plural_mappings,
                                                    RESOURCE_ATTRIBUTE_MAP,
-                                                   p_const.FIREWALL,
+                                                   fwaas_constants.FIREWALL,
                                                    action_map=action_map,
                                                    register_quota=True)
 
@@ -431,10 +431,10 @@ class Firewall(extensions.ExtensionDescriptor):
 class FirewallPluginBase(service_base.ServicePluginBase):
 
     def get_plugin_name(self):
-        return p_const.FIREWALL
+        return fwaas_constants.FIREWALL
 
     def get_plugin_type(self):
-        return p_const.FIREWALL
+        return fwaas_constants.FIREWALL
 
     def get_plugin_description(self):
         return 'Firewall service plugin'

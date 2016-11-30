@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+FIREWALL = 'FIREWALL'
+
 # Constants for "topics"
 FIREWALL_PLUGIN = 'q-firewall-plugin'
 L3_AGENT = 'l3_agent'

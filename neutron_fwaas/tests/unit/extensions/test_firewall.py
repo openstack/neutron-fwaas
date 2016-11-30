@@ -16,7 +16,6 @@
 import copy
 
 import mock
-from neutron.plugins.common import constants
 from neutron.tests import base
 from neutron.tests.unit.api.v2 import test_base as test_api_v2
 from neutron.tests.unit.extensions import base as test_api_v2_extension
@@ -25,6 +24,7 @@ from oslo_utils import uuidutils
 from webob import exc
 import webtest
 
+from neutron_fwaas.common import fwaas_constants
 from neutron_fwaas.extensions import firewall
 
 _uuid = uuidutils.generate_uuid
@@ -41,7 +41,7 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         plural_mappings = {'firewall_policy': 'firewall_policies'}
         self._setUpExtension(
             'neutron_fwaas.extensions.firewall.FirewallPluginBase',
-            constants.FIREWALL, firewall.RESOURCE_ATTRIBUTE_MAP,
+            fwaas_constants.FIREWALL, firewall.RESOURCE_ATTRIBUTE_MAP,
             firewall.Firewall, 'fw', plural_mappings=plural_mappings)
 
     def test_create_firewall(self):
