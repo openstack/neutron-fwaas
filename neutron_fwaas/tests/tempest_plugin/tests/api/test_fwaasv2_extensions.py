@@ -176,8 +176,8 @@ class FWaaSv2ExtensionTestJSON(v2_base.BaseFWaaSTest):
 
         # Update firewall rule
         body = self.firewall_rules_client.update_firewall_rule(fw_rule_id,
-                                                               public=True)
-        self.assertTrue(body["firewall_rule"]['public'])
+                                                               action="deny")
+        self.assertEqual("deny", body["firewall_rule"]['action'])
 
         # Delete firewall rule
         self.firewall_rules_client.delete_firewall_rule(fw_rule_id)
@@ -216,10 +216,8 @@ class FWaaSv2ExtensionTestJSON(v2_base.BaseFWaaSTest):
         # Update firewall policy
         body = self.firewall_policies_client.update_firewall_policy(
             fw_policy_id,
-            public=True,
             name="updated_policy")
         updated_fw_policy = body["firewall_policy"]
-        self.assertTrue(updated_fw_policy['public'])
         self.assertEqual("updated_policy", updated_fw_policy['name'])
 
         # Delete firewall policy

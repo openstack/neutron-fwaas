@@ -11,7 +11,8 @@ test_path=$neutron_path/$base_test_path
 test_files=$(find ${test_path} -iname 'test_*.py')
 
 ignore_regexes=(
-    "^plugins.*$"
+    "^plugins.*$",
+    "^misc.*$"
 )
 
 error_count=0
