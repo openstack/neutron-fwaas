@@ -141,21 +141,22 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
             raise fw_ext.FirewallRuleNotFound(firewall_rule_id=id)
 
     def _validate_fwr_protocol_parameters(self, fwr):
-        protocol = fwr['protocol']
+        protocol = fwr.get('protocol', None)
         if protocol not in (nl_constants.PROTO_NAME_TCP,
                             nl_constants.PROTO_NAME_UDP):
-            if fwr['source_port'] or fwr['destination_port']:
+            if (fwr.get('source_port', None) or
+                    fwr.get('destination_port', None)):
                 raise fw_ext.FirewallRuleInvalidICMPParameter(
                     param="Source, destination port")
 
     def _validate_fwr_src_dst_ip_version(self, fwr):
         src_version = dst_version = None
-        if fwr['source_ip_address']:
+        if fwr.get('source_ip_address', None):
             src_version = netaddr.IPNetwork(fwr['source_ip_address']).version
-        if fwr['destination_ip_address']:
+        if fwr.get('destination_ip_address', None):
             dst_version = netaddr.IPNetwork(
                 fwr['destination_ip_address']).version
-        rule_ip_version = fwr['ip_version']
+        rule_ip_version = fwr.get('ip_version', None)
         if ((src_version and src_version != rule_ip_version) or
                 (dst_version and dst_version != rule_ip_version)):
             raise fw_ext.FirewallIpAddressConflict()
@@ -352,6 +353,8 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
     def update_firewall_rule(self, context, id, firewall_rule):
         LOG.debug("update_firewall_rule() called")
         fwr = firewall_rule['firewall_rule']
+        self._validate_fwr_protocol_parameters(fwr)
+        self._validate_fwr_src_dst_ip_version(fwr)
         fwr_db = self._get_firewall_rule(context, id)
         if 'source_port' in fwr:
             src_port_min, src_port_max = self._get_min_max_ports_from_range(

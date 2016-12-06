@@ -841,6 +841,7 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
         attrs['destination_port'] = '30:40'
         with self.firewall_rule() as fwr:
             data = {'firewall_rule': {'name': name,
+                                      'protocol': PROTOCOL,
                                       'source_port': '10:20',
                                       'destination_port': '30:40'}}
             req = self.new_update_request('firewall_rules', data,
@@ -854,6 +855,7 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
         attrs['destination_port'] = '80'
         with self.firewall_rule() as fwr:
             data = {'firewall_rule': {'name': name,
+                                      'protocol': PROTOCOL,
                                       'source_port': 10000,
                                       'destination_port': 80}}
             req = self.new_update_request('firewall_rules', data,
@@ -867,6 +869,7 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
         attrs['destination_port'] = '80'
         with self.firewall_rule() as fwr:
             data = {'firewall_rule': {'name': name,
+                                      'protocol': PROTOCOL,
                                       'source_port': '10000',
                                       'destination_port': '80'}}
             req = self.new_update_request('firewall_rules', data,
@@ -936,6 +939,17 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
                                           fwr['firewall_rule']['id'])
             res = req.get_response(self.ext_api)
             self.assertEqual(200, res.status_int)
+
+    def test_update_firewall_rule_icmp_with_port(self):
+        with self.firewall_rule(source_port=None,
+                                destination_port=None,
+                                protocol=None) as fwr:
+            data = {'firewall_rule': {'destination_port': 80,
+                                      'protocol': 'icmp'}}
+            req = self.new_update_request('firewall_rules', data,
+                                          fwr['firewall_rule']['id'])
+            res = req.get_response(self.ext_api)
+            self.assertEqual(400, res.status_int)
 
     def test_update_firewall_rule_with_policy_associated(self):
         name = "new_firewall_rule1"
