@@ -19,13 +19,12 @@ from tempest.lib import exceptions as lib_exc
 from tempest.scenario import manager
 
 from neutron_fwaas.tests.tempest_plugin.tests import fwaas_client
+from neutron_fwaas.tests.tempest_plugin.tests import fwaas_v2_client
 
 CONF = config.CONF
 
 
-class FWaaSScenarioTest(fwaas_client.FWaaSClientMixin,
-                        manager.NetworkScenarioTest):
-
+class FWaaSScenarioTestBase(object):
     def check_connectivity(self, ip_address, username=None, private_key=None,
                            should_connect=True,
                            check_icmp=True, check_ssh=True,
@@ -63,3 +62,15 @@ class FWaaSScenarioTest(fwaas_client.FWaaSClientMixin,
             except lib_exc.SSHTimeout:
                 if should_connect:
                     raise
+
+
+class FWaaSScenarioTest(fwaas_client.FWaaSClientMixin,
+                        FWaaSScenarioTestBase,
+                        manager.NetworkScenarioTest):
+    pass
+
+
+class FWaaSScenarioTest_V2(fwaas_v2_client.FWaaSClientMixin,
+                        FWaaSScenarioTestBase,
+                        manager.NetworkScenarioTest):
+    pass
