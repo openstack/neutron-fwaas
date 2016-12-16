@@ -10,7 +10,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from neutron.db.migration.models import head
+from neutron_lib.db import model_base
 
 from neutron_fwaas.db.firewall import firewall_db  # noqa
 from neutron_fwaas.db.firewall import firewall_router_insertion_db  # noqa
@@ -18,4 +18,4 @@ from neutron_fwaas.db.firewall.v2 import firewall_db_v2  # noqa
 
 
 def get_metadata():
-    return head.model_base.BASEV2.metadata
+    return model_base.BASEV2.metadata
