@@ -20,7 +20,6 @@ from neutron.callbacks import registry
 from neutron.callbacks import resources
 from neutron.db import common_db_mixin as base_db
 from neutron.extensions import l3
-from neutron.plugins.common import constants as p_const
 from neutron_lib import constants as nl_constants
 from neutron_lib.db import model_base
 from oslo_config import cfg
@@ -33,6 +32,7 @@ from sqlalchemy.orm import exc
 
 import netaddr
 
+from neutron_fwaas.common import fwaas_constants
 from neutron_fwaas.extensions import firewall as fw_ext
 
 
@@ -616,7 +616,7 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
 def migration_callback(resource, event, trigger, **kwargs):
     context = kwargs['context']
     router = kwargs['router']
-    fw_plugin = directory.get_plugin(p_const.FIREWALL)
+    fw_plugin = directory.get_plugin(fwaas_constants.FIREWALL)
     if fw_plugin:
         tenant_firewalls = fw_plugin.get_firewalls(
             context, filters={'tenant_id': [router['tenant_id']]})

@@ -17,14 +17,13 @@ from neutron.agent.l3 import l3_agent_extension
 from neutron.agent.linux import ip_lib
 from neutron.common import rpc as n_rpc
 from neutron import context
-from neutron.plugins.common import constants as n_const
-from neutron_fwaas.common import fwaas_constants
 from neutron_lib import constants as nl_constants
 from oslo_config import cfg
 from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
 
 from neutron_fwaas._i18n import _, _LE
+from neutron_fwaas.common import fwaas_constants
 from neutron_fwaas.common import resources as f_resources
 from neutron_fwaas.extensions import firewall as fw_ext
 from neutron_fwaas.services.firewall.agents import firewall_agent_api as api
@@ -107,7 +106,7 @@ class FWaaSL3AgentExtension(l3_agent_extension.L3AgentCoreResourceExtension):
         # None means l3-agent has no information on the server
         # configuration due to the lack of RPC support.
         if self.neutron_service_plugins is not None:
-            fwaas_plugin_configured = (n_const.FIREWALL
+            fwaas_plugin_configured = (fwaas_constants.FIREWALL
                                        in self.neutron_service_plugins)
             if fwaas_plugin_configured and not self.fwaas_enabled:
                 msg = _("FWaaS plugin is configured in the server side, but "

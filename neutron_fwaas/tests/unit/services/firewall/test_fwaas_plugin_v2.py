@@ -16,7 +16,6 @@
 import mock
 from neutron.api.v2 import attributes as attr
 from neutron import context
-from neutron.plugins.common import constants as const
 from neutron.tests import fake_notifier
 from neutron.tests.unit.extensions import test_l3 as test_l3_plugin
 from oslo_config import cfg
@@ -588,7 +587,7 @@ class TestFirewallPluginBasev2(TestFirewallRouterPortBase,
                     default_policy=False,
                     ports=fwg_ports,
                     admin_state_up=True) as fwg1:
-                self.assertEqual(const.INACTIVE,
+                self.assertEqual(nl_constants.INACTIVE,
                                  fwg1['firewall_group']['status'])
                 data = {'firewall_group': {'ports': [foo_port_id]}}
                 req = self.new_update_request('firewall_groups', data,

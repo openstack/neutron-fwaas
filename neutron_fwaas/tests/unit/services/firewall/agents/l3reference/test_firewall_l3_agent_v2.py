@@ -22,8 +22,8 @@ from neutron.agent.l3 import router_info
 from neutron.agent.linux import ip_lib
 from neutron.conf.agent.l3 import config as l3_config
 from neutron import context
-from neutron.plugins.common import constants
 
+from neutron_fwaas.common import fwaas_constants
 from neutron_fwaas.services.firewall.agents import firewall_agent_api
 from neutron_fwaas.services.firewall.agents.l3reference \
     import firewall_l3_agent_v2
@@ -94,14 +94,14 @@ class TestFWaaSL3AgentExtension(base.BaseTestCase):
                           }
 
     def test_fw_config_match(self):
-        test_agent_class = _setup_test_agent_class([constants.FIREWALL])
+        test_agent_class = _setup_test_agent_class([fwaas_constants.FIREWALL])
         cfg.CONF.set_override('enabled', True, 'fwaas')
         with mock.patch('oslo_utils.importutils.import_object'):
             test_agent_class(cfg.CONF)
 
     def test_fw_config_mismatch_plugin_enabled_agent_disabled(self):
         self.skipTest('this is broken')
-        test_agent_class = _setup_test_agent_class([constants.FIREWALL])
+        test_agent_class = _setup_test_agent_class([fwaas_constants.FIREWALL])
         cfg.CONF.set_override('enabled', False, 'fwaas')
         self.assertRaises(SystemExit, test_agent_class, cfg.CONF)
 
@@ -342,7 +342,7 @@ class TestFWaaSL3AgentExtension(base.BaseTestCase):
             self.assertEqual(ports_for_fw_expected, ports_for_fw_actual)
 
     def test_add_router_for_check_input(self):
-        fw_agent = _setup_test_agent_class([constants.FIREWALL])
+        fw_agent = _setup_test_agent_class([fwaas_constants.FIREWALL])
         cfg.CONF.set_override('enabled', True, 'fwaas')
         updated_router = {
             '_interfaces': [{
