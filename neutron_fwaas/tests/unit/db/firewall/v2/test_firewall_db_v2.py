@@ -951,6 +951,15 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
             res = req.get_response(self.ext_api)
             self.assertEqual(400, res.status_int)
 
+        with self.firewall_rule(source_port=None,
+                                destination_port=None,
+                                protocol='icmp') as fwr:
+            data = {'firewall_rule': {'destination_port': 80}}
+            req = self.new_update_request('firewall_rules', data,
+                                          fwr['firewall_rule']['id'])
+            res = req.get_response(self.ext_api)
+            self.assertEqual(400, res.status_int)
+
     def test_update_firewall_rule_with_policy_associated(self):
         name = "new_firewall_rule1"
         attrs = self._get_test_firewall_rule_attrs(name)
