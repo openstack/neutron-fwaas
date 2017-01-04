@@ -1,0 +1,7 @@
+# neutron-fwaas privsep filters
+
+# This file should be owned by (and only-writeable by) the root user
+
+[Filters]
+
+privsep-rootwrap: PathFilter, privsep-helper, root, privsep-helper, --config-file, /etc/(?!\.\.).*, --privsep_context, neutron_fwaas.privileged.default
