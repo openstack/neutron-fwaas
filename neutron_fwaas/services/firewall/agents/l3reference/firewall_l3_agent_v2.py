@@ -485,7 +485,7 @@ class FWaaSL3AgentExtension(l3_agent_extension.L3AgentCoreResourceExtension):
             status = nl_constants.ERROR
 
         # Notify plugin of deletion or return firewall group's status to
-        # plugin, as appopriate.
+        # plugin, as appropriate.
         try:
             if status in [nl_constants.ACTIVE, nl_constants.DOWN]:
                 self.fwplugin_rpc.firewall_group_deleted(context,
