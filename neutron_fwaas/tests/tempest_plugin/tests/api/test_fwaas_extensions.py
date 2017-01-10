@@ -305,7 +305,7 @@ class FWaaSExtensionTestJSON(base.BaseFWaaSTest):
         # Try to create firewall with the same router
         self.assertRaisesRegexp(
             lib_exc.Conflict,
-            "An object with that identifier already exists",
+            "already associated with other Firewall",
             self.firewalls_client.create_firewall,
             name=data_utils.rand_name("firewall"),
             firewall_policy_id=self.fw_policy['id'],
