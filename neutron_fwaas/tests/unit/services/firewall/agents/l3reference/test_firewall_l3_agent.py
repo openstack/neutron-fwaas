@@ -298,7 +298,8 @@ class TestFwaasL3AgentRpcCallback(base.BaseTestCase):
                 fake_firewall['id'])
 
     def _prepare_router_data(self):
-        return router_info.RouterInfo(self.router_id,
+        return router_info.RouterInfo(self.api,
+                                      self.router_id,
                                       **self.ri_kwargs)
 
     def test_get_router_info_list_for_tenant(self):

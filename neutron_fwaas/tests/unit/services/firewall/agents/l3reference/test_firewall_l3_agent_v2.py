@@ -301,7 +301,8 @@ class TestFWaaSL3AgentExtension(base.BaseTestCase):
                     firewall_group['id'])
 
     def _prepare_router_data(self):
-        return router_info.RouterInfo(self.router_id,
+        return router_info.RouterInfo(self.api,
+                                      self.router_id,
                                       **self.ri_kwargs)
 
     def test_get_in_ns_ports_for_non_ns_fw(self):
