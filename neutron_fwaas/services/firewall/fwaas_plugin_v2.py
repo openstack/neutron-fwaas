@@ -215,6 +215,18 @@ class FirewallPluginV2(
                 raise fw_ext.FirewallGroupPortInvalidProject(port_id=port_id)
         return
 
+    def _check_no_need_pending(self, context, fwg_id, fwg_body):
+        fwg_db = self._get_firewall_group(context, fwg_id)
+        fwp_req_in = fwg_body.get('ingress_firewall_policy_id', None)
+        fwp_req_eg = fwg_body.get('egress_firewall_policy_id', None)
+
+        if ((not fwg_db.ingress_firewall_policy_id and
+                fwp_req_in is fwg_db.ingress_firewall_policy_id) and
+                (not fwg_db.egress_firewall_policy_id and
+                    fwp_req_eg is fwg_db.ingress_firewall_policy_id)):
+            return True
+        return False
+
     def create_firewall_group(self, context, firewall_group):
         LOG.debug("create_firewall_group() called")
         fwgrp = firewall_group['firewall_group']
@@ -279,13 +291,20 @@ class FirewallPluginV2(
             # existing ports.
             fwg_new_ports = self._get_ports_in_firewall_group(context, id)
 
-        if not fwg_new_ports and not fwg_current_ports:
+        if ((not fwg_new_ports and not fwg_current_ports) or
+            self._check_no_need_pending(context,
+                                        id, firewall_group['firewall_group'])):
             # no messaging to agent needed, and we need to continue
             # in INACTIVE state
             firewall_group['firewall_group']['status'] = nl_constants.INACTIVE
             fwg = super(FirewallPluginV2, self).update_firewall_group(
                 context, id, firewall_group)
-            fwg['ports'] = []
+            if fwg_new_ports:
+                fwg['ports'] = fwg_new_ports
+            elif not fwg_new_ports and fwg_current_ports:
+                fwg['ports'] = fwg_current_ports
+            else:
+                fwg['ports'] = []
             return fwg
         else:
             firewall_group['firewall_group']['status'] = (nl_constants.

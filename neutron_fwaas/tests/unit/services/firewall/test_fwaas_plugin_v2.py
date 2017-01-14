@@ -366,6 +366,9 @@ class TestFirewallPluginBasev2(TestFirewallRouterPortBase,
                 self.assertEqual(sorted([port_id2, port_id3]),
                                  sorted(res['firewall_group']['ports']))
 
+                self.assertEqual(nl_constants.INACTIVE,
+                                 res['firewall_group']['status'])
+
             self._router_interface_action('remove',
                 r['router']['id'],
                 s1['subnet']['id'],
@@ -601,3 +604,68 @@ class TestFirewallPluginBasev2(TestFirewallRouterPortBase,
                                           r['router']['id'],
                                           s['subnet']['id'],
                                           None)
+
+    def test_update_firewall_group_with_ports_and_polcy(self):
+        """neutron firewall_group create test-policy """
+        with self.router(name='router1', admin_state_up=True,
+                         tenant_id=self._tenant_id) as r,\
+                self.subnet() as s1,\
+                self.subnet(cidr='20.0.0.0/24') as s2:
+
+            body = self._router_interface_action(
+                'add',
+                r['router']['id'],
+                s1['subnet']['id'],
+                None)
+            port_id1 = body['port_id']
+
+            body = self._router_interface_action(
+                'add',
+                r['router']['id'],
+                s2['subnet']['id'],
+                None)
+            port_id2 = body['port_id']
+
+            fwg_ports = [port_id1, port_id2]
+            with self.firewall_rule() as fwr:
+                with self.firewall_policy(
+                        firewall_rules=[fwr['firewall_rule']['id']]) as fwp:
+                    with self.firewall_group(
+                            name='test',
+                            default_policy=False,
+                            ports=fwg_ports,
+                            admin_state_up=True) as fwg1:
+                        self.assertEqual(nl_constants.INACTIVE,
+                             fwg1['firewall_group']['status'])
+                        fwp_id = fwp["firewall_policy"]["id"]
+
+                        data = {'firewall_group': {'ports': fwg_ports}}
+                        req = (self.
+                               new_update_request('firewall_groups', data,
+                                                  fwg1['firewall_group']['id'],
+                                                  context=self._self_context))
+                        res = self.deserialize(self.fmt,
+                                               req.get_response(self.ext_api))
+                        self.assertEqual(nl_constants.INACTIVE,
+                                         res['firewall_group']['status'])
+
+                        data = {'firewall_group': {
+                            'ingress_firewall_policy_id': fwp_id}}
+                        req = (self.
+                               new_update_request('firewall_groups', data,
+                                                  fwg1['firewall_group']['id'],
+                                                  context=self._self_context))
+                        res = self.deserialize(self.fmt,
+                                               req.get_response(self.ext_api))
+                        self.assertEqual(nl_constants.PENDING_UPDATE,
+                                         res['firewall_group']['status'])
+
+                    self._router_interface_action('remove',
+                        r['router']['id'],
+                        s1['subnet']['id'],
+                        None)
+                    self._router_interface_action(
+                        'remove',
+                        r['router']['id'],
+                        s2['subnet']['id'],
+                        None)
