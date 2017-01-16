@@ -151,7 +151,7 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
                 raise fw_ext.FirewallRuleInvalidICMPParameter(
                     param="Source, destination port")
 
-    def _validate_fwr_src_dst_ip_version(self, fwr):
+    def _validate_fwr_src_dst_ip_version(self, fwr, fwr_db=None):
         src_version = dst_version = None
         if fwr.get('source_ip_address', None):
             src_version = netaddr.IPNetwork(fwr['source_ip_address']).version
@@ -159,6 +159,8 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
             dst_version = netaddr.IPNetwork(
                 fwr['destination_ip_address']).version
         rule_ip_version = fwr.get('ip_version', None)
+        if not rule_ip_version and fwr_db:
+            rule_ip_version = fwr_db.ip_version
         if ((src_version and src_version != rule_ip_version) or
                 (dst_version and dst_version != rule_ip_version)):
             raise fw_ext.FirewallIpAddressConflict()
@@ -357,7 +359,7 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
         fwr = firewall_rule['firewall_rule']
         fwr_db = self._get_firewall_rule(context, id)
         self._validate_fwr_protocol_parameters(fwr, fwr_db=fwr_db)
-        self._validate_fwr_src_dst_ip_version(fwr)
+        self._validate_fwr_src_dst_ip_version(fwr, fwr_db=fwr_db)
         if 'source_port' in fwr:
             src_port_min, src_port_max = self._get_min_max_ports_from_range(
                 fwr['source_port'])
