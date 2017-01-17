@@ -24,11 +24,13 @@ from oslo_utils import uuidutils
 import six
 import webob.exc
 
+from neutron_fwaas.common import exceptions
+from neutron_fwaas.common import fwaas_constants as fw_const
 from neutron_fwaas.db.firewall import firewall_db as fdb
 from neutron_fwaas import extensions
-from neutron_fwaas.extensions import firewall
 from neutron_fwaas.services.firewall import fwaas_plugin
 from neutron_fwaas.tests import base
+from neutron_lib.api.definitions import firewall as nl_firewall
 from neutron_lib import constants as nl_constants
 from neutron_lib import context
 from neutron_lib.exceptions import l3
@@ -67,14 +69,14 @@ class FakeAgentApi(fwaas_plugin.FirewallCallbacks):
         pass
 
     def delete_firewall(self, context, firewall, **kwargs):
-        self.plugin = directory.get_plugin('FIREWALL')
+        self.plugin = directory.get_plugin(fw_const.FIREWALL)
         self.firewall_deleted(context, firewall['id'], **kwargs)
 
 
 class FirewallPluginDbTestCase(base.NeutronDbPluginV2TestCase):
     resource_prefix_map = dict(
-        (k, firewall.FIREWALL_PREFIX)
-        for k in firewall.RESOURCE_ATTRIBUTE_MAP.keys()
+        (k, nl_firewall.API_PREFIX)
+        for k in nl_firewall.RESOURCE_ATTRIBUTE_MAP.keys()
     )
 
     def setUp(self, core_plugin=None, fw_plugin=None, ext_mgr=None):
@@ -86,7 +88,7 @@ class FirewallPluginDbTestCase(base.NeutronDbPluginV2TestCase):
         service_plugins = {'fw_plugin_name': fw_plugin}
 
         fdb.Firewall_db_mixin.supported_extension_aliases = ["fwaas"]
-        fdb.Firewall_db_mixin.path_prefix = firewall.FIREWALL_PREFIX
+        fdb.Firewall_db_mixin.path_prefix = nl_firewall.API_PREFIX
         super(FirewallPluginDbTestCase, self).setUp(
             ext_mgr=ext_mgr,
             service_plugins=service_plugins
@@ -627,7 +629,7 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
             req = self.new_delete_request('firewall_policies', fwp_id)
             res = req.get_response(self.ext_api)
             self.assertEqual(204, res.status_int)
-            self.assertRaises(firewall.FirewallPolicyNotFound,
+            self.assertRaises(exceptions.FirewallPolicyNotFound,
                               self.plugin.get_firewall_policy,
                               ctx, fwp_id)
 
@@ -650,7 +652,7 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
                 req = self.new_delete_request('firewall_policies', fwp_id)
                 res = req.get_response(self.ext_api)
                 self.assertEqual(204, res.status_int)
-                self.assertRaises(firewall.FirewallPolicyNotFound,
+                self.assertRaises(exceptions.FirewallPolicyNotFound,
                                   self.plugin.get_firewall_policy,
                                   ctx, fwp_id)
                 fw_rule = self.plugin.get_firewall_rule(ctx, fr_id)
@@ -684,8 +686,8 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
 
         attrs['source_port'] = '10000'
         attrs['destination_port'] = '80'
-        with self.firewall_rule(source_port=10000,
-                                destination_port=80) as firewall_rule:
+        with self.firewall_rule(source_port='10000',
+                                destination_port='80') as firewall_rule:
             for k, v in six.iteritems(attrs):
                 self.assertEqual(v, firewall_rule['firewall_rule'][k])
 
@@ -837,8 +839,8 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
         with self.firewall_rule() as fwr:
             data = {'firewall_rule': {'name': name,
                                       'protocol': PROTOCOL,
-                                      'source_port': 10000,
-                                      'destination_port': 80}}
+                                      'source_port': '10000',
+                                      'destination_port': '80'}}
             req = self.new_update_request('firewall_rules', data,
                                           fwr['firewall_rule']['id'])
             res = self.deserialize(self.fmt,
@@ -914,7 +916,7 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
         with self.firewall_rule(source_port=None,
                                 destination_port=None,
                                 protocol=None) as fwr:
-            data = {'firewall_rule': {'destination_port': 80,
+            data = {'firewall_rule': {'destination_port': '80',
                                       'protocol': 'tcp'}}
             req = self.new_update_request('firewall_rules', data,
                                           fwr['firewall_rule']['id'])
@@ -925,7 +927,7 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
         with self.firewall_rule(source_port=None,
                                 destination_port=None,
                                 protocol=None) as fwr:
-            data = {'firewall_rule': {'destination_port': 80,
+            data = {'firewall_rule': {'destination_port': '80',
                                       'protocol': 'icmp'}}
             req = self.new_update_request('firewall_rules', data,
                                           fwr['firewall_rule']['id'])
@@ -980,7 +982,7 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
             req = self.new_delete_request('firewall_rules', fwr_id)
             res = req.get_response(self.ext_api)
             self.assertEqual(204, res.status_int)
-            self.assertRaises(firewall.FirewallRuleNotFound,
+            self.assertRaises(exceptions.FirewallRuleNotFound,
                               self.plugin.get_firewall_rule,
                               ctx, fwr_id)
 
@@ -1196,7 +1198,7 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
                 req = self.new_delete_request('firewalls', fw_id)
                 res = req.get_response(self.ext_api)
                 self.assertEqual(204, res.status_int)
-                self.assertRaises(firewall.FirewallNotFound,
+                self.assertRaises(exceptions.FirewallNotFound,
                                   self.plugin.get_firewall,
                                   ctx, fw_id)
 
@@ -1481,7 +1483,7 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
 
     def test_check_router_has_no_firewall_raises(self):
         fw_plugin = mock.Mock()
-        directory.add_plugin('FIREWALL', fw_plugin)
+        directory.add_plugin(fw_const.FIREWALL, fw_plugin)
         fw_plugin.get_firewalls.return_value = [mock.ANY]
         kwargs = {
             'context': mock.ANY,

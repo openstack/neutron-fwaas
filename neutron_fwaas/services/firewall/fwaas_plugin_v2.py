@@ -16,15 +16,16 @@ from neutron_lib import context as neutron_context
 from neutron_lib.plugins import directory
 
 from neutron.common import rpc as n_rpc
+from neutron_lib.api.definitions import firewall_v2 as fw_ext
 from neutron_lib import constants as nl_constants
 from oslo_config import cfg
 from oslo_log import log as logging
 import oslo_messaging
 
 from neutron_fwaas._i18n import _LI
+from neutron_fwaas.common import exceptions
 from neutron_fwaas.common import fwaas_constants
 from neutron_fwaas.db.firewall.v2 import firewall_db_v2
-from neutron_fwaas.extensions import firewall_v2 as fw_ext
 
 
 LOG = logging.getLogger(__name__)
@@ -102,7 +103,7 @@ class FirewallCallbacks(object):
                                 {'fwg': fwg_id, 'status': fwg_db.status})
                     fwg_db.update({"status": nl_constants.ERROR})
                     return False
-        except fw_ext.FirewallGroupNotFound:
+        except exceptions.FirewallGroupNotFound:
             LOG.info(_LI('Firewall group %s already deleted'), fwg_id)
             return True
 
@@ -144,7 +145,7 @@ class FirewallPluginV2(
     firewall_db_v2.Firewall_db_mixin_v2.
     """
     supported_extension_aliases = ["fwaas_v2"]
-    path_prefix = fw_ext.FIREWALL_PREFIX
+    path_prefix = fw_ext.API_PREFIX
 
     def __init__(self):
         """Do the initialization for the firewall service plugin here."""
@@ -194,7 +195,7 @@ class FirewallPluginV2(
         if fwg['status'] in [nl_constants.PENDING_CREATE,
                              nl_constants.PENDING_UPDATE,
                              nl_constants.PENDING_DELETE]:
-            raise fw_ext.FirewallGroupInPendingState(firewall_id=fwg_id,
+            raise exceptions.FirewallGroupInPendingState(firewall_id=fwg_id,
                                                 pending_state=fwg['status'])
 
     def _ensure_update_firewall_policy(self, context, firewall_policy_id):
@@ -216,9 +217,9 @@ class FirewallPluginV2(
         for port_id in fwg_ports:
             port_db = self._core_plugin._get_port(context, port_id)
             if port_db['device_owner'] != "network:router_interface":
-                raise fw_ext.FirewallGroupPortInvalid(port_id=port_id)
+                raise exceptions.FirewallGroupPortInvalid(port_id=port_id)
             if port_db['tenant_id'] != tenant_id:
-                raise fw_ext.FirewallGroupPortInvalidProject(
+                raise exceptions.FirewallGroupPortInvalidProject(
                     port_id=port_id, tenant_id=port_db['tenant_id'])
         return
 
