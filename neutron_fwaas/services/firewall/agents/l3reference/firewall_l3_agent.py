@@ -13,7 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from neutron.agent.l3 import l3_agent_extension
 from neutron.common import rpc as n_rpc
 from neutron import context
 from oslo_config import cfg
@@ -26,6 +25,7 @@ from neutron_fwaas.common import resources as f_resources
 from neutron_fwaas.extensions import firewall as fw_ext
 from neutron_fwaas.services.firewall.agents import firewall_agent_api as api
 from neutron_fwaas.services.firewall.agents import firewall_service
+from neutron_lib.agent import l3_extension
 from neutron_lib import constants as nl_constants
 
 LOG = logging.getLogger(__name__)
@@ -53,7 +53,7 @@ class FWaaSL3PluginApi(api.FWaaSPluginApiMixin):
                           'get_tenants_with_firewalls', host=self.host)
 
 
-class FWaaSL3AgentExtension(l3_agent_extension.L3AgentCoreResourceExtension):
+class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
     """FWaaS Agent support to be used by Neutron L3 agent."""
 
     SUPPORTED_RESOURCE_TYPES = [f_resources.FIREWALL_GROUP,
