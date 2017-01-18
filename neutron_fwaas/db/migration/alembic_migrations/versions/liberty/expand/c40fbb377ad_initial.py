@@ -21,13 +21,13 @@ Create Date: 2015-07-28 22:18:13.321233
 
 """
 
-from neutron.db.migration import cli
+from neutron_lib.db import constants
 
 
 # revision identifiers, used by Alembic.
 revision = 'c40fbb377ad'
 down_revision = 'kilo'
-branch_labels = (cli.EXPAND_BRANCH,)
+branch_labels = (constants.EXPAND_BRANCH,)
 
 
 def upgrade():
