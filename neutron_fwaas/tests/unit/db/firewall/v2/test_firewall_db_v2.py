@@ -999,6 +999,17 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
                 res = req.get_response(self.ext_api)
                 self.assertEqual(webob.exc.HTTPConflict.code, res.status_int)
 
+    def test_update_firewall_rule_with_ipv6_ipaddr(self):
+        with self.firewall_rule(source_ip_address="1::10",
+                                destination_ip_address=None,
+                                ip_version=6) as fwr_v6:
+            data = {'firewall_rule': {
+                'destination_ip_address': "2::20"}}
+            req = self.new_update_request('firewall_rules', data,
+                                          fwr_v6['firewall_rule']['id'])
+            res = req.get_response(self.ext_api)
+            self.assertEqual(200, res.status_int)
+
     def test_delete_firewall_rule(self):
         ctx = context.get_admin_context()
         with self.firewall_rule(do_delete=False) as fwr:
