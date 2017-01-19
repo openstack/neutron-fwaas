@@ -102,7 +102,6 @@ class FirewallPolicyRuleAssociation(model_base.BASEV2):
                                                ondelete="CASCADE"),
                                  primary_key=True)
     position = sa.Column(sa.Integer)
-    firewall_rule = orm.relationship('FirewallRuleV2')
 
 
 class FirewallPolicy(model_base.BASEV2, model_base.HasId, HasName,
