@@ -223,6 +223,9 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
         return self._fields(res, fields)
 
     def _make_firewall_group_dict(self, firewall_group, fields=None):
+        fwg_ports = [
+            port_assoc.port_id for port_assoc in firewall_group['ports']
+        ]
         res = {'id': firewall_group['id'],
                'tenant_id': firewall_group['tenant_id'],
                'name': firewall_group['name'],
@@ -233,6 +236,7 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
                'egress_firewall_policy_id':
                    firewall_group['egress_firewall_policy_id'],
                'admin_state_up': firewall_group['admin_state_up'],
+               'ports': fwg_ports,
                'status': firewall_group['status']}
         return self._fields(res, fields)
 
