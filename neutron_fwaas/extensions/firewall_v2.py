@@ -51,7 +51,8 @@ class FirewallGroupPortInvalid(nexception.Conflict):
 
 
 class FirewallGroupPortInvalidProject(nexception.Conflict):
-    message = _("Firewall Group %(port_id)s in invalid Project")
+    message = _("Operation cannot be performed as port %(port_id)s "
+                "is in an invalid project %(tenant_id)s.")
 
 
 class FirewallGroupPortInUse(nexception.InUse):
