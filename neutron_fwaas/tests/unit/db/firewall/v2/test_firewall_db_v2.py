@@ -102,6 +102,14 @@ class FirewallPluginV2DbTestCase(base.NeutronDbPluginV2TestCase):
             )
             app = config.load_paste_app('extensions_test_app')
             self.ext_api = api_ext.ExtensionMiddleware(app, ext_mgr=ext_mgr)
+        router_distributed_opts = [
+            cfg.BoolOpt(
+                'router_distributed',
+                default=False,
+                help=_("System-wide flag to determine the type of router "
+                       "that tenants can create. Only admin can override.")),
+        ]
+        cfg.CONF.register_opts(router_distributed_opts)
 
     def _test_list_resources(self, resource, items,
                              neutron_context=None,
@@ -1042,13 +1050,26 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
                 name=attrs['name'],
                 ingress_firewall_policy_id=fwp_id,
                 egress_firewall_policy_id=fwp_id,
-                admin_state_up=ADMIN_STATE_UP
+                admin_state_up=ADMIN_STATE_UP,
+                ports=attrs['ports'] if 'ports' in attrs else None,
             ) as firewall_group:
                 for k, v in six.iteritems(attrs):
                     self.assertEqual(v, firewall_group['firewall_group'][k])
 
     def test_create_firewall_group(self):
         attrs = self._get_test_firewall_group_attrs("firewall1")
+        self._test_create_firewall_group(attrs)
+
+    def test_create_firewall_group_with_ports(self):
+        with self.port(
+            device_owner=nl_constants.DEVICE_OWNER_ROUTER_INTF) as dummy_port:
+            attrs = self._get_test_firewall_group_attrs("fwg1")
+            attrs['ports'] = [dummy_port['port']['id']]
+            self._test_create_firewall_group(attrs)
+
+    def test_create_firewall_group_with_empty_ports(self):
+        attrs = self._get_test_firewall_group_attrs("fwg1")
+        attrs['ports'] = []
         self._test_create_firewall_group(attrs)
 
     def test_create_firewall_group_with_dvr(self):
@@ -1107,17 +1128,15 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
                 self.assertEqual(target_tenant,
                                  fwg['firewall_group']['tenant_id'])
 
-    def test_show_firewall_group(self):
-        name = "firewall1"
-        attrs = self._get_test_firewall_group_attrs(name)
-
+    def _test_show_firewall_group(self, attrs):
         with self.firewall_policy() as fwp:
             fwp_id = fwp['firewall_policy']['id']
             attrs['ingress_firewall_policy_id'] = fwp_id
             attrs['egress_firewall_policy_id'] = fwp_id
             attrs['status'] = 'PENDING_CREATE'
             with self.firewall_group(
-                    name=name,
+                    name=attrs['name'],
+                    ports=attrs['ports'] if 'ports' in attrs else None,
                     ingress_firewall_policy_id=fwp_id,
                     egress_firewall_policy_id=fwp_id,
                     admin_state_up=ADMIN_STATE_UP) as firewall_group:
@@ -1125,10 +1144,26 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
                     'firewall_groups',
                     firewall_group['firewall_group']['id'],
                     fmt=self.fmt)
-                res = self.deserialize(self.fmt,
-                                       req.get_response(self.ext_api))
+                res = self.deserialize(
+                    self.fmt, req.get_response(self.ext_api))
                 for k, v in six.iteritems(attrs):
                     self.assertEqual(v, res['firewall_group'][k])
+
+    def test_show_firewall_group(self):
+        attrs = self._get_test_firewall_group_attrs('fwg1')
+        self._test_show_firewall_group(attrs)
+
+    def test_show_firewall_group_with_ports(self):
+        attrs = self._get_test_firewall_group_attrs('fwg1')
+        with self.port(
+            device_owner=nl_constants.DEVICE_OWNER_ROUTER_INTF) as dummy_port:
+            attrs['ports'] = [dummy_port['port']['id']]
+            self._test_show_firewall_group(attrs)
+
+    def test_show_firewall_group_with_empty_ports(self):
+        attrs = self._get_test_firewall_group_attrs('fwg1')
+        attrs['ports'] = []
+        self._test_show_firewall_group(attrs)
 
     def test_list_firewall_groups(self):
         with self.firewall_policy() as fwp:
