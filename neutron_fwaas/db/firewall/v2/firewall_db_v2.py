@@ -604,6 +604,9 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
             self._delete_rules_in_policy(context, fwp_db['id'])
             # and add in the new association
             self._set_rules_in_policy_rule_assoc(context, fwp_db, fwp)
+            # we need care about the associations related with this policy
+            # and its rules only.
+            filters['firewall_policy_id'] = [fwp_db['id']]
             rules_in_fpol_rul_db = self._get_collection_query(
                 context,
                 FirewallPolicyRuleAssociation,
