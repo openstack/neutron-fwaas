@@ -20,7 +20,9 @@ from neutron_lib.plugins import directory
 from neutron.callbacks import events
 from neutron.callbacks import registry
 from neutron.callbacks import resources
+from neutron.db import agents_db
 from neutron.db import common_db_mixin as base_db
+from neutron.db import l3_agentschedulers_db as l3_sch_db
 from neutron.extensions import l3
 from neutron_lib import constants as nl_constants
 from neutron_lib.db import model_base
@@ -35,6 +37,8 @@ from sqlalchemy.orm import exc
 import netaddr
 
 from neutron_fwaas.common import fwaas_constants
+from neutron_fwaas.db.firewall import firewall_router_insertion_db \
+    as fw_r_ins_db
 from neutron_fwaas.extensions import firewall as fw_ext
 
 
@@ -614,6 +618,17 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
                     firewall_rule_id=fwr_db['id'],
                     firewall_policy_id=id)
             return self._process_rule_for_policy(context, id, fwr_db, None)
+
+    def get_firewall_tenant_ids_on_host(self, context, host):
+        query = context.session.query(Firewall.tenant_id)
+        query = query.join(fw_r_ins_db.FirewallRouterAssociation)
+        query = query.join(l3_sch_db.RouterL3AgentBinding,
+                           l3_sch_db.RouterL3AgentBinding.router_id ==
+                           fw_r_ins_db.FirewallRouterAssociation.router_id)
+        query = query.join(agents_db.Agent)
+        query = query.filter(agents_db.Agent.host == host)
+        query = query.distinct()
+        return [item[0] for item in query]
 
 
 def migration_callback(resource, event, trigger, **kwargs):

@@ -108,10 +108,10 @@ class FirewallCallbacks(object):
     def get_tenants_with_firewalls(self, context, **kwargs):
         """Agent uses this to get all tenants that have firewalls."""
         LOG.debug("get_tenants_with_firewalls() called")
+        host = kwargs['host']
         ctx = neutron_context.get_admin_context()
-        fw_list = self.plugin.get_firewalls(ctx)
-        fw_tenant_list = list(set(fw['tenant_id'] for fw in fw_list))
-        return fw_tenant_list
+        tenant_ids = self.plugin.get_firewall_tenant_ids_on_host(ctx, host)
+        return tenant_ids
 
 
 class FirewallAgentApi(object):
