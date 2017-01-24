@@ -16,14 +16,20 @@
 import mock
 import testtools
 
+from neutron.api import extensions as api_ext
 from neutron.api.v2 import attributes as attr
+from neutron.common import config
 from neutron import context
+from neutron.tests.common import helpers
 from neutron.tests import fake_notifier
+from neutron.tests.unit.extensions import test_agent
 from neutron.tests.unit.extensions import test_l3 as test_l3_plugin
 from oslo_config import cfg
 import six
+import uuid
 from webob import exc
 
+from neutron_fwaas.db.firewall import firewall_db as fdb
 import neutron_fwaas.extensions
 from neutron_fwaas.extensions import firewall
 from neutron_fwaas.extensions import firewallrouterinsertion
@@ -731,3 +737,104 @@ class TestFirewallPluginBase(TestFirewallRouterInsertionBase,
             res = req.get_response(self.ext_api)
             self.assertIn('Quota exceeded', res.body.decode('utf-8'))
             self.assertEqual(exc.HTTPConflict.code, res.status_int)
+
+
+class TestFirewallRouterPluginBase(test_db_firewall.FirewallPluginDbTestCase,
+                                   test_l3_plugin.L3NatTestCaseMixin,
+                                   test_agent.AgentDBTestMixIn):
+
+    def setUp(self, core_plugin=None, fw_plugin=None, ext_mgr=None):
+        self.agentapi_del_fw_p = mock.patch(test_db_firewall.DELETEFW_PATH,
+            create=True, new=test_db_firewall.FakeAgentApi().delete_firewall)
+        self.agentapi_del_fw_p.start()
+
+        self.client_mock = mock.MagicMock(name="mocked client")
+        mock.patch('neutron.common.rpc.get_client'
+                   ).start().return_value = self.client_mock
+
+        # the L3 routing with L3 agent scheduling service plugin
+        l3_plugin = ('neutron.tests.unit.extensions.test_l3.'
+                     'TestL3NatAgentSchedulingServicePlugin')
+
+        cfg.CONF.set_override('api_extensions_path', extensions_path)
+        if not fw_plugin:
+            fw_plugin = FW_PLUGIN_KLASS
+        service_plugins = {'l3_plugin_name': l3_plugin,
+                           'fw_plugin_name': fw_plugin}
+
+        fdb.Firewall_db_mixin.\
+            supported_extension_aliases = ["fwaas",
+                                           "fwaasrouterinsertion"]
+        fdb.Firewall_db_mixin.path_prefix = firewall.FIREWALL_PREFIX
+
+        super(test_db_firewall.FirewallPluginDbTestCase, self).setUp(
+            ext_mgr=ext_mgr,
+            service_plugins=service_plugins
+        )
+
+        if not ext_mgr:
+            ext_mgr = FirewallTestExtensionManager()
+            app = config.load_paste_app('extensions_test_app')
+            self.ext_api = api_ext.ExtensionMiddleware(app, ext_mgr=ext_mgr)
+
+        self.l3_plugin = directory.get_plugin(nl_constants.L3)
+        self.plugin = directory.get_plugin('FIREWALL')
+
+    def test_get_firewall_tenant_ids_on_host_with_associated_router(self):
+        agent = helpers.register_l3_agent("host1")
+        tenant_id = str(uuid.uuid4())
+        ctxt = context.get_admin_context()
+
+        with self.router(name='router1', admin_state_up=True,
+                         tenant_id=tenant_id) as router1:
+            router_id = router1['router']['id']
+            self.l3_plugin.add_router_to_l3_agent(ctxt, agent.id,
+                                                  router_id)
+            with self.firewall(tenant_id=tenant_id,
+                               router_ids=[router_id]):
+                tenant_ids = self.plugin.get_firewall_tenant_ids_on_host(
+                    ctxt, 'host1')
+                self.assertEqual([tenant_id], tenant_ids)
+
+    def test_get_firewall_tenant_ids_on_host_without_associated_router(self):
+        agent1 = helpers.register_l3_agent("host1")
+        helpers.register_l3_agent("host2")
+        tenant_id = str(uuid.uuid4())
+        ctxt = context.get_admin_context()
+
+        with self.router(name='router1', admin_state_up=True,
+                         tenant_id=tenant_id) as router1:
+            router_id = router1['router']['id']
+            self.l3_plugin.add_router_to_l3_agent(ctxt, agent1.id,
+                                                  router_id)
+            with self.firewall(tenant_id=tenant_id,
+                               router_ids=[router_id]):
+                tenant_ids = self.plugin.get_firewall_tenant_ids_on_host(
+                    ctxt, 'host_2')
+                self.assertEqual([], tenant_ids)
+
+    def test_get_firewall_tenant_ids_on_host_with_routers(self):
+        agent1 = helpers.register_l3_agent("host1")
+        tenant_id1 = str(uuid.uuid4())
+        tenant_id2 = str(uuid.uuid4())
+        ctxt = context.get_admin_context()
+
+        with self.router(name='router1', admin_state_up=True,
+                         tenant_id=tenant_id1) as router1:
+            with self.router(name='router2', admin_state_up=True,
+                             tenant_id=tenant_id2) as router2:
+                router_id1 = router1['router']['id']
+                router_id2 = router2['router']['id']
+                self.l3_plugin.add_router_to_l3_agent(ctxt, agent1.id,
+                                                      router_id1)
+                self.l3_plugin.add_router_to_l3_agent(ctxt, agent1.id,
+                                                      router_id2)
+                with self.firewall(tenant_id=tenant_id1,
+                                   router_ids=[router_id1]):
+                    with self.firewall(tenant_id=tenant_id2,
+                                       router_ids=[router_id2]):
+                        tenant_ids = (self.plugin
+                                      .get_firewall_tenant_ids_on_host(
+                                          ctxt, 'host1'))
+                        self.assertItemsEqual([tenant_id1, tenant_id2],
+                                              tenant_ids)
