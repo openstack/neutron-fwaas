@@ -613,11 +613,28 @@ class TestFirewallAttributeValidators(base.BaseTestCase):
 
 
 class TestFirewallConvertProtocols(base.BaseTestCase):
-    def test_convert_protocol_digit(self):
+
+    def test_convert_protocol_string_integer(self):
         res = firewall.convert_protocol("0")
         self.assertEqual(0, res)
         res = firewall.convert_protocol("255")
         self.assertEqual(255, res)
+
+    def test_convert_protocol_digit(self):
+        res = firewall.convert_protocol(0)
+        self.assertEqual(0, res)
+        res = firewall.convert_protocol(255)
+        self.assertEqual(255, res)
+
+    def test_convert_protocol_another_types(self):
+        res = lambda: firewall.convert_protocol(['abc'])
+        self.assertRaises(firewall.FirewallRuleInvalidProtocol, res)
+        res = lambda: firewall.convert_protocol({1: 'foo'})
+        self.assertRaises(firewall.FirewallRuleInvalidProtocol, res)
+        res = lambda: firewall.convert_protocol((1, 100))
+        self.assertRaises(firewall.FirewallRuleInvalidProtocol, res)
+        res = lambda: firewall.convert_protocol(object)
+        self.assertRaises(firewall.FirewallRuleInvalidProtocol, res)
 
     def test_convert_protocol_invalid_digit(self):
         res = lambda: firewall.convert_protocol("-1")

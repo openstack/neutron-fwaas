@@ -176,20 +176,19 @@ fw_valid_action_values = [FWAAS_ALLOW, FWAAS_DENY, FWAAS_REJECT]
 def convert_protocol(value):
     if value is None:
         return
-    if value.isdigit():
+    if (isinstance(value, six.integer_types) or
+       (isinstance(value, six.string_types) and value.isdigit())):
         val = int(value)
         if 0 <= val <= 255:
             return val
         else:
             raise FirewallRuleInvalidProtocol(
-                protocol=value,
-                values=fw_valid_protocol_values)
-    elif value.lower() in fw_valid_protocol_values:
-        return value.lower()
-    else:
-        raise FirewallRuleInvalidProtocol(
-            protocol=value,
-            values=fw_valid_protocol_values)
+                protocol=value, values=fw_valid_protocol_values)
+    elif isinstance(value, six.string_types):
+        if value.lower() in fw_valid_protocol_values:
+            return value.lower()
+    raise FirewallRuleInvalidProtocol(
+        protocol=value, values=fw_valid_protocol_values)
 
 
 def convert_action_to_case_insensitive(value):
