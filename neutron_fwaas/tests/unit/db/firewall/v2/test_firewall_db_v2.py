@@ -356,6 +356,20 @@ class FirewallPluginV2DbTestCase(base.NeutronDbPluginV2TestCase):
 
 class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
 
+    def test_get_policy_ordered_rules(self):
+        with self.firewall_rule(name='alone'), \
+                self.firewall_rule(name='fwr1') as fwr1, \
+                self.firewall_rule(name='fwr3') as fwr3, \
+                self.firewall_rule(name='fwr2') as fwr2:
+            fwrs = fwr1, fwr2, fwr3
+            expected_ids = [fwr['firewall_rule']['id'] for fwr in fwrs]
+            with self.firewall_policy(firewall_rules=expected_ids) as fwp:
+                ctx = context.get_admin_context()
+                fwp_id = fwp['firewall_policy']['id']
+                observeds = self.plugin._get_policy_ordered_rules(ctx, fwp_id)
+                observed_ids = [r['id'] for r in observeds]
+                self.assertEqual(expected_ids, observed_ids)
+
     def test_create_firewall_policy(self):
         name = "firewall_policy1"
         attrs = self._get_test_firewall_policy_attrs(name)
