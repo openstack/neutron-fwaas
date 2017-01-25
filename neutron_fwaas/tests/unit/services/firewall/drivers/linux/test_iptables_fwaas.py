@@ -27,6 +27,8 @@ FAKE_DST_PREFIX = '20.0.0.0/24'
 FAKE_PROTOCOL = 'tcp'
 FAKE_SRC_PORT = 5000
 FAKE_DST_PORT = 22
+FAKE_ENTRY = [(4, 'icmp', '8', '0', '1000', '1.1.1.1', '2.2.2.2'),
+              (4, 'tcp', '1111', '23', '1.1.1.1', '2.2.2.2'), ]
 FAKE_FW_ID = 'fake-fw-uuid'
 FW_LEGACY = 'legacy'
 
@@ -40,6 +42,12 @@ class IptablesFwaasTestCase(base.BaseTestCase):
         self.iptables_cls_p = mock.patch(
             'neutron.agent.linux.iptables_manager.IptablesManager')
         self.iptables_cls_p.start()
+        self.netlink_kill_p = mock.patch(
+            'neutron_fwaas.privileged.netlink_lib.kill_entries')
+        self.netlink_kill_p.start()
+        self.netlink_flush_p = mock.patch(
+            'neutron_fwaas.privileged.netlink_lib.flush_entries')
+        self.netlink_flush = self.netlink_flush_p.start()
         self.firewall = fwaas.IptablesFwaasDriver()
 
     def _fake_rules_v4(self, fwid, apply_list):
@@ -285,13 +293,11 @@ class IptablesFwaasTestCase(base.BaseTestCase):
         self.firewall.create_firewall(FW_LEGACY, apply_list, firewall)
         for router_info_inst in apply_list:
             namespace = router_info_inst.iptables_manager.namespace
-            cmd = ['ip', 'netns', 'exec', namespace, 'conntrack', '-D']
-            calls = [
-                mock.call(cmd, run_as_root=True, check_exit_code=True,
-                      extra_ok_codes=[1])]
-            self.utils_exec.assert_has_calls(calls)
+            calls = [mock.call(namespace)]
+            self.netlink_flush.assert_has_calls(calls)
 
-    def test_remove_conntrack_inserted_rule(self):
+    @mock.patch('neutron_fwaas.privileged.netlink_lib.kill_entries')
+    def test_remove_conntrack_inserted_rule(self, mock_kill):
         apply_list = self._fake_apply_list()
         rule_list = self._fake_rules_v4(FAKE_FW_ID, apply_list)
         firewall = self._fake_firewall(rule_list)
@@ -304,21 +310,22 @@ class IptablesFwaasTestCase(base.BaseTestCase):
                  'id': 'fake-fw-rule'}
         rule_list.insert(2, insert_rule)
         firewall = self._fake_firewall(rule_list)
-        self.firewall.update_firewall(FW_LEGACY, apply_list, firewall)
         for router_info_inst in apply_list:
             namespace = router_info_inst.iptables_manager.namespace
-            cmd1 = ['ip', 'netns', 'exec', namespace, 'conntrack',
-                    '-D', '-p', 'tcp', '-f', 'ipv4', '--dport', '23']
-            cmd2 = ['ip', 'netns', 'exec', namespace, 'conntrack',
-                    '-D', '-p', 'icmp', '-f', 'ipv4']
-            calls = [
-                mock.call(cmd1, run_as_root=True, check_exit_code=True,
-                      extra_ok_codes=[1]),
-                mock.call(cmd2, run_as_root=True, check_exit_code=True,
-                      extra_ok_codes=[1])]
-            self.utils_exec.assert_has_calls(calls)
+            with mock.patch('neutron_fwaas.privileged.'
+                            'netlink_lib.list_entries') as list_entries:
+                list_entries.return_value = FAKE_ENTRY
+                self.firewall.update_firewall(FW_LEGACY, apply_list, firewall)
+                calls = [
+                    mock.call(namespace, [(4, 'icmp', '8', '0', '1000',
+                                          '1.1.1.1', '2.2.2.2'),
+                                          (4, 'tcp', '1111', '23',
+                                           '1.1.1.1', '2.2.2.2')])
+                ]
+                mock_kill.assert_has_calls(calls)
 
-    def test_remove_conntrack_removed_rule(self):
+    @mock.patch('neutron_fwaas.privileged.netlink_lib.kill_entries')
+    def test_remove_conntrack_removed_rule(self, mock_kill):
         apply_list = self._fake_apply_list()
         rule_list = self._fake_rules_v4(FAKE_FW_ID, apply_list)
         firewall = self._fake_firewall(rule_list)
@@ -327,21 +334,20 @@ class IptablesFwaasTestCase(base.BaseTestCase):
         remove_rule = rule_list[1]
         rule_list.remove(remove_rule)
         firewall = self._fake_firewall(rule_list)
-        self.firewall.update_firewall(FW_LEGACY, apply_list, firewall)
         for router_info_inst in apply_list:
             namespace = router_info_inst.iptables_manager.namespace
-            cmd1 = ['ip', 'netns', 'exec', namespace, 'conntrack',
-                    '-D', '-p', 'tcp', '-f', 'ipv4', '--dport', '23']
-            cmd2 = ['ip', 'netns', 'exec', namespace, 'conntrack',
-                    '-D', '-p', 'tcp', '-f', 'ipv4', '--dport', '22']
-            calls = [
-                mock.call(cmd1, run_as_root=True, check_exit_code=True,
-                      extra_ok_codes=[1]),
-                mock.call(cmd2, run_as_root=True, check_exit_code=True,
-                      extra_ok_codes=[1])]
-            self.utils_exec.assert_has_calls(calls)
+            with mock.patch('neutron_fwaas.privileged.'
+                            'netlink_lib.list_entries') as list_entries:
+                list_entries.return_value = FAKE_ENTRY
+                self.firewall.update_firewall(FW_LEGACY, apply_list, firewall)
+                calls = [
+                    mock.call(namespace, [(4, 'tcp', '1111', '23',
+                                          '1.1.1.1', '2.2.2.2')])
+                ]
+                mock_kill.assert_has_calls(calls)
 
-    def test_remove_conntrack_changed_rule(self):
+    @mock.patch('neutron_fwaas.privileged.netlink_lib.kill_entries')
+    def test_remove_conntrack_changed_rule(self, mock_kill):
         apply_list = self._fake_apply_list()
         rule_list = self._fake_rules_v4(FAKE_FW_ID, apply_list)
         firewall = self._fake_firewall(rule_list)
@@ -349,20 +355,18 @@ class IptablesFwaasTestCase(base.BaseTestCase):
         income_rule = {'enabled': True,
                  'action': 'deny',
                  'ip_version': 4,
-                 'protocol': 'icmp',
+                 'protocol': 'tcp',
                  'id': 'fake-fw-rule2'}
-        rule_list[1] = income_rule
+        rule_list[2] = income_rule
         firewall = self._fake_firewall(rule_list)
-        self.firewall.update_firewall(FW_LEGACY, apply_list, firewall)
         for router_info_inst in apply_list:
             namespace = router_info_inst.iptables_manager.namespace
-            cmd1 = ['ip', 'netns', 'exec', namespace, 'conntrack', '-D',
-                    '-p', 'tcp', '-f', 'ipv4', '--dport', '22']
-            cmd2 = ['ip', 'netns', 'exec', namespace, 'conntrack', '-D',
-                    '-p', 'icmp', '-f', 'ipv4']
-            calls = [
-                mock.call(cmd1, run_as_root=True, check_exit_code=True,
-                      extra_ok_codes=[1]),
-                mock.call(cmd2, run_as_root=True, check_exit_code=True,
-                      extra_ok_codes=[1])]
-            self.utils_exec.assert_has_calls(calls)
+            with mock.patch('neutron_fwaas.privileged.'
+                            'netlink_lib.list_entries') as list_entries:
+                list_entries.return_value = FAKE_ENTRY
+                self.firewall.update_firewall(FW_LEGACY, apply_list, firewall)
+                calls = [
+                    mock.call(namespace, [(4, 'tcp', '1111', '23',
+                                          '1.1.1.1', '2.2.2.2')])
+                ]
+                mock_kill.assert_has_calls(calls)
