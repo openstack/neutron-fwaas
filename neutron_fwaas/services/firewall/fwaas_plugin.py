@@ -119,18 +119,21 @@ class FirewallAgentApi(object):
         target = oslo_messaging.Target(topic=topic, version='1.0')
         self.client = n_rpc.get_client(target)
 
-    def create_firewall(self, context, firewall):
-        cctxt = self.client.prepare(fanout=True)
+    def create_firewall(self, context, firewall, host):
+        cctxt = self.client.prepare(server=host)
+        #TODO(blallau) host param is not used on agent side (to be removed)
         cctxt.cast(context, 'create_firewall', firewall=firewall,
                    host=self.host)
 
-    def update_firewall(self, context, firewall):
-        cctxt = self.client.prepare(fanout=True)
+    def update_firewall(self, context, firewall, host):
+        cctxt = self.client.prepare(server=host)
+        #TODO(blallau) host param is not used on agent side (to be removed)
         cctxt.cast(context, 'update_firewall', firewall=firewall,
                    host=self.host)
 
-    def delete_firewall(self, context, firewall):
-        cctxt = self.client.prepare(fanout=True)
+    def delete_firewall(self, context, firewall, host):
+        cctxt = self.client.prepare(server=host)
+        #TODO(blallau) host param is not used on agent side (to be removed)
         cctxt.cast(context, 'delete_firewall', firewall=firewall,
                    host=self.host)
 
@@ -166,6 +169,13 @@ class FirewallPlugin(
             f_const.FIREWALL_PLUGIN, self.endpoints, fanout=False)
         return self.conn.consume_in_threads()
 
+    def _get_hosts_to_notify(self, context, router_ids):
+        """Returns all hosts to send notification about firewall update"""
+        agents = directory.get_plugin(
+            nl_constants.L3).get_l3_agents_hosting_routers(
+                context, router_ids, admin_state_up=True, active=True)
+        return [a.host for a in agents]
+
     def _rpc_update_firewall(self, context, firewall_id):
         status_update = {"firewall": {"status": nl_constants.PENDING_UPDATE}}
         super(FirewallPlugin, self).update_firewall(context, firewall_id,
@@ -174,10 +184,14 @@ class FirewallPlugin(
                                                             firewall_id)
         # this is triggered on an update to fw rule or policy, no
         # change in associated routers.
-        fw_with_rules['add-router-ids'] = self.get_firewall_routers(
-                context, firewall_id)
+        fw_update_rtrs = self.get_firewall_routers(context, firewall_id)
+        fw_with_rules['add-router-ids'] = fw_update_rtrs
         fw_with_rules['del-router-ids'] = []
-        self.agent_rpc.update_firewall(context, fw_with_rules)
+
+        hosts = self._get_hosts_to_notify(context, fw_update_rtrs)
+        for host in hosts:
+            self.agent_rpc.update_firewall(context, fw_with_rules,
+                                           host=host)
 
     def _rpc_update_firewall_policy(self, context, firewall_policy_id):
         firewall_policy = self.get_firewall_policy(context, firewall_policy_id)
@@ -260,8 +274,10 @@ class FirewallPlugin(
         fw_with_rules['add-router-ids'] = fw_new_rtrs
         fw_with_rules['del-router-ids'] = []
 
-        self.agent_rpc.create_firewall(context, fw_with_rules)
-
+        hosts = self._get_hosts_to_notify(context, fw_new_rtrs)
+        for host in hosts:
+            self.agent_rpc.create_firewall(context, fw_with_rules,
+                                           host=host)
         return fw
 
     def update_firewall(self, context, id, firewall):
@@ -317,8 +333,11 @@ class FirewallPlugin(
             fw_with_rules['add-router-ids'],
             fw_with_rules['del-router-ids'])
 
-        self.agent_rpc.update_firewall(context, fw_with_rules)
-
+        hosts = self._get_hosts_to_notify(context, list(
+            set(fw_new_rtrs).union(set(fw_current_rtrs))))
+        for host in hosts:
+            self.agent_rpc.update_firewall(context, fw_with_rules,
+                                           host=host)
         return fw
 
     def delete_db_firewall_object(self, context, id):
@@ -328,8 +347,8 @@ class FirewallPlugin(
         LOG.debug("delete_firewall() called on firewall %s", id)
         fw_with_rules = (
             self._make_firewall_dict_with_rules(context, id))
-        fw_with_rules['del-router-ids'] = self.get_firewall_routers(
-            context, id)
+        fw_delete_rtrs = self.get_firewall_routers(context, id)
+        fw_with_rules['del-router-ids'] = fw_delete_rtrs
         fw_with_rules['add-router-ids'] = []
         if not fw_with_rules['del-router-ids']:
             # no routers to delete on the agent side
@@ -339,7 +358,15 @@ class FirewallPlugin(
             super(FirewallPlugin, self).update_firewall(context, id, status)
             # Reflect state change in fw_with_rules
             fw_with_rules['status'] = status['firewall']['status']
-            self.agent_rpc.delete_firewall(context, fw_with_rules)
+            hosts = self._get_hosts_to_notify(context, fw_delete_rtrs)
+            if hosts:
+                for host in hosts:
+                    self.agent_rpc.delete_firewall(context, fw_with_rules,
+                                                   host=host)
+            else:
+                # NOTE(blallau): we directly delete the firewall
+                # if router is not associated to an agent
+                self.delete_db_firewall_object(context, id)
 
     def update_firewall_policy(self, context, id, firewall_policy):
         LOG.debug("update_firewall_policy() called")
