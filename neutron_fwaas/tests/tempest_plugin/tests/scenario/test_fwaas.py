@@ -16,6 +16,7 @@
 import testscenarios
 
 from tempest import config
+from tempest.lib import decorators
 from tempest import test
 
 from neutron_fwaas.tests.tempest_plugin.tests.scenario import base
@@ -336,43 +337,43 @@ class TestFWaaS(base.FWaaSScenarioTest):
         confirm_allowed2(ip_address=server2_floating_ip, username=ssh_login,
                          private_key=private_key2)
 
-    @test.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21a8')
+    @decorators.idempotent_id('f970f6b3-6541-47ac-a9ea-f769be1e21a8')
     def test_firewall_block_ip(self):
         self._test_firewall_basic(block=self._block_ip, allow=self._allow_ip,
                                   confirm_allowed=self._confirm_allowed_oneway)
 
-    @test.idempotent_id('b985d010-994a-4055-bd5c-9e961464ccde')
+    @decorators.idempotent_id('b985d010-994a-4055-bd5c-9e961464ccde')
     def test_firewall_block_icmp(self):
         self._test_firewall_basic(
             block=self._block_icmp,
             confirm_blocked=self._confirm_icmp_blocked_but_tcp)
 
-    @test.idempotent_id('ca473af0-26f9-4fad-9550-1c34371c900e')
+    @decorators.idempotent_id('ca473af0-26f9-4fad-9550-1c34371c900e')
     def test_firewall_insert_rule(self):
         self._test_firewall_basic(
             block=self._block_icmp,
             allow=self._allow_ssh_and_icmp,
             confirm_blocked=self._confirm_icmp_blocked_but_tcp)
 
-    @test.idempotent_id('54a937a6-cecf-444c-b3f9-b67a1c1b7411')
+    @decorators.idempotent_id('54a937a6-cecf-444c-b3f9-b67a1c1b7411')
     def test_firewall_remove_rule(self):
         self._test_firewall_basic(block=self._block_all_with_default_allow,
                                   allow=self._remove_rule)
 
-    @test.idempotent_id('12a18776-9b60-4479-9988-f45971c96a92')
+    @decorators.idempotent_id('12a18776-9b60-4479-9988-f45971c96a92')
     def test_firewall_disable_rule(self):
         self._test_firewall_basic(block=self._block_all_with_default_allow,
                                   allow=self._disable_rule)
 
-    @test.idempotent_id('a2a58c1f-49ad-4b5f-9463-e746b9efe08a')
+    @decorators.idempotent_id('a2a58c1f-49ad-4b5f-9463-e746b9efe08a')
     def test_firewall_empty_policy(self):
         self._test_firewall_basic(block=self._empty_policy)
 
-    @test.idempotent_id('477a47e0-5156-4784-9417-f77970d85c36')
+    @decorators.idempotent_id('477a47e0-5156-4784-9417-f77970d85c36')
     def test_firewall_all_disabled_rules(self):
         self._test_firewall_basic(block=self._all_disabled_rules)
 
-    @test.idempotent_id('a83f51c5-1a18-4d2a-a778-c368e4d95c29')
+    @decorators.idempotent_id('a83f51c5-1a18-4d2a-a778-c368e4d95c29')
     def test_firewall_admin_disable(self):
         self._test_firewall_basic(block=self._admin_disable,
                                   allow=self._admin_enable)

@@ -20,6 +20,7 @@ from neutron_fwaas.tests.tempest_plugin.tests.scenario import base
 from oslo_log import log as logging
 from tempest import config
 from tempest.lib.common.utils import test_utils
+from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
 from tempest import test
 
@@ -206,7 +207,7 @@ class TestFWaaS_v2(base.FWaaSScenarioTest_V2):
 
         return resp
 
-    @test.idempotent_id('77fdf3ea-82c1-453d-bfec-f7efe335625d')
+    @decorators.idempotent_id('77fdf3ea-82c1-453d-bfec-f7efe335625d')
     def test_icmp_reachability_scenarios(self):
         topology = self._create_topology()
         ssh_login = CONF.validation.image_ssh_user
