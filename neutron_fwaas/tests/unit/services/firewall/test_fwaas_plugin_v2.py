@@ -102,6 +102,7 @@ class TestFirewallRouterPortBase(
         self.saved_attr_map = {}
         for resource, attrs in six.iteritems(attr.RESOURCE_ATTRIBUTE_MAP):
             self.saved_attr_map[resource] = attrs.copy()
+        self.addCleanup(self.restore_attribute_map)
         if not fw_plugin:
             fw_plugin = FW_PLUGIN_KLASS
         service_plugins = {'l3_plugin_name': l3_plugin,
@@ -121,10 +122,6 @@ class TestFirewallRouterPortBase(
     def restore_attribute_map(self):
         # Restore the original RESOURCE_ATTRIBUTE_MAP
         attr.RESOURCE_ATTRIBUTE_MAP = self.saved_attr_map
-
-    def tearDown(self):
-        self.restore_attribute_map()
-        super(TestFirewallRouterPortBase, self).tearDown()
 
 
 class TestFirewallCallbacks(TestFirewallRouterPortBase):
@@ -162,9 +159,6 @@ class TestFirewallPluginBasev2(TestFirewallRouterPortBase,
     def setUp(self):
         super(TestFirewallPluginBasev2, self).setUp(fw_plugin=FW_PLUGIN_KLASS)
         fake_notifier.reset()
-
-    def tearDown(self):
-        super(TestFirewallPluginBasev2, self).tearDown()
 
     @property
     def _self_context(self):

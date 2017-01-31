@@ -74,6 +74,7 @@ class TestFirewallRouterInsertionBase(
         self.saved_attr_map = {}
         for resource, attrs in six.iteritems(attr.RESOURCE_ATTRIBUTE_MAP):
             self.saved_attr_map[resource] = attrs.copy()
+        self.addCleanup(self.restore_attribute_map)
         if not fw_plugin:
             fw_plugin = FW_PLUGIN_KLASS
         service_plugins = {'l3_plugin_name': l3_plugin,
@@ -95,10 +96,6 @@ class TestFirewallRouterInsertionBase(
         firewall.RESOURCE_ATTRIBUTE_MAP['firewalls'].pop('router_ids')
         # Restore the original RESOURCE_ATTRIBUTE_MAP
         attr.RESOURCE_ATTRIBUTE_MAP = self.saved_attr_map
-
-    def tearDown(self):
-        self.restore_attribute_map()
-        super(TestFirewallRouterInsertionBase, self).tearDown()
 
     def _create_firewall(self, fmt, name, description, firewall_policy_id=None,
                          admin_state_up=True, expected_res_status=None,
@@ -300,9 +297,6 @@ class TestFirewallPluginBase(TestFirewallRouterInsertionBase,
     def setUp(self):
         super(TestFirewallPluginBase, self).setUp(fw_plugin=FW_PLUGIN_KLASS)
         fake_notifier.reset()
-
-    def tearDown(self):
-        super(TestFirewallPluginBase, self).tearDown()
 
     def test_create_firewall_routers_not_specified(self):
         """neutron firewall-create test-policy """
