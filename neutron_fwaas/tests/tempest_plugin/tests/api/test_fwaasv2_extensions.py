@@ -18,6 +18,7 @@ import six
 from tempest import config
 from tempest import exceptions
 from tempest.lib.common.utils import data_utils
+from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
 from tempest import test
 
@@ -147,7 +148,7 @@ class FWaaSv2ExtensionTestJSON(v2_base.BaseFWaaSTest):
                  (fwg_id, target_states))
             raise exceptions.TimeoutException(m)
 
-    @test.idempotent_id('ddccfa87-4af7-48a6-9e50-0bd0ad1348cb')
+    @decorators.idempotent_id('ddccfa87-4af7-48a6-9e50-0bd0ad1348cb')
     def test_list_firewall_rules(self):
         # List firewall rules
         fw_rules = self.firewall_rules_client.list_firewall_rules()
@@ -165,7 +166,7 @@ class FWaaSv2ExtensionTestJSON(v2_base.BaseFWaaSTest):
                         m['ip_version'],
                         m['enabled']) for m in fw_rules])
 
-    @test.idempotent_id('ffc009fa-cd17-4029-8025-c4b81a7dd923')
+    @decorators.idempotent_id('ffc009fa-cd17-4029-8025-c4b81a7dd923')
     def test_create_update_delete_firewall_rule(self):
         # Create firewall rule
         body = self.firewall_rules_client.create_firewall_rule(
@@ -186,7 +187,7 @@ class FWaaSv2ExtensionTestJSON(v2_base.BaseFWaaSTest):
         self.assertNotIn(fw_rule_id,
                          [m['id'] for m in fw_rules['firewall_rules']])
 
-    @test.idempotent_id('76b07afc-444e-4bb9-abec-9b8c5f994dcd')
+    @decorators.idempotent_id('76b07afc-444e-4bb9-abec-9b8c5f994dcd')
     def test_show_firewall_rule(self):
         # show a created firewall rule
         fw_rule = self.firewall_rules_client.show_firewall_rule(
@@ -194,7 +195,7 @@ class FWaaSv2ExtensionTestJSON(v2_base.BaseFWaaSTest):
         for key, value in six.iteritems(fw_rule['firewall_rule']):
             self.assertEqual(self.fw_rule_1[key], value)
 
-    @test.idempotent_id('f6b83902-746f-4e74-9403-2ec9899583a3')
+    @decorators.idempotent_id('f6b83902-746f-4e74-9403-2ec9899583a3')
     def test_list_firewall_policies(self):
         fw_policies = self.firewall_policies_client.list_firewall_policies()
         fw_policies = fw_policies['firewall_policies']
@@ -205,7 +206,7 @@ class FWaaSv2ExtensionTestJSON(v2_base.BaseFWaaSTest):
                         m['name'],
                         m['firewall_rules']) for m in fw_policies])
 
-    @test.idempotent_id('6ef9bd02-7349-4d61-8d1f-80479f64d904')
+    @decorators.idempotent_id('6ef9bd02-7349-4d61-8d1f-80479f64d904')
     def test_create_update_delete_firewall_policy(self):
         # Create firewall policy
         body = self.firewall_policies_client.create_firewall_policy(
@@ -227,7 +228,7 @@ class FWaaSv2ExtensionTestJSON(v2_base.BaseFWaaSTest):
         fw_policies = fw_policies['firewall_policies']
         self.assertNotIn(fw_policy_id, [m['id'] for m in fw_policies])
 
-    @test.idempotent_id('164381de-61f4-483f-9a5a-48105b8e70e2')
+    @decorators.idempotent_id('164381de-61f4-483f-9a5a-48105b8e70e2')
     def test_show_firewall_policy(self):
         # show a created firewall policy
         fw_policy = self.firewall_policies_client.show_firewall_policy(
@@ -236,7 +237,7 @@ class FWaaSv2ExtensionTestJSON(v2_base.BaseFWaaSTest):
         for key, value in six.iteritems(fw_policy):
             self.assertEqual(self.fw_policy_1[key], value)
 
-    @test.idempotent_id('48dfcd75-3924-479d-bb65-b3ed33397663')
+    @decorators.idempotent_id('48dfcd75-3924-479d-bb65-b3ed33397663')
     def test_create_show_delete_firewall_group(self):
         # create router and add interfaces
         intf_1, intf_2 = self._create_router_interfaces()
@@ -279,7 +280,7 @@ class FWaaSv2ExtensionTestJSON(v2_base.BaseFWaaSTest):
         # Delete firewall_group
         self.firewall_groups_client.delete_firewall_group(fwg_id)
 
-    @test.idempotent_id('e021baab-d4f7-4bad-b382-bde4946e0e0b')
+    @decorators.idempotent_id('e021baab-d4f7-4bad-b382-bde4946e0e0b')
     def test_update_firewall_group(self):
         # create router and add interfaces
         intf_1, intf_2 = self._create_router_interfaces()
