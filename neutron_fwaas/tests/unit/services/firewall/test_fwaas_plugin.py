@@ -195,6 +195,47 @@ class TestFirewallCallbacks(TestFirewallRouterInsertionBase):
                                       self.plugin.get_firewall,
                                       ctx, fw_id)
 
+    def test_firewall_deleted_concurrently(self):
+        ctx = context.get_admin_context()
+        alt_ctx = context.get_admin_context()
+
+        _get_firewall = self.plugin._get_firewall
+
+        def getdelete(context, firewall_id):
+            fw_db = _get_firewall(context, firewall_id)
+            # NOTE(cby): Use a different session to simulate a concurrent del
+            self.plugin.delete_db_firewall_object(alt_ctx, firewall_id)
+            return fw_db
+
+        with self.firewall_policy() as fwp:
+            fwp_id = fwp['firewall_policy']['id']
+            with self.firewall(
+                firewall_policy_id=fwp_id,
+                admin_state_up=test_db_firewall.ADMIN_STATE_UP,
+                do_delete=False
+            ) as fw:
+                fw_id = fw['firewall']['id']
+                with ctx.session.begin(subtransactions=True):
+                    fw_db = self.plugin._get_firewall(ctx, fw_id)
+                    fw_db['status'] = const.PENDING_DELETE
+                    ctx.session.flush()
+
+                with mock.patch.object(
+                    self.plugin, '_get_firewall', side_effect=getdelete
+                ):
+                    observed = self.callbacks.firewall_deleted(
+                        ctx, fw_id, host='dummy')
+                    self.assertTrue(observed)
+
+                self.assertRaises(firewall.FirewallNotFound,
+                                  self.plugin.get_firewall,
+                                  ctx, fw_id)
+
+    def test_firewall_deleted_not_found(self):
+        ctx = context.get_admin_context()
+        observed = self.callbacks.firewall_deleted(ctx, 'notfound', host='hh')
+        self.assertTrue(observed)
+
     def test_firewall_deleted_error(self):
         ctx = context.get_admin_context()
         with self.firewall_policy() as fwp:
