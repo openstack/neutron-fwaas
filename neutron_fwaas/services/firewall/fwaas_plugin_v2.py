@@ -94,7 +94,7 @@ class FirewallCallbacks(object):
                 self.plugin.delete_db_firewall_group_object(context, fwg_id)
                 return True
             else:
-                LOG.warning(('Firewall %(fw)s unexpectedly deleted by '
+                LOG.warning(('Firewall %(fwg)s unexpectedly deleted by '
                              'agent, status was %(status)s'),
                             {'fwg': fwg_id, 'status': fwg_db.status})
                 fwg_db.update({"status": nl_constants.ERROR})
