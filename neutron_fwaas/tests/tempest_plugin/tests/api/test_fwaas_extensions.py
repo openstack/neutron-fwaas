@@ -106,6 +106,22 @@ class FWaaSExtensionTestJSON(base.BaseFWaaSTest):
                  (fw_id, target_states))
             raise lib_exc.TimeoutException(m)
 
+    def _wait_until_deleted(self, fw_id):
+        def _wait():
+            try:
+                firewall = self.firewalls_client.show_firewall(fw_id)
+            except lib_exc.NotFound:
+                return True
+
+            fw_status = firewall['firewall']['status']
+            if fw_status == 'ERROR':
+                raise lib_exc.DeleteErrorException(resource_id=fw_id)
+
+        if not test_utils.call_until_true(_wait, CONF.network.build_timeout,
+                                          CONF.network.build_interval):
+            m = ("Timed out waiting for firewall %s deleted" % fw_id)
+            raise lib_exc.TimeoutException(m)
+
     @decorators.idempotent_id('1b84cf01-9c09-4ce7-bc72-b15e39076468')
     @test.attr(type='smoke')
     def test_list_firewall_rules(self):
@@ -134,6 +150,7 @@ class FWaaSExtensionTestJSON(base.BaseFWaaSTest):
             action="allow",
             protocol="tcp")
         fw_rule_id = body['firewall_rule']['id']
+        self.addCleanup(self._try_delete_rule, fw_rule_id)
 
         # Update firewall rule
         body = self.firewall_rules_client.update_firewall_rule(fw_rule_id,
@@ -245,6 +262,13 @@ class FWaaSExtensionTestJSON(base.BaseFWaaSTest):
 
         # Delete firewall
         self.firewalls_client.delete_firewall(firewall_id)
+
+        # Wait for the firewall resource to be deleted
+        self._wait_until_deleted(firewall_id)
+
+        # Confirm deletion
+        firewalls = self.firewalls_client.list_firewalls()['firewalls']
+        self.assertNotIn(firewall_id, [m['id'] for m in firewalls])
 
     @decorators.idempotent_id('1355cf5c-77d4-4bb9-87d7-e50c194d08b5')
     def test_firewall_insertion_mode_add_remove_router(self):
