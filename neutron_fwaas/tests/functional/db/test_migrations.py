@@ -15,6 +15,7 @@ from oslo_config import cfg
 from neutron.db.migration.alembic_migrations import external
 from neutron.db.migration import cli as migration
 from neutron.tests.functional.db import test_migrations
+from neutron.tests.unit import testlib_api
 
 from neutron_fwaas.db.models import head
 
@@ -47,3 +48,15 @@ class _TestModelsMigrationsFWaaS(test_migrations._TestModelsMigrations):
         if type_ == 'index' and reflected and name.startswith("idx_autoinc_"):
             return False
         return True
+
+
+class TestModelsMigrationsMysql(testlib_api.MySQLTestCaseMixin,
+                                _TestModelsMigrationsFWaaS,
+                                testlib_api.SqlTestCaseLight):
+    pass
+
+
+class TestModelsMigrationsPostgresql(testlib_api.PostgreSQLTestCaseMixin,
+                                     _TestModelsMigrationsFWaaS,
+                                     testlib_api.SqlTestCaseLight):
+    pass
