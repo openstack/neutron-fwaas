@@ -92,7 +92,7 @@ class TestFirewallRouterInsertionBase(
         self.callbacks = self.plugin.endpoints[0]
 
     def restore_attribute_map(self):
-        # Remove the csrfirewallinsertion extension
+        # Remove the fwaasrouterinsertion extension
         firewall.RESOURCE_ATTRIBUTE_MAP['firewalls'].pop('router_ids')
         # Restore the original RESOURCE_ATTRIBUTE_MAP
         attr.RESOURCE_ATTRIBUTE_MAP = self.saved_attr_map

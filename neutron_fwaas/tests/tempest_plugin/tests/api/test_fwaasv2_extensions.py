@@ -103,7 +103,7 @@ class FWaaSv2ExtensionTestJSON(v2_base.BaseFWaaSTest):
         # delete router, if it exists
         try:
             self.delete_router(router)
-        # if policy is not found, this means it was deleted in the test
+        # if router is not found, this means it was deleted in the test
         except lib_exc.NotFound:
             pass
 
@@ -127,7 +127,7 @@ class FWaaSv2ExtensionTestJSON(v2_base.BaseFWaaSTest):
         # delete firewall group, if it exists
         try:
             self.firewall_groups_client.delete_firewall_group(fwg_id)
-        # if firewall is not found, this means it was deleted in the test
+        # if firewall group is not found, this means it was deleted in the test
         except lib_exc.NotFound:
             pass
 
