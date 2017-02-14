@@ -37,6 +37,10 @@ FWaaSOpts = [
         'agent_version',
         default=FWAAS_V1,
         help=_("Firewall agent class")),
+    cfg.StrOpt(
+        'conntrack_driver',
+        default='conntrack',
+        help=_("Name of the FWaaS Conntrack Driver")),
 ]
 cfg.CONF.register_opts(FWaaSOpts, 'fwaas')
 

@@ -13,10 +13,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from neutron.agent.linux import iptables_manager
-from neutron.agent.linux import utils as linux_utils
+from oslo_config import cfg
 from oslo_log import log as logging
+from oslo_utils import excutils
 
+from neutron.agent.linux import iptables_manager
+from neutron.common import utils
 from neutron_fwaas._i18n import _LE
 from neutron_fwaas.common import fwaas_constants as f_const
 from neutron_fwaas.extensions import firewall as fw_ext
@@ -56,6 +58,27 @@ class IptablesFwaasDriver(fwaas_base.FwaasDriverBase):
     def __init__(self):
         LOG.debug("Initializing fwaas iptables driver")
         self.pre_firewall = None
+        conntrack_cls = self._load_firewall_extension_driver(
+                'neutron_fwaas.services.firewall.drivers.linux',
+                cfg.CONF.fwaas.conntrack_driver)
+        self.conntrack = conntrack_cls()
+        self.conntrack.initialize()
+
+    @staticmethod
+    def _load_firewall_extension_driver(namespace, driver):
+        """Loads driver using alias or class name
+        :param namespace: namespace where alias is defined
+        :param driver: driver alias or class name
+        :returns driver that is loaded
+        :raises ImportError if fails to load driver
+        """
+
+        try:
+            return utils.load_class_by_alias_or_classname(namespace,
+                    driver)
+        except ImportError:
+            with excutils.save_and_reraise_exception():
+                LOG.error(_LE("Driver '%s' not found."), driver)
 
     def create_firewall(self, agent_mode, apply_list, firewall):
         LOG.debug('Creating firewall %(fw_id)s for tenant %(tid)s',
@@ -257,26 +280,6 @@ class IptablesFwaasDriver(fwaas_base.FwaasDriverBase):
     def _find_new_rules(self, pre_firewall, firewall):
         return self._find_removed_rules(firewall, pre_firewall)
 
-    def _get_conntrack_cmd_from_rule(self, ipt_mgr, rule=None):
-        prefixcmd = ['ip', 'netns', 'exec'] + [ipt_mgr.namespace]
-        cmd = ['conntrack', '-D']
-        if rule:
-            conntrack_filter = self._get_conntrack_filter_from_rule(rule)
-            exec_cmd = prefixcmd + cmd + conntrack_filter
-        else:
-            exec_cmd = prefixcmd + cmd
-        return exec_cmd
-
-    def _remove_conntrack_by_cmd(self, cmd):
-        if cmd:
-            try:
-                linux_utils.execute(cmd, run_as_root=True,
-                             check_exit_code=True,
-                             extra_ok_codes=[1])
-            except RuntimeError:
-                LOG.exception(
-                        _LE("Failed execute conntrack command %s"), str(cmd))
-
     def _remove_conntrack_new_firewall(self, agent_mode, apply_list, firewall):
         """Remove conntrack when create new firewall"""
         routers_list = list(set(apply_list))
@@ -285,8 +288,7 @@ class IptablesFwaasDriver(fwaas_base.FwaasDriverBase):
                 agent_mode, router_info)
             for ipt_if_prefix in ipt_if_prefix_list:
                 ipt_mgr = ipt_if_prefix['ipt']
-                cmd = self._get_conntrack_cmd_from_rule(ipt_mgr)
-                self._remove_conntrack_by_cmd(cmd)
+                self.conntrack.flush_entries(ipt_mgr.namespace)
 
     def _remove_conntrack_updated_firewall(self, agent_mode,
                                            apply_list, pre_firewall, firewall):
@@ -302,27 +304,8 @@ class IptablesFwaasDriver(fwaas_base.FwaasDriverBase):
                 i_rules = self._find_new_rules(pre_firewall, firewall)
                 r_rules = self._find_removed_rules(pre_firewall, firewall)
                 removed_conntrack_rules_list = ch_rules + i_rules + r_rules
-                for rule in removed_conntrack_rules_list:
-                    cmd = self._get_conntrack_cmd_from_rule(ipt_mgr, rule)
-                    self._remove_conntrack_by_cmd(cmd)
-
-    def _get_conntrack_filter_from_rule(self, rule):
-        """Get conntrack filter from rule.
-        The key for get conntrack filter is protocol, destination_port
-        and source_port. If we want to take more keys, add to the list.
-        """
-        conntrack_filter = []
-        keys = [['-p', 'protocol'], ['-f', 'ip_version'],
-                ['--dport', 'destination_port'], ['--sport', 'source_port']]
-        for key in keys:
-            if rule.get(key[1]):
-                if key[1] == 'ip_version':
-                    conntrack_filter.append(key[0])
-                    conntrack_filter.append('ipv' + str(rule.get(key[1])))
-                else:
-                    conntrack_filter.append(key[0])
-                    conntrack_filter.append(rule.get(key[1]))
-        return conntrack_filter
+                self.conntrack.delete_entries(removed_conntrack_rules_list,
+                                              ipt_mgr.namespace)
 
     def _remove_default_chains(self, nsid):
         """Remove fwaas default policy chain."""
