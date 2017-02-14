@@ -14,7 +14,6 @@
 #  under the License.
 
 import mock
-from neutron.api.v2 import attributes as attr
 from neutron import context
 from neutron.tests import fake_notifier
 from neutron.tests.unit.extensions import test_l3 as test_l3_plugin
@@ -99,10 +98,6 @@ class TestFirewallRouterPortBase(
                      'TestL3NatServicePlugin')
 
         cfg.CONF.set_override('api_extensions_path', extensions_path)
-        self.saved_attr_map = {}
-        for resource, attrs in six.iteritems(attr.RESOURCE_ATTRIBUTE_MAP):
-            self.saved_attr_map[resource] = attrs.copy()
-        self.addCleanup(self.restore_attribute_map)
         if not fw_plugin:
             fw_plugin = FW_PLUGIN_KLASS
         service_plugins = {'l3_plugin_name': l3_plugin,
@@ -118,10 +113,6 @@ class TestFirewallRouterPortBase(
         self.l3_plugin = directory.get_plugin(nl_constants.L3)
         self.plugin = directory.get_plugin('FIREWALL_V2')
         self.callbacks = self.plugin.endpoints[0]
-
-    def restore_attribute_map(self):
-        # Restore the original RESOURCE_ATTRIBUTE_MAP
-        attr.RESOURCE_ATTRIBUTE_MAP = self.saved_attr_map
 
 
 class TestFirewallCallbacks(TestFirewallRouterPortBase):
