@@ -12,13 +12,14 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+
 from neutron.agent.linux import iptables_manager
+from neutron.agent.linux import utils as linux_utils
 from oslo_log import log as logging
 
 from neutron_fwaas._i18n import _LE
 from neutron_fwaas.common import fwaas_constants as f_const
 from neutron_fwaas.extensions import firewall as fw_ext
-from neutron_fwaas.privileged import netlink_lib
 from neutron_fwaas.services.firewall.drivers import fwaas_base
 
 LOG = logging.getLogger(__name__)
@@ -256,6 +257,26 @@ class IptablesFwaasDriver(fwaas_base.FwaasDriverBase):
     def _find_new_rules(self, pre_firewall, firewall):
         return self._find_removed_rules(firewall, pre_firewall)
 
+    def _get_conntrack_cmd_from_rule(self, ipt_mgr, rule=None):
+        prefixcmd = ['ip', 'netns', 'exec'] + [ipt_mgr.namespace]
+        cmd = ['conntrack', '-D']
+        if rule:
+            conntrack_filter = self._get_conntrack_filter_from_rule(rule)
+            exec_cmd = prefixcmd + cmd + conntrack_filter
+        else:
+            exec_cmd = prefixcmd + cmd
+        return exec_cmd
+
+    def _remove_conntrack_by_cmd(self, cmd):
+        if cmd:
+            try:
+                linux_utils.execute(cmd, run_as_root=True,
+                             check_exit_code=True,
+                             extra_ok_codes=[1])
+            except RuntimeError:
+                LOG.exception(
+                        _LE("Failed execute conntrack command %s"), str(cmd))
+
     def _remove_conntrack_new_firewall(self, agent_mode, apply_list, firewall):
         """Remove conntrack when create new firewall"""
         routers_list = list(set(apply_list))
@@ -264,7 +285,8 @@ class IptablesFwaasDriver(fwaas_base.FwaasDriverBase):
                 agent_mode, router_info)
             for ipt_if_prefix in ipt_if_prefix_list:
                 ipt_mgr = ipt_if_prefix['ipt']
-                self._flush_conntrack_netlink(ipt_mgr.namespace)
+                cmd = self._get_conntrack_cmd_from_rule(ipt_mgr)
+                self._remove_conntrack_by_cmd(cmd)
 
     def _remove_conntrack_updated_firewall(self, agent_mode,
                                            apply_list, pre_firewall, firewall):
@@ -280,78 +302,27 @@ class IptablesFwaasDriver(fwaas_base.FwaasDriverBase):
                 i_rules = self._find_new_rules(pre_firewall, firewall)
                 r_rules = self._find_removed_rules(pre_firewall, firewall)
                 removed_conntrack_rules_list = ch_rules + i_rules + r_rules
-                rules = []
                 for rule in removed_conntrack_rules_list:
-                    rules.append(self._get_filters_from_rules(rule))
-                rules = sorted(list(set(rules)))
-                self._remove_conntrack_netlink(ipt_mgr.namespace, rules)
+                    cmd = self._get_conntrack_cmd_from_rule(ipt_mgr, rule)
+                    self._remove_conntrack_by_cmd(cmd)
 
-    @staticmethod
-    def _entry2delete(rule, entry):
+    def _get_conntrack_filter_from_rule(self, rule):
+        """Get conntrack filter from rule.
+        The key for get conntrack filter is protocol, destination_port
+        and source_port. If we want to take more keys, add to the list.
         """
-        Check if an entry will be delete or not
-
-        :param rule: (ipversion, protocol, sport, dport)
-        :param entry: (ipversion, protocol, sport, dport, saddress, daddress)
-        :return: True if the entry matches the rule
-        The entry matches the rule if it has the same ipversion, protocol or
-        entry source port, destination port sequentially in rule source port,
-        destination port range.
-        """
-        return (
-            (entry[0] == rule[0]) and (not rule[1] or entry[1] == rule[1]) and
-            (not rule[2] or int(entry[2]) in range(int(rule[2].split(':')[0]),
-                int(rule[2].split(':')[-1]) + 1)) and
-            (not rule[2] or int(entry[2]) in range(int(rule[2].split(':')[0]),
-                int(rule[2].split(':')[-1]) + 1)))
-
-    def _remove_conntrack_netlink(self, namespace, rules):
-        # Getting a list of all entries
-        entries = netlink_lib.list_entries(namespace)
-
-        # Compare each entry to each rule to define that this entry
-        # is to delete or not.
-        # rule and entry have the same parameters order to be comparable:
-        # rule: (ipversion, protocol, sport, dport)
-        # entry: (ipversion, protocol, sport, dport, saddress, daddress)
-        # rules and entries were sorted lists of tuples to reduce the
-        # number of comparisons.
-        dentries = []
-        ientry = 0
-        entryNumber = len(entries)
-        for rule in rules:
-            while ientry < entryNumber and entries[ientry] < rule:
-                ientry += 1
-            while (ientry < entryNumber and
-                    self._entry2delete(rule, entries[ientry])):
-                dentries.append(entries[ientry])
-                ientry += 1
-
-        # Calling to netlink_lib.kill_entries to delete entries
-        netlink_lib.kill_entries(namespace, dentries)
-
-    def _flush_conntrack_netlink(self, namespace):
-        netlink_lib.flush_entries(namespace)
-
-    def _get_filters_from_rules(self, rule):
-        """Parse parameters from firewall rules
-
-        :param: rule: A firewall rule
-        :return filter: Tuple of parameters
-        example: (4, 'tcp', 1111, 2222, '1.1.1.1', '2.2.2.2')
-        """
-
-        keys = ['ip_version', 'protocol', 'source_port', 'destination_port']
-        addr_keys = ['source_ip_address', 'destination_ip_address']
-        rule_filter = []
+        conntrack_filter = []
+        keys = [['-p', 'protocol'], ['-f', 'ip_version'],
+                ['--dport', 'destination_port'], ['--sport', 'source_port']]
         for key in keys:
-            rule_filter.append(rule.get(key) or '')
-        for key in addr_keys:
-            if not rule.get(key):
-                rule_filter.append('')
-            else:
-                rule_filter.append(rule.get(key))
-        return tuple(rule_filter)
+            if rule.get(key[1]):
+                if key[1] == 'ip_version':
+                    conntrack_filter.append(key[0])
+                    conntrack_filter.append('ipv' + str(rule.get(key[1])))
+                else:
+                    conntrack_filter.append(key[0])
+                    conntrack_filter.append(rule.get(key[1]))
+        return conntrack_filter
 
     def _remove_default_chains(self, nsid):
         """Remove fwaas default policy chain."""
