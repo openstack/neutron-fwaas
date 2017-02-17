@@ -30,6 +30,7 @@ import six
 import testtools
 import webob.exc
 
+from neutron_fwaas.common import fwaas_constants as constants
 from neutron_fwaas.db.firewall.v2 import firewall_db_v2 as fdb
 from neutron_fwaas import extensions
 from neutron_fwaas.services.firewall import fwaas_plugin_v2
@@ -112,6 +113,21 @@ class FirewallPluginV2DbTestCase(base.NeutronDbPluginV2TestCase):
         ]
         cfg.CONF.register_opts(router_distributed_opts)
 
+    def _get_admin_context(self):
+        # FIXME NOTE(ivasilevskaya) seems that test framework treats context
+        # with user_id=None/tenant_id=None (return value of
+        # context._get_admin_context() method) in a somewhat special way.
+        # So as a workaround to have the framework behave properly right now
+        # let's implement our own _get_admin_context method and look into the
+        # matter some other time.
+        return context.Context(user_id='admin',
+                               tenant_id='admin-tenant',
+                               is_admin=True)
+
+    def _get_nonadmin_context(self, user_id=None, tenant_id=None):
+        return context.Context(user_id=user_id or 'non-admin',
+                               tenant_id=tenant_id or 'tenant1')
+
     def _test_list_resources(self, resource, items,
                              neutron_context=None,
                              query_params=None):
@@ -127,6 +143,30 @@ class FirewallPluginV2DbTestCase(base.NeutronDbPluginV2TestCase):
         self.assertEqual(
             sorted([i[resource]['id'] for i in items]),
             sorted([i['id'] for i in res[resource_plural]]))
+
+    def _list_req(self, resource_plural, ctx=None):
+        if not ctx:
+            ctx = self._get_admin_context()
+        req = self.new_list_request(resource_plural)
+        req.environ['neutron.context'] = ctx
+        return self.deserialize(
+            self.fmt, req.get_response(self.ext_api))[resource_plural]
+
+    def _show_req(self, resource_plural, obj_id, ctx=None):
+        req = self.new_show_request(resource_plural, obj_id, fmt=self.fmt)
+        if not ctx:
+            ctx = self._get_admin_context()
+        req.environ['neutron.context'] = ctx
+        res = self.deserialize(
+            self.fmt, req.get_response(self.ext_api))
+        return res
+
+    def _build_default_fwg(self, ctx=None, is_one=True):
+        res = self._list_req('firewall_groups', ctx=ctx)
+        if is_one:
+            self.assertEqual(1, len(res))
+            return res[0]
+        return res
 
     def _get_test_firewall_rule_attrs(self, name='firewall_rule1'):
         attrs = {'name': name,
@@ -363,7 +403,7 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
             fwrs = fwr1, fwr2, fwr3
             expected_ids = [fwr['firewall_rule']['id'] for fwr in fwrs]
             with self.firewall_policy(firewall_rules=expected_ids) as fwp:
-                ctx = context.get_admin_context()
+                ctx = self._get_admin_context()
                 fwp_id = fwp['firewall_policy']['id']
                 observeds = self.plugin._get_policy_ordered_rules(ctx, fwp_id)
                 observed_ids = [r['id'] for r in observeds]
@@ -432,10 +472,8 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
 
         with self.firewall_policy(name=name, shared=SHARED,
                                   firewall_rules=None, audited=AUDITED) as fwp:
-            req = self.new_show_request('firewall_policies',
-                                        fwp['firewall_policy']['id'],
-                                        fmt=self.fmt)
-            res = self.deserialize(self.fmt, req.get_response(self.ext_api))
+            res = self._show_req('firewall_policies',
+                                 fwp['firewall_policy']['id'])
             for k, v in six.iteritems(attrs):
                 self.assertEqual(v, res['firewall_policy'][k])
 
@@ -569,11 +607,7 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
                                        req.get_response(self.ext_api))
                 rules = []
                 for rule_id in fw_rule_ids:
-                    req = self.new_show_request('firewall_rules',
-                                                rule_id,
-                                                fmt=self.fmt)
-                    res = self.deserialize(self.fmt,
-                                           req.get_response(self.ext_api))
+                    res = self._show_req('firewall_rules', rule_id)
                     rules.append(res['firewall_rule'])
                 self.assertEqual(1, rules[0]['position'])
                 self.assertEqual(fr[1]['firewall_rule']['id'], rules[0]['id'])
@@ -602,11 +636,8 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
                 # check that the firewall_rule was not found
                 self.assertEqual(404, res.status_int)
                 # check if none of the rules got added to the policy
-                req = self.new_show_request('firewall_policies',
-                                            fwp['firewall_policy']['id'],
-                                            fmt=self.fmt)
-                res = self.deserialize(self.fmt,
-                                       req.get_response(self.ext_api))
+                res = self._show_req('firewall_policies',
+                                     fwp['firewall_policy']['id'])
                 for k, v in six.iteritems(attrs):
                     self.assertEqual(v, res['firewall_policy'][k])
 
@@ -703,8 +734,26 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
                 res = req.get_response(self.ext_api)
                 self.assertEqual(webob.exc.HTTPConflict.code, res.status_int)
 
+    def test_update_default_fwg_policy(self):
+        """
+        Make sure that neither admin nor non-admin can update policy
+        associated with default firewall group
+        """
+        ctx_admin = self._get_admin_context()
+        ctx_nonadmin = self._get_nonadmin_context()
+        for ctx in [ctx_admin, ctx_nonadmin]:
+            self._build_default_fwg(ctx=ctx)
+            policies = self._list_req('firewall_policies')
+            for p in policies:
+                data = {'firewall_policy':
+                        {'firewall_rules': []}}
+                req = self.new_update_request('firewall_policies',
+                                              data, p['id'])
+                res = req.get_response(self.ext_api)
+                self.assertEqual(409, res.status_int)
+
     def test_delete_firewall_policy(self):
-        ctx = context.get_admin_context()
+        ctx = self._get_admin_context()
         with self.firewall_policy(do_delete=False) as fwp:
             fwp_id = fwp['firewall_policy']['id']
             req = self.new_delete_request('firewall_policies', fwp_id)
@@ -716,7 +765,7 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
 
     @testtools.skip('bug/1614673')
     def test_delete_firewall_policy_with_rule(self):
-        ctx = context.get_admin_context()
+        ctx = self._get_admin_context()
         attrs = self._get_test_firewall_policy_attrs()
         with self.firewall_policy(do_delete=False) as fwp:
             fwp_id = fwp['firewall_policy']['id']
@@ -839,11 +888,8 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
     def test_show_firewall_rule_with_fw_policy_not_associated(self):
         attrs = self._get_test_firewall_rule_attrs()
         with self.firewall_rule() as fw_rule:
-            req = self.new_show_request('firewall_rules',
-                                        fw_rule['firewall_rule']['id'],
-                                        fmt=self.fmt)
-            res = self.deserialize(self.fmt,
-                                   req.get_response(self.ext_api))
+            res = self._show_req('firewall_rules',
+                                 fw_rule['firewall_rule']['id'])
             for k, v in six.iteritems(attrs):
                 self.assertEqual(v, res['firewall_rule'][k])
 
@@ -860,11 +906,8 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
                 req = self.new_update_request('firewall_policies', data,
                                               fwp['firewall_policy']['id'])
                 req.get_response(self.ext_api)
-                req = self.new_show_request('firewall_rules',
-                                            fw_rule['firewall_rule']['id'],
-                                            fmt=self.fmt)
-                res = self.deserialize(self.fmt,
-                                       req.get_response(self.ext_api))
+                res = self._show_req('firewall_rules',
+                                     fw_rule['firewall_rule']['id'])
                 for k, v in six.iteritems(attrs):
                     self.assertEqual(v, res['firewall_rule'][k])
 
@@ -1043,11 +1086,8 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
                                        req.get_response(self.ext_api))
                 for k, v in six.iteritems(attrs):
                     self.assertEqual(v, res['firewall_rule'][k])
-                req = self.new_show_request('firewall_policies',
-                                            fwp['firewall_policy']['id'],
-                                            fmt=self.fmt)
-                res = self.deserialize(self.fmt,
-                                       req.get_response(self.ext_api))
+                res = self._show_req('firewall_policies',
+                                     fwp['firewall_policy']['id'])
                 self.assertEqual(
                     [fwr_id],
                     res['firewall_policy']['firewall_rules'])
@@ -1076,7 +1116,7 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
             self.assertEqual(200, res.status_int)
 
     def test_delete_firewall_rule(self):
-        ctx = context.get_admin_context()
+        ctx = self._get_admin_context()
         with self.firewall_rule(do_delete=False) as fwr:
             fwr_id = fwr['firewall_rule']['id']
             req = self.new_delete_request('firewall_rules', fwr_id)
@@ -1129,6 +1169,84 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
         attrs['ports'] = []
         self._test_create_firewall_group(attrs)
 
+    def test_create_default_firewall_group_multiple_times_diff_tenants(self):
+        ctx_admin = self._get_admin_context()
+        fwg_admin = self._build_default_fwg(ctx=ctx_admin)
+        res = self._build_default_fwg(ctx=ctx_admin, is_one=False)
+        # check that only 1 group has been created
+        self.assertEqual(1, len(res))
+        ctx = self._get_nonadmin_context()
+        fwg_na = self._build_default_fwg(ctx=ctx)
+        res = self._build_default_fwg(ctx=ctx, is_one=False)
+        # check that only 1 group has been created
+        self.assertEqual(1, len(res))
+        # make sure that admin default_fwg and non_admin don't match
+        self.assertNotEqual(fwg_na['id'], fwg_admin['id'])
+        # make sure that admin can see default groups for admin and non-admin
+        res = self._list_req('firewall_groups', ctx=ctx_admin)
+        self.assertEqual(2, len(res))
+        self.assertEqual(set([ctx_admin.tenant_id, ctx.tenant_id]),
+                         set([r['tenant_id'] for r in res]))
+
+    def test_create_default_firewall_group(self):
+        self._build_default_fwg()
+        result_map = {
+            'firewall_groups': {"keys": ["description", "name"],
+                                "data": [("Default firewall group",
+                                          constants.DEFAULT_FWG)]
+                                },
+            'firewall_policies': {
+                "keys": ["description", "name"],
+                "data": [("Ingress firewall policy",
+                          constants.DEFAULT_FWP_INGRESS),
+                         ("Egress firewall policy",
+                          constants.DEFAULT_FWP_EGRESS)]},
+            'firewall_rules': {
+                "keys": ["description", "action", "protocol", "enabled",
+                         "ip_version", "name"],
+                "data": [
+                    ("default ingress rule for IPv4", "deny", None, True, 4,
+                     "default ingress ipv4 (deny all)"),
+                    ("default egress rule for IPv4", "allow", None, True, 4,
+                     "default egress ipv4 (allow all)"),
+                    ("default ingress rule for IPv6", "deny", None, True, 6,
+                     "default ingress ipv6 (deny all)"),
+                    ("default egress rule for IPv6", "allow", None, True, 6,
+                     "default egress ipv6 (allow all)")]
+            }
+        }
+
+        def _check_rules_match_policies(policy, direction):
+            if direction in policy["description"].lower():
+                for rule_id in policy['firewall_rules']:
+                    rule = self._show_req(
+                        'firewall_rules', rule_id)['firewall_rule']
+                    self.assertTrue(direction in rule["description"])
+
+        for obj in result_map:
+            res = self._list_req(obj)
+            check_keys = result_map[obj]["keys"]
+            expected = result_map[obj]["data"]
+            self.assertEqual(len(expected), len(res))
+
+            # an attempt to check that rules match policies
+            if obj == 'firewall_policies':
+                for p in res:
+                    _check_rules_match_policies(p, "ingress")
+                    _check_rules_match_policies(p, "egress")
+
+            # check that a rule with given params is present in actual
+            # data by comparing expected/actual tuples
+            actual = []
+            for r in res:
+                actual.append(tuple(r[key] for key in check_keys))
+            self.assertEqual(set(expected), set(actual))
+
+    def test_create_firewall_group_exists_default(self):
+        self._build_default_fwg()['id']
+        attrs = self._get_test_firewall_group_attrs("firewall1")
+        self._test_create_firewall_group(attrs)
+
     def test_create_firewall_group_with_dvr(self):
         cfg.CONF.set_override('router_distributed', True)
         attrs = self._get_test_firewall_group_attrs("firewall1", "CREATED")
@@ -1151,7 +1269,7 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
         description = "my_firewall1"
         with self.firewall_policy(shared=False, tenant_id='tenant2') as fwp:
             fwp_id = fwp['firewall_policy']['id']
-            ctx = context.Context('not_admin', 'tenant1')
+            ctx = self._get_nonadmin_context()
             self._create_firewall_group(fmt, fwg_name,
                                         description,
                     ingress_firewall_policy_id=fwp_id,
@@ -1165,7 +1283,7 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
         description = "my_firewall1"
         with self.firewall_policy(shared=False, tenant_id='tenant2') as fwp:
             fwp_id = fwp['firewall_policy']['id']
-            ctx = context.get_admin_context()
+            ctx = self._get_admin_context()
             self._create_firewall_group(fmt, fwg_name,
                                         description, fwp_id, fwp_id,
                                         tenant_id="admin-tenant",
@@ -1176,7 +1294,7 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
         fwg_name = "fw_with_shared_fwp"
         with self.firewall_policy(tenant_id="tenantX") as fwp:
             fwp_id = fwp['firewall_policy']['id']
-            ctx = context.get_admin_context()
+            ctx = self._get_admin_context()
             target_tenant = 'tenant1'
             with self.firewall_group(name=fwg_name,
                                      ingress_firewall_policy_id=fwp_id,
@@ -1197,12 +1315,8 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
                     ingress_firewall_policy_id=fwp_id,
                     egress_firewall_policy_id=fwp_id,
                     admin_state_up=ADMIN_STATE_UP) as firewall_group:
-                req = self.new_show_request(
-                    'firewall_groups',
-                    firewall_group['firewall_group']['id'],
-                    fmt=self.fmt)
-                res = self.deserialize(
-                    self.fmt, req.get_response(self.ext_api))
+                res = self._show_req('firewall_groups',
+                                     firewall_group['firewall_group']['id'])
                 for k, v in six.iteritems(attrs):
                     self.assertEqual(v, res['firewall_group'][k])
 
@@ -1257,11 +1371,50 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
                 for k, v in six.iteritems(attrs):
                     self.assertEqual(v, res['firewall_group'][k])
 
+    def test_existing_default_create_default_firewall_group(self):
+        self._build_default_fwg()
+        self._create_firewall_group(fmt=None,
+                                    name=constants.DEFAULT_FWG,
+                                    description="",
+                                    ingress_firewall_policy_id=None,
+                                    egress_firewall_policy_id=None,
+                                    expected_res_status=409)
+
+    def test_update_default_firewall_group(self):
+        ctx = self._get_nonadmin_context()
+        # try to rename a default group
+        def_fwg_id = self._build_default_fwg(ctx=ctx)['id']
+        data = {'firewall_group': {'name': 'not-default-anymore'}}
+        req = self.new_update_request('firewall_groups', data, def_fwg_id,
+                                      context=ctx)
+        res = req.get_response(self.ext_api)
+        self.assertEqual(409, res.status_int)
+        # create non default group and try to make it default by renaming
+        with self.firewall_group(name="not-default-at-all",
+                                 tenant_id=ctx.tenant_id,
+                                 context=ctx) as not_default:
+            data = {'firewall_group': {'name': constants.DEFAULT_FWG}}
+            req = self.new_update_request('firewall_groups',
+                                          data,
+                                          not_default['firewall_group']['id'],
+                                          context=ctx)
+            res = req.get_response(self.ext_api)
+            self.assertEqual(409, res.status_int)
+
+    def test_update_default_firewall_group_with_non_admin(self):
+        ctx = self._get_nonadmin_context()
+        def_fwg_id = self._build_default_fwg(ctx=ctx)['id']
+        data = {'firewall_group': {'name': 'default'}}
+        req = self.new_update_request('firewall_groups', data, def_fwg_id)
+        req.environ['neutron.context'] = ctx
+        res = req.get_response(self.ext_api)
+        self.assertEqual(409, res.status_int)
+
     def test_update_firewall_group_with_fwp(self):
-        ctx = context.Context('not_admin', 'tenant1')
-        with self.firewall_policy(name='p1', tenant_id='tenant1',
+        ctx = self._get_nonadmin_context()
+        with self.firewall_policy(name='p1', tenant_id=ctx.tenant_id,
                                   shared=False) as fwp1, \
-                self.firewall_policy(name='p2', tenant_id='tenant1',
+                self.firewall_policy(name='p2', tenant_id=ctx.tenant_id,
                                      shared=False) as fwp2, \
                 self.firewall_group(
                     ingress_firewall_policy_id=fwp1['firewall_policy']['id'],
@@ -1275,10 +1428,26 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
             res = req.get_response(self.ext_api)
             self.assertEqual(200, res.status_int)
 
+    def test_change_fwg_name_to_default(self):
+        """
+           Make sure that neither admin nor non-admin can change name of
+           existing firewall group to default
+        """
+        admin_ctx = self._get_admin_context()
+        nonadmin_ctx = self._get_nonadmin_context()
+        with self.firewall_group(context=nonadmin_ctx) as fwg:
+            data = {'firewall_group': {'name': constants.DEFAULT_FWG}}
+            fwg_id = fwg['firewall_group']['id']
+            for ctx in [admin_ctx, nonadmin_ctx]:
+                req = self.new_update_request('firewall_groups', data, fwg_id,
+                                              context=ctx)
+                res = req.get_response(self.ext_api)
+                self.assertEqual(409, res.status_int)
+
     @testtools.skip('bug/1614680')
     def test_update_firewall_group_with_shared_fwp(self):
-        ctx = context.Context('not_admin', 'tenant1')
-        with self.firewall_policy(name='p1', tenant_id='tenant1',
+        ctx = self._get_nonadmin_context()
+        with self.firewall_policy(name='p1', tenant_id=ctx.tenant_id,
                                   shared=True) as fwp1, \
                 self.firewall_policy(name='p2', tenant_id='tenant2',
                                      shared=True) as fwp2, \
@@ -1295,7 +1464,7 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
             self.assertEqual(200, res.status_int)
 
     def test_update_firewall_group_with_admin_and_fwp_different_tenant(self):
-        ctx = context.get_admin_context()
+        ctx = self._get_admin_context()
         with self.firewall_policy() as fwp1, \
                 self.firewall_policy(tenant_id='tenant2',
                                      shared=False) as fwp2, \
@@ -1321,7 +1490,7 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
             # create firewall using fwp1 exists the same tenant.
             fwp1_id = fwps[0]['firewall_policy']['id']
             fwp2_id = fwps[1]['firewall_policy']['id']
-            ctx = context.Context('not_admin', 'tenant1')
+            ctx = self._get_nonadmin_context()
             with self.firewall_group(ingress_firewall_policy_id=fwp1_id,
                                context=ctx) as firewall:
                 fw_id = firewall['firewall_group']['id']
@@ -1336,7 +1505,7 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
                 self.assertEqual(404, res.status_int)
 
     def test_delete_firewall_group(self):
-        ctx = context.get_admin_context()
+        ctx = self._get_admin_context()
         with self.firewall_policy() as fwp:
             fwp_id = fwp['firewall_policy']['id']
             with self.firewall_group(ingress_firewall_policy_id=fwp_id,
@@ -1350,12 +1519,34 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
                                   ctx, fw_id)
 
     def test_delete_firewall_group_already_deleted(self):
-        ctx = context.get_admin_context()
+        ctx = self._get_admin_context()
         deleted_id = uuidutils.generate_uuid()
         with self.firewall_group(do_delete=False) as fwg:
             fwg_id = fwg['firewall_group']['id']
             self.assertIsNone(self.plugin.delete_firewall_group(ctx, fwg_id))
         self.assertIsNone(self.plugin.delete_firewall_group(ctx, deleted_id))
+
+    def test_delete_default_firewall_group_with_admin(self):
+        ctx_a = self._get_admin_context()
+        ctx_na = self._get_nonadmin_context()
+        def_fwg_id = None
+        for ctx in [ctx_na, ctx_a]:
+            def_fwg_id = self._build_default_fwg(ctx=ctx)['id']
+            req = self.new_delete_request('firewall_groups', def_fwg_id)
+            req.environ['neutron.context'] = ctx_a
+            self.assertEqual(204, req.get_response(self.ext_api).status_int)
+        # check that policy has been deleted by listing as admin and getting 1
+        # default fwg with a differnt id
+        res = self._list_req('firewall_groups', ctx=ctx_a)
+        self.assertEqual(1, len(res))
+        self.assertNotEqual(def_fwg_id, res[0]['id'])
+
+    def test_delete_default_firewall_group_with_non_admin(self):
+        ctx = self._get_nonadmin_context()
+        def_fwg_id = self._build_default_fwg(ctx=ctx)['id']
+        req = self.new_delete_request('firewall_groups', def_fwg_id)
+        req.environ['neutron.context'] = ctx
+        self.assertEqual(409, req.get_response(self.ext_api).status_int)
 
     def test_insert_rule_in_policy_with_prior_rules_added_via_update(self):
         attrs = self._get_test_firewall_policy_attrs()

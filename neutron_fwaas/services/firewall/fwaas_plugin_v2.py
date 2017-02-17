@@ -211,8 +211,8 @@ class FirewallPluginV2(
     def _ensure_update_firewall_policy(self, context, firewall_policy_id):
         firewall_policy = self.get_firewall_policy(context, firewall_policy_id)
         if firewall_policy:
-            ing_fwg_ids, eg_fwg_ids = self._get_fwgs_with_policy(context,
-                firewall_policy_id)
+            ing_fwg_ids, eg_fwg_ids = self._get_fwgs_with_policy(
+                context, firewall_policy_id)
             for fwg_id in list(set(ing_fwg_ids + eg_fwg_ids)):
                 self._ensure_update_firewall_group(context, fwg_id)
 
@@ -222,7 +222,7 @@ class FirewallPluginV2(
             self._ensure_update_firewall_policy(context, fwp_id)
 
     def _validate_ports_for_firewall_group(self, context, tenant_id,
-        fwg_ports):
+                                           fwg_ports):
         # TODO(sridar): elevated context and do we want to use public ?
         for port_id in fwg_ports:
             port_db = self._core_plugin._get_port(context, port_id)
@@ -249,6 +249,7 @@ class FirewallPluginV2(
         LOG.debug("create_firewall_group() called")
         fwgrp = firewall_group['firewall_group']
         fwg_ports = fwgrp['ports']
+
         if not fwg_ports:
             # no messaging to agent needed, and fw needs to go
             # to INACTIVE(no associated ports) state.
@@ -260,9 +261,7 @@ class FirewallPluginV2(
         else:
             # Validate ports
             self._validate_ports_for_firewall_group(context,
-                firewall_group['firewall_group']['tenant_id'],
-                fwg_ports)
-            self._validate_if_firewall_group_on_ports(context, fwg_ports)
+                firewall_group['firewall_group']['tenant_id'], fwg_ports)
 
             if (not fwgrp['ingress_firewall_policy_id'] and
                 not fwgrp['egress_firewall_policy_id']):
@@ -295,16 +294,10 @@ class FirewallPluginV2(
         fwg_current_ports = fwg_new_ports = self._get_ports_in_firewall_group(
             context, id)
         if 'ports' in firewall_group['firewall_group']:
-            fwg_ports = firewall_group['firewall_group']['ports']
-            if fwg_ports == []:
-                # This indicates that user is indicating no ports.
-                fwg_new_ports = []
-            else:
+            fwg_new_ports = firewall_group['firewall_group']['ports']
+            if len(fwg_new_ports) > 0:
                 self._validate_ports_for_firewall_group(
-                    context, context.tenant_id, fwg_ports)
-                self._validate_if_firewall_group_on_ports(
-                    context, fwg_ports, id)
-                fwg_new_ports = fwg_ports
+                    context, context.project_id, fwg_new_ports)
 
         if ((not fwg_new_ports and not fwg_current_ports) or
             self._check_no_need_pending(context,
@@ -362,8 +355,8 @@ class FirewallPluginV2(
             # no ports, no need to talk to the agent
             self.delete_db_firewall_group_object(context, id)
         else:
-            status = {"firewall_group":
-                     {"status": nl_constants.PENDING_DELETE}}
+            status = {"firewall_group": {"status":
+                                         nl_constants.PENDING_DELETE}}
             super(FirewallPluginV2, self).update_firewall_group(
                 context, id, status)
             # Reflect state change in fw_with_rules

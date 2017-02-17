@@ -24,6 +24,7 @@ from neutron_lib.plugins import directory
 from oslo_config import cfg
 import six
 
+from neutron_fwaas.db.firewall.v2 import firewall_db_v2
 import neutron_fwaas.extensions
 from neutron_fwaas.extensions import firewall_v2
 from neutron_fwaas.services.firewall import fwaas_plugin_v2
@@ -175,7 +176,11 @@ class TestFirewallCallbacks(TestFirewallRouterPortBase):
         def getdelete(context, fwg_id):
             fwg_db = _get_firewall_group(context, fwg_id)
             # NOTE(cby): Use a different session to simulate a concurrent del
-            self.plugin.delete_db_firewall_group_object(alt_ctx, fwg_id)
+            with mock.patch.object(
+                    firewall_db_v2.Firewall_db_mixin_v2,
+                    'delete_firewall_group',
+                    return_value=None):
+                self.plugin.delete_db_firewall_group_object(alt_ctx, fwg_id)
             return fwg_db
 
         with self.firewall_policy() as fwp:
@@ -190,7 +195,6 @@ class TestFirewallCallbacks(TestFirewallRouterPortBase):
                     fwg_db = self.plugin._get_firewall_group(ctx, fwg_id)
                     fwg_db['status'] = nl_constants.PENDING_DELETE
                     ctx.session.flush()
-
                 with mock.patch.object(
                     self.plugin, '_get_firewall_group', side_effect=getdelete
                 ):
@@ -670,6 +674,11 @@ class TestFirewallPluginBasev2(TestFirewallRouterPortBase,
                                           s['subnet']['id'],
                                           None)
 
+    def _get_user_context(self, user_id="a_user", tenant_id="some_tenant",
+                          is_admin=False):
+        return context.Context(user_id=user_id, tenant_id=tenant_id,
+                               is_admin=is_admin)
+
     def test_update_firewall_group_with_invalid_project(self):
         with self.router(name='router1',
                          admin_state_up=True,
@@ -683,8 +692,11 @@ class TestFirewallPluginBasev2(TestFirewallRouterPortBase,
             with self.firewall_group(name='test',
                                      default_policy=False,
                                      ports=[],
-                                     admin_state_up=True) as fwg1:
+                                     admin_state_up=True,
+                                     ctx=self._get_user_context()) as fwg1:
                 data = {'firewall_group': {'ports': [port_id]}}
+                # make sure that an exception is raised when admin tries to
+                # update ports of another tenant
                 req = self.new_update_request(
                     'firewall_groups', data, fwg1['firewall_group']['id'],
                     context=context.get_admin_context())
