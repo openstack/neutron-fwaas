@@ -12,13 +12,12 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
-from neutron_lib import constants
+from neutron_lib import constants as nl_constants
 from neutron_lib.plugins import directory
 
 from neutron.common import rpc as n_rpc
 from neutron import context as neutron_context
-from neutron_lib import constants as nl_constants
+
 from oslo_config import cfg
 from oslo_log import log as logging
 import oslo_messaging
@@ -215,7 +214,7 @@ class FirewallPlugin(
         if router_ids == nl_constants.ATTR_NOT_SPECIFIED:
             # old semantics router-ids keyword not specified pick up
             # all routers on tenant.
-            l3_plugin = directory.get_plugin(constants.L3)
+            l3_plugin = directory.get_plugin(nl_constants.L3)
             ctx = neutron_context.get_admin_context()
             routers = l3_plugin.get_routers(ctx)
             router_ids = [
