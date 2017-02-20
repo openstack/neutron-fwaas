@@ -126,11 +126,6 @@ class TestFirewallRouterInsertionBase(
 
 class TestFirewallCallbacks(TestFirewallRouterInsertionBase):
 
-    def setUp(self):
-        super(TestFirewallCallbacks,
-              self).setUp(fw_plugin=FW_PLUGIN_KLASS)
-        self.callbacks = self.plugin.endpoints[0]
-
     def test_set_firewall_status(self):
         ctx = context.get_admin_context()
         with self.firewall_policy() as fwp:
