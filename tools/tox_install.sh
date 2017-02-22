@@ -24,6 +24,8 @@ set -x
 install_cmd="pip install -c$1"
 shift
 
+PARAMS="$*"
+
 # The devstack based functional tests have neutron checked out in
 # $NEUTRON_DIR on the test systems - with the change to test in it.
 # Use this directory if it exists, so that this script installs the
@@ -64,5 +66,8 @@ else
     $install_cmd -U -e ${NEUTRON_PIP_LOCATION}
 fi
 
-$install_cmd -U $*
+if [ -n "${PARAMS}" ]; then
+   $install_cmd -U ${PARAMS}
+fi
+
 exit $?

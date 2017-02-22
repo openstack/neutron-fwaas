@@ -21,13 +21,13 @@ Create Date: 2015-02-06 17:02:24.279337
 
 """
 
-# revision identifiers, used by Alembic.
-revision = '540142f314f4'
-down_revision = '4202e3047e47'
-
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.engine import reflection
+
+# revision identifiers, used by Alembic.
+revision = '540142f314f4'
+down_revision = '4202e3047e47'
 
 SQL_STATEMENT = (
     "insert into firewall_router_associations "

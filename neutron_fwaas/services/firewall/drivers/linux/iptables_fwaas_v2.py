@@ -424,8 +424,8 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
 
         # iptables adds '-m protocol' when any source
         # or destination port number is specified
-        if not((rule.get('source_port') is None)
-           and (rule.get('destination_port') is None)):
+        if (rule.get('source_port') is not None or
+            rule.get('destination_port') is not None):
                 args += self._match_arg(rule.get('protocol'))
 
         args += self._port_arg('dport',
@@ -478,8 +478,7 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
         return args
 
     def _port_arg(self, direction, protocol, port):
-        if (protocol not in ['udp', 'tcp']
-            or port is None):
+        if protocol not in ['udp', 'tcp'] or port is None:
             return []
 
         args = ['--%s' % direction, '%s' % port]

@@ -28,8 +28,8 @@ class BaseTestCase(n_base.BaseTestCase):
 class NeutronDbPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
 
     def setup_config(self):
-        ## Copied from neutron's test_db_base_plugin_v2 because they
-        ## don't allow to specify args
+        # Copied from neutron's test_db_base_plugin_v2 because they
+        # don't allow to specify args
 
         # Create the default configurations
         args = ['--config-file', n_base.etcdir('neutron.conf')]
@@ -37,8 +37,8 @@ class NeutronDbPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
         for config_file in test_lib.test_config.get('config_files', []):
             args.extend(['--config-file', config_file])
 
-        ## our own stuff
+        # our own stuff
         dirpath = os.path.join(os.path.dirname(__file__),
-                            './../../etc/neutron/policy.d')
+                               'etc/neutron/policy.d')
         args.extend(['--config-dir', dirpath])
         self.config_parse(args=args)

@@ -87,7 +87,7 @@ class ScenarioTest(tempest.test.BaseTestCase):
             cls.volumes_client = cls.manager.volumes_client
             cls.snapshots_client = cls.manager.snapshots_client
 
-    # ## Test functions library
+    # Test functions library
     #
     # The create_[resource] functions only return body and discard the
     # resp part which is not used in scenario tests
@@ -680,8 +680,9 @@ class ScenarioTest(tempest.test.BaseTestCase):
                 addresses = (server['addresses'][network['name']]
                              if network else [])
             for address in addresses:
-                if (address['version'] == CONF.validation.ip_version_for_ssh
-                        and address['OS-EXT-IPS:type'] == 'fixed'):
+                if (address['version'] ==
+                        CONF.validation.ip_version_for_ssh and
+                    address['OS-EXT-IPS:type'] == 'fixed'):
                     return address['addr']
             raise exceptions.ServerUnreachable(server_id=server['id'])
         else:
@@ -813,8 +814,8 @@ class NetworkScenarioTest(ScenarioTest):
         port_map = [(p["id"], fxip["ip_address"])
                     for p in ports
                     for fxip in p["fixed_ips"]
-                    if netutils.is_valid_ipv4(fxip["ip_address"])
-                    and p['status'] in p_status]
+                    if (netutils.is_valid_ipv4(fxip["ip_address"]) and
+                        p['status'] in p_status)]
         inactive = [p for p in ports if p['status'] != 'ACTIVE']
         if inactive:
             LOG.warning("Instance has ports that are not ACTIVE: %s", inactive)
