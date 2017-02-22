@@ -66,6 +66,14 @@ class FWaaSExtensionTestJSON(base.BaseFWaaSTest):
                                                  protocol="tcp")
         self.fw_policy = self.create_firewall_policy()
 
+    def _try_delete_router(self, router):
+        # delete router, if it exists
+        try:
+            self.delete_router(router)
+        # if router is not found, this means it was deleted in the test
+        except lib_exc.NotFound:
+            pass
+
     def _try_delete_policy(self, policy_id):
         # delete policy, if it exists
         try:
@@ -210,6 +218,7 @@ class FWaaSExtensionTestJSON(base.BaseFWaaSTest):
         router = self.create_router(
             data_utils.rand_name('router-'),
             admin_state_up=True)
+        self.addCleanup(self._try_delete_router, router)
         self.routers_client.add_router_interface(router['id'],
                                                  subnet_id=subnet['id'])
 
@@ -252,9 +261,12 @@ class FWaaSExtensionTestJSON(base.BaseFWaaSTest):
         router1 = self.create_router(
             data_utils.rand_name('router-'),
             admin_state_up=True)
+        self.addCleanup(self._try_delete_router, router1)
         router2 = self.create_router(
             data_utils.rand_name('router-'),
             admin_state_up=True)
+        self.addCleanup(self._try_delete_router, router2)
+
         # Create firewall on a router1
         body = self.firewalls_client.create_firewall(
             name=data_utils.rand_name("firewall"),
@@ -298,6 +310,7 @@ class FWaaSExtensionTestJSON(base.BaseFWaaSTest):
         router = self.create_router(
             data_utils.rand_name('router1-'),
             admin_state_up=True)
+        self.addCleanup(self._try_delete_router, router)
 
         # Create firewall
         body = self.firewalls_client.create_firewall(
