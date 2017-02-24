@@ -65,8 +65,9 @@ class TestFWaaS_v2(base.FWaaSScenarioTest_V2):
     def _check_connectivity_between_internal_networks(
             self, floating_ip1, keys1, network2, server2, should_connect=True):
         internal_ips = (p['fixed_ips'][0]['ip_address'] for p in
-                        self._list_ports(tenant_id=server2['tenant_id'],
-                                         network_id=network2['id'])
+                        self.admin_manager.ports_client.list_ports(
+                            tenant_id=server2['tenant_id'],
+                            network_id=network2['id'])['ports']
                         if p['device_owner'].startswith('network'))
         self._check_server_connectivity(
             floating_ip1, keys1, internal_ips, should_connect)
