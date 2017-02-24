@@ -23,7 +23,6 @@ source $TOP_DIR/functions
 source $TOP_DIR/inc/meta-config
 source $TOP_DIR/stackrc
 source $TOP_DIR/lib/database
-source $TOP_DIR/localrc
 
 # Install_databases [install_pg]
 # Tweak the script accordingly if we need psql in future
