@@ -18,6 +18,7 @@ import six
 from tempest import config
 from tempest import exceptions
 from tempest.lib.common.utils import data_utils
+from tempest.lib.common.utils import test_utils
 from tempest.lib import exceptions as lib_exc
 from tempest import test
 
@@ -140,8 +141,8 @@ class FWaaSv2ExtensionTestJSON(v2_base.BaseFWaaSTest):
             firewall_group = firewall_group['firewall_group']
             return firewall_group['status'] in target_states
 
-        if not test.call_until_true(_wait, CONF.network.build_timeout,
-                                    CONF.network.build_interval):
+        if not test_utils.call_until_true(_wait, CONF.network.build_timeout,
+                                          CONF.network.build_interval):
             m = ("Timed out waiting for firewall_group %s to reach %s "
                  "state(s)" %
                  (fwg_id, target_states))
