@@ -26,12 +26,6 @@ LIBDIR=$DEST/neutron-fwaas/devstack/lib
 source $LIBDIR/l2_agent
 source $LIBDIR/l3_agent
 
-function pre_install_fwaas() {
-    # Install OS packages if necessary with "install_package ...".
-    :
-    neutron_fwaas_configure_common
-}
-
 function install_fwaas() {
     # Install the service.
     :
@@ -71,12 +65,12 @@ function cleanup_fwaas() {
 }
 
 function neutron_fwaas_configure_common {
-    if is_service_enabled q-fwaas-v1; then
-        _neutron_service_plugin_class_add $FWAAS_PLUGIN_V1
-    elif is_service_enabled q-fwaas-v2; then
-        _neutron_service_plugin_class_add $FWAAS_PLUGIN_V2
+    if is_service_enabled q-fwaas-v1 neutron-fwaas-v1; then
+        neutron_service_plugin_class_add $FWAAS_PLUGIN_V1
+    elif is_service_enabled q-fwaas-v2 neutron-fwaas-v2; then
+        neutron_service_plugin_class_add $FWAAS_PLUGIN_V2
     else
-        _neutron_service_plugin_class_add $FWAAS_PLUGIN_V1
+        neutron_service_plugin_class_add $FWAAS_PLUGIN_V1
     fi
 }
 
@@ -88,39 +82,35 @@ function neutron_fwaas_configure_driver {
 }
 
 # check for service enabled
-if is_service_enabled q-svc && ( is_service_enabled q-fwaas || is_service_enabled q-fwaas-v1 || is_service_enabled q-fwaas-v2 ) then
+if is_service_enabled q-svc neutron-api && is_service_enabled q-fwaas q-fwaas-v1 q-fwaas-v2 neutron-fwaas-v1 neutron-fwaas-v2; then
 
-    if [[ "$1" == "stack" && "$2" == "pre-install" ]]; then
-        # Set up system services
-        echo_summary "Configuring system services q-fwaas"
-        pre_install_fwaas
-
-    elif [[ "$1" == "stack" && "$2" == "install" ]]; then
+    if [[ "$1" == "stack" && "$2" == "install" ]]; then
         # Perform installation of service source
-        echo_summary "Installing q-fwaas"
+        echo_summary "Installing neutron-fwaas"
         install_fwaas
 
     elif [[ "$1" == "stack" && "$2" == "post-config" ]]; then
         # Configure after the other layer 1 and 2 services have been configured
-        if is_service_enabled q-fwaas-v1; then
-            echo_summary "Configuring q-fwaas for FWaaS v1"
+        neutron_fwaas_configure_common
+        if is_service_enabled q-fwaas-v1 neutron-fwaas-v1; then
+            echo_summary "Configuring neutron-fwaas for FWaaS v1"
             configure_fwaas_v1
-        elif is_service_enabled q-fwaas-v2; then
-            echo_summary "Configuring q-fwaas for FWaaS v2"
+        elif is_service_enabled q-fwaas-v2 neutron-fwaas-v2; then
+            echo_summary "Configuring neutron-fwaas for FWaaS v2"
             configure_fwaas_v2
         else
-            echo_summary "Configuring q-fwaas for FWaaS v1"
+            echo_summary "Configuring neutron-fwaas for FWaaS v1"
             configure_fwaas_v1
         fi
 
     elif [[ "$1" == "stack" && "$2" == "extra" ]]; then
-        # Initialize and start the q-fwaas service
-        echo_summary "Initializing q-fwaas"
+        # Initialize and start the neutron-fwaas service
+        echo_summary "Initializing neutron-fwaas"
         init_fwaas
     fi
 
     if [[ "$1" == "unstack" ]]; then
-        # Shut down q-fwaas services
+        # Shut down neutron-fwaas services
         # no-op
         shutdown_fwaas
     fi
