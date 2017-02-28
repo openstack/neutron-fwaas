@@ -13,10 +13,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 from neutron_lib import constants as nl_constants
+from neutron_lib import context as neutron_context
 from neutron_lib.plugins import directory
 
 from neutron.common import rpc as n_rpc
-from neutron import context as neutron_context
 
 from oslo_config import cfg
 from oslo_log import log as logging
