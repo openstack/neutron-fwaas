@@ -281,7 +281,8 @@ class FirewallPluginV2(
         self._ensure_update_firewall_group(context, id)
 
         # TODO(sridar): need closure on status when no policy associated.
-        fwg_current_ports = self._get_ports_in_firewall_group(context, id)
+        fwg_current_ports = fwg_new_ports = self._get_ports_in_firewall_group(
+            context, id)
         if 'ports' in firewall_group['firewall_group']:
             fwg_ports = firewall_group['firewall_group']['ports']
             if fwg_ports == []:
@@ -293,10 +294,6 @@ class FirewallPluginV2(
                 self._validate_if_firewall_group_on_ports(
                     context, fwg_ports, id)
                 fwg_new_ports = fwg_ports
-        else:
-            # ports keyword not specified for update pick up
-            # existing ports.
-            fwg_new_ports = self._get_ports_in_firewall_group(context, id)
 
         if ((not fwg_new_ports and not fwg_current_ports) or
             self._check_no_need_pending(context,

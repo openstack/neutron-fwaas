@@ -273,7 +273,8 @@ class FirewallPlugin(
         # pop router_id as this goes in the router association db
         # and not firewall db
         router_ids = firewall['firewall'].pop('router_ids', None)
-        fw_current_rtrs = self.get_firewall_routers(context, id)
+        fw_current_rtrs = fw_new_rtrs = self.get_firewall_routers(
+            context, id)
         if router_ids is not None:
             if router_ids == []:
                 # This indicates that user is indicating no routers.
@@ -284,10 +285,6 @@ class FirewallPlugin(
                 fw_new_rtrs = router_ids
             self.update_firewall_routers(context, {'fw_id': id,
                 'router_ids': fw_new_rtrs})
-        else:
-            # router-ids keyword not specified for update pick up
-            # existing routers.
-            fw_new_rtrs = self.get_firewall_routers(context, id)
 
         if not fw_new_rtrs and not fw_current_rtrs:
             # no messaging to agent needed, and we need to continue
