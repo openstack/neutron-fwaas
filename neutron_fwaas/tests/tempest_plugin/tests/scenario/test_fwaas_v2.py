@@ -110,7 +110,7 @@ class TestFWaaS_v2(base.FWaaSScenarioTest_V2):
                 source.ping_host(dest, nic=nic)
             except lib_exc.SSHExecCommandFailed:
                 LOG.warning('Failed to ping IP: %s via a ssh connection '
-                            'from: %s.' % (dest, source.ssh_client.host))
+                            'from: %s.', dest, source.ssh_client.host)
                 return not should_succeed
             return should_succeed
 
@@ -232,9 +232,8 @@ class TestFWaaS_v2(base.FWaaSScenarioTest_V2):
             ingress_firewall_policy_id=fw_policy['id'],
             egress_firewall_policy_id=fw_policy['id'])
         self._wait_firewall_group_ready(fw_group['id'])
-        LOG.debug(
-            'fw_rule: %s\nfw_policy: %s\nfw_group: %s\n' %
-            (fw_rule, fw_policy, fw_group))
+        LOG.debug('fw_rule: %s\nfw_policy: %s\nfw_group: %s\n',
+                  fw_rule, fw_policy, fw_group)
 
         # Check the connectivity between VM1 and VM2. It should Pass.
         self._check_connectivity_between_internal_networks(

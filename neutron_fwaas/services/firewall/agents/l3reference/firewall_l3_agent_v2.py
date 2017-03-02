@@ -80,7 +80,7 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
         self._register_rpc_consumers(connection)
 
     def consume_api(self, agent_api):
-        LOG.debug("FWaaS consume_api call occurred with %s" % agent_api)
+        LOG.debug("FWaaS consume_api call occurred with %s", agent_api)
         self.agent_api = agent_api
 
     def _register_rpc_consumers(self, connection):
@@ -335,10 +335,10 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
         if not ports_for_fwg:
             return
 
-        LOG.debug("Create firewall group %(fwg_id)s on ports: %(ports)s"
-                % {'fwg_id': firewall_group['id'],
-                   'ports': ', '.join([p for ri_ports in ports_for_fwg
-                            for p in ri_ports[1]])})
+        LOG.debug("Create firewall group %(fwg_id)s on ports: %(ports)s",
+                 {'fwg_id': firewall_group['id'],
+                  'ports': ', '.join([p for ri_ports in ports_for_fwg
+                                      for p in ri_ports[1]])})
 
         # Set firewall group status; will be overwritten if call to driver
         # fails.
@@ -385,8 +385,9 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
         if ports_for_fwg:
             fw_ports = [p for ri_ports in ports_for_fwg for p in ri_ports[1]]
             LOG.debug("Update (delete) firewall group %(fwg_id)s on ports: "
-                    "%(ports)s" % {'fwg_id': firewall_group['id'],
-                    'ports': ', '.join(fw_ports)})
+                      "%(ports)s",
+                      {'fwg_id': firewall_group['id'],
+                       'ports': ', '.join(fw_ports)})
 
             # Set firewall group's status; will be overwritten if call to
             # driver fails.
@@ -418,8 +419,9 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
                 fw_ports = [p for ri_ports in ports_for_fwg
                             for p in ri_ports[1]]
                 LOG.debug("Update (create) firewall group %(fwg_id)s on "
-                          "ports: %(ports)s" % {'fwg_id': firewall_group['id'],
-                                       'ports': ', '.join(fw_ports)})
+                          "ports: %(ports)s",
+                          {'fwg_id': firewall_group['id'],
+                           'ports': ', '.join(fw_ports)})
 
                 # Set firewall group status, which will be overwritten if call
                 # to driver fails.
@@ -463,8 +465,8 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
             return
 
         fw_ports = [p for ri_ports in ports_for_fwg for p in ri_ports[1]]
-        LOG.debug("Delete firewall group %(fwg_id)s on ports: %(ports)s"
-                % {'fwg_id': firewall_group['id'],
+        LOG.debug("Delete firewall group %(fwg_id)s on ports: %(ports)s",
+                  {'fwg_id': firewall_group['id'],
                    'ports': ', '.join(fw_ports)})
 
         # Set the firewall group's status to return to plugin; status may be

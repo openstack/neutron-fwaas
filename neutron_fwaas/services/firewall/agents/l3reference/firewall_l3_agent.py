@@ -64,7 +64,7 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
         self._register_rpc_consumers(connection)
 
     def consume_api(self, agent_api):
-        LOG.debug("FWaaS consume_api call occurred with %s" % agent_api)
+        LOG.debug("FWaaS consume_api call occurred with %s", agent_api)
         self.agent_api = agent_api
 
     def _register_rpc_consumers(self, connection):
@@ -394,9 +394,9 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
                 router_ids,
                 firewall['tenant_id'])
             LOG.debug(
-                "Delete firewall %(fw)s on routers: '%(routers)s'"
-                % {'fw': firewall['id'],
-                   'routers': [ri.router['id'] for ri in router_info_list]})
+                "Delete firewall %(fw)s on routers: '%(routers)s'",
+                {'fw': firewall['id'],
+                 'routers': [ri.router['id'] for ri in router_info_list]})
             # call into the driver
             try:
                 self.fwaas_driver.delete_firewall(

@@ -66,8 +66,8 @@ class FirewallCallbacks(object):
 
     def set_firewall_group_status(self, context, fwg_id, status, **kwargs):
         """Agent uses this to set a firewall_group's status."""
-        LOG.debug("Setting firewall_group %s to status: %s" % (
-            fwg_id, status))
+        LOG.debug("Setting firewall_group %s to status: %s",
+                  fwg_id, status)
         # Sanitize status first
         if status in (nl_constants.ACTIVE, nl_constants.DOWN,
                       nl_constants.INACTIVE):
@@ -81,7 +81,7 @@ class FirewallCallbacks(object):
         updated = self.plugin.update_firewall_group_status(
             context, fwg_id, to_update, not_in=(nl_constants.PENDING_DELETE,))
         if updated:
-            LOG.debug("firewall %s status set: %s" % (fwg_id, to_update))
+            LOG.debug("firewall %s status set: %s", fwg_id, to_update)
         return updated and to_update != nl_constants.ERROR
 
     def firewall_group_deleted(self, context, fwg_id, **kwargs):
