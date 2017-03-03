@@ -16,13 +16,13 @@
 import abc
 
 from neutron.api.v2 import resource_helper
-from neutron.services import service_base
 from neutron_lib.api import converters
 from neutron_lib.api import extensions
 from neutron_lib.api import validators
 from neutron_lib import constants
 from neutron_lib.db import constants as db_const
 from neutron_lib import exceptions as nexception
+from neutron_lib.services import base as service_base
 from oslo_config import cfg
 from oslo_log import log as logging
 import six
