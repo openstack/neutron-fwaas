@@ -89,11 +89,9 @@ class FirewallCallbacks(object):
                 context, fw['id'])
             if fw['status'] == nl_constants.PENDING_DELETE:
                 fw_with_rules['add-router-ids'] = []
-                fw_with_rules['del-router-ids'] = (
-                    self.plugin.get_firewall_routers(context, fw['id']))
+                fw_with_rules['del-router-ids'] = fw['router_ids']
             else:
-                fw_with_rules['add-router-ids'] = (
-                    self.plugin.get_firewall_routers(context, fw['id']))
+                fw_with_rules['add-router-ids'] = fw['router_ids']
                 fw_with_rules['del-router-ids'] = []
             fw_list.append(fw_with_rules)
         return fw_list
