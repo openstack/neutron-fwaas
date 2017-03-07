@@ -19,7 +19,6 @@ import testtools
 from neutron.api import extensions as api_ext
 from neutron.api.v2 import attributes as attr
 from neutron.common import config
-from neutron import context
 from neutron.tests.common import helpers
 from neutron.tests import fake_notifier
 from neutron.tests.unit.extensions import test_agent
@@ -38,6 +37,7 @@ from neutron_fwaas.tests import base
 from neutron_fwaas.tests.unit.db.firewall import (
     test_firewall_db as test_db_firewall)
 from neutron_lib import constants as nl_constants
+from neutron_lib import context
 from neutron_lib.plugins import directory
 
 extensions_path = neutron_fwaas.extensions.__path__[0]

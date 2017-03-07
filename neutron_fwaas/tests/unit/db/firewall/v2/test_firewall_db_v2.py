@@ -18,7 +18,6 @@ import contextlib
 import mock
 from neutron.api import extensions as api_ext
 from neutron.common import config
-from neutron import context
 from oslo_config import cfg
 from oslo_utils import importutils
 from oslo_utils import uuidutils
@@ -33,6 +32,7 @@ from neutron_fwaas.extensions import firewall_v2 as firewall
 from neutron_fwaas.services.firewall import fwaas_plugin_v2
 from neutron_fwaas.tests import base
 from neutron_lib import constants as nl_constants
+from neutron_lib import context
 from neutron_lib.plugins import directory
 
 DB_FW_PLUGIN_KLASS = (
