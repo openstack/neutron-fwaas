@@ -1,0 +1,7 @@
+# neutron-rootwrap command filters to support functional testing.  It
+# is NOT intended to be used outside of a test environment.
+#
+# This file should be owned by (and only-writeable by) the root user
+
+[Filters]
+#none currently
