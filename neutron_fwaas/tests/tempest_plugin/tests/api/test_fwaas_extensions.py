@@ -248,13 +248,14 @@ class FWaaSExtensionTestJSON(base.BaseFWaaSTest):
 
     @decorators.idempotent_id('1355cf5c-77d4-4bb9-87d7-e50c194d08b5')
     def test_firewall_insertion_mode_add_remove_router(self):
-        # Create legacy routers
+        # Create routers
         router1 = self.create_router(
             data_utils.rand_name('router-'),
             admin_state_up=True)
         router2 = self.create_router(
             data_utils.rand_name('router-'),
             admin_state_up=True)
+
         # Create firewall on a router1
         body = self.firewalls_client.create_firewall(
             name=data_utils.rand_name("firewall"),
@@ -266,12 +267,6 @@ class FWaaSExtensionTestJSON(base.BaseFWaaSTest):
 
         self.assertEqual([router1['id']], created_firewall['router_ids'])
 
-        # Legacy routers are scheduled on L3 agents on network plug events
-        # Hence firewall resource will not became ready at this stage
-        network = self.create_network()
-        subnet = self.create_subnet(network)
-        self.routers_client.add_router_interface(router1['id'],
-                                                 subnet_id=subnet['id'])
         # Wait for the firewall resource to become ready
         self._wait_until_ready(firewall_id)
 
