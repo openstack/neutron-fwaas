@@ -20,6 +20,7 @@ from oslo_config import cfg
 from oslo_log import log as logging
 import oslo_messaging
 
+from neutron_fwaas._i18n import _LI
 from neutron_fwaas.common import fwaas_constants as f_const
 from neutron_fwaas.db.firewall.v2 import firewall_db_v2
 from neutron_fwaas.extensions import firewall_v2 as fw_ext
@@ -84,18 +85,23 @@ class FirewallCallbacks(object):
     def firewall_group_deleted(self, context, fwg_id, **kwargs):
         """Agent uses this to indicate firewall is deleted."""
         LOG.debug("firewall_group_deleted() called")
-        with context.session.begin(subtransactions=True):
-            fwg_db = self.plugin._get_firewall_group(context, fwg_id)
-            # allow to delete firewalls in ERROR state
-            if fwg_db.status in (n_const.PENDING_DELETE, n_const.ERROR):
-                self.plugin.delete_db_firewall_group_object(context, fwg_id)
-                return True
-            else:
-                LOG.warning(('Firewall %(fwg)s unexpectedly deleted by '
-                             'agent, status was %(status)s'),
-                            {'fwg': fwg_id, 'status': fwg_db.status})
-                fwg_db.update({"status": n_const.ERROR})
-                return False
+        try:
+            with context.session.begin(subtransactions=True):
+                fwg_db = self.plugin._get_firewall_group(context, fwg_id)
+                # allow to delete firewalls in ERROR state
+                if fwg_db.status in (n_const.PENDING_DELETE, n_const.ERROR):
+                    self.plugin.delete_db_firewall_group_object(context,
+                                                                fwg_id)
+                    return True
+                else:
+                    LOG.warning(('Firewall %(fwg)s unexpectedly deleted by '
+                                 'agent, status was %(status)s'),
+                                {'fwg': fwg_id, 'status': fwg_db.status})
+                    fwg_db.update({"status": n_const.ERROR})
+                    return False
+        except fw_ext.FirewallGroupNotFound:
+            LOG.info(_LI('Firewall group %s already deleted'), fwg_id)
+            return True
 
     def get_firewall_groups_for_project(self, context, **kwargs):
         """Gets all firewall_groups and rules on a project."""
