@@ -152,6 +152,85 @@ class TestFirewallCallbacks(TestFirewallRouterPortBase):
                 self.assertEqual(nl_constants.ERROR, fwg_db['status'])
                 self.assertFalse(res)
 
+    def test_firewall_group_deleted(self):
+        ctx = context.get_admin_context()
+        with self.firewall_policy() as fwp:
+            fwp_id = fwp['firewall_policy']['id']
+            with self.firewall_group(
+                ingress_firewall_policy_id=fwp_id,
+                admin_state_up=test_db_firewall.ADMIN_STATE_UP,
+                do_delete=False
+            ) as fwg:
+                fwg_id = fwg['firewall_group']['id']
+                with ctx.session.begin(subtransactions=True):
+                    fwg_db = self.plugin._get_firewall_group(ctx, fwg_id)
+                    fwg_db['status'] = nl_constants.PENDING_DELETE
+
+                observed = self.callbacks.firewall_group_deleted(
+                    ctx, fwg_id, host='dummy')
+                self.assertTrue(observed)
+
+            self.assertRaises(firewall_v2.FirewallGroupNotFound,
+                              self.plugin.get_firewall_group,
+                              ctx, fwg_id)
+
+    def test_firewall_group_deleted_concurrently(self):
+        ctx = context.get_admin_context()
+        alt_ctx = context.get_admin_context()
+
+        _get_firewall_group = self.plugin._get_firewall_group
+
+        def getdelete(context, fwg_id):
+            fwg_db = _get_firewall_group(context, fwg_id)
+            # NOTE(cby): Use a different session to simulate a concurrent del
+            self.plugin.delete_db_firewall_group_object(alt_ctx, fwg_id)
+            return fwg_db
+
+        with self.firewall_policy() as fwp:
+            fwp_id = fwp['firewall_policy']['id']
+            with self.firewall_group(
+                firewall_policy_id=fwp_id,
+                admin_state_up=test_db_firewall.ADMIN_STATE_UP,
+                do_delete=False
+            ) as fwg:
+                fwg_id = fwg['firewall_group']['id']
+                with ctx.session.begin(subtransactions=True):
+                    fwg_db = self.plugin._get_firewall_group(ctx, fwg_id)
+                    fwg_db['status'] = nl_constants.PENDING_DELETE
+                    ctx.session.flush()
+
+                with mock.patch.object(
+                    self.plugin, '_get_firewall_group', side_effect=getdelete
+                ):
+                    observed = self.callbacks.firewall_group_deleted(
+                        ctx, fwg_id, host='dummy')
+                    self.assertTrue(observed)
+
+                self.assertRaises(firewall_v2.FirewallGroupNotFound,
+                                  self.plugin.get_firewall_group,
+                                  ctx, fwg_id)
+
+    def test_firewall_group_deleted_not_found(self):
+        ctx = context.get_admin_context()
+        observed = self.callbacks.firewall_group_deleted(
+            ctx, 'notfound', host='hh')
+        self.assertTrue(observed)
+
+    def test_firewall_group_deleted_error(self):
+        ctx = context.get_admin_context()
+        with self.firewall_policy() as fwp:
+            fwp_id = fwp['firewall_policy']['id']
+            with self.firewall_group(
+                firewall_policy_id=fwp_id,
+                admin_state_up=test_db_firewall.ADMIN_STATE_UP,
+            ) as fwg:
+                fwg_id = fwg['firewall_group']['id']
+                observed = self.callbacks.firewall_group_deleted(
+                    ctx, fwg_id, host='dummy')
+                self.assertFalse(observed)
+                fwg_db = self.plugin._get_firewall_group(ctx, fwg_id)
+                self.assertEqual(nl_constants.ERROR, fwg_db['status'])
+
 
 class TestFirewallPluginBasev2(TestFirewallRouterPortBase,
                              test_l3_plugin.L3NatTestCaseMixin):
