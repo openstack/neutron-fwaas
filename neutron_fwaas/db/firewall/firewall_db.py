@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import operator
+
 from neutron.callbacks import events
 from neutron.callbacks import registry
 from neutron.callbacks import resources
@@ -176,9 +178,10 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
         firewall = self.get_firewall(context, firewall_id)
         fw_policy_id = firewall['firewall_policy_id']
         if fw_policy_id:
-            fw_policy = self.get_firewall_policy(context, fw_policy_id)
-            fw_rules_list = [self.get_firewall_rule(
-                context, rule_id) for rule_id in fw_policy['firewall_rules']]
+            fw_rules_list = self.get_firewall_rules(
+                context, filters={'firewall_policy_id': [fw_policy_id]})
+            fw_rules_list = sorted(
+                fw_rules_list, key=operator.itemgetter('position'))
             firewall['firewall_rule_list'] = fw_rules_list
         else:
             firewall['firewall_rule_list'] = []
