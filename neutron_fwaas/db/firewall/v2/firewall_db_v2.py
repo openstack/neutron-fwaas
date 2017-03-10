@@ -233,27 +233,26 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
                'status': firewall_group['status']}
         return self._fields(res, fields)
 
+    def _get_policy_ordered_rules(self, context, policy_id):
+        query = (context.session.query(FirewallRuleV2)
+                 .join(FirewallPolicyRuleAssociation)
+                 .filter_by(firewall_policy_id=policy_id)
+                 .order_by(FirewallPolicyRuleAssociation.position))
+        return [self._make_firewall_rule_dict(rule) for rule in query]
+
     def _make_firewall_group_dict_with_rules(self, context, firewall_group_id):
         firewall_group = self.get_firewall_group(context, firewall_group_id)
         ingress_policy_id = firewall_group['ingress_firewall_policy_id']
         if ingress_policy_id:
-            ingress_policy = self.get_firewall_policy(
-                context, ingress_policy_id)
-            ingress_rules_list = [self.get_firewall_rule(
-                context, rule_id) for rule_id
-                in ingress_policy['firewall_rules']]
-            firewall_group['ingress_rule_list'] = ingress_rules_list
+            firewall_group['ingress_rule_list'] = (
+                self._get_policy_ordered_rules(context, ingress_policy_id))
         else:
             firewall_group['ingress_rule_list'] = []
 
         egress_policy_id = firewall_group['egress_firewall_policy_id']
         if egress_policy_id:
-            egress_policy = self.get_firewall_policy(
-                context, egress_policy_id)
-            egress_rules_list = [self.get_firewall_rule(
-                context, rule_id) for rule_id
-                in egress_policy['firewall_rules']]
-            firewall_group['egress_rule_list'] = egress_rules_list
+            firewall_group['egress_rule_list'] = (
+                self._get_policy_ordered_rules(context, egress_policy_id))
         else:
             firewall_group['egress_rule_list'] = []
         return firewall_group
