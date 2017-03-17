@@ -286,25 +286,6 @@ class TestFirewallCallbacks(TestFirewallRouterInsertionBase):
                     self._compare_firewall_rule_lists(
                         fwp_id, fr, res[0]['firewall_rule_list'])
 
-    def test_get_firewall_for_tenant_without_rules(self):
-        tenant_id = 'test-tenant'
-        ctx = context.Context('', tenant_id)
-        with self.firewall_policy(tenant_id=tenant_id) as fwp:
-            fwp_id = fwp['firewall_policy']['id']
-            attrs = self._get_test_firewall_attrs()
-            attrs['firewall_policy_id'] = fwp_id
-            with self.firewall(firewall_policy_id=fwp_id, tenant_id=tenant_id,
-                               admin_state_up=test_db_firewall.ADMIN_STATE_UP
-                               ) as fw:
-                    # router_ids is not present in the firewall db
-                    # but is added in the get_firewalls override by plugin
-                    fw_list = [fw['firewall']]
-                    f = self.callbacks.get_firewalls_for_tenant_without_rules
-                    res = f(ctx, host='dummy')
-                    for fw in res:
-                        del fw['shared']
-                    self.assertEqual(fw_list, res)
-
 
 class TestFirewallAgentApi(base.BaseTestCase):
     def setUp(self):

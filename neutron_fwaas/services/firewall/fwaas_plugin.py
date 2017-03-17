@@ -96,12 +96,6 @@ class FirewallCallbacks(object):
             fw_list.append(fw_with_rules)
         return fw_list
 
-    def get_firewalls_for_tenant_without_rules(self, context, **kwargs):
-        """Agent uses this to get all firewalls for a tenant."""
-        LOG.debug("get_firewalls_for_tenant_without_rules() called")
-        fw_list = [fw for fw in self.plugin.get_firewalls(context)]
-        return fw_list
-
     def get_tenants_with_firewalls(self, context, **kwargs):
         """Agent uses this to get all tenants that have firewalls."""
         LOG.debug("get_tenants_with_firewalls() called")
