@@ -18,7 +18,7 @@ Add the following to the localrc section of your local.conf to configure FWaaS v
 .. code-block:: none
 
    [[local|localrc]]
-   enable_plugin neutron-fwaas http://git.openstack.org/openstack/neutron-fwaas
+   enable_plugin neutron-fwaas https://git.openstack.org/openstack/neutron-fwaas
    enable_service q-fwaas-v2
 
 To check a specific patchset that is currently under development, use a form
@@ -39,7 +39,7 @@ Add the following to the localrc section of your local.conf to configure FWaaS v
 .. code-block:: none
 
    [[local|localrc]]
-   enable_plugin neutron-fwaas http://git.openstack.org/openstack/neutron-fwaas
+   enable_plugin neutron-fwaas https://git.openstack.org/openstack/neutron-fwaas
    enable_service q-fwaas-v1
 
 To check a specific patchset that is currently under development, use a form
