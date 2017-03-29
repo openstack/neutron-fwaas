@@ -38,8 +38,8 @@ class InNamespaceTest(base.BaseTestCase):
         self.close_mock = close_patch.start()
         self.addCleanup(close_patch.stop)
 
-        self.setns_mock = mock.patch.object(
-            utils, 'setns', side_effect=self.fake_setns
+        self.setns_mock = mock.patch(
+            'pyroute2.netns.setns', side_effect=self.fake_setns
         ).start()
 
     def fake_setns(self, setns):

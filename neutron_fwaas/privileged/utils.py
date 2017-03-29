@@ -14,12 +14,10 @@
 #    under the License.
 
 import contextlib
-import ctypes
 import os
 
 from oslo_log import log as logging
 from pyroute2 import netns as pynetns
-import six
 
 from neutron_fwaas._i18n import _
 
@@ -31,19 +29,6 @@ LOG = logging.getLogger(__name__)
 
 class BackInNamespaceExit(SystemExit):
     """Raised if we fail to moved back process in its original namespace."""
-
-
-def setns(netns):
-    """Mimic future pyroute2 setns."""
-    if isinstance(netns, six.string_types):
-        return pynetns.setns(netns)
-
-    # NOTE(cby): netns is a netns fd
-    libc = ctypes.CDLL('libc.so.6', use_errno=True)
-    error = libc.syscall(pynetns.__NR_setns, netns, pynetns.CLONE_NEWNET)
-    if error:
-        raise OSError(ctypes.get_errno(), 'failed to open netns', netns)
-    return netns
 
 
 @contextlib.contextmanager
@@ -60,7 +45,7 @@ def in_namespace(namespace):
 
     org_netns_fd = os.open(PROCESS_NETNS, os.O_RDONLY)
     try:
-        new_netns_fd = setns(namespace)
+        new_netns_fd = pynetns.setns(namespace)
         try:
             try:
                 yield
@@ -68,7 +53,7 @@ def in_namespace(namespace):
                 try:
                     # NOTE(cby): this code is not executed only if we fail to
                     # move in target namespace
-                    setns(org_netns_fd)
+                    pynetns.setns(org_netns_fd)
                 except Exception as e:
                     msg = _('Failed to move back in original netns: %s') % e
                     LOG.critical(msg)
