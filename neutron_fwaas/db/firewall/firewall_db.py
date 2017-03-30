@@ -23,9 +23,9 @@ from neutron.callbacks import resources
 from neutron.db import common_db_mixin as base_db
 from neutron.db.models import agent as agent_model
 from neutron.db.models import l3agent as l3agent_model
-from neutron.extensions import l3
 from neutron_lib import constants as nl_constants
 from neutron_lib.db import model_base
+from neutron_lib.exceptions import l3
 from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_utils import uuidutils
