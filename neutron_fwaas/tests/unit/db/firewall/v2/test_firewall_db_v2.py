@@ -42,7 +42,6 @@ FWAAS_PLUGIN = 'neutron_fwaas.services.firewall.fwaas_plugin_v2'
 DELETEFW_PATH = FWAAS_PLUGIN + '.FirewallAgentApi.delete_firewall_group'
 extensions_path = ':'.join(extensions.__path__)
 DESCRIPTION = 'default description'
-PUBLIC = True
 PROTOCOL = 'tcp'
 IP_VERSION = 4
 SOURCE_IP_ADDRESS_RAW = '1.1.1.1'
@@ -53,6 +52,7 @@ ACTION = 'allow'
 AUDITED = True
 ENABLED = True
 ADMIN_STATE_UP = True
+SHARED = True
 
 
 class FakeAgentApi(fwaas_plugin_v2.FirewallCallbacks):
@@ -131,7 +131,6 @@ class FirewallPluginV2DbTestCase(base.NeutronDbPluginV2TestCase):
         attrs = {'name': name,
                  'tenant_id': self._tenant_id,
                  'project_id': self._tenant_id,
-                 'public': PUBLIC,
                  'protocol': PROTOCOL,
                  'ip_version': IP_VERSION,
                  'source_ip_address': SOURCE_IP_ADDRESS_RAW,
@@ -139,7 +138,8 @@ class FirewallPluginV2DbTestCase(base.NeutronDbPluginV2TestCase):
                  'source_port': SOURCE_PORT,
                  'destination_port': DESTINATION_PORT,
                  'action': ACTION,
-                 'enabled': ENABLED}
+                 'enabled': ENABLED,
+                 'shared': SHARED}
         return attrs
 
     def _get_test_firewall_policy_attrs(self, name='firewall_policy1',
@@ -148,9 +148,9 @@ class FirewallPluginV2DbTestCase(base.NeutronDbPluginV2TestCase):
                  'description': DESCRIPTION,
                  'tenant_id': self._tenant_id,
                  'project_id': self._tenant_id,
-                 'public': PUBLIC,
                  'firewall_rules': [],
-                 'audited': audited}
+                 'audited': audited,
+                 'shared': SHARED}
         return attrs
 
     def _get_test_firewall_group_attrs(self, name='firewall_1',
@@ -163,7 +163,7 @@ class FirewallPluginV2DbTestCase(base.NeutronDbPluginV2TestCase):
 
         return attrs
 
-    def _create_firewall_policy(self, fmt, name, description, public,
+    def _create_firewall_policy(self, fmt, name, description, shared,
                                 firewall_rules, audited,
                                 expected_res_status=None, **kwargs):
         tenant_id = kwargs.get('tenant_id', self._tenant_id)
@@ -171,9 +171,9 @@ class FirewallPluginV2DbTestCase(base.NeutronDbPluginV2TestCase):
                                     'description': description,
                                     'tenant_id': tenant_id,
                                     'project_id': tenant_id,
-                                    'public': public,
                                     'firewall_rules': firewall_rules,
-                                    'audited': audited}}
+                                    'audited': audited,
+                                    'shared': shared}}
 
         fw_policy_req = self.new_create_request('firewall_policies', data, fmt)
         fw_policy_res = fw_policy_req.get_response(self.ext_api)
@@ -189,16 +189,15 @@ class FirewallPluginV2DbTestCase(base.NeutronDbPluginV2TestCase):
 
     @contextlib.contextmanager
     def firewall_policy(self, fmt=None, name='firewall_policy1',
-                        description=DESCRIPTION, public=True,
+                        description=DESCRIPTION, shared=SHARED,
                         firewall_rules=None, audited=True,
                         do_delete=True, **kwargs):
         if firewall_rules is None:
             firewall_rules = []
         if not fmt:
             fmt = self.fmt
-        res = self._create_firewall_policy(fmt, name, description, public,
-                                           firewall_rules, audited,
-                                           **kwargs)
+        res = self._create_firewall_policy(fmt, name, description, shared,
+                                           firewall_rules, audited, **kwargs)
         if res.status_int >= 400:
             raise webob.exc.HTTPClientError(code=res.status_int)
         firewall_policy = self.deserialize(fmt or self.fmt, res)
@@ -207,7 +206,7 @@ class FirewallPluginV2DbTestCase(base.NeutronDbPluginV2TestCase):
             self._delete('firewall_policies',
                          firewall_policy['firewall_policy']['id'])
 
-    def _create_firewall_rule(self, fmt, name, public, protocol,
+    def _create_firewall_rule(self, fmt, name, shared, protocol,
                               ip_version, source_ip_address,
                               destination_ip_address, source_port,
                               destination_port, action, enabled,
@@ -216,7 +215,6 @@ class FirewallPluginV2DbTestCase(base.NeutronDbPluginV2TestCase):
         data = {'firewall_rule': {'name': name,
                                   'tenant_id': tenant_id,
                                   'project_id': tenant_id,
-                                  'public': public,
                                   'protocol': protocol,
                                   'ip_version': ip_version,
                                   'source_ip_address': source_ip_address,
@@ -225,7 +223,8 @@ class FirewallPluginV2DbTestCase(base.NeutronDbPluginV2TestCase):
                                   'source_port': source_port,
                                   'destination_port': destination_port,
                                   'action': action,
-                                  'enabled': enabled}}
+                                  'enabled': enabled,
+                                  'shared': shared}}
 
         fw_rule_req = self.new_create_request('firewall_rules', data, fmt)
         fw_rule_res = fw_rule_req.get_response(self.ext_api)
@@ -236,7 +235,7 @@ class FirewallPluginV2DbTestCase(base.NeutronDbPluginV2TestCase):
 
     @contextlib.contextmanager
     def firewall_rule(self, fmt=None, name='firewall_rule1',
-                      public=PUBLIC, protocol=PROTOCOL, ip_version=IP_VERSION,
+                      shared=SHARED, protocol=PROTOCOL, ip_version=IP_VERSION,
                       source_ip_address=SOURCE_IP_ADDRESS_RAW,
                       destination_ip_address=DESTINATION_IP_ADDRESS_RAW,
                       source_port=SOURCE_PORT,
@@ -245,7 +244,7 @@ class FirewallPluginV2DbTestCase(base.NeutronDbPluginV2TestCase):
                       do_delete=True, **kwargs):
         if not fmt:
             fmt = self.fmt
-        res = self._create_firewall_rule(fmt, name, public, protocol,
+        res = self._create_firewall_rule(fmt, name, shared, protocol,
                                          ip_version, source_ip_address,
                                          destination_ip_address,
                                          source_port, destination_port,
@@ -269,9 +268,8 @@ class FirewallPluginV2DbTestCase(base.NeutronDbPluginV2TestCase):
             if default_policy:
                 res = self._create_firewall_policy(fmt, 'fwp',
                                                    description=DESCRIPTION,
-                                                   public=True,
+                                                   shared=SHARED,
                                                    firewall_rules=[],
-                                                   tenant_id=tenant_id,
                                                    audited=AUDITED)
                 firewall_policy = self.deserialize(fmt or self.fmt, res)
                 fwp_id = firewall_policy["firewall_policy"]["id"]
@@ -374,9 +372,9 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
         name = "firewall_policy1"
         attrs = self._get_test_firewall_policy_attrs(name)
 
-        with self.firewall_policy(name=name, public=PUBLIC,
-                                  firewall_rules=None,
-                                  audited=AUDITED) as firewall_policy:
+        with self.firewall_policy(name=name, shared=SHARED,
+                                  firewall_rules=None, audited=AUDITED
+                                  ) as firewall_policy:
             for k, v in six.iteritems(attrs):
                 self.assertEqual(v, firewall_policy['firewall_policy'][k])
 
@@ -390,18 +388,18 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
             fr = [fwr1, fwr2, fwr3]
             fw_rule_ids = [r['firewall_rule']['id'] for r in fr]
             attrs['firewall_rules'] = fw_rule_ids
-            with self.firewall_policy(name=name, public=PUBLIC,
+            with self.firewall_policy(name=name, shared=SHARED,
                                       firewall_rules=fw_rule_ids,
                                       audited=AUDITED) as fwp:
                 for k, v in six.iteritems(attrs):
                     self.assertEqual(v, fwp['firewall_policy'][k])
 
     def test_create_admin_firewall_policy_with_other_tenant_rules(self):
-        with self.firewall_rule(public=False) as fr:
+        with self.firewall_rule(shared=False) as fr:
             fw_rule_ids = [fr['firewall_rule']['id']]
             res = self._create_firewall_policy(None, 'firewall_policy1',
                                                description=DESCRIPTION,
-                                               public=PUBLIC,
+                                               shared=SHARED,
                                                firewall_rules=fw_rule_ids,
                                                audited=AUDITED,
                                                tenant_id='admin-tenant')
@@ -411,27 +409,28 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
         with self.firewall_rule() as fwr:
             fw_rule_ids = [fwr['firewall_rule']['id']]
             with self.firewall_policy(firewall_rules=fw_rule_ids):
-                with self.firewall_policy(firewall_rules=fw_rule_ids,
-                                          public=PUBLIC) as fwp2:
+                with self.firewall_policy(shared=SHARED,
+                                          firewall_rules=fw_rule_ids) as fwp2:
                     self.assertEqual(
                         fwr['firewall_rule']['id'],
                         fwp2['firewall_policy']['firewall_rules'][0])
 
-    def test_create_public_firewall_policy_with_nonpublic_rule(self):
-        with self.firewall_rule(public=False) as fwr:
+    def test_create_shared_firewall_policy_with_nonshared_rule(self):
+        with self.firewall_rule(shared=False) as fwr:
             fw_rule_ids = [fwr['firewall_rule']['id']]
-            res = self._create_firewall_policy(
-                None, 'firewall_policy1', description=DESCRIPTION, public=True,
-                firewall_rules=fw_rule_ids, audited=AUDITED)
+            res = self._create_firewall_policy(None, 'firewall_policy1',
+                                               description=DESCRIPTION,
+                                               shared=SHARED,
+                                               firewall_rules=fw_rule_ids,
+                                               audited=AUDITED)
             self.assertEqual(webob.exc.HTTPConflict.code, res.status_int)
 
     def test_show_firewall_policy(self):
         name = "firewall_policy1"
         attrs = self._get_test_firewall_policy_attrs(name)
 
-        with self.firewall_policy(name=name, public=PUBLIC,
-                                  firewall_rules=None,
-                                  audited=AUDITED) as fwp:
+        with self.firewall_policy(name=name, shared=SHARED,
+                                  firewall_rules=None, audited=AUDITED) as fwp:
             req = self.new_show_request('firewall_policies',
                                         fwp['firewall_policy']['id'],
                                         fmt=self.fmt)
@@ -452,8 +451,7 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
         name = "new_firewall_policy1"
         attrs = self._get_test_firewall_policy_attrs(name, audited=False)
 
-        with self.firewall_policy(public=PUBLIC,
-                                  firewall_rules=None,
+        with self.firewall_policy(shared=SHARED, firewall_rules=None,
                                   audited=AUDITED) as fwp:
             data = {'firewall_policy': {'name': name}}
             req = self.new_update_request('firewall_policies', data,
@@ -463,8 +461,7 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
                 self.assertEqual(v, res['firewall_policy'][k])
 
     def _test_update_firewall_policy(self, with_audited):
-        with self.firewall_policy(name='firewall_policy1',
-                                  description='fwp',
+        with self.firewall_policy(name='firewall_policy1', description='fwp',
                                   audited=AUDITED) as fwp:
             attrs = self._get_test_firewall_policy_attrs(audited=with_audited)
             data = {'firewall_policy':
@@ -612,11 +609,11 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
                 for k, v in six.iteritems(attrs):
                     self.assertEqual(v, res['firewall_policy'][k])
 
-    def test_update_public_firewall_policy_with_nonpublic_rule(self):
-        with self.firewall_rule(name='fwr1', public=False) as fr:
+    def test_update_shared_firewall_policy_with_nonshared_rule(self):
+        with self.firewall_rule(name='fwr1', shared=False) as fr:
             with self.firewall_policy() as fwp:
                 fw_rule_ids = [fr['firewall_rule']['id']]
-                # update public policy with nonpublic rule
+                # update shared policy with nonshared rule
                 data = {'firewall_policy':
                         {'firewall_rules': fw_rule_ids}}
                 req = self.new_update_request('firewall_policies', data,
@@ -624,36 +621,36 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
                 res = req.get_response(self.ext_api)
                 self.assertEqual(webob.exc.HTTPConflict.code, res.status_int)
 
-    def test_update_firewall_policy_with_public_attr_nonpublic_rule(self):
-        with self.firewall_rule(name='fwr1', public=False) as fr:
-            with self.firewall_policy(public=False) as fwp:
+    def test_update_firewall_policy_with_shared_attr_nonshared_rule(self):
+        with self.firewall_rule(name='fwr1', shared=False) as fr:
+            with self.firewall_policy(shared=False) as fwp:
                 fw_rule_ids = [fr['firewall_rule']['id']]
-                # update public policy with public attr and nonpublic rule
-                data = {'firewall_policy': {'public': True,
+                # update shared policy with shared attr and nonshared rule
+                data = {'firewall_policy': {'shared': SHARED,
                                             'firewall_rules': fw_rule_ids}}
                 req = self.new_update_request('firewall_policies', data,
                                               fwp['firewall_policy']['id'])
                 res = req.get_response(self.ext_api)
                 self.assertEqual(webob.exc.HTTPConflict.code, res.status_int)
 
-    def test_update_firewall_policy_with_public_attr_exist_unshare_rule(self):
-        with self.firewall_rule(name='fwr1', public=False) as fr:
+    def test_update_firewall_policy_with_shared_attr_exist_unshare_rule(self):
+        with self.firewall_rule(name='fwr1', shared=False) as fr:
             fw_rule_ids = [fr['firewall_rule']['id']]
-            with self.firewall_policy(public=False,
+            with self.firewall_policy(shared=False,
                                       firewall_rules=fw_rule_ids) as fwp:
-                # update policy with public attr
-                data = {'firewall_policy': {'public': True}}
+                # update policy with shared attr
+                data = {'firewall_policy': {'shared': SHARED}}
                 req = self.new_update_request('firewall_policies', data,
                                               fwp['firewall_policy']['id'])
                 res = req.get_response(self.ext_api)
                 self.assertEqual(webob.exc.HTTPConflict.code, res.status_int)
 
     def test_update_firewall_policy_assoc_with_other_tenant_firewall(self):
-        with self.firewall_policy(public=True, tenant_id='tenant1') as fwp:
+        with self.firewall_policy(shared=SHARED, tenant_id='tenant1') as fwp:
             fwp_id = fwp['firewall_policy']['id']
             with self.firewall_group(ingress_firewall_policy_id=fwp_id,
                     egress_firewall_policy_id=fwp_id):
-                data = {'firewall_policy': {'public': False}}
+                data = {'firewall_policy': {'shared': False}}
                 req = self.new_update_request('firewall_policies', data,
                                               fwp['firewall_policy']['id'])
                 res = req.get_response(self.ext_api)
@@ -1011,11 +1008,10 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
 
     @testtools.skip('bug/1614680')
     def test_update_firewall_rule_associated_with_other_tenant_policy(self):
-        with self.firewall_rule(public=True, tenant_id='tenant1') as fwr:
+        with self.firewall_rule(shared=SHARED, tenant_id='tenant1') as fwr:
             fwr_id = [fwr['firewall_rule']['id']]
-            with self.firewall_policy(public=False,
-                                      firewall_rules=fwr_id):
-                data = {'firewall_rule': {'public': False}}
+            with self.firewall_policy(shared=False, firewall_rules=fwr_id):
+                data = {'firewall_rule': {'shared': False}}
                 req = self.new_update_request('firewall_rules', data,
                                               fwr['firewall_rule']['id'])
                 res = req.get_response(self.ext_api)
@@ -1106,7 +1102,7 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
         fmt = self.fmt
         fwg_name = "firewall1"
         description = "my_firewall1"
-        with self.firewall_policy(public=False, tenant_id='tenant2') as fwp:
+        with self.firewall_policy(shared=False, tenant_id='tenant2') as fwp:
             fwp_id = fwp['firewall_policy']['id']
             ctx = context.Context('not_admin', 'tenant1')
             self._create_firewall_group(fmt, fwg_name,
@@ -1120,7 +1116,7 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
         fmt = self.fmt
         fwg_name = "firewall1"
         description = "my_firewall1"
-        with self.firewall_policy(public=False, tenant_id='tenant2') as fwp:
+        with self.firewall_policy(shared=False, tenant_id='tenant2') as fwp:
             fwp_id = fwp['firewall_policy']['id']
             ctx = context.get_admin_context()
             self._create_firewall_group(fmt, fwg_name,
@@ -1129,8 +1125,8 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
                                         context=ctx,
                                         expected_res_status=409)
 
-    def test_create_firewall_group_with_admin_and_fwp_is_public(self):
-        fwg_name = "fw_with_public_fwp"
+    def test_create_firewall_group_with_admin_and_fwp_is_shared(self):
+        fwg_name = "fw_with_shared_fwp"
         with self.firewall_policy(tenant_id="tenantX") as fwp:
             fwp_id = fwp['firewall_policy']['id']
             ctx = context.get_admin_context()
@@ -1216,10 +1212,10 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
 
     def test_update_firewall_group_with_fwp(self):
         ctx = context.Context('not_admin', 'tenant1')
-        with self.firewall_policy(
-                name='p1', tenant_id='tenant1', public=False) as fwp1, \
-                self.firewall_policy(
-                    name='p2', tenant_id='tenant1', public=False) as fwp2, \
+        with self.firewall_policy(name='p1', tenant_id='tenant1',
+                                  shared=False) as fwp1, \
+                self.firewall_policy(name='p2', tenant_id='tenant1',
+                                     shared=False) as fwp2, \
                 self.firewall_group(
                     ingress_firewall_policy_id=fwp1['firewall_policy']['id'],
                     egress_firewall_policy_id=fwp2['firewall_policy']['id'],
@@ -1233,10 +1229,12 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
             self.assertEqual(200, res.status_int)
 
     @testtools.skip('bug/1614680')
-    def test_update_firewall_group_with_public_fwp(self):
+    def test_update_firewall_group_with_shared_fwp(self):
         ctx = context.Context('not_admin', 'tenant1')
-        with self.firewall_policy(name='p1', tenant_id='tenant1', public=True) as fwp1, \
-                self.firewall_policy(name='p2', tenant_id='tenant2', public=True) as fwp2, \
+        with self.firewall_policy(name='p1', tenant_id='tenant1',
+                                  shared=True) as fwp1, \
+                self.firewall_policy(name='p2', tenant_id='tenant2',
+                                     shared=True) as fwp2, \
                 self.firewall_group(
                     ingress_firewall_policy_id=fwp1['firewall_policy']['id'],
                     egress_firewall_policy_id=fwp1['firewall_policy']['id'],
@@ -1252,8 +1250,8 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
     def test_update_firewall_group_with_admin_and_fwp_different_tenant(self):
         ctx = context.get_admin_context()
         with self.firewall_policy() as fwp1, \
-                self.firewall_policy(
-                    tenant_id='tenant2', public=False) as fwp2, \
+                self.firewall_policy(tenant_id='tenant2',
+                                     shared=False) as fwp2, \
                 self.firewall_group(
                     ingress_firewall_policy_id=fwp1['firewall_policy']['id'],
                     egress_firewall_policy_id=fwp1['firewall_policy']['id'],
@@ -1269,7 +1267,7 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
     def test_update_firewall_group_fwp_not_found_on_different_tenant(self):
         with self.firewall_policy(name='fwp1', tenant_id='tenant1',
                                   do_delete=False) as fwp1, \
-                self.firewall_policy(name='fwp2', public=False,
+                self.firewall_policy(name='fwp2', shared=False,
                                      tenant_id='tenant2') as fwp2:
 
             fwps = [fwp1, fwp2]
@@ -1382,7 +1380,7 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
                 fwp_id = fwp['firewall_policy']['id']
                 msg = "Operation cannot be performed since Firewall Rule " \
                       "{0} is already associated with FirewallPolicy " \
-                      "{1}".format(fwr_id, fwp_id)
+                      "{1}.".format(fwr_id, fwp_id)
                 result = self._rule_action(
                     'insert', fwp_id, fwr_id,
                     insert_before=None,
@@ -1445,7 +1443,7 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
                                   expected_body=None)
 
     def test_insert_rule_for_policy_of_other_tenant(self):
-        with self.firewall_rule(tenant_id='tenant-2', public=False) as fwr:
+        with self.firewall_rule(tenant_id='tenant-2', shared=False) as fwr:
             fwr_id = fwr['firewall_rule']['id']
             with self.firewall_policy(name='firewall_policy') as fwp:
                 fwp_id = fwp['firewall_policy']['id']
@@ -1614,8 +1612,7 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
             self.assertEqual('firewall_Rule1', res['firewall_rule']['name'])
 
     def test_show_firewall_policy_by_name(self):
-        with self.firewall_policy(
-            name='firewall_Policy1') as fw_policy:
+        with self.firewall_policy(name='firewall_Policy1') as fw_policy:
             res = self._show('firewall_policies',
                              fw_policy['firewall_policy']['id'])
             self.assertEqual(
