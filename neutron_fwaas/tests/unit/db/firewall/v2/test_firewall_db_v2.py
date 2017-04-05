@@ -26,6 +26,7 @@ import six
 import testtools
 import webob.exc
 
+from neutron_fwaas._i18n import _
 from neutron_fwaas.db.firewall.v2 import firewall_db_v2 as fdb
 from neutron_fwaas import extensions
 from neutron_fwaas.extensions import firewall_v2 as firewall
