@@ -98,6 +98,7 @@ class TestFWaaS_v2(base.FWaaSScenarioTest_V2):
     def _check_remote_connectivity(self, source, dest, should_succeed=True,
                                    nic=None):
         """check ping server via source ssh connection
+
         :param source: RemoteClient: an ssh connection from which to ping
         :param dest: and IP to ping against
         :param should_succeed: boolean should ping succeed or not
