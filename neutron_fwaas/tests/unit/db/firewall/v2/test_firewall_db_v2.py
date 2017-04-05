@@ -658,6 +658,52 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
                 res = req.get_response(self.ext_api)
                 self.assertEqual(webob.exc.HTTPConflict.code, res.status_int)
 
+    def test_update_firewall_policy_from_shared_to_unshared(self):
+        with self.firewall_policy(shared=True) as fwp:
+            # update policy with public attr
+            data = {'firewall_policy': {'shared': False}}
+            req = self.new_update_request('firewall_policies', data,
+                                          fwp['firewall_policy']['id'])
+            res = req.get_response(self.ext_api)
+            self.assertEqual(webob.exc.HTTPOk.code, res.status_int)
+
+    def test_update_from_shared_to_unshared_associated_as_ingress_fwp(self):
+        with self.firewall_policy(shared=True, tenant_id='here') as fwp:
+            # update policy with public attr
+            fwp_id = fwp['firewall_policy']['id']
+            with self.firewall_group(tenant_id='another',
+                                     ingress_firewall_policy_id=fwp_id):
+                data = {'firewall_policy': {'shared': False}}
+                req = self.new_update_request('firewall_policies', data,
+                                              fwp_id)
+                res = req.get_response(self.ext_api)
+                self.assertEqual(webob.exc.HTTPConflict.code, res.status_int)
+
+    def test_update_from_shared_to_unshared_associated_as_egress_fwp(self):
+        with self.firewall_policy(shared=True, tenant_id='here') as fwp:
+            # update policy with public attr
+            fwp_id = fwp['firewall_policy']['id']
+            with self.firewall_group(tenant_id='another',
+                                     egress_firewall_policy_id=fwp_id):
+                data = {'firewall_policy': {'shared': False}}
+                req = self.new_update_request('firewall_policies', data,
+                                              fwp_id)
+                res = req.get_response(self.ext_api)
+                self.assertEqual(webob.exc.HTTPConflict.code, res.status_int)
+
+    def test_update_from_shared_to_unshared_associated_as_ingress_egress(self):
+        with self.firewall_policy(shared=True, tenant_id='here') as fwp:
+            # update policy with public attr
+            fwp_id = fwp['firewall_policy']['id']
+            with self.firewall_group(tenant_id='another',
+                                     egress_firewall_policy_id=fwp_id,
+                                     ingress_firewall_policy_id=fwp_id):
+                data = {'firewall_policy': {'shared': False}}
+                req = self.new_update_request('firewall_policies', data,
+                                              fwp_id)
+                res = req.get_response(self.ext_api)
+                self.assertEqual(webob.exc.HTTPConflict.code, res.status_int)
+
     def test_delete_firewall_policy(self):
         ctx = context.get_admin_context()
         with self.firewall_policy(do_delete=False) as fwp:
