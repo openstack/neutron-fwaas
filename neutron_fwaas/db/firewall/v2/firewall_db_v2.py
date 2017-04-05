@@ -23,6 +23,7 @@ from oslo_log import log as logging
 from oslo_utils import uuidutils
 import sqlalchemy as sa
 from sqlalchemy.ext.orderinglist import ordering_list
+from sqlalchemy import or_
 from sqlalchemy import orm
 from sqlalchemy.orm import exc
 
@@ -573,13 +574,10 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
     def _check_fwgs_associated_with_policy_in_same_project(self, context,
                                                            fwp_id,
                                                            fwp_tenant_id):
-        filters = {'ingress_firewall_rule_id': [fwp_id],
-                   'ingress_firewall_rule_id': [fwp_id]}
         with context.session.begin(subtransactions=True):
-            fwg_with_fwp_id_db = self._get_collection_query(
-                context,
-                FirewallGroup,
-                filters=filters)
+            fwg_with_fwp_id_db = context.session.query(FirewallGroup).filter(
+                or_(FirewallGroup.ingress_firewall_policy_id == fwp_id,
+                FirewallGroup.egress_firewall_policy_id == fwp_id))
         for entry in fwg_with_fwp_id_db:
             if entry.tenant_id != fwp_tenant_id:
                 raise f_exc.FirewallPolicyInUse(
