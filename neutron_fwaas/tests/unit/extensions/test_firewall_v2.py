@@ -50,7 +50,6 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         project_id = _uuid()
         data = {'firewall_rule': {'description': 'descr_firewall_rule1',
                                   'name': 'rule1',
-                                  'public': False,
                                   'protocol': 'tcp',
                                   'ip_version': 4,
                                   'source_ip_address': '192.168.0.1',
@@ -59,7 +58,8 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
                                   'destination_port': dst_port,
                                   'action': 'allow',
                                   'enabled': True,
-                                  'tenant_id': project_id}}
+                                  'tenant_id': project_id,
+                                  'shared': False}}
         expected_ret_val = copy.copy(data['firewall_rule'])
         expected_ret_val['source_port'] = str(src_port)
         expected_ret_val['destination_port'] = str(dst_port)
@@ -87,7 +87,6 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
     def test_create_firewall_rule_invalid_long_name(self):
         data = {'firewall_rule': {'description': 'descr_firewall_rule1',
                                   'name': _long_name,
-                                  'public': False,
                                   'protocol': 'tcp',
                                   'ip_version': 4,
                                   'source_ip_address': '192.168.0.1',
@@ -96,7 +95,8 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
                                   'destination_port': 1,
                                   'action': 'allow',
                                   'enabled': True,
-                                  'tenant_id': _uuid()}}
+                                  'tenant_id': _uuid(),
+                                  'shared': False}}
         res = self.api.post(_get_path('fwaas/firewall_rules', fmt=self.fmt),
                             self.serialize(data),
                             content_type='application/%s' % self.fmt,
@@ -106,7 +106,6 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
     def test_create_firewall_rule_invalid_long_description(self):
         data = {'firewall_rule': {'description': _long_description,
                                   'name': 'rule1',
-                                  'public': False,
                                   'protocol': 'tcp',
                                   'ip_version': 4,
                                   'source_ip_address': '192.168.0.1',
@@ -115,7 +114,8 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
                                   'destination_port': 1,
                                   'action': 'allow',
                                   'enabled': True,
-                                  'tenant_id': _uuid()}}
+                                  'tenant_id': _uuid(),
+                                  'shared': False}}
         res = self.api.post(_get_path('fwaas/firewall_rules', fmt=self.fmt),
                             self.serialize(data),
                             content_type='application/%s' % self.fmt,
@@ -126,7 +126,6 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
     def test_create_firewall_rule_invalid_long_tenant_id(self):
         data = {'firewall_rule': {'description': 'desc',
                                   'name': 'rule1',
-                                  'public': False,
                                   'protocol': 'tcp',
                                   'ip_version': 4,
                                   'source_ip_address': '192.168.0.1',
@@ -135,7 +134,8 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
                                   'destination_port': 1,
                                   'action': 'allow',
                                   'enabled': True,
-                                  'tenant_id': _long_tenant}}
+                                  'tenant_id': _long_tenant,
+                                  'shared': False}}
         res = self.api.post(_get_path('fwaas/firewall_rules', fmt=self.fmt),
                             self.serialize(data),
                             content_type='application/%s' % self.fmt,
@@ -206,10 +206,10 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
         project_id = _uuid()
         data = {'firewall_policy': {'description': 'descr_firewall_policy1',
                                     'name': 'new_fw_policy1',
-                                    'public': False,
                                     'firewall_rules': [_uuid(), _uuid()],
                                     'audited': False,
-                                    'tenant_id': project_id}}
+                                    'tenant_id': project_id,
+                                    'shared': False}}
         return_value = copy.copy(data['firewall_policy'])
         return_value.update({'id': policy_id})
 
@@ -228,10 +228,10 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
     def test_create_firewall_policy_invalid_long_name(self):
         data = {'firewall_policy': {'description': 'descr_firewall_policy1',
                                     'name': _long_name,
-                                    'public': False,
                                     'firewall_rules': [_uuid(), _uuid()],
                                     'audited': False,
-                                    'tenant_id': _uuid()}}
+                                    'tenant_id': _uuid(),
+                                    'shared': False}}
         res = self.api.post(_get_path('fwaas/firewall_policies',
                                       fmt=self.fmt),
                             self.serialize(data),
@@ -242,10 +242,10 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
     def test_create_firewall_policy_invalid_long_description(self):
         data = {'firewall_policy': {'description': _long_description,
                                     'name': 'new_fw_policy1',
-                                    'public': False,
                                     'firewall_rules': [_uuid(), _uuid()],
                                     'audited': False,
-                                    'tenant_id': _uuid()}}
+                                    'tenant_id': _uuid(),
+                                    'shared': False}}
         res = self.api.post(_get_path('fwaas/firewall_policies',
                                       fmt=self.fmt),
                             self.serialize(data),
@@ -257,10 +257,10 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
     def test_create_firewall_policy_invalid_long_tenant_id(self):
         data = {'firewall_policy': {'description': 'desc',
                                     'name': 'new_fw_policy1',
-                                    'public': False,
                                     'firewall_rules': [_uuid(), _uuid()],
                                     'audited': False,
-                                    'tenant_id': _long_tenant}}
+                                    'tenant_id': _long_tenant,
+                                    'shared': False}}
         res = self.api.post(_get_path('fwaas/firewall_policies',
                                       fmt=self.fmt),
                             self.serialize(data),
@@ -399,11 +399,11 @@ class FirewallExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
             data = {'firewall_group': {'description': 'fake_description',
                                        'name': 'fake_name',
                                        'tenant_id': 'fake-tenant_id',
-                                       'public': False,
                                        'ingress_firewall_policy_id': None,
                                        'egress_firewall_policy_id': None,
                                        'admin_state_up': True,
-                                       'ports': []}}
+                                       'ports': [],
+                                       'shared': False}}
             data['firewall_group'].update(target)
             res = self.api.post(_get_path('fwaas/firewall_groups',
                                 fmt=self.fmt),

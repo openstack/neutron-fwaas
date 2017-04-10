@@ -72,36 +72,36 @@ class FirewallPolicyConflict(nexception.Conflict):
     """FWaaS exception for firewall policy
 
     Occurs when admin policy tries to use another tenant's policy that
-    is not public.
+    is not shared.
     """
 
     message = _("Operation cannot be performed since Firewall Policy "
-                "%(firewall_policy_id)s is not public and does not belong to "
+                "%(firewall_policy_id)s is not shared and does not belong to "
                 "your tenant.")
 
 
 class FirewallRuleSharingConflict(nexception.Conflict):
     """FWaaS exception for firewall rules
 
-    This exception will be raised when a public policy is created or
-    updated with rules that are not public.
+    This exception will be raised when a shared policy is created or
+    updated with rules that are not shared.
     """
 
     message = _("Operation cannot be performed since Firewall Policy "
-                "%(firewall_policy_id)s is public but Firewall Rule "
-                "%(firewall_rule_id)s is not public")
+                "%(firewall_policy_id)s is shared but Firewall Rule "
+                "%(firewall_rule_id)s is not shared.")
 
 
 class FirewallPolicySharingConflict(nexception.Conflict):
     """FWaaS exception for firewall policy
 
-    When a policy is public without sharing its associated rules,
+    When a policy is 'shared' without sharing its associated rules,
     this exception will be raised.
     """
 
     message = _("Operation cannot be performed. Before sharing Firewall "
                 "Policy %(firewall_policy_id)s, share associated Firewall "
-                "Rule %(firewall_rule_id)s")
+                "Rule %(firewall_rule_id)s.")
 
 
 class FirewallRuleNotFound(nexception.NotFound):
@@ -147,7 +147,7 @@ class FirewallRuleInfoMissing(nexception.InvalidInput):
 
 
 class FirewallIpAddressConflict(nexception.InvalidInput):
-    message = _("Invalid input - IP addresses do not agree with IP Version")
+    message = _("Invalid input - IP addresses do not agree with IP Version.")
 
 
 class FirewallInternalDriverError(nexception.NeutronException):
@@ -164,12 +164,12 @@ class FirewallRuleConflict(nexception.Conflict):
     """Firewall rule conflict exception.
 
     Occurs when admin policy tries to use another tenant's rule that is
-    not public
+    not shared
     """
 
     message = _("Operation cannot be performed since Firewall Rule "
-                "%(firewall_rule_id)s is not public and belongs to "
-                "another tenant %(tenant_id)s")
+                "%(firewall_rule_id)s is not shared and belongs to "
+                "another tenant %(tenant_id)s.")
 
 
 class FirewallRuleAlreadyAssociated(nexception.Conflict):
@@ -181,7 +181,7 @@ class FirewallRuleAlreadyAssociated(nexception.Conflict):
 
     message = _("Operation cannot be performed since Firewall Rule "
                 "%(firewall_rule_id)s is already associated with Firewall"
-                "Policy %(firewall_policy_id)s")
+                "Policy %(firewall_policy_id)s.")
 
 
 RESOURCE_ATTRIBUTE_MAP = {
@@ -204,7 +204,7 @@ RESOURCE_ATTRIBUTE_MAP = {
         'firewall_policy_id': {'allow_post': False, 'allow_put': False,
                                'validate': {'type:uuid_or_none': None},
                                'is_visible': True},
-        'public': {'allow_post': True, 'allow_put': True,
+        'shared': {'allow_post': True, 'allow_put': True,
                    'default': False, 'is_visible': True,
                    'convert_to': converters.convert_to_boolean,
                    'required_by_policy': True, 'enforce_policy': True},
@@ -260,7 +260,7 @@ RESOURCE_ATTRIBUTE_MAP = {
                            'convert_to': converters.convert_to_boolean},
         'status': {'allow_post': False, 'allow_put': False,
                    'is_visible': True},
-        'public': {'allow_post': True, 'allow_put': True, 'default': False,
+        'shared': {'allow_post': True, 'allow_put': True, 'default': False,
                    'convert_to': converters.convert_to_boolean,
                    'is_visible': True, 'required_by_policy': True,
                    'enforce_policy': True},
@@ -301,7 +301,7 @@ RESOURCE_ATTRIBUTE_MAP = {
                         'validate': {'type:string':
                                      nl_db_constants.DESCRIPTION_FIELD_SIZE},
                         'is_visible': True, 'default': ''},
-        'public': {'allow_post': True, 'allow_put': True, 'default': False,
+        'shared': {'allow_post': True, 'allow_put': True, 'default': False,
                    'convert_to': converters.convert_to_boolean,
                    'is_visible': True, 'required_by_policy': True,
                    'enforce_policy': True},

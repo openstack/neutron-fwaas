@@ -42,7 +42,7 @@ class HasDescription(object):
 class FirewallRuleV2(model_base.BASEV2, model_base.HasId, HasName,
                      HasDescription, model_base.HasProject):
     __tablename__ = "firewall_rules_v2"
-    public = sa.Column(sa.Boolean)
+    shared = sa.Column(sa.Boolean)
     protocol = sa.Column(sa.String(40))
     ip_version = sa.Column(sa.Integer)
     source_ip_address = sa.Column(sa.String(46))
@@ -65,7 +65,6 @@ class FirewallGroup(model_base.BASEV2, model_base.HasId, HasName,
                             cascade='all, delete'))
     name = sa.Column(sa.String(255))
     description = sa.Column(sa.String(1024))
-    public = sa.Column(sa.Boolean)
     ingress_firewall_policy_id = sa.Column(sa.String(36),
                                            sa.ForeignKey(
                                                'firewall_policies_v2.id'))
@@ -74,6 +73,7 @@ class FirewallGroup(model_base.BASEV2, model_base.HasId, HasName,
                                               'firewall_policies_v2.id'))
     admin_state_up = sa.Column(sa.Boolean)
     status = sa.Column(sa.String(16))
+    shared = sa.Column(sa.Boolean)
 
 
 class FirewallGroupPortAssociation(model_base.BASEV2):
@@ -109,7 +109,6 @@ class FirewallPolicy(model_base.BASEV2, model_base.HasId, HasName,
     __tablename__ = 'firewall_policies_v2'
     name = sa.Column(sa.String(255))
     description = sa.Column(sa.String(1024))
-    public = sa.Column(sa.Boolean)
     rule_count = sa.Column(sa.Integer)
     audited = sa.Column(sa.Boolean)
     rule_associations = orm.relationship(
@@ -117,6 +116,7 @@ class FirewallPolicy(model_base.BASEV2, model_base.HasId, HasName,
         backref=orm.backref('firewall_policies_v2', cascade='all, delete'),
         order_by='FirewallPolicyRuleAssociation.position',
         collection_class=ordering_list('position', count_from=1))
+    shared = sa.Column(sa.Boolean)
 
 
 class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
@@ -197,7 +197,6 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
                'tenant_id': firewall_rule['tenant_id'],
                'name': firewall_rule['name'],
                'description': firewall_rule['description'],
-               'public': firewall_rule['public'],
                'protocol': firewall_rule['protocol'],
                'ip_version': firewall_rule['ip_version'],
                'source_ip_address': firewall_rule['source_ip_address'],
@@ -206,7 +205,8 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
                'source_port': src_port_range,
                'destination_port': dst_port_range,
                'action': firewall_rule['action'],
-               'enabled': firewall_rule['enabled']}
+               'enabled': firewall_rule['enabled'],
+               'shared': firewall_rule['shared']}
         return self._fields(res, fields)
 
     def _make_firewall_policy_dict(self, firewall_policy, fields=None):
@@ -217,9 +217,9 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
                'tenant_id': firewall_policy['tenant_id'],
                'name': firewall_policy['name'],
                'description': firewall_policy['description'],
-               'public': firewall_policy['public'],
                'audited': firewall_policy['audited'],
-               'firewall_rules': fw_rules}
+               'firewall_rules': fw_rules,
+               'shared': firewall_policy['shared']}
         return self._fields(res, fields)
 
     def _make_firewall_group_dict(self, firewall_group, fields=None):
@@ -230,14 +230,14 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
                'tenant_id': firewall_group['tenant_id'],
                'name': firewall_group['name'],
                'description': firewall_group['description'],
-               'public': firewall_group['public'],
                'ingress_firewall_policy_id':
                    firewall_group['ingress_firewall_policy_id'],
                'egress_firewall_policy_id':
                    firewall_group['egress_firewall_policy_id'],
                'admin_state_up': firewall_group['admin_state_up'],
                'ports': fwg_ports,
-               'status': firewall_group['status']}
+               'status': firewall_group['status'],
+               'shared': firewall_group['shared']}
         return self._fields(res, fields)
 
     def _get_policy_ordered_rules(self, context, policy_id):
@@ -265,7 +265,7 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
         return firewall_group
 
     def _check_firewall_rule_conflict(self, fwr_db, fwp_db):
-        if not fwr_db['public']:
+        if not fwr_db['shared']:
             if fwr_db['tenant_id'] != fwp_db['tenant_id']:
                 raise fw_ext.FirewallRuleConflict(
                     firewall_rule_id=fwr_db['id'],
@@ -342,7 +342,6 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
                 tenant_id=fwr['tenant_id'],
                 name=fwr['name'],
                 description=fwr['description'],
-                public=fwr['public'],
                 protocol=fwr['protocol'],
                 ip_version=fwr['ip_version'],
                 source_ip_address=fwr['source_ip_address'],
@@ -352,7 +351,8 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
                 destination_port_range_min=dst_port_min,
                 destination_port_range_max=dst_port_max,
                 action=fwr['action'],
-                enabled=fwr['enabled'])
+                enabled=fwr['enabled'],
+                shared=fwr['shared'])
             context.session.add(fwr_db)
         return self._make_firewall_rule_dict(fwr_db)
 
@@ -524,32 +524,32 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
                 # Bail as soon as we find an invalid rule.
                 raise fw_ext.FirewallRuleNotFound(
                     firewall_rule_id=fwrule_id)
-            if 'public' in fwp:
-                if fwp['public'] and not rules_dict[fwrule_id]['public']:
+            if 'shared' in fwp:
+                if fwp['shared'] and not rules_dict[fwrule_id]['shared']:
                     raise fw_ext.FirewallRuleSharingConflict(
                         firewall_rule_id=fwrule_id,
                         firewall_policy_id=fwp_db['id'])
-            elif fwp_db['public'] and not rules_dict[fwrule_id]['public']:
+            elif fwp_db['shared'] and not rules_dict[fwrule_id]['shared']:
                 raise fw_ext.FirewallRuleSharingConflict(
                     firewall_rule_id=fwrule_id,
                     firewall_policy_id=fwp_db['id'])
             else:
-                # the policy is not public, the rule and policy should be in
-                # the same project if the rule is not public.
-                if not rules_dict[fwrule_id]['public']:
-                    if (rules_dict[fwrule_id]['tenant_id'] !=
-                        fwp_db['tenant_id']):
+                # the policy is not shared, the rule and policy should be in
+                # the same project if the rule is not shared.
+                if not rules_dict[fwrule_id]['shared']:
+                    if (rules_dict[fwrule_id]['tenant_id'] != fwp_db[
+                            'tenant_id']):
                         raise fw_ext.FirewallRuleConflict(
                             firewall_rule_id=fwrule_id,
                             tenant_id=rules_dict[fwrule_id]['tenant_id'])
 
-    def _check_if_rules_public_for_policy_public(self, context, fwp_db, fwp):
-        if fwp['public']:
+    def _check_if_rules_shared_for_policy_shared(self, context, fwp_db, fwp):
+        if fwp['shared']:
             rules_in_db = fwp_db.rule_associations
             for entry in rules_in_db:
                 fwr_db = self._get_firewall_rule(context,
                                                  entry.firewall_rule_id)
-                if not fwr_db['public']:
+                if not fwp_db['shared']:
                     raise fw_ext.FirewallPolicySharingConflict(
                         firewall_rule_id=fwr_db['id'],
                         firewall_policy_id=fwp_db['id'])
@@ -626,8 +626,8 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
                 tenant_id=fwp['tenant_id'],
                 name=fwp['name'],
                 description=fwp['description'],
-                public=fwp['public'],
-                audited=fwp['audited'])
+                audited=fwp['audited'],
+                shared=fwp['shared'])
             context.session.add(fwp_db)
             self._set_rules_for_policy(context, fwp_db, fwp)
         return self._make_firewall_policy_dict(fwp_db)
@@ -637,13 +637,13 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
         fwp = firewall_policy['firewall_policy']
         with context.session.begin(subtransactions=True):
             fwp_db = self._get_firewall_policy(context, id)
-            if not fwp.get('public', True):
-                # an update is setting public to False, make sure associated
+            if not fwp.get('shared', True):
+                # an update is setting shared to False, make sure associated
                 # firewall groups are in the same project.
                 self._check_fwgs_associated_with_policy_in_same_project(
                     context, id, fwp_db['tenant_id'])
-            if 'public' in fwp and 'firewall_rules' not in fwp:
-                self._check_if_rules_public_for_policy_public(
+            if 'shared' in fwp and 'firewall_rules' not in fwp:
+                self._check_if_rules_shared_for_policy_shared(
                     context, fwp_db, fwp)
             if 'firewall_rules' in fwp:
                 self._set_rules_for_policy(context, fwp_db, fwp)
@@ -685,7 +685,7 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
             fwp_id = fwg['ingress_firewall_policy_id']
             if fwp_id is not None:
                 fwp = self._get_firewall_policy(context, fwp_id)
-                if fwg_tenant_id != fwp['tenant_id'] and not fwp['public']:
+                if fwg_tenant_id != fwp['tenant_id'] and not fwp['shared']:
                     raise fw_ext.FirewallPolicyConflict(
                         firewall_policy_id=fwp_id)
 
@@ -693,7 +693,7 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
             fwp_id = fwg['egress_firewall_policy_id']
             if fwp_id is not None:
                 fwp = self._get_firewall_policy(context, fwp_id)
-                if fwg_tenant_id != fwp['tenant_id'] and not fwp['public']:
+                if fwg_tenant_id != fwp['tenant_id'] and not fwp['shared']:
                     raise fw_ext.FirewallPolicyConflict(
                         firewall_policy_id=fwp_id)
         return
@@ -754,11 +754,11 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
                 tenant_id=fwg['tenant_id'],
                 name=fwg['name'],
                 description=fwg['description'],
-                public=fwg['public'],
                 status=status,
                 ingress_firewall_policy_id=fwg['ingress_firewall_policy_id'],
                 egress_firewall_policy_id=fwg['egress_firewall_policy_id'],
-                admin_state_up=fwg['admin_state_up'])
+                admin_state_up=fwg['admin_state_up'],
+                shared=fwg['shared'])
             context.session.add(fwg_db)
             self._set_ports_for_firewall_group(context, fwg_db, fwg)
         return self._make_firewall_group_dict(fwg_db)
