@@ -1519,3 +1519,9 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
         with self.firewall(name='fireWall1') as fw:
             res = self._show('firewalls', fw['firewall']['id'])
             self.assertEqual('fireWall1', res['firewall']['name'])
+
+    def test_create_firewall_rule_with_invalid_action_type(self):
+        attrs = self._get_test_firewall_rule_attrs()
+        attrs['action'] = 123
+        res = self._create_firewall_rule(self.fmt, **attrs)
+        self.assertEqual(400, res.status_int)
