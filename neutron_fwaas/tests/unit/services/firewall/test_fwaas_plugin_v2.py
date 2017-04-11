@@ -132,8 +132,7 @@ class TestFirewallCallbacks(TestFirewallRouterPortBase):
             ) as fwg:
                 fwg_id = fwg['firewall_group']['id']
                 res = self.callbacks.set_firewall_group_status(ctx, fwg_id,
-                                                         nl_constants.ACTIVE,
-                                                         host='dummy')
+                                                         nl_constants.ACTIVE)
                 fwg_db = self.plugin.get_firewall_group(ctx, fwg_id)
                 self.assertEqual(nl_constants.ACTIVE, fwg_db['status'])
                 self.assertTrue(res)
@@ -157,8 +156,7 @@ class TestFirewallCallbacks(TestFirewallRouterPortBase):
                     fwg_db = self.plugin._get_firewall_group(ctx, fwg_id)
                     fwg_db['status'] = nl_constants.PENDING_DELETE
 
-                observed = self.callbacks.firewall_group_deleted(
-                    ctx, fwg_id, host='dummy')
+                observed = self.callbacks.firewall_group_deleted(ctx, fwg_id)
                 self.assertTrue(observed)
 
             self.assertRaises(firewall_v2.FirewallGroupNotFound,
@@ -194,7 +192,7 @@ class TestFirewallCallbacks(TestFirewallRouterPortBase):
                     self.plugin, '_get_firewall_group', side_effect=getdelete
                 ):
                     observed = self.callbacks.firewall_group_deleted(
-                        ctx, fwg_id, host='dummy')
+                        ctx, fwg_id)
                     self.assertTrue(observed)
 
                 self.assertRaises(firewall_v2.FirewallGroupNotFound,
@@ -204,7 +202,7 @@ class TestFirewallCallbacks(TestFirewallRouterPortBase):
     def test_firewall_group_deleted_not_found(self):
         ctx = context.get_admin_context()
         observed = self.callbacks.firewall_group_deleted(
-            ctx, 'notfound', host='hh')
+            ctx, 'notfound')
         self.assertTrue(observed)
 
     def test_firewall_group_deleted_error(self):
@@ -217,7 +215,7 @@ class TestFirewallCallbacks(TestFirewallRouterPortBase):
             ) as fwg:
                 fwg_id = fwg['firewall_group']['id']
                 observed = self.callbacks.firewall_group_deleted(
-                    ctx, fwg_id, host='dummy')
+                    ctx, fwg_id)
                 self.assertFalse(observed)
                 fwg_db = self.plugin._get_firewall_group(ctx, fwg_id)
                 self.assertEqual(nl_constants.ERROR, fwg_db['status'])

@@ -142,8 +142,7 @@ class TestFirewallCallbacks(TestFirewallRouterInsertionBase):
             ) as fw:
                 fw_id = fw['firewall']['id']
                 res = self.callbacks.set_firewall_status(ctx, fw_id,
-                                                         nl_constants.ACTIVE,
-                                                         host='dummy')
+                                                         nl_constants.ACTIVE)
                 fw_db = self.plugin.get_firewall(ctx, fw_id)
                 self.assertEqual(nl_constants.ACTIVE, fw_db['status'])
                 self.assertTrue(res)
@@ -166,8 +165,7 @@ class TestFirewallCallbacks(TestFirewallRouterInsertionBase):
                 fw_db['status'] = nl_constants.PENDING_DELETE
                 ctx.session.flush()
                 res = self.callbacks.set_firewall_status(ctx, fw_id,
-                                                         nl_constants.ACTIVE,
-                                                         host='dummy')
+                                                         nl_constants.ACTIVE)
                 fw_db = self.plugin.get_firewall(ctx, fw_id)
                 self.assertEqual(nl_constants.PENDING_DELETE, fw_db['status'])
                 self.assertFalse(res)
@@ -184,8 +182,7 @@ class TestFirewallCallbacks(TestFirewallRouterInsertionBase):
                     fw_db = self.plugin._get_firewall(ctx, fw_id)
                     fw_db['status'] = nl_constants.PENDING_DELETE
                     ctx.session.flush()
-                    res = self.callbacks.firewall_deleted(ctx, fw_id,
-                                                          host='dummy')
+                    res = self.callbacks.firewall_deleted(ctx, fw_id)
                     self.assertTrue(res)
                     self.assertRaises(firewall.FirewallNotFound,
                                       self.plugin.get_firewall,
@@ -219,8 +216,7 @@ class TestFirewallCallbacks(TestFirewallRouterInsertionBase):
                 with mock.patch.object(
                     self.plugin, '_get_firewall', side_effect=getdelete
                 ):
-                    observed = self.callbacks.firewall_deleted(
-                        ctx, fw_id, host='dummy')
+                    observed = self.callbacks.firewall_deleted(ctx, fw_id)
                     self.assertTrue(observed)
 
                 self.assertRaises(firewall.FirewallNotFound,
@@ -229,7 +225,7 @@ class TestFirewallCallbacks(TestFirewallRouterInsertionBase):
 
     def test_firewall_deleted_not_found(self):
         ctx = context.get_admin_context()
-        observed = self.callbacks.firewall_deleted(ctx, 'notfound', host='hh')
+        observed = self.callbacks.firewall_deleted(ctx, 'notfound')
         self.assertTrue(observed)
 
     def test_firewall_deleted_error(self):
@@ -241,8 +237,7 @@ class TestFirewallCallbacks(TestFirewallRouterInsertionBase):
                 admin_state_up=test_db_firewall.ADMIN_STATE_UP,
             ) as fw:
                 fw_id = fw['firewall']['id']
-                res = self.callbacks.firewall_deleted(ctx, fw_id,
-                                                      host='dummy')
+                res = self.callbacks.firewall_deleted(ctx, fw_id)
                 self.assertFalse(res)
                 fw_db = self.plugin._get_firewall(ctx, fw_id)
                 self.assertEqual(nl_constants.ERROR, fw_db['status'])
@@ -269,8 +264,7 @@ class TestFirewallCallbacks(TestFirewallRouterInsertionBase):
                         tenant_id=tenant_id,
                         admin_state_up=test_db_firewall.ADMIN_STATE_UP) as fw:
                     fw_id = fw['firewall']['id']
-                    res = self.callbacks.get_firewalls_for_tenant(ctx,
-                                                                  host='dummy')
+                    res = self.callbacks.get_firewalls_for_tenant(ctx)
                     fw_rules = (
                         self.plugin._make_firewall_dict_with_rules(ctx,
                                                                    fw_id)
