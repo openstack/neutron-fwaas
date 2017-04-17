@@ -16,7 +16,6 @@ import netaddr
 import six
 
 from tempest import config
-from tempest import exceptions
 from tempest.lib.common.utils import data_utils
 from tempest.lib.common.utils import test_utils
 from tempest.lib import decorators
@@ -147,7 +146,23 @@ class FWaaSv2ExtensionTestJSON(v2_base.BaseFWaaSTest):
             m = ("Timed out waiting for firewall_group %s to reach %s "
                  "state(s)" %
                  (fwg_id, target_states))
-            raise exceptions.TimeoutException(m)
+            raise lib_exc.TimeoutException(m)
+
+    def _wait_until_deleted(self, fwg_id):
+        def _wait():
+            try:
+                fwg = self.firewall_groups_client.show_firewall_group(fwg_id)
+            except lib_exc.NotFound:
+                return True
+
+            fwg_status = fwg['firewall_group']['status']
+            if fwg_status == 'ERROR':
+                raise lib_exc.DeleteErrorException(resource_id=fwg_id)
+
+        if not test_utils.call_until_true(_wait, CONF.network.build_timeout,
+                                          CONF.network.build_interval):
+            m = ("Timed out waiting for firewall_group %s deleted" % fwg_id)
+            raise lib_exc.TimeoutException(m)
 
     @decorators.idempotent_id('ddccfa87-4af7-48a6-9e50-0bd0ad1348cb')
     def test_list_firewall_rules(self):
@@ -175,6 +190,7 @@ class FWaaSv2ExtensionTestJSON(v2_base.BaseFWaaSTest):
             action="allow",
             protocol="tcp")
         fw_rule_id = body['firewall_rule']['id']
+        self.addCleanup(self._try_delete_rule, fw_rule_id)
 
         # Update firewall rule
         body = self.firewall_rules_client.update_firewall_rule(fw_rule_id,
@@ -280,6 +296,14 @@ class FWaaSv2ExtensionTestJSON(v2_base.BaseFWaaSTest):
 
         # Delete firewall_group
         self.firewall_groups_client.delete_firewall_group(fwg_id)
+
+        # Wait for the firewall group to be deleted
+        self._wait_until_deleted(fwg_id)
+
+        # Confirm deletion
+        firewall_groups = self.firewall_groups_client.list_firewall_groups()
+        fwgs = firewall_groups['firewall_groups']
+        self.assertNotIn(fwg_id, [m['id'] for m in fwgs])
 
     @decorators.idempotent_id('e021baab-d4f7-4bad-b382-bde4946e0e0b')
     def test_update_firewall_group(self):
