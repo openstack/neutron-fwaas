@@ -274,7 +274,9 @@ class FirewallPluginDbTestCase(base.NeutronDbPluginV2TestCase):
         if ctx is None or ctx.is_admin:
             data['firewall'].update({'tenant_id': tenant_id})
             data['firewall'].update({'project_id': tenant_id})
-
+        router_ids = kwargs.get('router_ids', None)
+        if router_ids:
+            data['firewall'].update({'router_ids': router_ids})
         firewall_req = self.new_create_request('firewalls', data, fmt,
                                                context=ctx)
         firewall_res = firewall_req.get_response(self.ext_api)
