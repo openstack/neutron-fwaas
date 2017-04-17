@@ -74,7 +74,7 @@ class TestFirewallRouterInsertionBase(
         plugin = 'neutron.tests.unit.extensions.test_l3.TestNoL3NatPlugin'
         # the L3 service plugin
         l3_plugin = ('neutron.tests.unit.extensions.test_l3.'
-                     'TestL3NatServicePlugin')
+                     'TestL3NatAgentSchedulingServicePlugin')
 
         cfg.CONF.set_override('api_extensions_path', extensions_path)
         self.saved_attr_map = {}
@@ -316,26 +316,26 @@ class TestFirewallAgentApi(base.BaseTestCase):
         self.assertEqual('topic', self.api.client.target.topic)
         self.assertEqual('host', self.api.host)
 
-    def _call_test_helper(self, method_name):
+    def _call_test_helper(self, method_name, host):
         with mock.patch.object(self.api.client, 'cast') as rpc_mock, \
                 mock.patch.object(self.api.client, 'prepare') as prepare_mock:
             prepare_mock.return_value = self.api.client
-            getattr(self.api, method_name)(mock.sentinel.context, 'test')
+            getattr(self.api, method_name)(mock.sentinel.context, 'test', host)
 
-        prepare_args = {'fanout': True}
+        prepare_args = {'server': host}
         prepare_mock.assert_called_once_with(**prepare_args)
 
         rpc_mock.assert_called_once_with(mock.sentinel.context, method_name,
                                          firewall='test', host='host')
 
     def test_create_firewall(self):
-        self._call_test_helper('create_firewall')
+        self._call_test_helper('create_firewall', 'host')
 
     def test_update_firewall(self):
-        self._call_test_helper('update_firewall')
+        self._call_test_helper('update_firewall', 'host')
 
     def test_delete_firewall(self):
-        self._call_test_helper('delete_firewall')
+        self._call_test_helper('delete_firewall', 'host')
 
 
 class TestFirewallPluginBase(TestFirewallRouterInsertionBase,
