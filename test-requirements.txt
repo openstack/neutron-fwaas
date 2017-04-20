@@ -21,4 +21,4 @@ oslotest>=1.10.0 # Apache-2.0
 reno>=1.8.0 # Apache2
 PyMySQL!=0.7.7,>=0.6.2 # MIT License
 psycopg2>=2.5 # LGPL/ZPL
-os-testr>=0.7.0  # Apache-2.0
+os-testr>=0.7.0 # Apache-2.0
