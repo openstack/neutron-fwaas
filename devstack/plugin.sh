@@ -33,14 +33,21 @@ function install_fwaas() {
 }
 
 function configure_fwaas_v1() {
+    cp $NEUTRON_FWAAS_DIR/etc/neutron_fwaas.conf.sample $NEUTRON_FWAAS_CONF
     neutron_fwaas_configure_driver fwaas
     iniset_multiline $Q_L3_CONF_FILE fwaas agent_version v1
     iniset_multiline $Q_L3_CONF_FILE fwaas conntrack_driver conntrack
 }
 
 function configure_fwaas_v2() {
+    # Add conf file
+    cp $NEUTRON_FWAAS_DIR/etc/neutron_fwaas.conf.sample $NEUTRON_FWAAS_CONF
     neutron_fwaas_configure_driver fwaas_v2
     iniset_multiline $Q_L3_CONF_FILE fwaas agent_version v2
+}
+
+function neutron_fwaas_generate_config_files {
+    (cd $NEUTRON_FWAAS_DIR && exec ./tools/generate_config_file_samples.sh)
 }
 
 function init_fwaas() {
@@ -92,6 +99,7 @@ if is_service_enabled q-svc neutron-api && is_service_enabled q-fwaas q-fwaas-v1
     elif [[ "$1" == "stack" && "$2" == "post-config" ]]; then
         # Configure after the other layer 1 and 2 services have been configured
         neutron_fwaas_configure_common
+        neutron_fwaas_generate_config_files
         if is_service_enabled q-fwaas-v1 neutron-fwaas-v1; then
             echo_summary "Configuring neutron-fwaas for FWaaS v1"
             configure_fwaas_v1

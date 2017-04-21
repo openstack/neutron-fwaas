@@ -21,6 +21,10 @@ from oslo_config import cfg
 from oslo_log import log as logging
 import oslo_messaging
 
+from neutron.db import servicetype_db as st_db
+from neutron.plugins.common import constants
+from neutron.services import provider_configuration as provider_conf
+
 from neutron_fwaas._i18n import _LI
 from neutron_fwaas.common import fwaas_constants
 from neutron_fwaas.db.firewall.v2 import firewall_db_v2
@@ -28,6 +32,12 @@ from neutron_fwaas.extensions import firewall_v2 as fw_ext
 
 
 LOG = logging.getLogger(__name__)
+
+
+def add_provider_configuration(type_manager, service_type):
+    type_manager.add_provider_configuration(
+        service_type,
+        provider_conf.ProviderConfiguration('neutron_fwaas'))
 
 
 class FirewallAgentApi(object):
@@ -148,6 +158,9 @@ class FirewallPluginV2(
 
     def __init__(self):
         """Do the initialization for the firewall service plugin here."""
+        self.service_type_manager = st_db.ServiceTypeManager.get_instance()
+        add_provider_configuration(
+            self.service_type_manager, constants.FIREWALL)
         self.start_rpc_listeners()
 
         self.agent_rpc = FirewallAgentApi(
