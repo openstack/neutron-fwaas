@@ -41,6 +41,7 @@ function install_fwaas() {
 function configure_fwaas_v1() {
     neutron_fwaas_configure_driver fwaas
     iniset_multiline $Q_L3_CONF_FILE fwaas agent_version v1
+    iniset_multiline $Q_L3_CONF_FILE fwaas conntrack_driver conntrack
 }
 
 function configure_fwaas_v2() {
