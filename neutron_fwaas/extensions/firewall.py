@@ -391,10 +391,6 @@ class Firewall(extensions.ExtensionDescriptor):
         return "Extension for Firewall service"
 
     @classmethod
-    def get_namespace(cls):
-        return "http://wiki.openstack.org/Neutron/FWaaS/API_1.0"
-
-    @classmethod
     def get_updated(cls):
         return "2013-02-25T10:00:00-00:00"
 

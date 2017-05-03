@@ -66,11 +66,6 @@ class Firewallrouterinsertion(extensions.ExtensionDescriptor):
         return "Firewall Router insertion on specified set of routers"
 
     @classmethod
-    def get_namespace(cls):
-        return ("http://docs.openstack.org/ext/neutron/fwaasrouterinsertion"
-            "/api/v1.0")
-
-    @classmethod
     def get_updated(cls):
         return "2015-01-27T10:00:00-00:00"
 
