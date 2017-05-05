@@ -370,9 +370,15 @@ class IptablesFwaasDriver(fwaas_base.FwaasDriverBase):
     def _convert_fwaas_to_iptables_rule(self, rule):
         action = FWAAS_TO_IPTABLE_ACTION_MAP[rule.get('action')]
 
+        # Output ordering is important here as it must exactly match what
+        # is returned by iptables-save.  If not we risk unnecessarily removing
+        # and readding rules.
         args = []
 
         args += self._protocol_arg(rule.get('protocol'))
+
+        args += self._ip_prefix_arg('s', rule.get('source_ip_address'))
+        args += self._ip_prefix_arg('d', rule.get('destination_ip_address'))
 
         # iptables adds '-m protocol' when any source
         # or destination port number is specified
@@ -380,16 +386,13 @@ class IptablesFwaasDriver(fwaas_base.FwaasDriverBase):
            and (rule.get('destination_port') is None)):
                 args += self._match_arg(rule.get('protocol'))
 
-        args += self._port_arg('dport',
-                               rule.get('protocol'),
-                               rule.get('destination_port'))
-
         args += self._port_arg('sport',
                                rule.get('protocol'),
                                rule.get('source_port'))
 
-        args += self._ip_prefix_arg('s', rule.get('source_ip_address'))
-        args += self._ip_prefix_arg('d', rule.get('destination_ip_address'))
+        args += self._port_arg('dport',
+                               rule.get('protocol'),
+                               rule.get('destination_port'))
 
         args += self._action_arg(action)
 
@@ -400,7 +403,7 @@ class IptablesFwaasDriver(fwaas_base.FwaasDriverBase):
         return '-m state --state INVALID -j DROP'
 
     def _allow_established_rule(self):
-        return '-m state --state ESTABLISHED,RELATED -j ACCEPT'
+        return '-m state --state RELATED,ESTABLISHED -j ACCEPT'
 
     def _action_arg(self, action):
         if not action:
@@ -442,5 +445,5 @@ class IptablesFwaasDriver(fwaas_base.FwaasDriverBase):
         if not(ip_prefix):
             return []
 
-        args = ['-%s' % direction, '%s' % ip_prefix]
+        args = ['-%s' % direction, '%s' % utils.ip_to_cidr(ip_prefix)]
         return args
