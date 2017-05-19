@@ -2,7 +2,8 @@
 
 set -xe
 
-NEUTRON_DIR="$BASE/new/neutron-fwaas"
+FWAAS_DIR="$BASE/new/neutron-fwaas"
+NEUTRON_DIR="$BASE/new/neutron"
 TEMPEST_DIR="$BASE/new/tempest"
 SCRIPTS_DIR="/usr/os-testr-env/bin"
 
@@ -29,7 +30,8 @@ owner=stack
 prep_func="dsvm_functional_prep_func"
 
 # Set owner permissions according to job's requirements.
-cd $NEUTRON_DIR
+cd $FWAAS_DIR
+sudo chown -R $owner:stack $FWAAS_DIR
 sudo chown -R $owner:stack $NEUTRON_DIR
 # Prep the environment according to job's requirements.
 $prep_func
