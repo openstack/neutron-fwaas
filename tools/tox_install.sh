@@ -58,10 +58,12 @@ elif [ -x "$ZUUL_CLONER" ]; then
     popd
 else
     echo "PIP HARDCODE" > /tmp/tox_install.txt
-    if [ -z "$NEUTRON_PIP_LOCATION" ]; then
-        NEUTRON_PIP_LOCATION="git+https://git.openstack.org/openstack/neutron@$BRANCH_NAME#egg=neutron"
+    if [ -z "$NEUTRON_GIT_LOCATION" ]; then
+        NEUTRON_GIT_REPO="https://git.openstack.org/openstack/neutron"
     fi
-    $install_cmd -U -e ${NEUTRON_PIP_LOCATION}
+    SRC_DIR="$VIRTUAL_ENV/src/neutron"
+    git clone --depth 1 --branch $BRANCH_NAME $NEUTRON_GIT_REPO $SRC_DIR
+    $install_cmd -U -e $SRC_DIR
 fi
 
 $install_cmd -U $*
