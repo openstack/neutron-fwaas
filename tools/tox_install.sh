@@ -58,7 +58,7 @@ elif [ -x "$ZUUL_CLONER" ]; then
     popd
 else
     echo "PIP HARDCODE" > /tmp/tox_install.txt
-    if [ -z "$NEUTRON_GIT_LOCATION" ]; then
+    if [ -z "$NEUTRON_GIT_REPO" ]; then
         NEUTRON_GIT_REPO="https://git.openstack.org/openstack/neutron"
     fi
     SRC_DIR="$VIRTUAL_ENV/src/neutron"
