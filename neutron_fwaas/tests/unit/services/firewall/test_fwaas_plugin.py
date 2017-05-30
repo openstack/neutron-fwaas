@@ -17,7 +17,6 @@ import mock
 import testtools
 
 from neutron.api import extensions as api_ext
-from neutron.api.v2 import attributes as attr
 from neutron.common import config
 from neutron.tests.common import helpers
 from neutron.tests import fake_notifier
@@ -37,6 +36,7 @@ from neutron_fwaas.tests import base
 from neutron_fwaas.tests.unit.db.firewall import (
     test_firewall_db as test_db_firewall)
 
+from neutron_lib.api import attributes as attr
 import neutron_lib.api.definitions
 from neutron_lib.api.definitions import firewall as fw
 from neutron_lib.api.definitions import firewall_v2
@@ -83,7 +83,7 @@ class TestFirewallRouterInsertionBase(
 
         cfg.CONF.set_override('api_extensions_path', extensions_path)
         self.saved_attr_map = {}
-        for resource, attrs in six.iteritems(attr.RESOURCE_ATTRIBUTE_MAP):
+        for resource, attrs in six.iteritems(attr.RESOURCES):
             self.saved_attr_map[resource] = attrs.copy()
         self.addCleanup(self.restore_attribute_map)
         if not fw_plugin:
@@ -106,7 +106,7 @@ class TestFirewallRouterInsertionBase(
         # Remove the fwaasrouterinsertion extension
         fw.RESOURCE_ATTRIBUTE_MAP['firewalls'].pop('router_ids')
         # Restore the original RESOURCE_ATTRIBUTE_MAP
-        attr.RESOURCE_ATTRIBUTE_MAP = self.saved_attr_map
+        attr.RESOURCES = self.saved_attr_map
 
     def _create_firewall(self, fmt, name, description, firewall_policy_id=None,
                          admin_state_up=True, expected_res_status=None,
