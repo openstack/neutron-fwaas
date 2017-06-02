@@ -35,5 +35,5 @@ Or, if you have virtualenvwrapper installed::
     $ pip install neutron-fwaas
 
 For information on what to do with FWaaS once it is installed, please check the
-Networking Guide `Firewall-as-a-Service (FWaaS) v2 scenario <http://docs.openstack.org/newton/networking-guide/fwaas-v2-scenario.html>`_ or
-the `Firewall-as-a-Service (FWaaS) v1 scenario <http://docs.openstack.org/newton/networking-guide/fwaas-v1-scenario.html>`_.
+Networking Guide `Firewall-as-a-Service (FWaaS) v2 scenario <https://docs.openstack.org/newton/networking-guide/fwaas-v2-scenario.html>`_ or
+the `Firewall-as-a-Service (FWaaS) v1 scenario <https://docs.openstack.org/newton/networking-guide/fwaas-v1-scenario.html>`_.
