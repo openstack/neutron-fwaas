@@ -1,0 +1,4 @@
+---
+features:
+ - Neutron Firewall as a Service can be configured by the users
+   with the newly introduced fwaas configuration file.
