@@ -26,12 +26,12 @@ import six
 import testtools
 import webob.exc
 
-from neutron_fwaas._i18n import _
+from neutron_fwaas.common import exceptions
 from neutron_fwaas.db.firewall.v2 import firewall_db_v2 as fdb
 from neutron_fwaas import extensions
-from neutron_fwaas.extensions import firewall_v2 as firewall
 from neutron_fwaas.services.firewall import fwaas_plugin_v2
 from neutron_fwaas.tests import base
+from neutron_lib.api.definitions import firewall_v2 as nl_firewall
 from neutron_lib import constants as nl_constants
 from neutron_lib import context
 from neutron_lib.plugins import directory
@@ -69,14 +69,14 @@ class FakeAgentApi(fwaas_plugin_v2.FirewallCallbacks):
         pass
 
     def delete_firewall_group(self, context, firewall_group, **kwargs):
-        self.plugin = directory.get_plugin('FIREWALL_V2')
+        self.plugin = directory.get_plugin('fwaas_v2')
         self.firewall_group_deleted(context, firewall_group['id'], **kwargs)
 
 
 class FirewallPluginV2DbTestCase(base.NeutronDbPluginV2TestCase):
     resource_prefix_map = dict(
-        (k, firewall.FIREWALL_PREFIX)
-        for k in firewall.RESOURCE_ATTRIBUTE_MAP.keys()
+        (k, nl_firewall.API_PREFIX)
+        for k in nl_firewall.RESOURCE_ATTRIBUTE_MAP.keys()
     )
 
     def setUp(self, core_plugin=None, fw_plugin=None, ext_mgr=None):
@@ -89,7 +89,7 @@ class FirewallPluginV2DbTestCase(base.NeutronDbPluginV2TestCase):
         service_plugins = {'fw_plugin_name': fw_plugin}
 
         fdb.Firewall_db_mixin_v2.supported_extension_aliases = ["fwaas_v2"]
-        fdb.Firewall_db_mixin_v2.path_prefix = firewall.FIREWALL_PREFIX
+        fdb.Firewall_db_mixin_v2.path_prefix = nl_firewall.API_PREFIX
         super(FirewallPluginV2DbTestCase, self).setUp(
             ext_mgr=ext_mgr,
             service_plugins=service_plugins
@@ -664,7 +664,7 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
             req = self.new_delete_request('firewall_policies', fwp_id)
             res = req.get_response(self.ext_api)
             self.assertEqual(204, res.status_int)
-            self.assertRaises(firewall.FirewallPolicyNotFound,
+            self.assertRaises(exceptions.FirewallPolicyNotFound,
                               self.plugin.get_firewall_policy,
                               ctx, fwp_id)
 
@@ -688,7 +688,7 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
                 req = self.new_delete_request('firewall_policies', fwp_id)
                 res = req.get_response(self.ext_api)
                 self.assertEqual(204, res.status_int)
-                self.assertRaises(firewall.FirewallPolicyNotFound,
+                self.assertRaises(exceptions.FirewallPolicyNotFound,
                                   self.plugin.get_firewall_policy,
                                   ctx, fwp_id)
                 fw_rule = self.plugin.get_firewall_rule(ctx, fr_id)
@@ -722,8 +722,8 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
 
         attrs['source_port'] = '10000'
         attrs['destination_port'] = '80'
-        with self.firewall_rule(source_port=10000,
-                                destination_port=80) as firewall_rule:
+        with self.firewall_rule(source_port='10000',
+                                destination_port='80') as firewall_rule:
             for k, v in six.iteritems(attrs):
                 self.assertEqual(v, firewall_rule['firewall_rule'][k])
 
@@ -876,8 +876,8 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
         with self.firewall_rule() as fwr:
             data = {'firewall_rule': {'name': name,
                                       'protocol': PROTOCOL,
-                                      'source_port': 10000,
-                                      'destination_port': 80}}
+                                      'source_port': '10000',
+                                      'destination_port': '80'}}
             req = self.new_update_request('firewall_rules', data,
                                           fwr['firewall_rule']['id'])
             res = self.deserialize(self.fmt,
@@ -915,7 +915,7 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
     def test_update_firewall_rule_with_port_and_no_proto(self):
         with self.firewall_rule() as fwr:
             data = {'firewall_rule': {'protocol': None,
-                                      'destination_port': 80}}
+                                      'destination_port': '80'}}
             req = self.new_update_request('firewall_rules', data,
                                           fwr['firewall_rule']['id'])
             res = req.get_response(self.ext_api)
@@ -935,7 +935,7 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
         with self.firewall_rule(source_port=None,
                                 destination_port=None,
                                 protocol=None) as fwr:
-            data = {'firewall_rule': {'destination_port': 80}}
+            data = {'firewall_rule': {'destination_port': '80'}}
             req = self.new_update_request('firewall_rules', data,
                                           fwr['firewall_rule']['id'])
             res = req.get_response(self.ext_api)
@@ -953,7 +953,7 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
         with self.firewall_rule(source_port=None,
                                 destination_port=None,
                                 protocol=None) as fwr:
-            data = {'firewall_rule': {'destination_port': 80,
+            data = {'firewall_rule': {'destination_port': '80',
                                       'protocol': 'tcp'}}
             req = self.new_update_request('firewall_rules', data,
                                           fwr['firewall_rule']['id'])
@@ -964,7 +964,7 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
         with self.firewall_rule(source_port=None,
                                 destination_port=None,
                                 protocol=None) as fwr:
-            data = {'firewall_rule': {'destination_port': 80,
+            data = {'firewall_rule': {'destination_port': '80',
                                       'protocol': 'icmp'}}
             req = self.new_update_request('firewall_rules', data,
                                           fwr['firewall_rule']['id'])
@@ -974,7 +974,7 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
         with self.firewall_rule(source_port=None,
                                 destination_port=None,
                                 protocol='icmp') as fwr:
-            data = {'firewall_rule': {'destination_port': 80}}
+            data = {'firewall_rule': {'destination_port': '80'}}
             req = self.new_update_request('firewall_rules', data,
                                           fwr['firewall_rule']['id'])
             res = req.get_response(self.ext_api)
@@ -1036,7 +1036,7 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
             req = self.new_delete_request('firewall_rules', fwr_id)
             res = req.get_response(self.ext_api)
             self.assertEqual(204, res.status_int)
-            self.assertRaises(firewall.FirewallRuleNotFound,
+            self.assertRaises(exceptions.FirewallRuleNotFound,
                               self.plugin.get_firewall_rule,
                               ctx, fwr_id)
 
@@ -1202,10 +1202,10 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
             fwp_id = fwp['firewall_policy']['id']
             with self.firewall_group(
                     ingress_firewall_policy_id=fwp_id,
-                    admin_state_up=ADMIN_STATE_UP) as firewall:
+                    admin_state_up=ADMIN_STATE_UP) as tfirewall:
                 data = {'firewall_group': {'name': name}}
-                req = self.new_update_request('firewall_groups', data,
-                                              firewall['firewall_group']['id'])
+                req = self.new_update_request(
+                    'firewall_groups', data, tfirewall['firewall_group']['id'])
                 res = self.deserialize(self.fmt,
                                        req.get_response(self.ext_api))
                 for k, v in six.iteritems(attrs):
@@ -1277,8 +1277,8 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
             fwp2_id = fwps[1]['firewall_policy']['id']
             ctx = context.Context('not_admin', 'tenant1')
             with self.firewall_group(ingress_firewall_policy_id=fwp1_id,
-                               context=ctx) as firewall:
-                fw_id = firewall['firewall_group']['id']
+                               context=ctx) as tfirewall:
+                fw_id = tfirewall['firewall_group']['id']
                 fw_db = self.plugin._get_firewall_group(ctx, fw_id)
                 fw_db['status'] = nl_constants.ACTIVE
                 # update firewall from fwp1 to fwp2(different tenant)
@@ -1299,7 +1299,7 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
                 req = self.new_delete_request('firewall_groups', fw_id)
                 res = req.get_response(self.ext_api)
                 self.assertEqual(204, res.status_int)
-                self.assertRaises(firewall.FirewallGroupNotFound,
+                self.assertRaises(exceptions.FirewallGroupNotFound,
                                   self.plugin.get_firewall_group,
                                   ctx, fw_id)
 

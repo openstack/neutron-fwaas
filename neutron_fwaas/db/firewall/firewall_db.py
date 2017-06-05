@@ -35,6 +35,7 @@ from sqlalchemy.orm import exc
 
 import netaddr
 
+from neutron_fwaas.common import exceptions
 from neutron_fwaas.common import fwaas_constants
 from neutron_fwaas.db.firewall import firewall_router_insertion_db \
     as fw_r_ins_db
@@ -110,19 +111,19 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
         try:
             return self._get_by_id(context, Firewall, id)
         except exc.NoResultFound:
-            raise fw_ext.FirewallNotFound(firewall_id=id)
+            raise exceptions.FirewallNotFound(firewall_id=id)
 
     def _get_firewall_policy(self, context, id):
         try:
             return self._get_by_id(context, FirewallPolicy, id)
         except exc.NoResultFound:
-            raise fw_ext.FirewallPolicyNotFound(firewall_policy_id=id)
+            raise exceptions.FirewallPolicyNotFound(firewall_policy_id=id)
 
     def _get_firewall_rule(self, context, id):
         try:
             return self._get_by_id(context, FirewallRule, id)
         except exc.NoResultFound:
-            raise fw_ext.FirewallRuleNotFound(firewall_rule_id=id)
+            raise exceptions.FirewallRuleNotFound(firewall_rule_id=id)
 
     def _make_firewall_dict(self, fw, fields=None):
         res = {'id': fw['id'],
@@ -197,7 +198,7 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
     def _check_firewall_rule_conflict(self, fwr_db, fwp_db):
         if not fwr_db['shared']:
             if fwr_db['tenant_id'] != fwp_db['tenant_id']:
-                raise fw_ext.FirewallRuleConflict(
+                raise exceptions.FirewallRuleConflict(
                     firewall_rule_id=fwr_db['id'],
                     tenant_id=fwr_db['tenant_id'])
 
@@ -219,20 +220,20 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
                     # If we find an invalid rule in the list we
                     # do not perform the update since this breaks
                     # the integrity of this list.
-                    raise fw_ext.FirewallRuleNotFound(
+                    raise exceptions.FirewallRuleNotFound(
                         firewall_rule_id=fwrule_id)
                 elif rules_dict[fwrule_id]['firewall_policy_id']:
                     if (rules_dict[fwrule_id]['firewall_policy_id'] !=
                             fwp_db['id']):
-                        raise fw_ext.FirewallRuleInUse(
+                        raise exceptions.FirewallRuleInUse(
                             firewall_rule_id=fwrule_id)
                 if 'shared' in fwp:
                     if fwp['shared'] and not rules_dict[fwrule_id]['shared']:
-                        raise fw_ext.FirewallRuleSharingConflict(
+                        raise exceptions.FirewallRuleSharingConflict(
                             firewall_rule_id=fwrule_id,
                             firewall_policy_id=fwp_db['id'])
                 elif fwp_db['shared'] and not rules_dict[fwrule_id]['shared']:
-                    raise fw_ext.FirewallRuleSharingConflict(
+                    raise exceptions.FirewallRuleSharingConflict(
                         firewall_rule_id=fwrule_id,
                         firewall_policy_id=fwp_db['id'])
             for fwr_db in rules_in_db:
@@ -252,7 +253,7 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
             rules_in_db = fwp_db['firewall_rules']
             for fwr_db in rules_in_db:
                 if not fwr_db['shared']:
-                    raise fw_ext.FirewallPolicySharingConflict(
+                    raise exceptions.FirewallPolicySharingConflict(
                         firewall_rule_id=fwr_db['id'],
                         firewall_policy_id=fwp_db['id'])
 
@@ -295,7 +296,7 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
         fwp_id = fw['firewall_policy_id']
         fwp = self._get_firewall_policy(context, fwp_id)
         if fw_tenant_id != fwp['tenant_id'] and not fwp['shared']:
-            raise fw_ext.FirewallPolicyConflict(firewall_policy_id=fwp_id)
+            raise exceptions.FirewallPolicyConflict(firewall_policy_id=fwp_id)
 
     def _validate_fwr_src_dst_ip_version(self, fwr):
         src_version = dst_version = None
@@ -307,12 +308,12 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
         rule_ip_version = fwr.get('ip_version', None)
         if ((src_version and src_version != rule_ip_version) or
                 (dst_version and dst_version != rule_ip_version)):
-            raise fw_ext.FirewallIpAddressConflict()
+            raise exceptions.FirewallIpAddressConflict()
 
     def _validate_fwr_port_range(self, min_port, max_port):
         if int(min_port) > int(max_port):
             port_range = '%s:%s' % (min_port, max_port)
-            raise fw_ext.FirewallRuleInvalidPortValue(port=port_range)
+            raise exceptions.FirewallRuleInvalidPortValue(port=port_range)
 
     def _validate_fwr_protocol_parameters(self, fwr):
         protocol = fwr.get('protocol', None)
@@ -320,7 +321,7 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
                             nl_constants.PROTO_NAME_UDP):
             if (fwr.get('source_port', None) or
                     fwr.get('destination_port', None)):
-                raise fw_ext.FirewallRuleInvalidICMPParameter(
+                raise exceptions.FirewallRuleInvalidICMPParameter(
                     param="Source, destination port")
 
     def create_firewall(self, context, firewall, status=None):
@@ -354,7 +355,7 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
             self._validate_fw_parameters(context, fw, fw_db['tenant_id'])
             count = context.session.query(Firewall).filter_by(id=id).update(fw)
             if not count:
-                raise fw_ext.FirewallNotFound(firewall_id=id)
+                raise exceptions.FirewallNotFound(firewall_id=id)
         return self.get_firewall(context, id)
 
     def update_firewall_status(self, context, id, status, not_in=None):
@@ -378,7 +379,7 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
             # firewall is active
             count = context.session.query(Firewall).filter_by(id=id).delete()
             if not count:
-                raise fw_ext.FirewallNotFound(firewall_id=id)
+                raise exceptions.FirewallNotFound(firewall_id=id)
 
     def get_firewall(self, context, id, fields=None):
         LOG.debug("get_firewall() called")
@@ -419,7 +420,7 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
             if not fwp.get('shared', True) and fwp_db.firewalls:
                 for fw in fwp_db['firewalls']:
                     if fwp_db['tenant_id'] != fw['tenant_id']:
-                        raise fw_ext.FirewallPolicyInUse(
+                        raise exceptions.FirewallPolicyInUse(
                             firewall_policy_id=id)
             # check any existing rules are not shared
             if 'shared' in fwp and 'firewall_rules' not in fwp:
@@ -440,7 +441,7 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
             # being used
             qry = context.session.query(Firewall)
             if qry.filter_by(firewall_policy_id=id).first():
-                raise fw_ext.FirewallPolicyInUse(firewall_policy_id=id)
+                raise exceptions.FirewallPolicyInUse(firewall_policy_id=id)
             else:
                 context.session.delete(fwp)
 
@@ -467,7 +468,7 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
         self._validate_fwr_src_dst_ip_version(fwr)
         if not fwr['protocol'] and (fwr['source_port'] or
            fwr['destination_port']):
-            raise fw_ext.FirewallRuleWithPortWithoutProtocolInvalid()
+            raise exceptions.FirewallRuleWithPortWithoutProtocolInvalid()
         src_port_min, src_port_max = self._get_min_max_ports_from_range(
             fwr['source_port'])
         dst_port_min, dst_port_max = self._get_min_max_ports_from_range(
@@ -503,7 +504,7 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
                                                fwr_db.firewall_policy_id)
             if 'shared' in fwr and not fwr['shared']:
                 if fwr_db['tenant_id'] != fwp_db['tenant_id']:
-                    raise fw_ext.FirewallRuleInUse(firewall_rule_id=id)
+                    raise exceptions.FirewallRuleInUse(firewall_rule_id=id)
         if 'source_port' in fwr:
             src_port_min, src_port_max = self._get_min_max_ports_from_range(
                 fwr['source_port'])
@@ -524,7 +525,8 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
                 dport = fwr.get('destination_port_range_min',
                                 fwr_db['destination_port_range_min'])
                 if sport or dport:
-                    raise fw_ext.FirewallRuleWithPortWithoutProtocolInvalid()
+                    raise exceptions.\
+                        FirewallRuleWithPortWithoutProtocolInvalid()
             fwr_db.update(fwr)
             if fwr_db.firewall_policy_id:
                 fwp_db.audited = False
@@ -535,7 +537,7 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
         with context.session.begin(subtransactions=True):
             fwr = self._get_firewall_rule(context, id)
             if fwr.firewall_policy_id:
-                raise fw_ext.FirewallRuleInUse(firewall_rule_id=id)
+                raise exceptions.FirewallRuleInUse(firewall_rule_id=id)
             context.session.delete(fwr)
 
     def get_firewall_rule(self, context, id, fields=None):
@@ -556,7 +558,7 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
 
     def _validate_insert_remove_rule_request(self, id, rule_info):
         if not rule_info or 'firewall_rule_id' not in rule_info:
-            raise fw_ext.FirewallRuleInfoMissing()
+            raise exceptions.FirewallRuleInfoMissing()
 
     def insert_rule(self, context, id, rule_info):
         LOG.debug("insert_rule() called")
@@ -565,7 +567,7 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
         insert_before = True
         ref_firewall_rule_id = None
         if not firewall_rule_id:
-            raise fw_ext.FirewallRuleNotFound(firewall_rule_id=None)
+            raise exceptions.FirewallRuleNotFound(firewall_rule_id=None)
         if 'insert_before' in rule_info:
             ref_firewall_rule_id = rule_info['insert_before']
         if not ref_firewall_rule_id and 'insert_after' in rule_info:
@@ -576,7 +578,8 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
             fwr_db = self._get_firewall_rule(context, firewall_rule_id)
             fwp_db = self._get_firewall_policy(context, id)
             if fwr_db.firewall_policy_id:
-                raise fw_ext.FirewallRuleInUse(firewall_rule_id=fwr_db['id'])
+                raise exceptions.FirewallRuleInUse(
+                    firewall_rule_id=fwr_db['id'])
             self._check_firewall_rule_conflict(fwr_db, fwp_db)
             if ref_firewall_rule_id:
                 # If reference_firewall_rule_id is set, the new rule
@@ -587,7 +590,7 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
                 ref_fwr_db = self._get_firewall_rule(
                     context, ref_firewall_rule_id)
                 if ref_fwr_db.firewall_policy_id != id:
-                    raise fw_ext.FirewallRuleNotAssociatedWithPolicy(
+                    raise exceptions.FirewallRuleNotAssociatedWithPolicy(
                         firewall_rule_id=ref_fwr_db['id'],
                         firewall_policy_id=id)
                 if insert_before:
@@ -609,11 +612,11 @@ class Firewall_db_mixin(fw_ext.FirewallPluginBase, base_db.CommonDbMixin):
         self._validate_insert_remove_rule_request(id, rule_info)
         firewall_rule_id = rule_info['firewall_rule_id']
         if not firewall_rule_id:
-            raise fw_ext.FirewallRuleNotFound(firewall_rule_id=None)
+            raise exceptions.FirewallRuleNotFound(firewall_rule_id=None)
         with context.session.begin(subtransactions=True):
             fwr_db = self._get_firewall_rule(context, firewall_rule_id)
             if fwr_db.firewall_policy_id != id:
-                raise fw_ext.FirewallRuleNotAssociatedWithPolicy(
+                raise exceptions.FirewallRuleNotAssociatedWithPolicy(
                     firewall_rule_id=fwr_db['id'],
                     firewall_policy_id=id)
             return self._process_rule_for_policy(context, id, fwr_db, None)
