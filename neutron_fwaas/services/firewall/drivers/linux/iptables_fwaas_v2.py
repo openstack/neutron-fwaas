@@ -131,13 +131,13 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
                   {'fw_id': firewall['id'], 'tid': firewall['tenant_id']})
         try:
             if firewall['admin_state_up']:
+                self._setup_firewall(agent_mode, apply_list, firewall)
                 if self.pre_firewall:
                     self._remove_conntrack_updated_firewall(agent_mode,
                                     apply_list, self.pre_firewall, firewall)
                 else:
                     self._remove_conntrack_new_firewall(agent_mode,
                                                     apply_list, firewall)
-                self._setup_firewall(agent_mode, apply_list, firewall)
             else:
                 self.apply_default_policy(agent_mode, apply_list, firewall)
             self.pre_firewall = dict(firewall)
