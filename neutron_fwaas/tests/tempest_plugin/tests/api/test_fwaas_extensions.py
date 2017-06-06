@@ -346,7 +346,7 @@ class FWaaSExtensionTestJSON(base.BaseFWaaSTest):
         self.addCleanup(self._try_delete_firewall, created_firewall['id'])
 
         # Try to create firewall with the same router
-        self.assertRaisesRegexp(
+        self.assertRaisesRegex(
             lib_exc.Conflict,
             "already associated with other Firewall",
             self.firewalls_client.create_firewall,
