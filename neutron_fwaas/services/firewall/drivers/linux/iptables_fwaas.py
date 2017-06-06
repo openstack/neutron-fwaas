@@ -266,15 +266,11 @@ class IptablesFwaasDriver(fwaas_base.FwaasDriverBase):
         return changed_rules
 
     def _find_removed_rules(self, pre_firewall, firewall):
-        removed_rules = []
         fw_rules_list = firewall[f_const.FIREWALL_RULE_LIST]
         pre_fw_rules_list = pre_firewall[f_const.FIREWALL_RULE_LIST]
-        fw_rule_ids = []
-        for fw_rule in fw_rules_list:
-            fw_rule_ids.append(fw_rule.get('id'))
-        for pre_fw_rule in pre_fw_rules_list:
-            if pre_fw_rule.get('id') not in fw_rule_ids:
-                removed_rules.append(pre_fw_rule)
+        fw_rule_ids = [fw_rule.get('id') for fw_rule in fw_rules_list]
+        removed_rules = [pre_fw_rule for pre_fw_rule in
+            pre_fw_rules_list if pre_fw_rule.get('id') not in fw_rule_ids]
         return removed_rules
 
     def _find_new_rules(self, pre_firewall, firewall):
