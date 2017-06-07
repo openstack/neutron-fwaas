@@ -27,25 +27,21 @@ import six
 import uuid
 from webob import exc
 
-from neutron_fwaas.common import exceptions
-from neutron_fwaas.common import fwaas_constants as fw_const
 from neutron_fwaas.db.firewall import firewall_db as fdb
+import neutron_fwaas.extensions
 from neutron_fwaas.extensions import firewall
+from neutron_fwaas.extensions import firewallrouterinsertion
 from neutron_fwaas.services.firewall import fwaas_plugin
 from neutron_fwaas.tests import base
 from neutron_fwaas.tests.unit.db.firewall import (
     test_firewall_db as test_db_firewall)
 
 from neutron_lib.api import attributes as attr
-import neutron_lib.api.definitions
-from neutron_lib.api.definitions import firewall as fw
-from neutron_lib.api.definitions import firewall_v2
-from neutron_lib.api.definitions import firewallrouterinsertion
 from neutron_lib import constants as nl_constants
 from neutron_lib import context
 from neutron_lib.plugins import directory
 
-extensions_path = neutron_lib.api.definitions.__path__[0]
+extensions_path = neutron_fwaas.extensions.__path__[0]
 
 FW_PLUGIN_KLASS = (
     "neutron_fwaas.services.firewall.fwaas_plugin.FirewallPlugin"
@@ -56,8 +52,8 @@ class FirewallTestExtensionManager(test_l3_plugin.L3TestExtensionManager):
 
     def get_resources(self):
         res = super(FirewallTestExtensionManager, self).get_resources()
-        fw.RESOURCE_ATTRIBUTE_MAP['firewalls'].update(
-            firewallrouterinsertion.RESOURCE_ATTRIBUTE_MAP['firewalls'])
+        firewall.RESOURCE_ATTRIBUTE_MAP['firewalls'].update(
+            firewallrouterinsertion.EXTENDED_ATTRIBUTES_2_0['firewalls'])
         return res + firewall.Firewall.get_resources()
 
     def get_actions(self):
@@ -99,12 +95,12 @@ class TestFirewallRouterInsertionBase(
         self.setup_notification_driver()
 
         self.l3_plugin = directory.get_plugin(nl_constants.L3)
-        self.plugin = directory.get_plugin(fw_const.FIREWALL)
+        self.plugin = directory.get_plugin('FIREWALL')
         self.callbacks = self.plugin.endpoints[0]
 
     def restore_attribute_map(self):
         # Remove the fwaasrouterinsertion extension
-        fw.RESOURCE_ATTRIBUTE_MAP['firewalls'].pop('router_ids')
+        firewall.RESOURCE_ATTRIBUTE_MAP['firewalls'].pop('router_ids')
         # Restore the original RESOURCE_ATTRIBUTE_MAP
         attr.RESOURCES = self.saved_attr_map
 
@@ -189,7 +185,7 @@ class TestFirewallCallbacks(TestFirewallRouterInsertionBase):
                     ctx.session.flush()
                     res = self.callbacks.firewall_deleted(ctx, fw_id)
                     self.assertTrue(res)
-                    self.assertRaises(exceptions.FirewallNotFound,
+                    self.assertRaises(firewall.FirewallNotFound,
                                       self.plugin.get_firewall,
                                       ctx, fw_id)
 
@@ -224,7 +220,7 @@ class TestFirewallCallbacks(TestFirewallRouterInsertionBase):
                     observed = self.callbacks.firewall_deleted(ctx, fw_id)
                     self.assertTrue(observed)
 
-                self.assertRaises(exceptions.FirewallNotFound,
+                self.assertRaises(firewall.FirewallNotFound,
                                   self.plugin.get_firewall,
                                   ctx, fw_id)
 
@@ -539,7 +535,7 @@ class TestFirewallPluginBase(TestFirewallRouterInsertionBase,
                 req = self.new_delete_request('firewalls', fw_id)
                 res = req.get_response(self.ext_api)
                 self.assertEqual(exc.HTTPNoContent.code, res.status_int)
-                self.assertRaises(exceptions.FirewallNotFound,
+                self.assertRaises(firewall.FirewallNotFound,
                                   self.plugin.get_firewall,
                                   ctx, fw_id)
 
@@ -553,7 +549,7 @@ class TestFirewallPluginBase(TestFirewallRouterInsertionBase,
                 req = self.new_delete_request('firewalls', fw_id)
                 res = req.get_response(self.ext_api)
                 self.assertEqual(exc.HTTPNoContent.code, res.status_int)
-                self.assertRaises(exceptions.FirewallNotFound,
+                self.assertRaises(firewall.FirewallNotFound,
                                   self.plugin.get_firewall,
                                   ctx, fw_id)
 
@@ -740,7 +736,7 @@ class TestFirewallRouterPluginBase(test_db_firewall.FirewallPluginDbTestCase,
         fdb.Firewall_db_mixin.\
             supported_extension_aliases = ["fwaas",
                                            "fwaasrouterinsertion"]
-        fdb.Firewall_db_mixin.path_prefix = firewall_v2.API_PREFIX
+        fdb.Firewall_db_mixin.path_prefix = firewall.FIREWALL_PREFIX
 
         super(test_db_firewall.FirewallPluginDbTestCase, self).setUp(
             ext_mgr=ext_mgr,
@@ -753,7 +749,7 @@ class TestFirewallRouterPluginBase(test_db_firewall.FirewallPluginDbTestCase,
             self.ext_api = api_ext.ExtensionMiddleware(app, ext_mgr=ext_mgr)
 
         self.l3_plugin = directory.get_plugin(nl_constants.L3)
-        self.plugin = directory.get_plugin(fw_const.FIREWALL)
+        self.plugin = directory.get_plugin('FIREWALL')
 
     def test_get_firewall_tenant_ids_on_host_with_associated_router(self):
         agent = helpers.register_l3_agent("host1")

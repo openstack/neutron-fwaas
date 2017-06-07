@@ -19,20 +19,17 @@ from neutron.tests.unit.extensions import test_l3 as test_l3_plugin
 from oslo_config import cfg
 import six
 
-
-from neutron_fwaas.common import exceptions
+import neutron_fwaas.extensions
 from neutron_fwaas.extensions import firewall_v2
 from neutron_fwaas.services.firewall import fwaas_plugin_v2
 from neutron_fwaas.tests import base
 from neutron_fwaas.tests.unit.db.firewall.v2 import (
     test_firewall_db_v2 as test_db_firewall)
-
-import neutron_lib.api.definitions
 from neutron_lib import constants as nl_constants
 from neutron_lib import context
 from neutron_lib.plugins import directory
 
-extensions_path = neutron_lib.api.definitions.__path__[0]
+extensions_path = neutron_fwaas.extensions.__path__[0]
 
 FW_PLUGIN_KLASS = (
     "neutron_fwaas.services.firewall.fwaas_plugin_v2.FirewallPluginV2"
@@ -114,7 +111,7 @@ class TestFirewallRouterPortBase(
         self.setup_notification_driver()
 
         self.l3_plugin = directory.get_plugin(nl_constants.L3)
-        self.plugin = directory.get_plugin('fwaas_v2')
+        self.plugin = directory.get_plugin('FIREWALL_V2')
         self.callbacks = self.plugin.endpoints[0]
 
 
@@ -162,7 +159,7 @@ class TestFirewallCallbacks(TestFirewallRouterPortBase):
                 observed = self.callbacks.firewall_group_deleted(ctx, fwg_id)
                 self.assertTrue(observed)
 
-            self.assertRaises(exceptions.FirewallGroupNotFound,
+            self.assertRaises(firewall_v2.FirewallGroupNotFound,
                               self.plugin.get_firewall_group,
                               ctx, fwg_id)
 
@@ -198,7 +195,7 @@ class TestFirewallCallbacks(TestFirewallRouterPortBase):
                         ctx, fwg_id)
                     self.assertTrue(observed)
 
-                self.assertRaises(exceptions.FirewallGroupNotFound,
+                self.assertRaises(firewall_v2.FirewallGroupNotFound,
                                   self.plugin.get_firewall_group,
                                   ctx, fwg_id)
 

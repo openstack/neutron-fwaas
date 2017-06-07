@@ -12,7 +12,6 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
 from neutron_lib import constants as nl_constants
 from neutron_lib import context as neutron_context
 from neutron_lib.plugins import directory
@@ -20,16 +19,15 @@ from neutron_lib.plugins import directory
 from neutron.common import rpc as n_rpc
 from neutron.common import utils as n_utils
 
-from neutron_lib.api.definitions import firewall as fw_ext
 from oslo_config import cfg
 from oslo_log import log as logging
 import oslo_messaging
 
-from neutron_fwaas._i18n import _
-from neutron_fwaas.common import exceptions
+from neutron_fwaas._i18n import _LI, _LW
 from neutron_fwaas.common import fwaas_constants as f_const
 from neutron_fwaas.db.firewall import firewall_db
 from neutron_fwaas.db.firewall import firewall_router_insertion_db
+from neutron_fwaas.extensions import firewall as fw_ext
 
 
 LOG = logging.getLogger(__name__)
@@ -74,13 +72,13 @@ class FirewallCallbacks(object):
                     self.plugin.delete_db_firewall_object(context, firewall_id)
                     return True
                 else:
-                    LOG.warning(_('Firewall %(fw)s unexpectedly deleted by '
-                                  'agent, status was %(status)s'),
+                    LOG.warning(_LW('Firewall %(fw)s unexpectedly deleted by '
+                                    'agent, status was %(status)s'),
                                 {'fw': firewall_id, 'status': fw_db.status})
                     fw_db.update({"status": nl_constants.ERROR})
                     return False
-        except exceptions.FirewallNotFound:
-            LOG.info(_('Firewall %s already deleted'), firewall_id)
+        except fw_ext.FirewallNotFound:
+            LOG.info(_LI('Firewall %s already deleted'), firewall_id)
             return True
 
     def get_firewalls_for_tenant(self, context, **kwargs):
@@ -153,7 +151,7 @@ class FirewallPlugin(
     firewall_db.Firewall_db_mixin.
     """
     supported_extension_aliases = ["fwaas", "fwaasrouterinsertion"]
-    path_prefix = fw_ext.API_PREFIX
+    path_prefix = fw_ext.FIREWALL_PREFIX
 
     def __init__(self):
         """Do the initialization for the firewall service plugin here."""
@@ -216,7 +214,7 @@ class FirewallPlugin(
         if fwall['status'] in [nl_constants.PENDING_CREATE,
                                nl_constants.PENDING_UPDATE,
                                nl_constants.PENDING_DELETE]:
-            raise exceptions.FirewallInPendingState(firewall_id=firewall_id,
+            raise fw_ext.FirewallInPendingState(firewall_id=firewall_id,
                                                 pending_state=fwall['status'])
 
     def _ensure_update_firewall_policy(self, context, firewall_policy_id):
