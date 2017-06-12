@@ -3,7 +3,7 @@ neutron-fwaas in DevStack
 
 This is setup as a DevStack plugin.  For more information on DevStack plugins,
 see the `DevStack Plugins documentation
-<http://docs.openstack.org/developer/devstack/plugins.html>`_.
+<https://docs.openstack.org/developer/devstack/plugins.html>`_.
 
 Please note that the old 'q-fwaas' keyword still exists, and will run FWaaS V1.
 This default will be changed during the Ocata cycle.  The introduction of two

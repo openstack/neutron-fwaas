@@ -2,8 +2,8 @@
 Team and repository tags
 ========================
 
-.. image:: http://governance.openstack.org/badges/neutron-fwaas.svg
-    :target: http://governance.openstack.org/reference/tags/index.html
+.. image:: https://governance.openstack.org/badges/neutron-fwaas.svg
+    :target: https://governance.openstack.org/reference/tags/index.html
 
 .. Change things from this point on
 
@@ -16,12 +16,12 @@ This package contains the code for the Neutron Firewall as a Service
 External Resources:
 ===================
 
-The homepage for Neutron is: http://launchpad.net/neutron.  Use this
+The homepage for Neutron is: https://launchpad.net/neutron.  Use this
 site for asking for help, and filing bugs. We use a single Launchpad
 page for all Neutron projects.
 
 Code is available on git.openstack.org at:
-<http://git.openstack.org/cgit/openstack/neutron-fwaas>.
+<https://git.openstack.org/cgit/openstack/neutron-fwaas>.
 
 Please refer to Neutron documentation for more information:
-`Neutron README.rst <http://git.openstack.org/cgit/openstack/neutron/tree/README.rst>`_
+`Neutron README.rst <https://git.openstack.org/cgit/openstack/neutron/tree/README.rst>`_
