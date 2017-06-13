@@ -18,12 +18,12 @@ from neutron_lib.plugins import directory
 from neutron.common import rpc as n_rpc
 from neutron_lib.api.definitions import firewall_v2 as fw_ext
 from neutron_lib import constants as nl_constants
+from neutron_lib.plugins import constants as plugin_const
 from oslo_config import cfg
 from oslo_log import log as logging
 import oslo_messaging
 
 from neutron.db import servicetype_db as st_db
-from neutron.plugins.common import constants
 from neutron.services import provider_configuration as provider_conf
 
 from neutron_fwaas._i18n import _LI
@@ -161,7 +161,7 @@ class FirewallPluginV2(
         """Do the initialization for the firewall service plugin here."""
         self.service_type_manager = st_db.ServiceTypeManager.get_instance()
         add_provider_configuration(
-            self.service_type_manager, constants.FIREWALL)
+            self.service_type_manager, plugin_const.FIREWALL)
         self.start_rpc_listeners()
 
         self.agent_rpc = FirewallAgentApi(
