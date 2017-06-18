@@ -17,6 +17,9 @@ from neutron.db import servicetype_db as st_db
 from neutron.services import provider_configuration as provider_conf
 from neutron_lib.api.definitions import firewall_v2
 from neutron_lib.api.definitions import portbindings as pb_def
+from neutron_lib.callbacks import events
+from neutron_lib.callbacks import registry
+from neutron_lib.callbacks import resources
 from neutron_lib import constants as nl_constants
 from neutron_lib import context as neutron_context
 from neutron_lib.exceptions import firewall_v2 as f_exc
@@ -30,6 +33,14 @@ from neutron_fwaas.common import fwaas_constants
 from neutron_fwaas.db.firewall.v2 import firewall_db_v2
 
 LOG = logging.getLogger(__name__)
+
+FW_V2_OPTS = [
+    cfg.BoolOpt(
+        'auto_associate_default_firewall_group',
+        default=False,
+        help=_("Apply default fwg to all new VM ports within a project")),
+]
+cfg.CONF.register_opts(FW_V2_OPTS, 'fwaas')
 
 
 def add_provider_configuration(type_manager, service_type):
@@ -150,6 +161,7 @@ class FirewallCallbacks(object):
             ctx, kwargs.get('port_id'))
 
 
+@registry.has_registry_receivers
 class FirewallPluginV2(
     firewall_db_v2.Firewall_db_mixin_v2):
     """Implementation of the Neutron Firewall Service Plugin.
@@ -171,6 +183,10 @@ class FirewallPluginV2(
         self.agent_rpc = FirewallAgentApi(
             fwaas_constants.FW_AGENT,
             cfg.CONF.host
+        )
+
+        self.apply_default_fwg = (
+            cfg.CONF.fwaas.auto_associate_default_firewall_group
         )
 
     @property
@@ -283,6 +299,23 @@ class FirewallPluginV2(
     def get_project_id_from_port_id(self, context, port_id):
         """Returns an ID of project for specified port_id. """
         return self._core_plugin.get_port(context, port_id)['project_id']
+
+    @registry.receives(resources.PORT, [events.AFTER_CREATE])
+    def handle_create_port_event(self, resource, event, trigger, **kwargs):
+
+        if not self.apply_default_fwg:
+            return
+        context = kwargs['context']
+        port_id = kwargs['port']['id']
+        project_id = kwargs['port']['project_id']
+        fwg_with_rules = self.set_port_for_default_firewall_group(
+            context, port_id, project_id)
+        fwg_with_rules['add-port-ids'] = port_id
+        fwg_with_rules['del-ports-ids'] = []
+        fwg_with_rules['port_details'] = self._get_fwg_port_details(
+            context, port_id)
+
+        self.agent_rpc.update_firewall_group(context, fwg_with_rules)
 
     def create_firewall_group(self, context, firewall_group):
         LOG.debug("create_firewall_group() called")

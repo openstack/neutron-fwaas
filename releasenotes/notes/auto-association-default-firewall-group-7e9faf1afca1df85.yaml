@@ -1,0 +1,14 @@
+---
+prelude: >
+    Associating default firewall group for new VM ports within a project
+    automatically.
+features:
+  - |
+    The default firewall group won't be applied to all new VM ports as default.
+    However, if option ``auto_associate_default_firewall_group`` is enabled in
+    neutron_fwaas.conf like:
+
+        [fwaas]
+        auto_associate_default_firewall_group = True
+
+    Then, the default firewall group will be applied to all new VM ports.

@@ -1100,3 +1100,18 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
         if fwg_port_binding:
             fwg_id = fwg_port_binding['firewall_group_id']
             return self._make_firewall_group_dict_with_rules(context, fwg_id)
+
+    def _get_default_fwg(self, context, project_id):
+        query = self._model_query(context, DefaultFirewallGroup)
+        def_fwg_id = query.filter_by(
+            project_id=project_id).one().firewall_group_id
+        return self._get_firewall_group(context, def_fwg_id)
+
+    def set_port_for_default_firewall_group(self, context, port, project_id):
+        with context.session.begin(subtransactions=True):
+            def_fwg_db = self._get_default_fwg(context, project_id)
+            new_ports = [p.port_id for p in def_fwg_db['ports']] + [port]
+            fwg_ports = {'ports': new_ports}
+            self._set_ports_for_firewall_group(context, def_fwg_db, fwg_ports)
+            return self._make_firewall_group_dict_with_rules(
+                context, def_fwg_db['id'])

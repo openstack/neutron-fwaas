@@ -773,3 +773,35 @@ class TestFirewallPluginBasev2(TestFirewallRouterPortBase,
                         r['router']['id'],
                         s2['subnet']['id'],
                         None)
+
+
+class TestEnabledAutomaticAssociation(TestFirewallPluginBasev2):
+
+    def setUp(self):
+        # set auto association fwg
+        cfg.CONF.set_override(
+            'auto_associate_default_firewall_group', True, 'fwaas')
+        super(TestEnabledAutomaticAssociation, self).setUp()
+        self.agent_rpc = self.plugin.agent_rpc
+
+    def test_enabled_auto_association_fwg(self):
+        fwg_with_rule = {'id': 'fake_id',
+                         'name': 'default'}
+        self.plugin.set_port_for_default_firewall_group = \
+            mock.Mock(return_value=fwg_with_rule)
+        self.plugin._get_fwg_port_details = mock.Mock()
+        self.agent_rpc.update_firewall_group = mock.Mock()
+        m_context = mock.ANY
+        kwargs = {
+            "context": m_context,
+            "port": {"id": "fake_port",
+                     "project_id": "fake_project"}
+        }
+        self.plugin.handle_create_port_event(
+            "PORT", "after_create", "test_plugin", **kwargs)
+        self.plugin.set_port_for_default_firewall_group.\
+            assert_called_once_with(m_context,
+                                    kwargs['port']['id'],
+                                    kwargs['port']['project_id'])
+        self.agent_rpc.update_firewall_group.assert_called_once_with(
+            m_context, fwg_with_rule)
