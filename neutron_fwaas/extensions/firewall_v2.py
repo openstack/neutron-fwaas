@@ -126,6 +126,7 @@ class Firewallv2PluginBase(service_base.ServicePluginBase):
     def get_plugin_description(self):
         return 'Firewall Service v2 Plugin'
 
+    # Firewall Group
     @abc.abstractmethod
     def create_firewall_group(self, context, firewall_group):
         pass
@@ -135,7 +136,7 @@ class Firewallv2PluginBase(service_base.ServicePluginBase):
         pass
 
     @abc.abstractmethod
-    def get_firewall_group(self, context, id):
+    def get_firewall_group(self, context, id, fields=None):
         pass
 
     @abc.abstractmethod
@@ -146,24 +147,13 @@ class Firewallv2PluginBase(service_base.ServicePluginBase):
     def update_firewall_group(self, context, id, firewall_group):
         pass
 
+    # Firewall Policy
     @abc.abstractmethod
-    def get_firewall_rules(self, context, filters=None, fields=None):
+    def create_firewall_policy(self, context, firewall_policy):
         pass
 
     @abc.abstractmethod
-    def get_firewall_rule(self, context, id, fields=None):
-        pass
-
-    @abc.abstractmethod
-    def create_firewall_rule(self, context, firewall_rule):
-        pass
-
-    @abc.abstractmethod
-    def update_firewall_rule(self, context, id, firewall_rule):
-        pass
-
-    @abc.abstractmethod
-    def delete_firewall_rule(self, context, id):
+    def delete_firewall_policy(self, context, id):
         pass
 
     @abc.abstractmethod
@@ -175,15 +165,28 @@ class Firewallv2PluginBase(service_base.ServicePluginBase):
         pass
 
     @abc.abstractmethod
-    def create_firewall_policy(self, context, firewall_policy):
-        pass
-
-    @abc.abstractmethod
     def update_firewall_policy(self, context, id, firewall_policy):
         pass
 
+    # Firewall Rule
     @abc.abstractmethod
-    def delete_firewall_policy(self, context, id):
+    def create_firewall_rule(self, context, firewall_rule):
+        pass
+
+    @abc.abstractmethod
+    def delete_firewall_rule(self, context, id):
+        pass
+
+    @abc.abstractmethod
+    def get_firewall_rule(self, context, id, fields=None):
+        pass
+
+    @abc.abstractmethod
+    def get_firewall_rules(self, context, filters=None, fields=None):
+        pass
+
+    @abc.abstractmethod
+    def update_firewall_rule(self, context, id, firewall_rule):
         pass
 
     @abc.abstractmethod
