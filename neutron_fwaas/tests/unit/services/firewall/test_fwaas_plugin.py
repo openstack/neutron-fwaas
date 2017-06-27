@@ -39,6 +39,7 @@ from neutron_fwaas.tests.unit.db.firewall import (
 from neutron_lib.api import attributes as attr
 from neutron_lib import constants as nl_constants
 from neutron_lib import context
+from neutron_lib.plugins import constants as plugin_constants
 from neutron_lib.plugins import directory
 
 extensions_path = neutron_fwaas.extensions.__path__[0]
@@ -94,7 +95,7 @@ class TestFirewallRouterInsertionBase(
 
         self.setup_notification_driver()
 
-        self.l3_plugin = directory.get_plugin(nl_constants.L3)
+        self.l3_plugin = directory.get_plugin(plugin_constants.L3)
         self.plugin = directory.get_plugin('FIREWALL')
         self.callbacks = self.plugin.endpoints[0]
 
@@ -748,7 +749,7 @@ class TestFirewallRouterPluginBase(test_db_firewall.FirewallPluginDbTestCase,
             app = config.load_paste_app('extensions_test_app')
             self.ext_api = api_ext.ExtensionMiddleware(app, ext_mgr=ext_mgr)
 
-        self.l3_plugin = directory.get_plugin(nl_constants.L3)
+        self.l3_plugin = directory.get_plugin(plugin_constants.L3)
         self.plugin = directory.get_plugin('FIREWALL')
 
     def test_get_firewall_tenant_ids_on_host_with_associated_router(self):
