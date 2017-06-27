@@ -13,8 +13,25 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from neutron_lib.api.definitions import firewallrouterinsertion
 from neutron_lib.api import extensions
+from neutron_lib import constants
+from neutron_lib import exceptions as nexception
+
+from neutron_fwaas._i18n import _
+
+
+class FirewallRouterInUse(nexception.InUse):
+    message = _("Router(s) %(router_ids)s provided already associated with "
+                "other Firewall(s). ")
+
+
+EXTENDED_ATTRIBUTES_2_0 = {
+    'firewalls': {
+        'router_ids': {'allow_post': True, 'allow_put': True,
+            'validate': {'type:uuid_list': None},
+            'is_visible': True, 'default': constants.ATTR_NOT_SPECIFIED},
+    }
+}
 
 
 class Firewallrouterinsertion(extensions.ExtensionDescriptor):
@@ -38,22 +55,22 @@ class Firewallrouterinsertion(extensions.ExtensionDescriptor):
     """
     @classmethod
     def get_name(cls):
-        return firewallrouterinsertion.NAME
+        return "Firewall Router insertion"
 
     @classmethod
     def get_alias(cls):
-        return firewallrouterinsertion.ALIAS
+        return "fwaasrouterinsertion"
 
     @classmethod
     def get_description(cls):
-        return firewallrouterinsertion.DESCRIPTION
+        return "Firewall Router insertion on specified set of routers"
 
     @classmethod
     def get_updated(cls):
-        return firewallrouterinsertion.UPDATED_TIMESTAMP
+        return "2015-01-27T10:00:00-00:00"
 
     def get_extended_resources(self, version):
         if version == "2.0":
-            return firewallrouterinsertion.RESOURCE_ATTRIBUTE_MAP
+            return EXTENDED_ATTRIBUTES_2_0
         else:
             return {}

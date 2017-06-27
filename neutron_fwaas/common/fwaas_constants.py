@@ -13,8 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-FIREWALL = 'fwaas'
-FIREWALL_V2 = 'fwaas_v2'
+FIREWALL = 'FIREWALL'
 
 # Constants for "topics"
 FIREWALL_PLUGIN = 'q-firewall-plugin'

@@ -13,11 +13,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from neutron_lib.api.definitions import firewallrouterinsertion as fwrtrins
 from neutron_lib.db import model_base
 from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
 import sqlalchemy as sa
+
+from neutron_fwaas.extensions import firewallrouterinsertion as fwrtrins
 
 LOG = logging.getLogger(__name__)
 

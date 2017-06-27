@@ -328,7 +328,6 @@ class FWaaSExtensionTestJSON(base.BaseFWaaSTest):
         self.assertNotIn(router1['id'], updated_firewall['router_ids'])
         self.assertEqual(1, len(updated_firewall['router_ids']))
 
-    @decorators.skip_because(bug="1694363")
     @decorators.idempotent_id('c60ceff5-d51f-451d-b6e6-cb983d16ab6b')
     def test_firewall_insertion_mode_one_firewall_per_router(self):
         # Create router required for an ACTIVE firewall
