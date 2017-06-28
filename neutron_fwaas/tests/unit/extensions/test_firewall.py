@@ -20,6 +20,7 @@ from neutron.tests import base
 from neutron.tests.unit.api.v2 import test_base as test_api_v2
 from neutron.tests.unit.extensions import base as test_api_v2_extension
 from neutron_lib.db import constants as db_const
+from neutron_lib.exceptions import firewall_v1 as f_exc
 from oslo_utils import uuidutils
 from webob import exc
 import webtest
@@ -628,20 +629,20 @@ class TestFirewallConvertProtocols(base.BaseTestCase):
 
     def test_convert_protocol_another_types(self):
         res = lambda: firewall.convert_protocol(['abc'])
-        self.assertRaises(firewall.FirewallRuleInvalidProtocol, res)
+        self.assertRaises(f_exc.FirewallRuleInvalidProtocol, res)
         res = lambda: firewall.convert_protocol({1: 'foo'})
-        self.assertRaises(firewall.FirewallRuleInvalidProtocol, res)
+        self.assertRaises(f_exc.FirewallRuleInvalidProtocol, res)
         res = lambda: firewall.convert_protocol((1, 100))
-        self.assertRaises(firewall.FirewallRuleInvalidProtocol, res)
+        self.assertRaises(f_exc.FirewallRuleInvalidProtocol, res)
         res = lambda: firewall.convert_protocol(object)
-        self.assertRaises(firewall.FirewallRuleInvalidProtocol, res)
+        self.assertRaises(f_exc.FirewallRuleInvalidProtocol, res)
 
     def test_convert_protocol_invalid_digit(self):
         res = lambda: firewall.convert_protocol("-1")
-        self.assertRaises(firewall.FirewallRuleInvalidProtocol, res)
+        self.assertRaises(f_exc.FirewallRuleInvalidProtocol, res)
 
         res = lambda: firewall.convert_protocol("256")
-        self.assertRaises(firewall.FirewallRuleInvalidProtocol, res)
+        self.assertRaises(f_exc.FirewallRuleInvalidProtocol, res)
 
     def test_convert_protocol_name(self):
         res = firewall.convert_protocol("tcp")
@@ -655,7 +656,7 @@ class TestFirewallConvertProtocols(base.BaseTestCase):
 
     def test_convert_protocol_invalid_name(self):
         res = lambda: firewall.convert_protocol("foo")
-        self.assertRaises(firewall.FirewallRuleInvalidProtocol, res)
+        self.assertRaises(f_exc.FirewallRuleInvalidProtocol, res)
 
 
 class TestConvertActionToCaseInsensitive(base.BaseTestCase):

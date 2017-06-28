@@ -13,6 +13,7 @@
 #    under the License.
 
 from neutron_lib import context as neutron_context
+from neutron_lib.exceptions import firewall_v2 as f_exc
 from neutron_lib.plugins import directory
 
 from neutron.common import rpc as n_rpc
@@ -112,7 +113,7 @@ class FirewallCallbacks(object):
                                 {'fwg': fwg_id, 'status': fwg_db.status})
                     fwg_db.update({"status": nl_constants.ERROR})
                     return False
-        except fw_ext.FirewallGroupNotFound:
+        except f_exc.FirewallGroupNotFound:
             LOG.info(_LI('Firewall group %s already deleted'), fwg_id)
             return True
 
@@ -207,7 +208,7 @@ class FirewallPluginV2(
         if fwg['status'] in [nl_constants.PENDING_CREATE,
                              nl_constants.PENDING_UPDATE,
                              nl_constants.PENDING_DELETE]:
-            raise fw_ext.FirewallGroupInPendingState(firewall_id=fwg_id,
+            raise f_exc.FirewallGroupInPendingState(firewall_id=fwg_id,
                                                 pending_state=fwg['status'])
 
     def _ensure_update_firewall_policy(self, context, firewall_policy_id):
@@ -229,9 +230,9 @@ class FirewallPluginV2(
         for port_id in fwg_ports:
             port_db = self._core_plugin._get_port(context, port_id)
             if port_db['device_owner'] != "network:router_interface":
-                raise fw_ext.FirewallGroupPortInvalid(port_id=port_id)
+                raise f_exc.FirewallGroupPortInvalid(port_id=port_id)
             if port_db['tenant_id'] != tenant_id:
-                raise fw_ext.FirewallGroupPortInvalidProject(
+                raise f_exc.FirewallGroupPortInvalidProject(
                     port_id=port_id, tenant_id=port_db['tenant_id'])
         return
 

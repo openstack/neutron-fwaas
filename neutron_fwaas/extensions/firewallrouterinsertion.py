@@ -15,14 +15,6 @@
 
 from neutron_lib.api import extensions
 from neutron_lib import constants
-from neutron_lib import exceptions as nexception
-
-from neutron_fwaas._i18n import _
-
-
-class FirewallRouterInUse(nexception.InUse):
-    message = _("Router(s) %(router_ids)s provided already associated with "
-                "other Firewall(s). ")
 
 
 EXTENDED_ATTRIBUTES_2_0 = {

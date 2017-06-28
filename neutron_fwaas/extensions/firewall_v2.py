@@ -14,15 +14,15 @@
 
 import abc
 
+from debtcollector import moves
+
 from neutron.api.v2 import resource_helper
 from neutron_lib.api import converters
 from neutron_lib.api import extensions
 from neutron_lib.db import constants as nl_db_constants
-from neutron_lib import exceptions as nexception
+from neutron_lib.exceptions import firewall_v2 as f_exc
 from neutron_lib.services import base as service_base
 import six
-
-from neutron_fwaas._i18n import _
 
 # Import firewall v1 API to get the validators
 # TODO(shpadubi): pull the validators out of fwaas v1 into a separate file
@@ -32,157 +32,65 @@ FIREWALL_PREFIX = '/fwaas'
 
 FIREWALL_CONST = 'FIREWALL_V2'
 
-
-# Firewall Exceptions
-class FirewallGroupNotFound(nexception.NotFound):
-    message = _("Firewall Group %(firewall_id)s could not be found.")
-
-
-class FirewallGroupInUse(nexception.InUse):
-    message = _("Firewall %(firewall_id)s is still active.")
-
-
-class FirewallGroupInPendingState(nexception.Conflict):
-    message = _("Operation cannot be performed since associated Firewall "
-                "%(firewall_id)s is in %(pending_state)s.")
-
-
-class FirewallGroupPortInvalid(nexception.Conflict):
-    message = _("Firewall Group Port %(port_id)s is invalid")
-
-
-class FirewallGroupPortInvalidProject(nexception.Conflict):
-    message = _("Operation cannot be performed as port %(port_id)s "
-                "is in an invalid project %(tenant_id)s.")
-
-
-class FirewallGroupPortInUse(nexception.InUse):
-    message = _("Port(s) %(port_ids)s provided already associated with "
-                "other Firewall Group(s). ")
-
-
-class FirewallPolicyNotFound(nexception.NotFound):
-    message = _("Firewall Policy %(firewall_policy_id)s could not be found.")
-
-
-class FirewallPolicyInUse(nexception.InUse):
-    message = _("Firewall Policy %(firewall_policy_id)s is being used.")
-
-
-class FirewallPolicyConflict(nexception.Conflict):
-    """FWaaS exception for firewall policy
-
-    Occurs when admin policy tries to use another tenant's policy that
-    is not shared.
-    """
-
-    message = _("Operation cannot be performed since Firewall Policy "
-                "%(firewall_policy_id)s is not shared and does not belong to "
-                "your tenant.")
-
-
-class FirewallRuleSharingConflict(nexception.Conflict):
-    """FWaaS exception for firewall rules
-
-    This exception will be raised when a shared policy is created or
-    updated with rules that are not shared.
-    """
-
-    message = _("Operation cannot be performed since Firewall Policy "
-                "%(firewall_policy_id)s is shared but Firewall Rule "
-                "%(firewall_rule_id)s is not shared.")
-
-
-class FirewallPolicySharingConflict(nexception.Conflict):
-    """FWaaS exception for firewall policy
-
-    When a policy is 'shared' without sharing its associated rules,
-    this exception will be raised.
-    """
-
-    message = _("Operation cannot be performed. Before sharing Firewall "
-                "Policy %(firewall_policy_id)s, share associated Firewall "
-                "Rule %(firewall_rule_id)s.")
-
-
-class FirewallRuleNotFound(nexception.NotFound):
-    message = _("Firewall Rule %(firewall_rule_id)s could not be found.")
-
-
-class FirewallRuleInUse(nexception.InUse):
-    message = _("Firewall Rule %(firewall_rule_id)s is being used.")
-
-
-class FirewallRuleNotAssociatedWithPolicy(nexception.InvalidInput):
-    message = _("Firewall Rule %(firewall_rule_id)s is not associated "
-                "with Firewall Policy %(firewall_policy_id)s.")
-
-
-class FirewallRuleInvalidProtocol(nexception.InvalidInput):
-    message = _("Firewall Rule protocol %(protocol)s is not supported. "
-                "Only protocol values %(values)s and their integer "
-                "representation (0 to 255) are supported.")
-
-
-class FirewallRuleInvalidAction(nexception.InvalidInput):
-    message = _("Firewall rule action %(action)s is not supported. "
-                "Only action values %(values)s are supported.")
-
-
-class FirewallRuleInvalidICMPParameter(nexception.InvalidInput):
-    message = _("%(param)s are not allowed when protocol "
-                "is set to ICMP.")
-
-
-class FirewallRuleWithPortWithoutProtocolInvalid(nexception.InvalidInput):
-    message = _("Source/destination port requires a protocol")
-
-
-class FirewallRuleInvalidPortValue(nexception.InvalidInput):
-    message = _("Invalid value for port %(port)s.")
-
-
-class FirewallRuleInfoMissing(nexception.InvalidInput):
-    message = _("Missing rule info argument for insert/remove "
-                "rule operation.")
-
-
-class FirewallIpAddressConflict(nexception.InvalidInput):
-    message = _("Invalid input - IP addresses do not agree with IP Version.")
-
-
-class FirewallInternalDriverError(nexception.NeutronException):
-    """Fwaas exception for all driver errors.
-
-    On any failure or exception in the driver, driver should log it and
-    raise this exception to the agent
-    """
-
-    message = _("%(driver)s: Internal driver error.")
-
-
-class FirewallRuleConflict(nexception.Conflict):
-    """Firewall rule conflict exception.
-
-    Occurs when admin policy tries to use another tenant's rule that is
-    not shared
-    """
-
-    message = _("Operation cannot be performed since Firewall Rule "
-                "%(firewall_rule_id)s is not shared and belongs to "
-                "another tenant %(tenant_id)s.")
-
-
-class FirewallRuleAlreadyAssociated(nexception.Conflict):
-    """Firewall rule conflict exception.
-
-    Occurs when there is an attempt to assign a rule to a policy that
-    the rule is already associated with.
-    """
-
-    message = _("Operation cannot be performed since Firewall Rule "
-                "%(firewall_rule_id)s is already associated with Firewall"
-                "Policy %(firewall_policy_id)s.")
+FirewallGroupNotFound = moves.moved_class(
+    f_exc.FirewallGroupNotFound, 'FirewallGroupNotFound', __name__)
+FirewallGroupInUse = moves.moved_class(
+    f_exc.FirewallGroupInUse, 'FirewallGroupInUse', __name__)
+FirewallGroupInPendingState = moves.moved_class(
+    f_exc.FirewallGroupInPendingState, 'FirewallGroupInPendingState', __name__)
+FirewallGroupPortInvalid = moves.moved_class(
+    f_exc.FirewallGroupPortInvalid, 'FirewallGroupPortInvalid', __name__)
+FirewallGroupPortInvalidProject = moves.moved_class(
+    f_exc.FirewallGroupPortInvalidProject, 'FirewallGroupPortInvalidProject',
+    __name__)
+FirewallGroupPortInUse = moves.moved_class(
+    f_exc.FirewallGroupPortInUse, 'FirewallGroupPortInUse', __name__)
+FirewallPolicyNotFound = moves.moved_class(
+    f_exc.FirewallPolicyNotFound, 'FirewallPolicyNotFound', __name__)
+FirewallPolicyInUse = moves.moved_class(
+    f_exc.FirewallPolicyInUse, 'FirewallPolicyInUse', __name__)
+FirewallPolicyConflict = moves.moved_class(
+    f_exc.FirewallPolicyConflict, 'FirewallPolicyConflict', __name__)
+FirewallRuleSharingConflict = moves.moved_class(
+    f_exc.FirewallRuleSharingConflict, 'FirewallRuleSharingConflict',
+    __name__)
+FirewallPolicySharingConflict = moves.moved_class(
+    f_exc.FirewallPolicySharingConflict, 'FirewallPolicySharingConflict',
+    __name__)
+FirewallRuleNotFound = moves.moved_class(
+    f_exc.FirewallRuleNotFound, 'FirewallRuleNotFound', __name__)
+FirewallRuleInUse = moves.moved_class(
+    f_exc.FirewallRuleInUse, 'FirewallRuleInUse', __name__)
+FirewallRuleNotAssociatedWithPolicy = moves.moved_class(
+    f_exc.FirewallRuleNotAssociatedWithPolicy,
+    'FirewallRuleNotAssociatedWithPolicy',
+    __name__)
+FirewallRuleInvalidProtocol = moves.moved_class(
+    f_exc.FirewallRuleInvalidProtocol, 'FirewallRuleInvalidProtocol',
+    __name__)
+FirewallRuleInvalidAction = moves.moved_class(
+    f_exc.FirewallRuleInvalidAction, 'FirewallRuleInvalidAction',
+    __name__)
+FirewallRuleInvalidICMPParameter = moves.moved_class(
+    f_exc.FirewallRuleInvalidICMPParameter,
+    'FirewallRuleInvalidICMPParameter', __name__)
+FirewallRuleWithPortWithoutProtocolInvalid = moves.moved_class(
+    f_exc.FirewallRuleWithPortWithoutProtocolInvalid,
+    'FirewallRuleWithPortWithoutProtocolInvalid', __name__)
+FirewallRuleInvalidPortValue = moves.moved_class(
+    f_exc.FirewallRuleInvalidPortValue, 'FirewallRuleInvalidPortValue',
+    __name__)
+FirewallRuleInfoMissing = moves.moved_class(
+    f_exc.FirewallRuleInfoMissing, 'FirewallRuleInfoMissing', __name__)
+FirewallIpAddressConflict = moves.moved_class(
+    f_exc.FirewallIpAddressConflict, 'FirewallIpAddressConflict', __name__)
+FirewallInternalDriverError = moves.moved_class(
+    f_exc.FirewallInternalDriverError, 'FirewallInternalDriverError', __name__)
+FirewallRuleConflict = moves.moved_class(
+    f_exc.FirewallRuleConflict, 'FirewallRuleConflict', __name__)
+FirewallRuleAlreadyAssociated = moves.moved_class(
+    f_exc.FirewallRuleAlreadyAssociated, 'FirewallRuleAlreadyAssociated',
+    __name__)
 
 
 RESOURCE_ATTRIBUTE_MAP = {

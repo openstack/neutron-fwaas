@@ -14,6 +14,7 @@
 #    under the License.
 from neutron_lib import constants as nl_constants
 from neutron_lib import context as neutron_context
+from neutron_lib.exceptions import firewall_v1 as f_exc
 from neutron_lib.plugins import constants as plugin_constants
 from neutron_lib.plugins import directory
 
@@ -78,7 +79,7 @@ class FirewallCallbacks(object):
                                 {'fw': firewall_id, 'status': fw_db.status})
                     fw_db.update({"status": nl_constants.ERROR})
                     return False
-        except fw_ext.FirewallNotFound:
+        except f_exc.FirewallNotFound:
             LOG.info(_LI('Firewall %s already deleted'), firewall_id)
             return True
 
@@ -215,8 +216,8 @@ class FirewallPlugin(
         if fwall['status'] in [nl_constants.PENDING_CREATE,
                                nl_constants.PENDING_UPDATE,
                                nl_constants.PENDING_DELETE]:
-            raise fw_ext.FirewallInPendingState(firewall_id=firewall_id,
-                                                pending_state=fwall['status'])
+            raise f_exc.FirewallInPendingState(firewall_id=firewall_id,
+                                               pending_state=fwall['status'])
 
     def _ensure_update_firewall_policy(self, context, firewall_policy_id):
         firewall_policy = self.get_firewall_policy(context, firewall_policy_id)

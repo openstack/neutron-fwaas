@@ -31,6 +31,7 @@ from neutron_fwaas.services.firewall import fwaas_plugin
 from neutron_fwaas.tests import base
 from neutron_lib import constants as nl_constants
 from neutron_lib import context
+from neutron_lib.exceptions import firewall_v1 as f_exc
 from neutron_lib.exceptions import l3
 from neutron_lib.plugins import directory
 
@@ -627,7 +628,7 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
             req = self.new_delete_request('firewall_policies', fwp_id)
             res = req.get_response(self.ext_api)
             self.assertEqual(204, res.status_int)
-            self.assertRaises(firewall.FirewallPolicyNotFound,
+            self.assertRaises(f_exc.FirewallPolicyNotFound,
                               self.plugin.get_firewall_policy,
                               ctx, fwp_id)
 
@@ -650,7 +651,7 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
                 req = self.new_delete_request('firewall_policies', fwp_id)
                 res = req.get_response(self.ext_api)
                 self.assertEqual(204, res.status_int)
-                self.assertRaises(firewall.FirewallPolicyNotFound,
+                self.assertRaises(f_exc.FirewallPolicyNotFound,
                                   self.plugin.get_firewall_policy,
                                   ctx, fwp_id)
                 fw_rule = self.plugin.get_firewall_rule(ctx, fr_id)
@@ -980,7 +981,7 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
             req = self.new_delete_request('firewall_rules', fwr_id)
             res = req.get_response(self.ext_api)
             self.assertEqual(204, res.status_int)
-            self.assertRaises(firewall.FirewallRuleNotFound,
+            self.assertRaises(f_exc.FirewallRuleNotFound,
                               self.plugin.get_firewall_rule,
                               ctx, fwr_id)
 
@@ -1196,7 +1197,7 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
                 req = self.new_delete_request('firewalls', fw_id)
                 res = req.get_response(self.ext_api)
                 self.assertEqual(204, res.status_int)
-                self.assertRaises(firewall.FirewallNotFound,
+                self.assertRaises(f_exc.FirewallNotFound,
                                   self.plugin.get_firewall,
                                   ctx, fw_id)
 
@@ -1406,8 +1407,8 @@ class TestFirewallDBPlugin(FirewallPluginDbTestCase):
                 name='firewall_policy2', firewall_rules=[associated]) as fwp:
                 fwp_id = fwp['firewall_policy']['id']
                 not_associated = fwr2['firewall_rule']['id']
-                msg = "Firewall Rule {0} is not associated with " \
-                      "Firewall Policy {1}.".format(not_associated, fwp_id)
+                msg = "Firewall rule {0} is not associated with " \
+                      "firewall policy {1}.".format(not_associated, fwp_id)
                 result = self._rule_action(
                     'remove', fwp_id, not_associated,
                     insert_before=None,
