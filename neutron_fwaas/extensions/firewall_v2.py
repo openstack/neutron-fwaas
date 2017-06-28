@@ -15,22 +15,16 @@
 import abc
 
 from debtcollector import moves
-
 from neutron.api.v2 import resource_helper
-from neutron_lib.api import converters
+from neutron_lib.api.definitions import constants as api_const
+from neutron_lib.api.definitions import firewall_v2
 from neutron_lib.api import extensions
-from neutron_lib.db import constants as nl_db_constants
 from neutron_lib.exceptions import firewall_v2 as f_exc
 from neutron_lib.services import base as service_base
 import six
 
-# Import firewall v1 API to get the validators
-# TODO(shpadubi): pull the validators out of fwaas v1 into a separate file
-from neutron_fwaas.extensions import firewall as fwaas_v1
+from neutron_fwaas.common import fwaas_constants
 
-FIREWALL_PREFIX = '/fwaas'
-
-FIREWALL_CONST = 'FIREWALL_V2'
 
 FirewallGroupNotFound = moves.moved_class(
     f_exc.FirewallGroupNotFound, 'FirewallGroupNotFound', __name__)
@@ -93,192 +87,44 @@ FirewallRuleAlreadyAssociated = moves.moved_class(
     __name__)
 
 
-RESOURCE_ATTRIBUTE_MAP = {
-    'firewall_rules': {
-        'id': {'allow_post': False, 'allow_put': False,
-               'validate': {'type:uuid': None},
-               'is_visible': True, 'primary_key': True},
-        'tenant_id': {'allow_post': True, 'allow_put': False,
-                      'required_by_policy': True,
-                      'validate': {'type:string':
-                                   nl_db_constants.UUID_FIELD_SIZE},
-                      'is_visible': True},
-        'name': {'allow_post': True, 'allow_put': True,
-                 'validate': {'type:string': nl_db_constants.NAME_FIELD_SIZE},
-                 'is_visible': True, 'default': ''},
-        'description': {'allow_post': True, 'allow_put': True,
-                        'validate': {'type:string':
-                                     nl_db_constants.DESCRIPTION_FIELD_SIZE},
-                        'is_visible': True, 'default': ''},
-        'firewall_policy_id': {'allow_post': False, 'allow_put': False,
-                               'validate': {'type:uuid_or_none': None},
-                               'is_visible': True},
-        'shared': {'allow_post': True, 'allow_put': True,
-                   'default': False, 'is_visible': True,
-                   'convert_to': converters.convert_to_boolean,
-                   'required_by_policy': True, 'enforce_policy': True},
-        'protocol': {'allow_post': True, 'allow_put': True,
-                     'is_visible': True, 'default': None,
-                     'convert_to': fwaas_v1.convert_protocol,
-                     'validate': {'type:values':
-                                  fwaas_v1.fw_valid_protocol_values}},
-        'ip_version': {'allow_post': True, 'allow_put': True,
-                       'default': 4, 'convert_to': converters.convert_to_int,
-                       'validate': {'type:values': [4, 6]},
-                       'is_visible': True},
-        'source_ip_address': {'allow_post': True, 'allow_put': True,
-                              'validate': {'type:ip_or_subnet_or_none': None},
-                              'is_visible': True, 'default': None},
-        'destination_ip_address': {'allow_post': True, 'allow_put': True,
-                                   'validate': {'type:ip_or_subnet_or_none':
-                                                None},
-                                   'is_visible': True, 'default': None},
-        'source_port': {'allow_post': True, 'allow_put': True,
-                        'validate': {'type:port_range': None},
-                        'convert_to': fwaas_v1.convert_port_to_string,
-                        'default': None, 'is_visible': True},
-        'destination_port': {'allow_post': True, 'allow_put': True,
-                             'validate': {'type:port_range': None},
-                             'convert_to': fwaas_v1.convert_port_to_string,
-                             'default': None, 'is_visible': True},
-        'position': {'allow_post': False, 'allow_put': False,
-                     'default': None, 'is_visible': True},
-        'action': {'allow_post': True, 'allow_put': True,
-                   'convert_to': fwaas_v1.convert_action_to_case_insensitive,
-                   'validate': {'type:values':
-                                fwaas_v1.fw_valid_action_values},
-                   'is_visible': True, 'default': 'deny'},
-        'enabled': {'allow_post': True, 'allow_put': True,
-                    'convert_to': converters.convert_to_boolean,
-                    'default': True, 'is_visible': True},
-    },
-    'firewall_groups': {
-        'id': {'allow_post': False, 'allow_put': False,
-               'validate': {'type:uuid': None},
-               'is_visible': True,
-               'primary_key': True},
-        'name': {'allow_post': True, 'allow_put': True,
-                 'validate': {'type:string': nl_db_constants.NAME_FIELD_SIZE},
-                 'is_visible': True, 'default': ''},
-        'description': {'allow_post': True, 'allow_put': True,
-                        'validate': {'type:string':
-                                     nl_db_constants.DESCRIPTION_FIELD_SIZE},
-                        'is_visible': True, 'default': ''},
-        'admin_state_up': {'allow_post': True, 'allow_put': True,
-                           'default': True, 'is_visible': True,
-                           'convert_to': converters.convert_to_boolean},
-        'status': {'allow_post': False, 'allow_put': False,
-                   'is_visible': True},
-        'shared': {'allow_post': True, 'allow_put': True, 'default': False,
-                   'convert_to': converters.convert_to_boolean,
-                   'is_visible': True, 'required_by_policy': True,
-                   'enforce_policy': True},
-        'ports': {'allow_post': True, 'allow_put': True,
-                  'validate': {'type:uuid_list': None},
-                  'convert_to': converters.convert_none_to_empty_list,
-                  'default': None, 'is_visible': True},
-        'tenant_id': {'allow_post': True, 'allow_put': False,
-                      'required_by_policy': True,
-                      'validate': {'type:string':
-                                   nl_db_constants.UUID_FIELD_SIZE},
-                      'is_visible': True},
-        'ingress_firewall_policy_id': {'allow_post': True,
-                                       'allow_put': True,
-                                       'validate': {'type:uuid_or_none':
-                                                    None},
-                                       'default': None, 'is_visible': True},
-        'egress_firewall_policy_id': {'allow_post': True,
-                                      'allow_put': True,
-                                      'validate': {'type:uuid_or_none':
-                                                   None},
-                                      'default': None, 'is_visible': True},
-    },
-    'firewall_policies': {
-        'id': {'allow_post': False, 'allow_put': False,
-               'validate': {'type:uuid': None},
-               'is_visible': True,
-               'primary_key': True},
-        'tenant_id': {'allow_post': True, 'allow_put': False,
-                      'required_by_policy': True,
-                      'validate': {'type:string':
-                                   nl_db_constants.UUID_FIELD_SIZE},
-                      'is_visible': True},
-        'name': {'allow_post': True, 'allow_put': True,
-                 'validate': {'type:string': nl_db_constants.NAME_FIELD_SIZE},
-                 'is_visible': True, 'default': ''},
-        'description': {'allow_post': True, 'allow_put': True,
-                        'validate': {'type:string':
-                                     nl_db_constants.DESCRIPTION_FIELD_SIZE},
-                        'is_visible': True, 'default': ''},
-        'shared': {'allow_post': True, 'allow_put': True, 'default': False,
-                   'convert_to': converters.convert_to_boolean,
-                   'is_visible': True, 'required_by_policy': True,
-                   'enforce_policy': True},
-        'firewall_rules': {'allow_post': True, 'allow_put': True,
-                           'validate': {'type:uuid_list': None},
-                           'convert_to': converters.convert_none_to_empty_list,
-                           'default': None, 'is_visible': True},
-        'audited': {'allow_post': True, 'allow_put': True, 'default': False,
-                    'convert_to': converters.convert_to_boolean,
-                    'is_visible': True},
+# TODO(Reedip): Remove the convert_to functionality after bug1706061 is fixed.
+def convert_to_string(value):
+    if value is not None:
+        return str(value)
+    return None
 
-    },
-}
+firewall_v2.RESOURCE_ATTRIBUTE_MAP[api_const.FIREWALL_RULES][
+    'source_port']['convert_to'] = convert_to_string
+firewall_v2.RESOURCE_ATTRIBUTE_MAP[api_const.FIREWALL_RULES][
+    'destination_port']['convert_to'] = convert_to_string
 
 
-class Firewall_v2(extensions.ExtensionDescriptor):
-
-    @classmethod
-    def get_name(cls):
-        return "Firewall service v2"
-
-    @classmethod
-    def get_alias(cls):
-        return "fwaas_v2"
-
-    @classmethod
-    def get_description(cls):
-        return "Extension for Firewall service v2"
-
-    @classmethod
-    def get_updated(cls):
-        return "2016-08-16T00:00:00-00:00"
+class Firewall_v2(extensions.APIExtensionDescriptor):
+    api_definition = firewall_v2
 
     @classmethod
     def get_resources(cls):
         special_mappings = {'firewall_policies': 'firewall_policy'}
         plural_mappings = resource_helper.build_plural_mappings(
-            special_mappings, RESOURCE_ATTRIBUTE_MAP)
-        action_map = {'firewall_policy': {'insert_rule': 'PUT',
-                                          'remove_rule': 'PUT'}}
-        return resource_helper.build_resource_info(plural_mappings,
-                                                   RESOURCE_ATTRIBUTE_MAP,
-                                                   FIREWALL_CONST,
-                                                   action_map=action_map)
+            special_mappings, firewall_v2.RESOURCE_ATTRIBUTE_MAP)
+        return resource_helper.build_resource_info(
+            plural_mappings, firewall_v2.RESOURCE_ATTRIBUTE_MAP,
+            fwaas_constants.FIREWALL_V2, action_map=firewall_v2.ACTION_MAP,
+            register_quota=True)
 
     @classmethod
     def get_plugin_interface(cls):
         return Firewallv2PluginBase
-
-    def update_attributes_map(self, attributes):
-        super(Firewall_v2, self).update_attributes_map(
-            attributes, extension_attrs_map=RESOURCE_ATTRIBUTE_MAP)
-
-    def get_extended_resources(self, version):
-        if version == "2.0":
-            return RESOURCE_ATTRIBUTE_MAP
-        else:
-            return {}
 
 
 @six.add_metaclass(abc.ABCMeta)
 class Firewallv2PluginBase(service_base.ServicePluginBase):
 
     def get_plugin_name(self):
-        return FIREWALL_CONST
+        return fwaas_constants.FIREWALL_V2
 
     def get_plugin_type(self):
-        return FIREWALL_CONST
+        return fwaas_constants.FIREWALL_V2
 
     def get_plugin_description(self):
         return 'Firewall Service v2 Plugin'

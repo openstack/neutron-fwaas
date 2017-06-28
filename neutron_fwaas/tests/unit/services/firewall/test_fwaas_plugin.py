@@ -23,6 +23,8 @@ from neutron.tests import fake_notifier
 from neutron.tests.unit.extensions import test_agent
 from neutron.tests.unit.extensions import test_l3 as test_l3_plugin
 from neutron_lib.api import attributes as attr
+from neutron_lib.api.definitions import firewall as fwaas_def
+from neutron_lib.api.definitions import firewallrouterinsertion
 from neutron_lib import constants as nl_constants
 from neutron_lib import context
 from neutron_lib.exceptions import firewall_v1 as f_exc
@@ -36,7 +38,6 @@ from webob import exc
 from neutron_fwaas.db.firewall import firewall_db as fdb
 import neutron_fwaas.extensions
 from neutron_fwaas.extensions import firewall
-from neutron_fwaas.extensions import firewallrouterinsertion
 from neutron_fwaas.services.firewall import fwaas_plugin
 from neutron_fwaas.tests import base
 from neutron_fwaas.tests.unit.db.firewall import (
@@ -53,8 +54,8 @@ class FirewallTestExtensionManager(test_l3_plugin.L3TestExtensionManager):
 
     def get_resources(self):
         res = super(FirewallTestExtensionManager, self).get_resources()
-        firewall.RESOURCE_ATTRIBUTE_MAP['firewalls'].update(
-            firewallrouterinsertion.EXTENDED_ATTRIBUTES_2_0['firewalls'])
+        fwaas_def.RESOURCE_ATTRIBUTE_MAP['firewalls'].update(
+            firewallrouterinsertion.RESOURCE_ATTRIBUTE_MAP['firewalls'])
         return res + firewall.Firewall.get_resources()
 
     def get_actions(self):
@@ -82,7 +83,6 @@ class TestFirewallRouterInsertionBase(
         self.saved_attr_map = {}
         for resource, attrs in six.iteritems(attr.RESOURCES):
             self.saved_attr_map[resource] = attrs.copy()
-        self.addCleanup(self.restore_attribute_map)
         if not fw_plugin:
             fw_plugin = FW_PLUGIN_KLASS
         service_plugins = {'l3_plugin_name': l3_plugin,
@@ -93,6 +93,7 @@ class TestFirewallRouterInsertionBase(
         super(test_db_firewall.FirewallPluginDbTestCase, self).setUp(
             plugin=plugin, service_plugins=service_plugins, ext_mgr=ext_mgr)
 
+        self.addCleanup(self.restore_attribute_map)
         self.setup_notification_driver()
 
         self.l3_plugin = directory.get_plugin(plugin_constants.L3)
@@ -101,7 +102,7 @@ class TestFirewallRouterInsertionBase(
 
     def restore_attribute_map(self):
         # Remove the fwaasrouterinsertion extension
-        firewall.RESOURCE_ATTRIBUTE_MAP['firewalls'].pop('router_ids')
+        fwaas_def.RESOURCE_ATTRIBUTE_MAP['firewalls'].pop('router_ids')
         # Restore the original RESOURCE_ATTRIBUTE_MAP
         attr.RESOURCES = self.saved_attr_map
 
@@ -737,7 +738,7 @@ class TestFirewallRouterPluginBase(test_db_firewall.FirewallPluginDbTestCase,
         fdb.Firewall_db_mixin.\
             supported_extension_aliases = ["fwaas",
                                            "fwaasrouterinsertion"]
-        fdb.Firewall_db_mixin.path_prefix = firewall.FIREWALL_PREFIX
+        fdb.Firewall_db_mixin.path_prefix = fwaas_def.API_PREFIX
 
         super(test_db_firewall.FirewallPluginDbTestCase, self).setUp(
             ext_mgr=ext_mgr,

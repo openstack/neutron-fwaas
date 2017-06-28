@@ -14,6 +14,7 @@
 #    under the License.
 
 FIREWALL = 'FIREWALL'
+FIREWALL_V2 = 'FIREWALL_V2'
 
 # Constants for "topics"
 FIREWALL_PLUGIN = 'q-firewall-plugin'

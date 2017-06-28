@@ -14,6 +14,10 @@
 #    under the License.
 
 from neutron.common import rpc as n_rpc
+from neutron_lib.agent import l3_extension
+from neutron_lib.api.definitions import firewall as fw_ext
+from neutron_lib import constants as nl_constants
+from neutron_lib import context
 from oslo_config import cfg
 from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
@@ -21,12 +25,8 @@ from oslo_log import log as logging
 from neutron_fwaas._i18n import _, _LE
 from neutron_fwaas.common import fwaas_constants
 from neutron_fwaas.common import resources as f_resources
-from neutron_fwaas.extensions import firewall as fw_ext
 from neutron_fwaas.services.firewall.agents import firewall_agent_api as api
 from neutron_fwaas.services.firewall.agents import firewall_service
-from neutron_lib.agent import l3_extension
-from neutron_lib import constants as nl_constants
-from neutron_lib import context
 
 LOG = logging.getLogger(__name__)
 

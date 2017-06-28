@@ -18,6 +18,12 @@ import contextlib
 import mock
 from neutron.api import extensions as api_ext
 from neutron.common import config
+from neutron_lib.api.definitions import firewall
+from neutron_lib import constants as nl_constants
+from neutron_lib import context
+from neutron_lib.exceptions import firewall_v1 as f_exc
+from neutron_lib.exceptions import l3
+from neutron_lib.plugins import directory
 from oslo_config import cfg
 from oslo_utils import importutils
 from oslo_utils import uuidutils
@@ -26,14 +32,9 @@ import webob.exc
 
 from neutron_fwaas.db.firewall import firewall_db as fdb
 from neutron_fwaas import extensions
-from neutron_fwaas.extensions import firewall
 from neutron_fwaas.services.firewall import fwaas_plugin
 from neutron_fwaas.tests import base
-from neutron_lib import constants as nl_constants
-from neutron_lib import context
-from neutron_lib.exceptions import firewall_v1 as f_exc
-from neutron_lib.exceptions import l3
-from neutron_lib.plugins import directory
+
 
 DB_FW_PLUGIN_KLASS = (
     "neutron_fwaas.db.firewall.firewall_db.Firewall_db_mixin"
@@ -74,7 +75,7 @@ class FakeAgentApi(fwaas_plugin.FirewallCallbacks):
 
 class FirewallPluginDbTestCase(base.NeutronDbPluginV2TestCase):
     resource_prefix_map = dict(
-        (k, firewall.FIREWALL_PREFIX)
+        (k, firewall.API_PREFIX)
         for k in firewall.RESOURCE_ATTRIBUTE_MAP.keys()
     )
 
@@ -87,7 +88,7 @@ class FirewallPluginDbTestCase(base.NeutronDbPluginV2TestCase):
         service_plugins = {'fw_plugin_name': fw_plugin}
 
         fdb.Firewall_db_mixin.supported_extension_aliases = ["fwaas"]
-        fdb.Firewall_db_mixin.path_prefix = firewall.FIREWALL_PREFIX
+        fdb.Firewall_db_mixin.path_prefix = firewall.API_PREFIX
         super(FirewallPluginDbTestCase, self).setUp(
             ext_mgr=ext_mgr,
             service_plugins=service_plugins

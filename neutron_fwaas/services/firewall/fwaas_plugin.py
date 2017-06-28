@@ -12,15 +12,15 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+
+from neutron.common import rpc as n_rpc
+from neutron.common import utils as n_utils
+from neutron_lib.api.definitions import firewall as fw_ext
 from neutron_lib import constants as nl_constants
 from neutron_lib import context as neutron_context
 from neutron_lib.exceptions import firewall_v1 as f_exc
 from neutron_lib.plugins import constants as plugin_constants
 from neutron_lib.plugins import directory
-
-from neutron.common import rpc as n_rpc
-from neutron.common import utils as n_utils
-
 from oslo_config import cfg
 from oslo_log import log as logging
 import oslo_messaging
@@ -29,7 +29,6 @@ from neutron_fwaas._i18n import _LI, _LW
 from neutron_fwaas.common import fwaas_constants as f_const
 from neutron_fwaas.db.firewall import firewall_db
 from neutron_fwaas.db.firewall import firewall_router_insertion_db
-from neutron_fwaas.extensions import firewall as fw_ext
 
 
 LOG = logging.getLogger(__name__)
@@ -153,7 +152,7 @@ class FirewallPlugin(
     firewall_db.Firewall_db_mixin.
     """
     supported_extension_aliases = ["fwaas", "fwaasrouterinsertion"]
-    path_prefix = fw_ext.FIREWALL_PREFIX
+    path_prefix = fw_ext.API_PREFIX
 
     def __init__(self):
         """Do the initialization for the firewall service plugin here."""
