@@ -149,8 +149,8 @@ class IptablesFwaasTestCase(base.BaseTestCase):
             distributed_mode = 'legacy'
         func(distributed_mode, apply_list, firewall)
         invalid_rule = '-m state --state INVALID -j DROP'
-        est_rule = '-m state --state ESTABLISHED,RELATED -j ACCEPT'
-        rule1 = '-p tcp -m tcp --dport 80 -s 10.24.4.2 -j ACCEPT'
+        est_rule = '-m state --state RELATED,ESTABLISHED -j ACCEPT'
+        rule1 = '-p tcp -s 10.24.4.2/32 -m tcp --dport 80 -j ACCEPT'
         rule2 = '-p tcp -m tcp --dport 22 -j DROP'
         rule3 = '-p tcp -m tcp --dport 23 -j REJECT'
         ingress_chain = 'iv4%s' % firewall['id']
@@ -201,7 +201,7 @@ class IptablesFwaasTestCase(base.BaseTestCase):
         firewall = self._fake_firewall_no_rule()
         self.firewall.create_firewall_group('legacy', apply_list, firewall)
         invalid_rule = '-m state --state INVALID -j DROP'
-        est_rule = '-m state --state ESTABLISHED,RELATED -j ACCEPT'
+        est_rule = '-m state --state RELATED,ESTABLISHED -j ACCEPT'
         bname = fwaas.iptables_manager.binary_name
         for ip_version in (4, 6):
             ingress_chain = ('iv%s%s' % (ip_version, firewall['id']))
