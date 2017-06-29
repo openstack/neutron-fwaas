@@ -28,9 +28,7 @@
 # serve to show the default.
 
 import os
-import subprocess
 import sys
-import warnings
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -48,7 +46,7 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.ifconfig',
               'sphinx.ext.graphviz',
               'sphinx.ext.todo',
-              'oslosphinx']
+              'openstackdocstheme',]
 
 todo_include_todos = True
 
@@ -136,6 +134,7 @@ modindex_common_prefix = ['neutron_fwaas.']
 # Sphinx are currently 'default' and 'sphinxdoc'.
 # html_theme_path = ["."]
 # html_theme = '_theme'
+html_theme = 'openstackdocs'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -168,14 +167,8 @@ modindex_common_prefix = ['neutron_fwaas.']
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
-#html_last_updated_fmt = '%b %d, %Y'
-git_cmd = ["git", "log", "--pretty=format:'%ad, commit %h'", "--date=local",
-           "-n1"]
-try:
-    html_last_updated_fmt = subprocess.check_output(git_cmd).decode('utf-8')
-except Exception:
-    warnings.warn('Cannot get last updated time from git repository. '
-                  'Not setting "html_last_updated_fmt".')
+# html_last_updated_fmt = '%b %d, %Y'
+html_last_updated_fmt = '%Y-%m-%d %H:%M'
 
 # If true, SmartyPants will be used to convert quotes and dashes to
 # typographically correct entities.
@@ -244,3 +237,8 @@ except Exception:
 
 # If false, no module index is generated.
 #latex_use_modindex = True
+
+# -- Options for openstackdocstheme -------------------------------------------
+repository_name = 'openstack/neutron-fwaas'
+bug_project = 'neutron'
+bug_tag = 'doc'
