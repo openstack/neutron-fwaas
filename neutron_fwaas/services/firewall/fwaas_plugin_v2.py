@@ -25,7 +25,6 @@ from oslo_config import cfg
 from oslo_log import log as logging
 import oslo_messaging
 
-from neutron_fwaas._i18n import _LI
 from neutron_fwaas.common import fwaas_constants
 from neutron_fwaas.db.firewall.v2 import firewall_db_v2
 
@@ -112,7 +111,7 @@ class FirewallCallbacks(object):
                     fwg_db.update({"status": nl_constants.ERROR})
                     return False
         except f_exc.FirewallGroupNotFound:
-            LOG.info(_LI('Firewall group %s already deleted'), fwg_id)
+            LOG.info('Firewall group %s already deleted', fwg_id)
             return True
 
     def get_firewall_groups_for_project(self, context, **kwargs):

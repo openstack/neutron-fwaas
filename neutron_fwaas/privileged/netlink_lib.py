@@ -42,7 +42,6 @@ from oslo_log import log as logging
 
 from neutron_lib import constants
 
-from neutron_fwaas._i18n import _, _LW
 from neutron_fwaas import privileged
 from neutron_fwaas.privileged import netlink_constants as nl_constants
 from neutron_fwaas.privileged import utils as fwaas_utils
@@ -148,7 +147,7 @@ class ConntrackManager(object):
                 self._set_attributes(conntrack, entry)
                 self._query(nl_constants.NFCT_Q_DESTROY, conntrack)
         except Exception as e:
-            msg = _("Failed to delete conntrack entries %s") % e
+            msg = "Failed to delete conntrack entries %s" % e
             LOG.critical(msg)
             raise ConntrackOpenFailedExit(msg)
         finally:
@@ -163,7 +162,7 @@ class ConntrackManager(object):
         result = nfct.nfct_query(self.conntrack_handler, query_type,
                                  query_data)
         if result == nl_constants.NFCT_CB_FAILURE:
-            LOG.warning(_LW("Netlink query failed"))
+            LOG.warning("Netlink query failed")
 
     def _set_attributes(self, conntrack, entry):
         ipversion = entry.get('ipversion', 4)
@@ -185,7 +184,7 @@ class ConntrackManager(object):
                 nl_constants.CONNTRACK,
                 nl_constants.NFNL_SUBSYS_CTNETLINK)
         if not self.conntrack_handler:
-            msg = _("Failed to open new conntrack handler")
+            msg = "Failed to open new conntrack handler"
             LOG.critical(msg)
             raise ConntrackOpenFailedExit(msg)
         return self

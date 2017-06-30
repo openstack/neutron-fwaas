@@ -25,7 +25,6 @@ from oslo_config import cfg
 from oslo_log import log as logging
 import oslo_messaging
 
-from neutron_fwaas._i18n import _LI, _LW
 from neutron_fwaas.common import fwaas_constants as f_const
 from neutron_fwaas.db.firewall import firewall_db
 from neutron_fwaas.db.firewall import firewall_router_insertion_db
@@ -73,13 +72,13 @@ class FirewallCallbacks(object):
                     self.plugin.delete_db_firewall_object(context, firewall_id)
                     return True
                 else:
-                    LOG.warning(_LW('Firewall %(fw)s unexpectedly deleted by '
-                                    'agent, status was %(status)s'),
+                    LOG.warning('Firewall %(fw)s unexpectedly deleted by '
+                                'agent, status was %(status)s',
                                 {'fw': firewall_id, 'status': fw_db.status})
                     fw_db.update({"status": nl_constants.ERROR})
                     return False
         except f_exc.FirewallNotFound:
-            LOG.info(_LI('Firewall %s already deleted'), firewall_id)
+            LOG.info('Firewall %s already deleted', firewall_id)
             return True
 
     def get_firewalls_for_tenant(self, context, **kwargs):
