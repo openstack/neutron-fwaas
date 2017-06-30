@@ -31,7 +31,7 @@ class FWaaSClientMixin(object):
     @classmethod
     def resource_setup(cls):
         super(FWaaSClientMixin, cls).resource_setup()
-        manager = cls.manager
+        manager = cls.os_primary
         cls.firewalls_client = client.FirewallsClient(
             manager.auth_provider,
             CONF.network.catalog_type,

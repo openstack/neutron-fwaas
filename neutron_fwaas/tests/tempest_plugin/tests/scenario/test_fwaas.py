@@ -278,7 +278,7 @@ class TestFWaaS(base.FWaaSScenarioTest):
         ext_fixed_ips = ext_gw_info['external_fixed_ips']
         for ip in ext_fixed_ips:
             subnet_id = ip['subnet_id']
-            res = self.admin_manager.subnets_client.show_subnet(subnet_id)
+            res = self.os_admin.subnets_client.show_subnet(subnet_id)
             subnet = res['subnet']
             # REVISIT(yamamoto): IPv4 assumption
             if subnet['ip_version'] == 4:
