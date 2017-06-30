@@ -27,6 +27,7 @@ from neutron_fwaas.tests.unit.db.firewall.v2 import (
     test_firewall_db_v2 as test_db_firewall)
 from neutron_lib import constants as nl_constants
 from neutron_lib import context
+from neutron_lib.plugins import constants as plugin_constants
 from neutron_lib.plugins import directory
 
 extensions_path = neutron_fwaas.extensions.__path__[0]
@@ -110,7 +111,7 @@ class TestFirewallRouterPortBase(
 
         self.setup_notification_driver()
 
-        self.l3_plugin = directory.get_plugin(nl_constants.L3)
+        self.l3_plugin = directory.get_plugin(plugin_constants.L3)
         self.plugin = directory.get_plugin('FIREWALL_V2')
         self.callbacks = self.plugin.endpoints[0]
 

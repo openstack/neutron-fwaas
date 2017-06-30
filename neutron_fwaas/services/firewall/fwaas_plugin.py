@@ -14,6 +14,7 @@
 #    under the License.
 from neutron_lib import constants as nl_constants
 from neutron_lib import context as neutron_context
+from neutron_lib.plugins import constants as plugin_constants
 from neutron_lib.plugins import directory
 
 from neutron.common import rpc as n_rpc
@@ -173,7 +174,7 @@ class FirewallPlugin(
 
     def _get_hosts_to_notify(self, context, router_ids):
         """Returns all hosts to send notification about firewall update"""
-        l3_plugin = directory.get_plugin(nl_constants.L3)
+        l3_plugin = directory.get_plugin(plugin_constants.L3)
         no_broadcast = (
             n_utils.is_extension_supported(
                 l3_plugin, nl_constants.L3_AGENT_SCHEDULER_EXT_ALIAS) and
@@ -236,7 +237,7 @@ class FirewallPlugin(
         if router_ids == nl_constants.ATTR_NOT_SPECIFIED:
             # old semantics router-ids keyword not specified pick up
             # all routers on tenant.
-            l3_plugin = directory.get_plugin(nl_constants.L3)
+            l3_plugin = directory.get_plugin(plugin_constants.L3)
             ctx = neutron_context.get_admin_context()
             routers = l3_plugin.get_routers(ctx)
             router_ids = [
