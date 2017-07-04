@@ -21,9 +21,10 @@ Testing and Usage Information:
    :maxdepth: 1
 
    devstack
+   API reference <api/modules>
 
-==================
-Indices and tables
-==================
+.. rubric:: Indices and tables
 
+* :ref:`genindex`
+* :ref:`modindex`
 * :ref:`search`
