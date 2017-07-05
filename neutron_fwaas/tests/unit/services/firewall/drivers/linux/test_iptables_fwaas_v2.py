@@ -14,10 +14,11 @@
 #    under the License.
 
 import copy
-import mock
 
+import mock
 from neutron.tests import base
 from neutron.tests.unit.api.v2 import test_base as test_api_v2
+
 import neutron_fwaas.services.firewall.drivers.linux.iptables_fwaas_v2 as fwaas
 
 

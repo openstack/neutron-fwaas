@@ -13,6 +13,7 @@
 # under the License.
 
 import abc
+
 from neutron.api.v2 import resource_helper
 from neutron_lib.api import converters
 from neutron_lib.api import extensions
