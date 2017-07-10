@@ -13,18 +13,23 @@
 #  License for the specific language governing permissions and limitations
 #  under the License.
 
-import mock
-import testtools
+import uuid
 
+import mock
 from neutron.api import extensions as api_ext
 from neutron.common import config
 from neutron.tests.common import helpers
 from neutron.tests import fake_notifier
 from neutron.tests.unit.extensions import test_agent
 from neutron.tests.unit.extensions import test_l3 as test_l3_plugin
+from neutron_lib.api import attributes as attr
+from neutron_lib import constants as nl_constants
+from neutron_lib import context
+from neutron_lib.plugins import constants as plugin_constants
+from neutron_lib.plugins import directory
 from oslo_config import cfg
 import six
-import uuid
+import testtools
 from webob import exc
 
 from neutron_fwaas.db.firewall import firewall_db as fdb
@@ -35,12 +40,6 @@ from neutron_fwaas.services.firewall import fwaas_plugin
 from neutron_fwaas.tests import base
 from neutron_fwaas.tests.unit.db.firewall import (
     test_firewall_db as test_db_firewall)
-
-from neutron_lib.api import attributes as attr
-from neutron_lib import constants as nl_constants
-from neutron_lib import context
-from neutron_lib.plugins import constants as plugin_constants
-from neutron_lib.plugins import directory
 
 extensions_path = neutron_fwaas.extensions.__path__[0]
 
