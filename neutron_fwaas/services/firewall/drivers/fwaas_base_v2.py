@@ -37,9 +37,10 @@ class FwaasDriverBase(object):
     The policy is applied on traffic ingressing/egressing interfaces on
     the trusted zone. This implies that policy will be applied for traffic
     passing from
-        - trusted to untrusted zones
-        - untrusted to trusted zones
-        - trusted to trusted zones
+
+    - trusted to untrusted zones
+    - untrusted to trusted zones
+    - trusted to trusted zones
 
     Policy WILL NOT be applied for traffic from untrusted to untrusted zones.
     This is not a problem in Havana release as there is only one interface

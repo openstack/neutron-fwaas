@@ -6,6 +6,7 @@ cover/
 covhtml/
 dist/
 doc/build
+doc/source/api/
 etc/*.sample
 *.DS_Store
 *.pyc
