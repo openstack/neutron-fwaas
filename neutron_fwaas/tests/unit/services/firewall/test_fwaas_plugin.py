@@ -13,8 +13,6 @@
 #  License for the specific language governing permissions and limitations
 #  under the License.
 
-import uuid
-
 import mock
 from neutron.api import extensions as api_ext
 from neutron.common import config
@@ -28,6 +26,7 @@ from neutron_lib import context
 from neutron_lib.plugins import constants as plugin_constants
 from neutron_lib.plugins import directory
 from oslo_config import cfg
+from oslo_utils import uuidutils
 import six
 import testtools
 from webob import exc
@@ -753,7 +752,7 @@ class TestFirewallRouterPluginBase(test_db_firewall.FirewallPluginDbTestCase,
 
     def test_get_firewall_tenant_ids_on_host_with_associated_router(self):
         agent = helpers.register_l3_agent("host1")
-        tenant_id = str(uuid.uuid4())
+        tenant_id = uuidutils.generate_uuid()
         ctxt = context.get_admin_context()
 
         with self.router(name='router1', admin_state_up=True,
@@ -770,7 +769,7 @@ class TestFirewallRouterPluginBase(test_db_firewall.FirewallPluginDbTestCase,
     def test_get_firewall_tenant_ids_on_host_without_associated_router(self):
         agent1 = helpers.register_l3_agent("host1")
         helpers.register_l3_agent("host2")
-        tenant_id = str(uuid.uuid4())
+        tenant_id = uuidutils.generate_uuid()
         ctxt = context.get_admin_context()
 
         with self.router(name='router1', admin_state_up=True,
@@ -786,8 +785,8 @@ class TestFirewallRouterPluginBase(test_db_firewall.FirewallPluginDbTestCase,
 
     def test_get_firewall_tenant_ids_on_host_with_routers(self):
         agent1 = helpers.register_l3_agent("host1")
-        tenant_id1 = str(uuid.uuid4())
-        tenant_id2 = str(uuid.uuid4())
+        tenant_id1 = uuidutils.generate_uuid()
+        tenant_id2 = uuidutils.generate_uuid()
         ctxt = context.get_admin_context()
 
         with self.router(name='router1', admin_state_up=True,
