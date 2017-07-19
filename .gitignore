@@ -6,6 +6,7 @@ cover/
 covhtml/
 dist/
 doc/build
+doc/source/_static/config_samples/*.sample
 doc/source/contributor/api/
 etc/*.sample
 *.DS_Store
