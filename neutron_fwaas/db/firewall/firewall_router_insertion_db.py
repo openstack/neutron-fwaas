@@ -14,11 +14,11 @@
 #    under the License.
 
 from neutron_lib.db import model_base
+from neutron_lib.exceptions import firewall_v1 as fwrtrins
 from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
 import sqlalchemy as sa
 
-from neutron_fwaas.extensions import firewallrouterinsertion as fwrtrins
 
 LOG = logging.getLogger(__name__)
 

@@ -27,6 +27,7 @@ from neutron_fwaas.tests.unit.db.firewall.v2 import (
     test_firewall_db_v2 as test_db_firewall)
 from neutron_lib import constants as nl_constants
 from neutron_lib import context
+from neutron_lib.exceptions import firewall_v2 as f_exc
 from neutron_lib.plugins import constants as plugin_constants
 from neutron_lib.plugins import directory
 
@@ -160,7 +161,7 @@ class TestFirewallCallbacks(TestFirewallRouterPortBase):
                 observed = self.callbacks.firewall_group_deleted(ctx, fwg_id)
                 self.assertTrue(observed)
 
-            self.assertRaises(firewall_v2.FirewallGroupNotFound,
+            self.assertRaises(f_exc.FirewallGroupNotFound,
                               self.plugin.get_firewall_group,
                               ctx, fwg_id)
 
@@ -196,7 +197,7 @@ class TestFirewallCallbacks(TestFirewallRouterPortBase):
                         ctx, fwg_id)
                     self.assertTrue(observed)
 
-                self.assertRaises(firewall_v2.FirewallGroupNotFound,
+                self.assertRaises(f_exc.FirewallGroupNotFound,
                                   self.plugin.get_firewall_group,
                                   ctx, fwg_id)
 

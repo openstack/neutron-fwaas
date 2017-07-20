@@ -25,6 +25,7 @@ from neutron.tests.unit.extensions import test_l3 as test_l3_plugin
 from neutron_lib.api import attributes as attr
 from neutron_lib import constants as nl_constants
 from neutron_lib import context
+from neutron_lib.exceptions import firewall_v1 as f_exc
 from neutron_lib.plugins import constants as plugin_constants
 from neutron_lib.plugins import directory
 from oslo_config import cfg
@@ -185,7 +186,7 @@ class TestFirewallCallbacks(TestFirewallRouterInsertionBase):
                     ctx.session.flush()
                     res = self.callbacks.firewall_deleted(ctx, fw_id)
                     self.assertTrue(res)
-                    self.assertRaises(firewall.FirewallNotFound,
+                    self.assertRaises(f_exc.FirewallNotFound,
                                       self.plugin.get_firewall,
                                       ctx, fw_id)
 
@@ -220,7 +221,7 @@ class TestFirewallCallbacks(TestFirewallRouterInsertionBase):
                     observed = self.callbacks.firewall_deleted(ctx, fw_id)
                     self.assertTrue(observed)
 
-                self.assertRaises(firewall.FirewallNotFound,
+                self.assertRaises(f_exc.FirewallNotFound,
                                   self.plugin.get_firewall,
                                   ctx, fw_id)
 
@@ -535,7 +536,7 @@ class TestFirewallPluginBase(TestFirewallRouterInsertionBase,
                 req = self.new_delete_request('firewalls', fw_id)
                 res = req.get_response(self.ext_api)
                 self.assertEqual(exc.HTTPNoContent.code, res.status_int)
-                self.assertRaises(firewall.FirewallNotFound,
+                self.assertRaises(f_exc.FirewallNotFound,
                                   self.plugin.get_firewall,
                                   ctx, fw_id)
 
@@ -549,7 +550,7 @@ class TestFirewallPluginBase(TestFirewallRouterInsertionBase,
                 req = self.new_delete_request('firewalls', fw_id)
                 res = req.get_response(self.ext_api)
                 self.assertEqual(exc.HTTPNoContent.code, res.status_int)
-                self.assertRaises(firewall.FirewallNotFound,
+                self.assertRaises(f_exc.FirewallNotFound,
                                   self.plugin.get_firewall,
                                   ctx, fw_id)
 
