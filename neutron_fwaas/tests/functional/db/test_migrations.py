@@ -10,12 +10,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from oslo_config import cfg
-
 from neutron.db.migration.alembic_migrations import external
 from neutron.db.migration import cli as migration
 from neutron.tests.functional.db import test_migrations
 from neutron.tests.unit import testlib_api
+from oslo_config import cfg
 
 from neutron_fwaas.db.models import head
 

@@ -13,11 +13,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import neutron_fwaas.privileged.netlink_lib as nl_lib
-
 from neutron.agent.linux import utils as linux_utils
 from neutron.tests.common import net_helpers
 from neutron.tests.functional import base as functional_base
+
+import neutron_fwaas.privileged.netlink_lib as nl_lib
 
 
 CONNTRACK_CMDS = (

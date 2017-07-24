@@ -15,6 +15,7 @@
 
 from neutron.agent.linux import ip_lib
 from neutron.common import rpc as n_rpc
+from neutron_lib.agent import l3_extension
 from neutron_lib import constants as nl_constants
 from neutron_lib import context
 from oslo_config import cfg
@@ -27,7 +28,7 @@ from neutron_fwaas.common import resources as f_resources
 from neutron_fwaas.extensions import firewall as fw_ext
 from neutron_fwaas.services.firewall.agents import firewall_agent_api as api
 from neutron_fwaas.services.firewall.agents import firewall_service
-from neutron_lib.agent import l3_extension
+
 
 LOG = logging.getLogger(__name__)
 

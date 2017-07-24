@@ -13,16 +13,17 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from neutron.agent.linux import iptables_manager
+from neutron.common import utils
+from neutron_lib.exceptions import firewall_v2 as f_exc
 from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_utils import excutils
 
-from neutron.agent.linux import iptables_manager
-from neutron.common import utils
 from neutron_fwaas._i18n import _LE
 from neutron_fwaas.common import fwaas_constants as f_const
 from neutron_fwaas.services.firewall.drivers import fwaas_base
-from neutron_lib.exceptions import firewall_v2 as f_exc
+
 
 LOG = logging.getLogger(__name__)
 FWAAS_DRIVER_NAME = 'Fwaas iptables driver'

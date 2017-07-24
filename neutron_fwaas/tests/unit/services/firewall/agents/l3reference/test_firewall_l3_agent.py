@@ -13,18 +13,15 @@
 #    under the License.
 
 import mock
-import testtools
-
-from oslo_config import cfg
-from oslo_utils import uuidutils
-
-from neutron_lib import context
-
 from neutron.agent.l3 import l3_agent_extension_api as l3_agent_api
 from neutron.agent.l3 import router_info
 from neutron.agent.linux import ip_lib
 from neutron.conf.agent.l3 import config as l3_config
 from neutron.conf import common as base_config
+from neutron_lib import context
+from oslo_config import cfg
+from oslo_utils import uuidutils
+import testtools
 
 from neutron_fwaas.common import fwaas_constants
 from neutron_fwaas.services.firewall.agents import firewall_agent_api

@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import netaddr
 from neutron.db import common_db_mixin as base_db
 from neutron_lib import constants as nl_constants
 from neutron_lib.db import model_base
@@ -25,9 +26,8 @@ from sqlalchemy.ext.orderinglist import ordering_list
 from sqlalchemy import orm
 from sqlalchemy.orm import exc
 
-import netaddr
-
 from neutron_fwaas.extensions import firewall_v2 as fw_ext
+
 
 LOG = logging.getLogger(__name__)
 

@@ -13,9 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from oslo_log import log as logging
-
 from neutron.agent.linux import utils as linux_utils
+from oslo_log import log as logging
 
 from neutron_fwaas._i18n import _
 from neutron_fwaas.services.firewall.drivers import conntrack_base

@@ -16,6 +16,11 @@
 import mock
 from neutron.tests import fake_notifier
 from neutron.tests.unit.extensions import test_l3 as test_l3_plugin
+from neutron_lib import constants as nl_constants
+from neutron_lib import context
+from neutron_lib.exceptions import firewall_v2 as f_exc
+from neutron_lib.plugins import constants as plugin_constants
+from neutron_lib.plugins import directory
 from oslo_config import cfg
 import six
 
@@ -25,11 +30,7 @@ from neutron_fwaas.services.firewall import fwaas_plugin_v2
 from neutron_fwaas.tests import base
 from neutron_fwaas.tests.unit.db.firewall.v2 import (
     test_firewall_db_v2 as test_db_firewall)
-from neutron_lib import constants as nl_constants
-from neutron_lib import context
-from neutron_lib.exceptions import firewall_v2 as f_exc
-from neutron_lib.plugins import constants as plugin_constants
-from neutron_lib.plugins import directory
+
 
 extensions_path = neutron_fwaas.extensions.__path__[0]
 
