@@ -16,6 +16,7 @@
 from neutron.agent.linux import iptables_manager
 from neutron.common import utils
 from neutron_lib.exceptions import firewall_v2 as f_exc
+from neutron_lib.utils import runtime
 from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_utils import excutils
@@ -75,8 +76,8 @@ class IptablesFwaasDriver(fwaas_base.FwaasDriverBase):
         """
 
         try:
-            return utils.load_class_by_alias_or_classname(namespace,
-                    driver)
+            return runtime.load_class_by_alias_or_classname(
+                namespace, driver)
         except ImportError:
             with excutils.save_and_reraise_exception():
                 LOG.error(_LE("Driver '%s' not found."), driver)
