@@ -10,6 +10,7 @@
 #  License for the specific language governing permissions and limitations
 #  under the License.
 
+import neutron_fwaas.extensions.firewall
 import neutron_fwaas.services.firewall.agents.firewall_agent_api
 
 
