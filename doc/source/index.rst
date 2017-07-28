@@ -9,6 +9,7 @@ General Information and Other Project References:
    :maxdepth: 2
 
    install/index
+   configuration/index
    contributor/index
 
 .. rubric:: Indices and tables
