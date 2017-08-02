@@ -37,13 +37,12 @@ MAX_INTF_NAME_LEN = 14
 class IptablesFwaasTestCase(base.BaseTestCase):
     def setUp(self):
         super(IptablesFwaasTestCase, self).setUp()
-        self.utils_exec_p = mock.patch(
-            'neutron.agent.linux.utils.execute')
-        self.utils_exec = self.utils_exec_p.start()
         self.iptables_cls_p = mock.patch(
             'neutron.agent.linux.iptables_manager.IptablesManager')
         self.iptables_cls_p.start()
         self.firewall = fwaas.IptablesFwaasDriver()
+        self.firewall.conntrack.delete_entries = mock.Mock()
+        self.firewall.conntrack.flush_entries = mock.Mock()
 
     def _fake_rules_v4(self, fwid, apply_list):
         rule_list = []
@@ -304,11 +303,8 @@ class IptablesFwaasTestCase(base.BaseTestCase):
         self.firewall.create_firewall_group(FW_LEGACY, apply_list, firewall)
         for router_info_inst, port_ids in apply_list:
             namespace = router_info_inst.iptables_manager.namespace
-            cmd = ['ip', 'netns', 'exec', namespace, 'conntrack', '-D']
-            calls = [
-                mock.call(cmd, run_as_root=True, check_exit_code=True,
-                      extra_ok_codes=[1])]
-            self.utils_exec.assert_has_calls(calls)
+            calls = [mock.call(namespace)]
+            self.firewall.conntrack.flush_entries.assert_has_calls(calls)
 
     def test_remove_conntrack_inserted_rule(self):
         apply_list = self._fake_apply_list()
@@ -324,18 +320,35 @@ class IptablesFwaasTestCase(base.BaseTestCase):
         rule_list.insert(2, insert_rule)
         firewall = self._fake_firewall(rule_list)
         self.firewall.update_firewall_group(FW_LEGACY, apply_list, firewall)
+        rules_changed = [
+            {'destination_port': '23',
+             'position': '2',
+             'protocol': 'tcp',
+             'ip_version': 4,
+             'enabled': True,
+             'action': 'reject',
+             'id': 'fake-fw-rule3'},
+            {'destination_port': '23',
+             'position': '3',
+             'protocol': 'tcp',
+             'ip_version': 4,
+             'enabled': True,
+             'action': 'reject',
+             'id': 'fake-fw-rule3'}
+        ] * 2  # Egress and ingress rule lists
+        rules_inserted = [
+            {'id': 'fake-fw-rule',
+             'protocol': 'icmp',
+             'ip_version': 4,
+             'enabled': True,
+             'action': 'deny',
+             'position': '2'}
+        ] * 2  # Egress and ingress rule lists
         for router_info_inst, port_ids in apply_list:
             namespace = router_info_inst.iptables_manager.namespace
-            cmd1 = ['ip', 'netns', 'exec', namespace, 'conntrack',
-                    '-D', '-p', 'tcp', '-f', 'ipv4', '--dport', '23']
-            cmd2 = ['ip', 'netns', 'exec', namespace, 'conntrack',
-                    '-D', '-p', 'icmp', '-f', 'ipv4']
-            calls = [
-                mock.call(cmd1, run_as_root=True, check_exit_code=True,
-                      extra_ok_codes=[1]),
-                mock.call(cmd2, run_as_root=True, check_exit_code=True,
-                      extra_ok_codes=[1])]
-            self.utils_exec.assert_has_calls(calls)
+            self.firewall.conntrack.delete_entries.assert_called_once_with(
+                rules_changed + rules_inserted, namespace
+            )
 
     def test_remove_conntrack_removed_rule(self):
         apply_list = self._fake_apply_list()
@@ -347,18 +360,36 @@ class IptablesFwaasTestCase(base.BaseTestCase):
         rule_list.remove(remove_rule)
         firewall = self._fake_firewall(rule_list)
         self.firewall.update_firewall_group(FW_LEGACY, apply_list, firewall)
+        rules_changed = [
+            {'destination_port': '23',
+             'position': '2',
+             'protocol': 'tcp',
+             'ip_version': 4,
+             'enabled': True,
+             'action': 'reject',
+             'id': 'fake-fw-rule3'},
+            {'destination_port': '23',
+             'position': '1',
+             'protocol': 'tcp',
+             'ip_version': 4,
+             'enabled': True,
+             'action': 'reject',
+             'id': 'fake-fw-rule3'}
+        ] * 2  # Egress and ingress rule lists
+        rules_removed = [
+            {'enabled': True,
+             'position': '1',
+             'protocol': 'tcp',
+             'id': 'fake-fw-rule2',
+             'ip_version': 4,
+             'action': 'deny',
+             'destination_port': '22'}
+        ] * 2  # Egress and ingress rule lists
         for router_info_inst, port_ids in apply_list:
             namespace = router_info_inst.iptables_manager.namespace
-            cmd1 = ['ip', 'netns', 'exec', namespace, 'conntrack',
-                    '-D', '-p', 'tcp', '-f', 'ipv4', '--dport', '23']
-            cmd2 = ['ip', 'netns', 'exec', namespace, 'conntrack',
-                    '-D', '-p', 'tcp', '-f', 'ipv4', '--dport', '22']
-            calls = [
-                mock.call(cmd1, run_as_root=True, check_exit_code=True,
-                      extra_ok_codes=[1]),
-                mock.call(cmd2, run_as_root=True, check_exit_code=True,
-                      extra_ok_codes=[1])]
-            self.utils_exec.assert_has_calls(calls)
+            self.firewall.conntrack.delete_entries.assert_called_once_with(
+                rules_changed + rules_removed, namespace
+            )
 
     def test_remove_conntrack_changed_rule(self):
         apply_list = self._fake_apply_list()
@@ -368,20 +399,28 @@ class IptablesFwaasTestCase(base.BaseTestCase):
         income_rule = {'enabled': True,
                  'action': 'deny',
                  'ip_version': 4,
-                 'protocol': 'icmp',
-                 'id': 'fake-fw-rule2'}
-        rule_list[1] = income_rule
+                 'protocol': 'tcp',
+                 'id': 'fake-fw-rule3'}
+        rule_list[2] = income_rule
         firewall = self._fake_firewall(rule_list)
         self.firewall.update_firewall_group(FW_LEGACY, apply_list, firewall)
+        rules_changed = [
+            {'id': 'fake-fw-rule3',
+             'enabled': True,
+             'action': 'reject',
+             'position': '2',
+             'destination_port': '23',
+             'ip_version': 4,
+             'protocol': 'tcp'},
+            {'position': '2',
+             'enabled': True,
+             'action': 'deny',
+             'id': 'fake-fw-rule3',
+             'ip_version': 4,
+             'protocol': 'tcp'}
+        ] * 2  # Egress and ingress rule lists
         for router_info_inst, port_ids in apply_list:
             namespace = router_info_inst.iptables_manager.namespace
-            cmd1 = ['ip', 'netns', 'exec', namespace, 'conntrack', '-D',
-                    '-p', 'tcp', '-f', 'ipv4', '--dport', '22']
-            cmd2 = ['ip', 'netns', 'exec', namespace, 'conntrack', '-D',
-                    '-p', 'icmp', '-f', 'ipv4']
-            calls = [
-                mock.call(cmd1, run_as_root=True, check_exit_code=True,
-                      extra_ok_codes=[1]),
-                mock.call(cmd2, run_as_root=True, check_exit_code=True,
-                      extra_ok_codes=[1])]
-            self.utils_exec.assert_has_calls(calls)
+            self.firewall.conntrack.delete_entries.assert_called_once_with(
+                rules_changed, namespace
+            )

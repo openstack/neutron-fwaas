@@ -16,12 +16,10 @@
 from neutron.agent.linux import iptables_manager
 from neutron.common import utils
 from neutron_lib.exceptions import firewall_v1 as f_exc
-from neutron_lib.utils import runtime
-from oslo_config import cfg
 from oslo_log import log as logging
-from oslo_utils import excutils
 
 from neutron_fwaas.common import fwaas_constants as f_const
+from neutron_fwaas.services.firewall.drivers import conntrack_base
 from neutron_fwaas.services.firewall.drivers import fwaas_base
 
 
@@ -59,27 +57,7 @@ class IptablesFwaasDriver(fwaas_base.FwaasDriverBase):
     def __init__(self):
         LOG.debug("Initializing fwaas iptables driver")
         self.pre_firewall = None
-        conntrack_cls = self._load_firewall_extension_driver(
-                'neutron_fwaas.services.firewall.drivers.linux',
-                cfg.CONF.fwaas.conntrack_driver)
-        self.conntrack = conntrack_cls()
-        self.conntrack.initialize()
-
-    @staticmethod
-    def _load_firewall_extension_driver(namespace, driver):
-        """Loads driver using alias or class name
-        :param namespace: namespace where alias is defined
-        :param driver: driver alias or class name
-        :returns driver that is loaded
-        :raises ImportError if fails to load driver
-        """
-
-        try:
-            return runtime.load_class_by_alias_or_classname(
-                namespace, driver)
-        except ImportError:
-            with excutils.save_and_reraise_exception():
-                LOG.error("Driver '%s' not found.", driver)
+        self.conntrack = conntrack_base.load_and_init_conntrack_driver()
 
     def create_firewall(self, agent_mode, apply_list, firewall):
         LOG.debug('Creating firewall %(fw_id)s for tenant %(tid)s',

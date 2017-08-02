@@ -17,6 +17,26 @@ import abc
 
 import six
 
+from neutron_lib.utils import runtime
+from oslo_config import cfg
+from oslo_log import log as logging
+from oslo_utils import excutils
+
+LOG = logging.getLogger(__name__)
+
+
+def load_and_init_conntrack_driver(*args, **kwargs):
+    driver = cfg.CONF.fwaas.conntrack_driver
+    try:
+        conntrack_driver_cls = runtime.load_class_by_alias_or_classname(
+            'neutron_fwaas.services.firewall.drivers.linux', driver)
+    except ImportError:
+        with excutils.save_and_reraise_exception():
+            LOG.exception("Driver '%s' not found.", driver)
+    conntrack_driver = conntrack_driver_cls()
+    conntrack_driver.initialize(*args, **kwargs)
+    return conntrack_driver
+
 
 @six.add_metaclass(abc.ABCMeta)
 class ConntrackDriverBase(object):
