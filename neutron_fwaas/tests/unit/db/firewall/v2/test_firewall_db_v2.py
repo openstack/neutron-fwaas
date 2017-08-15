@@ -1290,7 +1290,7 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
                 res = req.get_response(self.ext_api)
                 self.assertEqual(404, res.status_int)
 
-    def test_delete_firewall(self):
+    def test_delete_firewall_group(self):
         ctx = context.get_admin_context()
         with self.firewall_policy() as fwp:
             fwp_id = fwp['firewall_policy']['id']
@@ -1303,6 +1303,14 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
                 self.assertRaises(f_exc.FirewallGroupNotFound,
                                   self.plugin.get_firewall_group,
                                   ctx, fw_id)
+
+    def test_delete_firewall_group_already_deleted(self):
+        ctx = context.get_admin_context()
+        deleted_id = uuidutils.generate_uuid()
+        with self.firewall_group(do_delete=False) as fwg:
+            fwg_id = fwg['firewall_group']['id']
+            self.assertIsNone(self.plugin.delete_firewall_group(ctx, fwg_id))
+        self.assertIsNone(self.plugin.delete_firewall_group(ctx, deleted_id))
 
     def test_insert_rule_in_policy_with_prior_rules_added_via_update(self):
         attrs = self._get_test_firewall_policy_attrs()

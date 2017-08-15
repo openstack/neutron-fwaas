@@ -799,10 +799,9 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
         with context.session.begin(subtransactions=True):
             # Note: Plugin should ensure that it's okay to delete if the
             # firewall is active
-            count = context.session.query(
+            context.session.query(
                 FirewallGroup).filter_by(id=id).delete()
-            if not count:
-                raise f_exc.FirewallGroupNotFound(firewall_id=id)
+            # No need to check if FWG exists -- if it's deleted it's deleted
 
     def get_firewall_group(self, context, id, fields=None):
         LOG.debug("get_firewall_group() called")
