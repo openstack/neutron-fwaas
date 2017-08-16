@@ -231,7 +231,7 @@ class FirewallPluginV2(
                 raise f_exc.FirewallGroupPortInvalid(port_id=port_id)
             if port_db['tenant_id'] != tenant_id:
                 raise f_exc.FirewallGroupPortInvalidProject(
-                    port_id=port_id, tenant_id=port_db['tenant_id'])
+                    port_id=port_id, project_id=port_db['tenant_id'])
         return
 
     def _check_no_need_pending(self, context, fwg_id, fwg_body):
