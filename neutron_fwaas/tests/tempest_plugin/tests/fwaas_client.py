@@ -32,6 +32,7 @@ class FWaaSClientMixin(object):
     def resource_setup(cls):
         super(FWaaSClientMixin, cls).resource_setup()
         manager = cls.os_primary
+        default_params = config.service_client_config()
         cls.firewalls_client = client.FirewallsClient(
             manager.auth_provider,
             CONF.network.catalog_type,
@@ -39,7 +40,7 @@ class FWaaSClientMixin(object):
             endpoint_type=CONF.network.endpoint_type,
             build_interval=CONF.network.build_interval,
             build_timeout=CONF.network.build_timeout,
-            **manager.default_params)
+            **default_params)
         cls.firewall_policies_client = client.FirewallPoliciesClient(
             manager.auth_provider,
             CONF.network.catalog_type,
@@ -47,7 +48,7 @@ class FWaaSClientMixin(object):
             endpoint_type=CONF.network.endpoint_type,
             build_interval=CONF.network.build_interval,
             build_timeout=CONF.network.build_timeout,
-            **manager.default_params)
+            **default_params)
         cls.firewall_rules_client = client.FirewallRulesClient(
             manager.auth_provider,
             CONF.network.catalog_type,
@@ -55,7 +56,7 @@ class FWaaSClientMixin(object):
             endpoint_type=CONF.network.endpoint_type,
             build_interval=CONF.network.build_interval,
             build_timeout=CONF.network.build_timeout,
-            **manager.default_params)
+            **default_params)
 
     def create_firewall_rule(self, **kwargs):
         body = self.firewall_rules_client.create_firewall_rule(
