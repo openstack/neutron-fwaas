@@ -37,6 +37,7 @@ function configure_fwaas_v1() {
     neutron_fwaas_configure_driver fwaas
     iniset_multiline $Q_L3_CONF_FILE fwaas agent_version v1
     iniset_multiline $Q_L3_CONF_FILE fwaas conntrack_driver conntrack
+    iniset_multiline $Q_L3_CONF_FILE fwaas driver $FWAAS_DRIVER_V1
 }
 
 function configure_fwaas_v2() {
@@ -44,6 +45,7 @@ function configure_fwaas_v2() {
     cp $NEUTRON_FWAAS_DIR/etc/neutron_fwaas.conf.sample $NEUTRON_FWAAS_CONF
     neutron_fwaas_configure_driver fwaas_v2
     iniset_multiline $Q_L3_CONF_FILE fwaas agent_version v2
+    iniset_multiline $Q_L3_CONF_FILE fwaas driver $FWAAS_DRIVER_V2
 }
 
 function neutron_fwaas_generate_config_files {
@@ -85,7 +87,6 @@ function neutron_fwaas_configure_driver {
     plugin_agent_add_l3_agent_extension $1
     configure_l3_agent
     iniset_multiline $Q_L3_CONF_FILE fwaas enabled True
-    iniset_multiline $Q_L3_CONF_FILE fwaas driver $FWAAS_DRIVER
 }
 
 # check for service enabled
