@@ -15,6 +15,7 @@
 
 import netaddr
 from neutron.db import common_db_mixin as base_db
+from neutron_lib.api import validators
 from neutron_lib import constants as nl_constants
 from neutron_lib.db import model_base
 from neutron_lib.exceptions import firewall_v2 as f_exc
@@ -403,14 +404,12 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
 
     def insert_rule(self, context, id, rule_info):
         LOG.debug("insert_rule() called")
-        self._validate_insert_remove_rule_request(id, rule_info)
+        self._validate_insert_remove_rule_request(rule_info)
         firewall_rule_id = rule_info['firewall_rule_id']
         # ensure rule is not already assigned to the policy
         self._ensure_rule_not_already_associated(context, id, firewall_rule_id)
         insert_before = True
         ref_firewall_rule_id = None
-        if not firewall_rule_id:
-            raise f_exc.FirewallRuleNotFound(firewall_rule_id=None)
         if 'insert_before' in rule_info:
             ref_firewall_rule_id = rule_info['insert_before']
         if not ref_firewall_rule_id and 'insert_after' in rule_info:
@@ -445,10 +444,8 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
 
     def remove_rule(self, context, id, rule_info):
         LOG.debug("remove_rule() called")
-        self._validate_insert_remove_rule_request(id, rule_info)
+        self._validate_insert_remove_rule_request(rule_info)
         firewall_rule_id = rule_info['firewall_rule_id']
-        if not firewall_rule_id:
-            raise f_exc.FirewallRuleNotFound(firewall_rule_id=None)
         with context.session.begin(subtransactions=True):
             self._get_firewall_rule(context, firewall_rule_id)
             fwpra_db = self._get_policy_rule_association(context, id,
@@ -467,9 +464,18 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
                                     self._make_firewall_rule_dict,
                                     filters=filters, fields=fields)
 
-    def _validate_insert_remove_rule_request(self, id, rule_info):
+    def _validate_insert_remove_rule_request(self, rule_info):
+        """Validate rule_info dict
+
+        Check that all mandatory fields are present, otherwise raise
+        proper exception.
+        """
         if not rule_info or 'firewall_rule_id' not in rule_info:
             raise f_exc.FirewallRuleInfoMissing()
+        # Validator doesn't return anything if the check passes
+        if validators.validate_uuid(rule_info['firewall_rule_id']):
+            raise f_exc.FirewallRuleNotFound(
+                firewall_rule_id=rule_info['firewall_rule_id'])
 
     def _delete_rules_in_policy(self, context, firewall_policy_id):
         """Delete the rules in the  firewall policy."""

@@ -388,3 +388,19 @@ class FirewallPluginV2(
         for fwp_id in fwp_ids:
             self._rpc_update_firewall_policy(context, fwp_id)
         return fwr
+
+    def insert_rule(self, context, policy_id, rule_info):
+        LOG.debug("insert_rule() called for policy %s ", policy_id)
+        self._ensure_update_firewall_policy(context, policy_id)
+        fwp = super(FirewallPluginV2, self).insert_rule(context, policy_id,
+                                                        rule_info)
+        self._rpc_update_firewall_policy(context, policy_id)
+        return fwp
+
+    def remove_rule(self, context, policy_id, rule_info):
+        LOG.debug("remove_rule() called for policy %s ", policy_id)
+        self._ensure_update_firewall_policy(context, policy_id)
+        fwp = super(FirewallPluginV2, self).remove_rule(context, policy_id,
+                                                        rule_info)
+        self._rpc_update_firewall_policy(context, policy_id)
+        return fwp
