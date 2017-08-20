@@ -383,4 +383,62 @@ class TestFWaaSL3AgentExtension(base.BaseTestCase):
                 mock_get_ipt_mgrs_with_if_prefix.assert_any_call(
                     agent.conf.agent_mode, mock.ANY)
 
+    @mock.patch('oslo_utils.importutils.import_object')
+    def test_add_router_with_several_ports(self, mock_import_object):
+        fw_agent = _setup_test_agent_class([fwaas_constants.FIREWALL])
+        cfg.CONF.set_override('enabled', True, 'fwaas')
+        updated_router = {
+            '_interfaces': [
+                {'device_owner': 'network: router_interface',
+                 'id': '1',
+                 'tenant_id': 'demo_tenant_id'},
+                {'device_owner': 'network: router_interface',
+                 'id': '2',
+                 'tenant_id': 'demo_tenant_id'},
+                {'device_owner': 'network: router_interface',
+                 'id': '3',
+                 'tenant_id': 'demo_tenant_id'}],
+            'tenant_id': 'demo_tenant_id',
+            'id': '0b109a4e-d228-479d-ad43-08bf3245adbb',
+            'name': 'demo_router'
+        }
+        fwg1 = {
+            'status': 'ACTIVE',
+            'admin_state_up': True,
+            'tenant_id': 'demo_tenant_id',
+            'del-port-ids': [],
+            'add-port-ids': ['1', '3'],
+            'id': '2932b3d9-3a7b-48a1-a16c-bf9f7b2751a5'
+        }
+        fwg2 = {
+            'status': 'ACTIVE',
+            'admin_state_up': True,
+            'tenant_id': 'demo_tenant_id',
+            'del-port-ids': [],
+            'add-port-ids': ['2', '3'],
+            'id': '2932b3d9-3a7b-48a1-a16c-bf9f7b2751a5'
+        }
+        agent = fw_agent(cfg.CONF)
+        agent.agent_api = mock.Mock()
+        agent.fwplugin_rpc = mock.Mock()
+        agent.conf.agent_mode = mock.Mock()
+        agent.fwaas_driver = iptables_fwaas_v2.IptablesFwaasDriver()
+
+        patch_project = mock.patch.object(
+            agent.fwplugin_rpc, 'get_firewall_groups_for_project')
+        patch_invoke = mock.patch.object(
+            agent, '_invoke_driver_for_sync_from_plugin')
+
+        with patch_project as mock_get_firewall_groups, \
+                patch_invoke as mock_invoke_driver:
+            mock_get_firewall_groups.return_value = [fwg1, fwg2]
+            agent.add_router(self.context, updated_router)
+
+            # Check that mock_invoke_driver was called exactly twice with
+            # correct arguments.
+            self.assertEqual([
+                mock.call(mock.ANY, {'1', '3'}, fwg1),
+                mock.call(mock.ANY, {'2'}, fwg2),
+            ], mock_invoke_driver.call_args_list)
+
     #TODO(Margaret) Add test for add_router method.
