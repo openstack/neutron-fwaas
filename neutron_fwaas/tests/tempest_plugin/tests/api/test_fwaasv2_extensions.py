@@ -210,7 +210,11 @@ class FWaaSv2ExtensionTestJSON(v2_base.BaseFWaaSTest):
         fw_rule = self.firewall_rules_client.show_firewall_rule(
             self.fw_rule_1['id'])
         for key, value in six.iteritems(fw_rule['firewall_rule']):
-            self.assertEqual(self.fw_rule_1[key], value)
+            if key != 'firewall_policy_id':
+                self.assertEqual(self.fw_rule_1[key], value)
+            # This check is placed because we cannot modify policy during
+            # Create/Update of Firewall Rule but we can see the association
+            # of a Firewall Rule with the policies it belongs to.
 
     @decorators.idempotent_id('f6b83902-746f-4e74-9403-2ec9899583a3')
     def test_list_firewall_policies(self):
