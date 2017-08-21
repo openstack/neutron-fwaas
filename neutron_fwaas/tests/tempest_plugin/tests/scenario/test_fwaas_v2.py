@@ -224,8 +224,13 @@ class TestFWaaS_v2(base.FWaaSScenarioTest_V2):
             private_key=topology['private_key2'])
 
         # Scenario 1: Add allow ICMP rules between the two VMs.
-        fw_rule = self.create_firewall_rule(action="allow", protocol="icmp")
-        fw_policy = self.create_firewall_policy(firewall_rules=[fw_rule['id']])
+        fw_allow_icmp_rule = self.create_firewall_rule(action="allow",
+                                                       protocol="icmp")
+        fw_allow_ssh_rule = self.create_firewall_rule(action="allow",
+                                                      protocol="tcp",
+                                                      destination_port=22)
+        fw_policy = self.create_firewall_policy(
+            firewall_rules=[fw_allow_icmp_rule['id'], fw_allow_ssh_rule['id']])
         fw_group = self.create_firewall_group(
             ports=[
                 topology['router_portid_1'],
@@ -233,8 +238,9 @@ class TestFWaaS_v2(base.FWaaSScenarioTest_V2):
             ingress_firewall_policy_id=fw_policy['id'],
             egress_firewall_policy_id=fw_policy['id'])
         self._wait_firewall_group_ready(fw_group['id'])
-        LOG.debug('fw_rule: %s\nfw_policy: %s\nfw_group: %s\n',
-                  fw_rule, fw_policy, fw_group)
+        LOG.debug('fw_allow_icmp_rule: %s\nfw_allow_ssh_rule: %s\n'
+                  'fw_policy: %s\nfw_group: %s\n',
+                  fw_allow_icmp_rule, fw_allow_ssh_rule, fw_policy, fw_group)
 
         # Check the connectivity between VM1 and VM2. It should Pass.
         self._check_connectivity_between_internal_networks(
