@@ -1,0 +1,11 @@
+---
+fixes:
+  - |
+    [`bug 1702242 <https://bugs.launchpad.net/neutron/+bug/1702242>`__]
+    Port range specification of a firewall rule now works expectedly
+    with the reference L3 agent based implementation.
+    Previously, when creating a firewall rule with port range like
+    ``8778:9000``, the rule was not deleted correctly and only entries
+    associated with the first port number were clean up.
+    Note that this bug is only applied to the reference L3 agent
+    based implementation.
