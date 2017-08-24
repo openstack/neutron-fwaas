@@ -140,7 +140,6 @@ class TestFWaaS_v2(base.FWaaSScenarioTest_V2):
         private_key = keys['private_key']
         server_floating_ip = self.create_floating_ip(server, pub_network_id)
         fixed_ip = server['addresses'].values()[0][0]['addr']
-        #floating_ip = server_floating_ip['floating_ip_address']
         return server, private_key, fixed_ip, server_floating_ip
 
     def _create_topology(self):
@@ -243,9 +242,26 @@ class TestFWaaS_v2(base.FWaaSScenarioTest_V2):
                   fw_allow_icmp_rule, fw_allow_ssh_rule, fw_policy, fw_group)
 
         # Check the connectivity between VM1 and VM2. It should Pass.
-        self._check_connectivity_between_internal_networks(
+        self._check_server_connectivity(
             topology['server_floating_ip_1'],
             topology['private_key1'],
-            topology['network2'],
-            topology['server2'],
+            address_list=[topology['server_fixed_ip_2']],
             should_connect=True)
+
+        # Now remove the allow_icmp rule add a deny_icmp rule and check that
+        # ICMP gets blocked
+        fw_deny_icmp_rule = self.create_firewall_rule(action="deny",
+                                                      protocol="icmp")
+        self.remove_firewall_rule_from_policy(
+            firewall_rule_id=fw_allow_icmp_rule['id'],
+            firewall_policy_id=fw_policy['id'])
+        self._wait_firewall_group_ready(fw_group['id'])
+        self.insert_firewall_rule_in_policy(
+            firewall_rule_id=fw_deny_icmp_rule['id'],
+            firewall_policy_id=fw_policy['id'])
+        self._wait_firewall_group_ready(fw_group['id'])
+        self._check_server_connectivity(
+            topology['server_floating_ip_1'],
+            topology['private_key1'],
+            address_list=[topology['server_fixed_ip_2']],
+            should_connect=False)

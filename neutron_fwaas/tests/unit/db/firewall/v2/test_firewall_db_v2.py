@@ -1464,6 +1464,52 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
                     expected_code=webob.exc.HTTPConflict.code,
                     expected_body=None, body_data=insert_data)
 
+    def test_insert_rule_missing_rule_id(self):
+        with self.firewall_rule(tenant_id='tenant-2', shared=False):
+            with self.firewall_policy(name='firewall_policy') as fwp:
+                fwp_id = fwp['firewall_policy']['id']
+                insert_data = {}
+                self._rule_action(
+                    'insert', fwp_id, None, insert_before=None,
+                    insert_after=None,
+                    expected_code=webob.exc.HTTPBadRequest.code,
+                    expected_body=None, body_data=insert_data)
+
+    def test_insert_rule_empty_rule_id(self):
+        with self.firewall_rule(tenant_id='tenant-2', shared=False):
+            with self.firewall_policy(name='firewall_policy') as fwp:
+                fwp_id = fwp['firewall_policy']['id']
+                insert_data = {'firewall_rule_id': None}
+                self._rule_action(
+                    'insert', fwp_id, None, insert_before=None,
+                    insert_after=None,
+                    expected_code=webob.exc.HTTPNotFound.code,
+                    expected_body=None, body_data=insert_data)
+
+    def test_insert_rule_invalid_rule_id(self):
+        with self.firewall_rule(tenant_id='tenant-2', shared=False):
+            with self.firewall_policy(name='firewall_policy') as fwp:
+                fwp_id = fwp['firewall_policy']['id']
+                fwr_id_fake = 'foo'
+                insert_data = {'firewall_rule_id': fwr_id_fake}
+                self._rule_action(
+                    'insert', fwp_id, fwr_id_fake, insert_before=None,
+                    insert_after=None,
+                    expected_code=webob.exc.HTTPNotFound.code,
+                    expected_body=None, body_data=insert_data)
+
+    def test_insert_rule_nonexistent_rule_id(self):
+        with self.firewall_rule(tenant_id='tenant-2', shared=False):
+            with self.firewall_policy(name='firewall_policy') as fwp:
+                fwp_id = fwp['firewall_policy']['id']
+                fwr_id_fake = uuidutils.generate_uuid()
+                insert_data = {'firewall_rule_id': fwr_id_fake}
+                self._rule_action(
+                    'insert', fwp_id, fwr_id_fake, insert_before=None,
+                    insert_after=None,
+                    expected_code=webob.exc.HTTPNotFound.code,
+                    expected_body=None, body_data=insert_data)
+
     def test_insert_rule_in_policy(self):
         attrs = self._get_test_firewall_policy_attrs()
         attrs['audited'] = False
