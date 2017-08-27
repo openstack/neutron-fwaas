@@ -15,7 +15,7 @@
 
 from neutron.agent.linux import iptables_manager
 from neutron.common import utils
-from neutron_lib.exceptions import firewall_v2 as f_exc
+from neutron_lib.exceptions import firewall_v1 as f_exc
 from neutron_lib.utils import runtime
 from oslo_config import cfg
 from oslo_log import log as logging

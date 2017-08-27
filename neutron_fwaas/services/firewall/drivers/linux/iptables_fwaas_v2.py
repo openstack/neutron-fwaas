@@ -16,7 +16,7 @@
 from neutron.agent.linux import iptables_manager
 from neutron.agent.linux import utils as linux_utils
 from neutron.common import utils
-from neutron_lib.api.definitions import firewall as fw_ext
+from neutron_lib.exceptions import firewall_v2 as fw_ext
 from oslo_log import log as logging
 
 from neutron_fwaas.services.firewall.drivers import fwaas_base_v2
