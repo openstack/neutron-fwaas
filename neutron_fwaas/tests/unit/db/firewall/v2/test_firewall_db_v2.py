@@ -30,7 +30,6 @@ import six
 import testtools
 import webob.exc
 
-from neutron_fwaas._i18n import _
 from neutron_fwaas.db.firewall.v2 import firewall_db_v2 as fdb
 from neutron_fwaas import extensions
 from neutron_fwaas.services.firewall import fwaas_plugin_v2
@@ -108,8 +107,8 @@ class FirewallPluginV2DbTestCase(base.NeutronDbPluginV2TestCase):
             cfg.BoolOpt(
                 'router_distributed',
                 default=False,
-                help=_("System-wide flag to determine the type of router "
-                       "that tenants can create. Only admin can override.")),
+                help=("System-wide flag to determine the type of router "
+                      "that tenants can create. Only admin can override.")),
         ]
         cfg.CONF.register_opts(router_distributed_opts)
 

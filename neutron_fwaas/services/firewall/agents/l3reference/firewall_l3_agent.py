@@ -22,7 +22,6 @@ from oslo_config import cfg
 from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
 
-from neutron_fwaas._i18n import _, _LE
 from neutron_fwaas.common import fwaas_constants
 from neutron_fwaas.common import resources as f_resources
 from neutron_fwaas.services.firewall.agents import firewall_agent_api as api
@@ -93,8 +92,8 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
             fwaas_plugin_configured = (fwaas_constants.FIREWALL
                                        in self.neutron_service_plugins)
             if fwaas_plugin_configured and not self.fwaas_enabled:
-                msg = _("FWaaS plugin is configured in the server side, but "
-                        "FWaaS is disabled in L3-agent.")
+                msg = ("FWaaS plugin is configured in the server side, but "
+                       "FWaaS is disabled in L3-agent.")
                 LOG.error(msg)
                 raise SystemExit(1)
             self.fwaas_enabled = self.fwaas_enabled and fwaas_plugin_configured
@@ -123,7 +122,7 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
 
     def _get_routers_in_project(self, project_id):
         if self.agent_api is None:
-            LOG.exception(_LE("FWaaS RPC call failed; L3 agent_api failure"))
+            LOG.exception("FWaaS RPC call failed; L3 agent_api failure")
         router_info = self.agent_api._router_info
         if project_id:
             return [ri for ri in router_info.values()
@@ -152,8 +151,8 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
                     ctx,
                     fw['id'])
             except fw_ext.FirewallInternalDriverError:
-                LOG.error(_LE("Firewall Driver Error on fw state %(fwmsg)s "
-                              "for fw: %(fwid)s"),
+                LOG.error("Firewall Driver Error on fw state %(fwmsg)s "
+                          "for fw: %(fwid)s",
                           {'fwmsg': fw['status'], 'fwid': fw['id']})
                 self.fwplugin_rpc.set_firewall_status(
                     ctx,
@@ -171,8 +170,8 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
                 else:
                     status = nl_constants.DOWN
             except fw_ext.FirewallInternalDriverError:
-                LOG.error(_LE("Firewall Driver Error on fw state %(fwmsg)s "
-                              "for fw: %(fwid)s"),
+                LOG.error("Firewall Driver Error on fw state %(fwmsg)s "
+                          "for fw: %(fwid)s",
                           {'fwmsg': fw['status'], 'fwid': fw['id']})
                 status = nl_constants.ERROR
 
@@ -220,8 +219,7 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
             self._process_router_add(new_router)
         except Exception:
             LOG.exception(
-                _LE("FWaaS RPC info call failed for '%s'."),
-                new_router['id'])
+                "FWaaS RPC info call failed for '%s'.", new_router['id'])
             self.services_sync_needed = True
 
     def update_router(self, context, updated_router):
@@ -261,7 +259,7 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
                         self.update_firewall(ctx, fw, self.host)
             self.services_sync_needed = False
         except Exception:
-            LOG.exception(_LE("Failed fwaas process services sync"))
+            LOG.exception("Failed fwaas process services sync")
             self.services_sync_needed = True
 
     @log_helpers.log_method_call
@@ -287,9 +285,8 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
             else:
                 status = nl_constants.DOWN
         except fw_ext.FirewallInternalDriverError:
-            LOG.error(_LE("Firewall Driver Error for create_firewall "
-                          "for firewall: %(fwid)s"),
-                {'fwid': firewall['id']})
+            LOG.error("Firewall Driver Error for create_firewall "
+                      "for firewall: %s", firewall['id'])
             status = nl_constants.ERROR
 
         try:
@@ -299,10 +296,8 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
                 firewall['id'],
                 status)
         except Exception:
-            LOG.exception(
-                _LE("FWaaS RPC failure in create_firewall "
-                    "for firewall: %(fwid)s"),
-                {'fwid': firewall['id']})
+            LOG.exception("FWaaS RPC failure in create_firewall "
+                          "for firewall: %s", firewall['id'])
             self.services_sync_needed = True
 
     @log_helpers.log_method_call
@@ -336,10 +331,9 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
                     else:
                         status = nl_constants.DOWN
                 except fw_ext.FirewallInternalDriverError:
-                    LOG.error(_LE("Firewall Driver Error for "
-                                  "update_firewall for firewall: "
-                                  "%(fwid)s"),
-                        {'fwid': firewall['id']})
+                    LOG.error(
+                        "Firewall Driver Error for "
+                        "update_firewall for firewall: %s", firewall['id'])
                     status = nl_constants.ERROR
 
         # handle the add router and/or rule, policy, firewall
@@ -363,10 +357,9 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
                     else:
                         status = nl_constants.DOWN
                 except fw_ext.FirewallInternalDriverError:
-                    LOG.error(_LE("Firewall Driver Error for "
-                                  "update_firewall for firewall: "
-                                  "%(fwid)s"),
-                        {'fwid': firewall['id']})
+                    LOG.error(
+                        "Firewall Driver Error for "
+                        "update_firewall for firewall: %s", firewall['id'])
                     status = nl_constants.ERROR
             else:
                 status = nl_constants.INACTIVE
@@ -377,10 +370,8 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
                 firewall['id'],
                 status)
         except Exception:
-            LOG.exception(
-                _LE("FWaaS RPC failure in update_firewall "
-                    "for firewall: %(fwid)s"),
-                {'fwid': firewall['id']})
+            LOG.exception("FWaaS RPC failure in update_firewall "
+                          "for firewall: %s", firewall['id'])
             self.services_sync_needed = True
 
     @log_helpers.log_method_call
@@ -408,9 +399,8 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
                 else:
                     status = nl_constants.DOWN
             except fw_ext.FirewallInternalDriverError:
-                LOG.error(_LE("Firewall Driver Error for delete_firewall "
-                              "for firewall: %(fwid)s"),
-                    {'fwid': firewall['id']})
+                LOG.error("Firewall Driver Error for delete_firewall "
+                          "for firewall: %s", firewall['id'])
                 status = nl_constants.ERROR
 
             try:
@@ -423,10 +413,8 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
                         firewall['id'],
                         status)
             except Exception:
-                LOG.exception(
-                    _LE("FWaaS RPC failure in delete_firewall "
-                        "for firewall: %(fwid)s"),
-                    {'fwid': firewall['id']})
+                LOG.exception("FWaaS RPC failure in delete_firewall "
+                              "for firewall: %s", firewall['id'])
                 self.services_sync_needed = True
 
 

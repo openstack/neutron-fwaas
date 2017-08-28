@@ -19,7 +19,6 @@ from neutron.common import utils
 from neutron_lib.api.definitions import firewall as fw_ext
 from oslo_log import log as logging
 
-from neutron_fwaas._i18n import _LE
 from neutron_fwaas.services.firewall.drivers import fwaas_base_v2
 
 LOG = logging.getLogger(__name__)
@@ -79,7 +78,7 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
                 self.apply_default_policy(agent_mode, apply_list, firewall)
         except (LookupError, RuntimeError):
             # catch known library exceptions and raise Fwaas generic exception
-            LOG.exception(_LE("Failed to create firewall: %s"), firewall['id'])
+            LOG.exception("Failed to create firewall: %s", firewall['id'])
             raise fw_ext.FirewallInternalDriverError(driver=FWAAS_DRIVER_NAME)
 
     def _get_ipt_mgrs_with_if_prefix(self, agent_mode, ri):
@@ -124,7 +123,7 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
             self.pre_firewall = None
         except (LookupError, RuntimeError):
             # catch known library exceptions and raise Fwaas generic exception
-            LOG.exception(_LE("Failed to delete firewall: %s"), fwid)
+            LOG.exception("Failed to delete firewall: %s", fwid)
             raise fw_ext.FirewallInternalDriverError(driver=FWAAS_DRIVER_NAME)
 
     def update_firewall_group(self, agent_mode, apply_list, firewall):
@@ -144,7 +143,7 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
             self.pre_firewall = dict(firewall)
         except (LookupError, RuntimeError):
             # catch known library exceptions and raise Fwaas generic exception
-            LOG.exception(_LE("Failed to update firewall: %s"), firewall['id'])
+            LOG.exception("Failed to update firewall: %s", firewall['id'])
             raise fw_ext.FirewallInternalDriverError(driver=FWAAS_DRIVER_NAME)
 
     def apply_default_policy(self, agent_mode, apply_list, firewall):
@@ -171,7 +170,7 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
         except (LookupError, RuntimeError):
             # catch known library exceptions and raise Fwaas generic exception
             LOG.exception(
-                _LE("Failed to apply default policy on firewall: %s"), fwid)
+                "Failed to apply default policy on firewall: %s", fwid)
             raise fw_ext.FirewallInternalDriverError(driver=FWAAS_DRIVER_NAME)
 
     def _setup_firewall(self, agent_mode, apply_list, firewall):
@@ -296,8 +295,7 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
                                     check_exit_code=True,
                                     extra_ok_codes=[1])
             except RuntimeError:
-                LOG.exception(
-                        _LE("Failed execute conntrack command %s"), str(cmd))
+                LOG.exception("Failed execute conntrack command %s", str(cmd))
 
     def _remove_conntrack_new_firewall(self, agent_mode, apply_list, firewall):
         """Remove conntrack when create new firewall"""

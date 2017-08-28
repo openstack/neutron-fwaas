@@ -17,7 +17,6 @@ from neutron.agent.linux import utils as linux_utils
 from neutron_lib import constants
 from oslo_log import log as logging
 
-from neutron_fwaas._i18n import _
 from neutron_fwaas.services.firewall.drivers import conntrack_base
 
 
@@ -58,7 +57,7 @@ class ConntrackLegacy(conntrack_base.ConntrackDriverBase):
                                   check_exit_code=True,
                                   extra_ok_codes=[1])
         except RuntimeError:
-            msg = _("Failed execute conntrack command %s") % cmd
+            msg = "Failed execute conntrack command %s" % cmd
             raise RuntimeError(msg)
         return output
 

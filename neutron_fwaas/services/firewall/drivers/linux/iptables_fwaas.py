@@ -21,7 +21,6 @@ from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_utils import excutils
 
-from neutron_fwaas._i18n import _LE
 from neutron_fwaas.common import fwaas_constants as f_const
 from neutron_fwaas.services.firewall.drivers import fwaas_base
 
@@ -80,7 +79,7 @@ class IptablesFwaasDriver(fwaas_base.FwaasDriverBase):
                 namespace, driver)
         except ImportError:
             with excutils.save_and_reraise_exception():
-                LOG.error(_LE("Driver '%s' not found."), driver)
+                LOG.error("Driver '%s' not found.", driver)
 
     def create_firewall(self, agent_mode, apply_list, firewall):
         LOG.debug('Creating firewall %(fw_id)s for tenant %(tid)s',
@@ -95,7 +94,7 @@ class IptablesFwaasDriver(fwaas_base.FwaasDriverBase):
                 self.apply_default_policy(agent_mode, apply_list, firewall)
         except (LookupError, RuntimeError):
             # catch known library exceptions and raise Fwaas generic exception
-            LOG.exception(_LE("Failed to create firewall: %s"), firewall['id'])
+            LOG.exception("Failed to create firewall: %s", firewall['id'])
             raise f_exc.FirewallInternalDriverError(driver=FWAAS_DRIVER_NAME)
 
     def _get_ipt_mgrs_with_if_prefix(self, agent_mode, router_info):
@@ -140,7 +139,7 @@ class IptablesFwaasDriver(fwaas_base.FwaasDriverBase):
             self.pre_firewall = None
         except (LookupError, RuntimeError):
             # catch known library exceptions and raise Fwaas generic exception
-            LOG.exception(_LE("Failed to delete firewall: %s"), fwid)
+            LOG.exception("Failed to delete firewall: %s", fwid)
             raise f_exc.FirewallInternalDriverError(driver=FWAAS_DRIVER_NAME)
 
     def update_firewall(self, agent_mode, apply_list, firewall):
@@ -160,7 +159,7 @@ class IptablesFwaasDriver(fwaas_base.FwaasDriverBase):
             self.pre_firewall = dict(firewall)
         except (LookupError, RuntimeError):
             # catch known library exceptions and raise Fwaas generic exception
-            LOG.exception(_LE("Failed to update firewall: %s"), firewall['id'])
+            LOG.exception("Failed to update firewall: %s", firewall['id'])
             raise f_exc.FirewallInternalDriverError(driver=FWAAS_DRIVER_NAME)
 
     def apply_default_policy(self, agent_mode, apply_list, firewall):
@@ -186,7 +185,7 @@ class IptablesFwaasDriver(fwaas_base.FwaasDriverBase):
         except (LookupError, RuntimeError):
             # catch known library exceptions and raise Fwaas generic exception
             LOG.exception(
-                _LE("Failed to apply default policy on firewall: %s"), fwid)
+                "Failed to apply default policy on firewall: %s", fwid)
             raise f_exc.FirewallInternalDriverError(driver=FWAAS_DRIVER_NAME)
 
     def _setup_firewall(self, agent_mode, apply_list, firewall):
