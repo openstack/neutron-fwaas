@@ -16,13 +16,14 @@
 
 import testscenarios
 
-from neutron_fwaas.tests.tempest_plugin.tests.scenario import base
 from oslo_log import log as logging
 from tempest import config
 from tempest.lib.common.utils import test_utils
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
 from tempest import test
+
+from neutron_fwaas.tests.tempest_plugin.tests.scenario import base
 
 
 CONF = config.CONF
@@ -248,20 +249,48 @@ class TestFWaaS_v2(base.FWaaSScenarioTest_V2):
             address_list=[topology['server_fixed_ip_2']],
             should_connect=True)
 
-        # Now remove the allow_icmp rule add a deny_icmp rule and check that
-        # ICMP gets blocked
+        # Scenario 2: Now remove the allow_icmp rule add a deny_icmp rule and
+        # check that ICMP gets blocked
         fw_deny_icmp_rule = self.create_firewall_rule(action="deny",
                                                       protocol="icmp")
-        self.remove_firewall_rule_from_policy(
+        self.remove_firewall_rule_from_policy_and_wait(
+            firewall_group_id=fw_group['id'],
             firewall_rule_id=fw_allow_icmp_rule['id'],
             firewall_policy_id=fw_policy['id'])
-        self._wait_firewall_group_ready(fw_group['id'])
-        self.insert_firewall_rule_in_policy(
+        self.insert_firewall_rule_in_policy_and_wait(
+            firewall_group_id=fw_group['id'],
             firewall_rule_id=fw_deny_icmp_rule['id'],
             firewall_policy_id=fw_policy['id'])
-        self._wait_firewall_group_ready(fw_group['id'])
         self._check_server_connectivity(
             topology['server_floating_ip_1'],
             topology['private_key1'],
             address_list=[topology['server_fixed_ip_2']],
+            should_connect=False)
+
+        # Scenario 3: Create a rule allowing ICMP only from server_fixed_ip_1
+        # to server_fixed_ip_2 and check that traffic from opposite direction
+        # is blocked.
+        fw_allow_unidirectional_icmp_rule = self.create_firewall_rule(
+            action="allow", protocol="icmp",
+            source_ip_address=topology['server_fixed_ip_1'],
+            destination_ip_address=topology['server_fixed_ip_2'])
+
+        self.remove_firewall_rule_from_policy_and_wait(
+            firewall_group_id=fw_group['id'],
+            firewall_rule_id=fw_deny_icmp_rule['id'],
+            firewall_policy_id=fw_policy['id'])
+        self.insert_firewall_rule_in_policy_and_wait(
+            firewall_group_id=fw_group['id'],
+            firewall_rule_id=fw_allow_unidirectional_icmp_rule['id'],
+            firewall_policy_id=fw_policy['id'])
+
+        self._check_server_connectivity(
+            topology['server_floating_ip_1'],
+            topology['private_key1'],
+            address_list=[topology['server_fixed_ip_2']],
+            should_connect=True)
+        self._check_server_connectivity(
+            topology['server_floating_ip_2'],
+            topology['private_key2'],
+            address_list=[topology['server_fixed_ip_1']],
             should_connect=False)
