@@ -165,8 +165,12 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
         return self._get_in_ns_ports(fwg_port_ids)
 
     def _get_in_ns_ports(self, port_ids):
-        """Returns port objects in the local namespace, along with their
-           router_info.
+        """Get ports in namespace by their IDs.
+
+        Returns port objects in the local namespace, along with their
+        router_info.
+
+        :param port_ids: IDs of router ports (set, list or tuple)
         """
         in_ns_ports = {}  # This will be converted to a list later.
         if port_ids and self.agent_api:
@@ -180,13 +184,21 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
                         in_ns_ports[router_info] = [port_id]
         return list(in_ns_ports.items())
 
-    def _invoke_driver_for_sync_from_plugin(self, ctx, port, firewall_group):
-        """Calls the FWaaS driver's delete_firewall_group method if firewall
-           group has status of PENDING_DELETE; calls driver's
-           update_firewall_group method for all other statuses. Both of these
-           methods are idempotent.
+    def _invoke_driver_for_sync_from_plugin(self, ctx, ports, firewall_group):
+        """Call driver to sync firewall group.
+
+        Calls the FWaaS driver's delete_firewall_group method if firewall
+        group has status of PENDING_DELETE; calls driver's
+        update_firewall_group method for all other statuses. Both of these
+        methods are idempotent.
+
+        :param ctx: RPC context
+        :param ports: IDs of ports associated with a firewall group
+                      (set, list or tuple)
+        :param firewall_group: Dictionary describing the firewall group object
+
         """
-        port_list = self._get_in_ns_ports([port['id']])
+        port_list = self._get_in_ns_ports(ports)
         if firewall_group['status'] == nl_constants.PENDING_DELETE:
             try:
                 self.fwaas_driver.delete_firewall_group(
@@ -243,17 +255,31 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
         ctx = context.Context('', updated_router['tenant_id'])
         fwg_list = self.fwplugin_rpc.get_firewall_groups_for_project(ctx)
 
+        if nl_constants.INTERFACE_KEY not in updated_router:
+            return
+
         # Apply a firewall group, as requested, to ports on the new router.
-        if nl_constants.INTERFACE_KEY in updated_router:
-            for port in updated_router[nl_constants.INTERFACE_KEY]:
-                for firewall_group in fwg_list:
-                    if (self._has_port_insertion_fields(firewall_group) and
-                            (port['id'] in firewall_group['add-port-ids'] or
-                            port['id'] in firewall_group['del-port-ids'])):
-                        self._invoke_driver_for_sync_from_plugin(ctx, port,
-                                firewall_group)
-                        # A port can have at most one firewall group.
-                        break
+        all_router_ports = set(
+            p['id'] for p in updated_router[nl_constants.INTERFACE_KEY]
+        )
+        processed_ports = set()
+        for firewall_group in fwg_list:
+            if not self._has_port_insertion_fields(firewall_group):
+                continue
+
+            ports_to_process = (set(firewall_group['add-port-ids'] +
+                                    firewall_group['del-port-ids']) &
+                                all_router_ports)
+            # A port can have at most one firewall group.
+            port_ids_to_exclude = ports_to_process & processed_ports
+            if port_ids_to_exclude:
+                LOG.warning("Port(s) %s is associated with "
+                            "more than one firewall group(s).",
+                            port_ids_to_exclude)
+                ports_to_process -= port_ids_to_exclude
+            self._invoke_driver_for_sync_from_plugin(
+                ctx, ports_to_process, firewall_group)
+            processed_ports |= ports_to_process
 
     def add_router(self, context, new_router):
         """Handles agent restart and router add. Fetches firewall groups from
