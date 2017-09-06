@@ -15,6 +15,7 @@
 
 import time
 
+from neutron_lib import constants as nl_constants
 from tempest import config
 from tempest import exceptions
 from tempest.lib.common.utils import data_utils
@@ -22,7 +23,7 @@ from tempest.lib.common.utils import test_utils
 from tempest.lib import exceptions as lib_exc
 
 from neutron_fwaas.tests.tempest_plugin.services import v2_client
-from neutron_lib import constants as nl_constants
+
 
 CONF = config.CONF
 
@@ -94,25 +95,40 @@ class FWaaSClientMixin(object):
                                         [nl_constants.PENDING_DELETE],
                                         not_found_ok=True)
 
-    def insert_firewall_rule_in_policy(self,
-                                       firewall_policy_id,
-                                       firewall_rule_id, **kwargs):
+    def insert_firewall_rule_in_policy_and_wait(self,
+                                                firewall_group_id,
+                                                firewall_policy_id,
+                                                firewall_rule_id, **kwargs):
         self.firewall_policies_client.insert_firewall_rule_in_policy(
             firewall_policy_id=firewall_policy_id,
             firewall_rule_id=firewall_rule_id,
             **kwargs)
         self.addCleanup(
-            test_utils.call_and_ignore_notfound_exc,
-            self.firewall_policies_client.remove_firewall_rule_from_policy,
+            self._call_and_ignore_exceptions,
+            (lib_exc.NotFound, lib_exc.BadRequest),
+            self.remove_firewall_rule_from_policy_and_wait,
+            firewall_group_id=firewall_group_id,
             firewall_policy_id=firewall_policy_id,
             firewall_rule_id=firewall_rule_id)
+        self._wait_firewall_group_ready(firewall_group_id)
 
-    def remove_firewall_rule_from_policy(self,
-                                         firewall_policy_id,
-                                         firewall_rule_id):
+    def remove_firewall_rule_from_policy_and_wait(self,
+                                                  firewall_group_id,
+                                                  firewall_policy_id,
+                                                  firewall_rule_id):
         self.firewall_policies_client.remove_firewall_rule_from_policy(
             firewall_policy_id=firewall_policy_id,
             firewall_rule_id=firewall_rule_id)
+        self._wait_firewall_group_ready(firewall_group_id)
+
+    @staticmethod
+    def _call_and_ignore_exceptions(exc_list, func, *args, **kwargs):
+        """Call the given function and pass if a given exception is raised."""
+
+        try:
+            return func(*args, **kwargs)
+        except exc_list:
+            pass
 
     def _wait_firewall_group_ready(self, firewall_group_id):
         self._wait_firewall_group_while(firewall_group_id,
