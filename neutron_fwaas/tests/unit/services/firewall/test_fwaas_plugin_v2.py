@@ -670,6 +670,34 @@ class TestFirewallPluginBasev2(TestFirewallRouterPortBase,
                                           s['subnet']['id'],
                                           None)
 
+    def test_update_firewall_group_with_invalid_project(self):
+        with self.router(name='router1',
+                         admin_state_up=True,
+                         tenant_id=self._tenant_id) as r, \
+                self.subnet(cidr='30.0.0.0/24') as s:
+            body = self._router_interface_action('add',
+                                                 r['router']['id'],
+                                                 s['subnet']['id'],
+                                                 None)
+            port_id = body['port_id']
+            with self.firewall_group(name='test',
+                                     default_policy=False,
+                                     ports=[],
+                                     admin_state_up=True) as fwg1:
+                data = {'firewall_group': {'ports': [port_id]}}
+                req = self.new_update_request(
+                    'firewall_groups', data, fwg1['firewall_group']['id'],
+                    context=context.get_admin_context())
+                res = self.deserialize(self.fmt,
+                                       req.get_response(self.ext_api))
+                self.assertEqual('FirewallGroupPortInvalidProject',
+                                 res['NeutronError']['type'])
+
+            self._router_interface_action('remove',
+                                          r['router']['id'],
+                                          s['subnet']['id'],
+                                          None)
+
     def test_update_firewall_group_with_ports_and_polcy(self):
         """neutron firewall_group create test-policy """
         with self.router(name='router1', admin_state_up=True,
