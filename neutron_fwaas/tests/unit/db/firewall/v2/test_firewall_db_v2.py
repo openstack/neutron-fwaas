@@ -1433,16 +1433,12 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
             fwr_id = fwr['firewall_rule']['id']
             with self.firewall_policy(firewall_rules=[fwr_id]) as fwp:
                 fwp_id = fwp['firewall_policy']['id']
-                msg = "Operation cannot be performed since firewall rule " \
-                      "{0} is already associated with firewallpolicy " \
-                      "{1}.".format(fwr_id, fwp_id)
-                result = self._rule_action(
+                self._rule_action(
                     'insert', fwp_id, fwr_id,
                     insert_before=None,
                     insert_after=None,
                     expected_code=webob.exc.HTTPConflict.code,
                     body_data={'firewall_rule_id': fwr_id})
-                self.assertEqual(msg, result['NeutronError']['message'])
 
     def test_insert_rule_for_previously_associated_rule(self):
         with self.firewall_rule() as fwr:
