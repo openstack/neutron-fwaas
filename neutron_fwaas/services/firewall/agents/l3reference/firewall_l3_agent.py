@@ -123,12 +123,7 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
     def _get_routers_in_project(self, project_id):
         if self.agent_api is None:
             LOG.exception("FWaaS RPC call failed; L3 agent_api failure")
-        router_info = self.agent_api._router_info
-        if project_id:
-            return [ri for ri in router_info.values()
-                    if ri.router['tenant_id'] == project_id]
-        else:
-            return []
+        return self.agent_api.get_routers_in_project(project_id)
 
     def _get_router_info_list_for_tenant(self, router_ids, tenant_id):
         """Returns the list of router info objects on which to apply the fw."""
