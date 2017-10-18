@@ -127,8 +127,7 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
 
     @property
     def _local_namespaces(self):
-        root_ip = ip_lib.IPWrapper()
-        local_ns_list = root_ip.get_namespaces()
+        local_ns_list = ip_lib.list_network_namespaces()
         return local_ns_list
 
     def _has_port_insertion_fields(self, firewall_group):

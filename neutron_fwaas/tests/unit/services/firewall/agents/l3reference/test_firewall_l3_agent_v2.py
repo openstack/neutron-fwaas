@@ -314,13 +314,12 @@ class TestFWaaSL3AgentExtension(base.BaseTestCase):
         self.api.consume_api(api_object)
         fw_port_ids = port_ids
 
-        with mock.patch.object(ip_lib.IPWrapper,
-                               'get_namespaces') as mock_get_namespaces:
-
-            mock_get_namespaces.return_value = []
+        with mock.patch.object(ip_lib,
+                               'list_network_namespaces') as mock_list_netns:
+            mock_list_netns.return_value = []
             ports_for_fw_list = self.api._get_in_ns_ports(fw_port_ids)
 
-        mock_get_namespaces.assert_called_with()
+        mock_list_netns.assert_called_with()
         self.assertFalse(ports_for_fw_list)
 
     def test_get_in_ns_ports_for_fw(self):
@@ -335,9 +334,9 @@ class TestFWaaSL3AgentExtension(base.BaseTestCase):
         fw_port_ids = port_ids
         ports_for_fw_expected = [(ri, port_ids)]
 
-        with mock.patch.object(ip_lib.IPWrapper,
-                               'get_namespaces') as mock_get_namespaces:
-            mock_get_namespaces.return_value = [ri.ns_name]
+        with mock.patch.object(ip_lib,
+                               'list_network_namespaces') as mock_list_netns:
+            mock_list_netns.return_value = [ri.ns_name]
             ports_for_fw_actual = self.api._get_in_ns_ports(fw_port_ids)
             self.assertEqual(ports_for_fw_expected, ports_for_fw_actual)
 

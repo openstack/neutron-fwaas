@@ -311,13 +311,13 @@ class TestFwaasL3AgentRpcCallback(base.BaseTestCase):
         routers = [ri.router]
         router_ids = [router['id'] for router in routers]
 
-        with mock.patch.object(ip_lib.IPWrapper,
-                               'get_namespaces') as mock_get_namespaces:
-            mock_get_namespaces.return_value = []
+        with mock.patch.object(ip_lib,
+                               'list_network_namespaces') as mock_list_netns:
+            mock_list_netns.return_value = []
             router_info_list = self.api._get_router_info_list_for_tenant(
                 router_ids,
                 ri.router['tenant_id'])
-        mock_get_namespaces.assert_called_once_with()
+        mock_list_netns.assert_called_once_with()
         self.assertFalse(router_info_list)
 
     def _get_router_info_list_router_without_router_info_helper(self,
@@ -341,9 +341,9 @@ class TestFwaasL3AgentRpcCallback(base.BaseTestCase):
         self.api.router_info = router_info
         router_ids = [router['id'] for router in routers]
 
-        with mock.patch.object(ip_lib.IPWrapper,
-                               'get_namespaces') as mock_get_namespaces:
-            mock_get_namespaces.return_value = [ri.ns_name]
+        with mock.patch.object(ip_lib,
+                               'list_network_namespaces') as mock_list_netns:
+            mock_list_netns.return_value = [ri.ns_name]
             api_object = l3_agent_api.L3AgentExtensionAPI(router_info)
             self.api.consume_api(api_object)
             router_info_list = self.api._get_router_info_list_for_tenant(
