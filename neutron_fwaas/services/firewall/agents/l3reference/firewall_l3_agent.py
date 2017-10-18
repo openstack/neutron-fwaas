@@ -417,6 +417,9 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
                               "for firewall: %s", firewall['id'])
                 self.services_sync_needed = True
 
+    def ha_state_change(self, context, data):
+        pass
+
 
 class L3WithFWaaS(FWaaSL3AgentExtension):
 
