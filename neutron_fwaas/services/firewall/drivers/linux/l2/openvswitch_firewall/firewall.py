@@ -241,6 +241,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
         self._deferred = False
         self.sg_enabled = sg_enabled
         self._drop_all_unmatched_flows()
+        self._initialize_third_party_tables()
 
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver
     def _accept_flow(self, **flow):
@@ -293,6 +294,16 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
                 self.sg_enabled):
                 continue
             self.int_br.br.add_flow(table=table, priority=0, actions='drop')
+
+    def _initialize_third_party_tables(self):
+        self.int_br.br.add_flow(
+            table=ovs_consts.ACCEPTED_EGRESS_TRAFFIC_TABLE,
+            priority=1,
+            actions='normal')
+        for table in (ovs_consts.ACCEPTED_INGRESS_TRAFFIC_TABLE,
+                      ovs_consts.DROPPED_TRAFFIC_TABLE):
+            self.int_br.br.add_flow(
+                table=table, priority=0, actions='drop')
 
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver
     def get_ovs_port(self, port_id):
@@ -520,7 +531,8 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
                 dl_type=constants.ETHERTYPE_IPV6,
                 nw_proto=lib_const.PROTO_NUM_IPV6_ICMP,
                 icmp_type=icmp_type,
-                actions='normal'
+                actions='resubmit(,%d)' % (
+                    ovs_consts.ACCEPTED_EGRESS_TRAFFIC_TABLE)
             )
 
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver
@@ -557,7 +569,8 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
             table=fwaas_ovs_consts.FW_ACCEPT_OR_INGRESS_TABLE,
             priority=80,
             reg_port=ovs_port.ofport,
-            actions='normal'
+            actions='resubmit(,%d)' % (
+                ovs_consts.ACCEPTED_EGRESS_TRAFFIC_TABLE)
         )
 
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver
@@ -596,7 +609,8 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
                 dl_src=mac_addr,
                 dl_type=constants.ETHERTYPE_ARP,
                 arp_spa=ip_addr,
-                actions='normal'
+                actions='resubmit(,%d)' % (
+                    ovs_consts.ACCEPTED_EGRESS_TRAFFIC_TABLE)
             )
             self._add_flow(
                 table=fwaas_ovs_consts.FW_BASE_EGRESS_TABLE,
@@ -661,7 +675,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
                 nw_proto=lib_const.PROTO_NUM_UDP,
                 tp_src=src_port,
                 tp_dst=dst_port,
-                actions='drop'
+                actions='resubmit(,%d)' % ovs_consts.DROPPED_TRAFFIC_TABLE
             )
 
         # Drop Router Advertisements from instances
@@ -673,7 +687,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
             dl_type=constants.ETHERTYPE_IPV6,
             nw_proto=lib_const.PROTO_NUM_IPV6_ICMP,
             icmp_type=lib_const.ICMPV6_TYPE_RA,
-            actions='drop'
+            actions='resubmit(,%d)' % ovs_consts.DROPPED_TRAFFIC_TABLE
         )
 
         # Drop all remaining not tracked egress connections
@@ -683,7 +697,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
             ct_state=fwaas_ovs_consts.OF_STATE_NOT_TRACKED,
             in_port=port.ofport,
             reg_port=port.ofport,
-            actions='drop'
+            actions='resubmit(,%d)' % ovs_consts.DROPPED_TRAFFIC_TABLE
         )
 
         # Fill in accept_or_ingress table by checking that traffic is ingress
@@ -710,14 +724,17 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
                     dl_type=ethertype,
                     reg_port=port.ofport,
                     ct_state=fwaas_ovs_consts.OF_STATE_NEW_NOT_ESTABLISHED,
-                    actions='ct(commit,zone=NXM_NX_REG{:d}[0..15]),normal'.
-                    format(fwaas_ovs_consts.REG_NET)
+                    actions='ct(commit,zone=NXM_NX_REG{:d}[0..15]),'
+                            'resubmit(,{:d})'.format(
+                                fwaas_ovs_consts.REG_NET,
+                                ovs_consts.ACCEPTED_EGRESS_TRAFFIC_TABLE)
                 )
             self._add_flow(
                 table=fwaas_ovs_consts.FW_ACCEPT_OR_INGRESS_TABLE,
                 priority=80,
                 reg_port=port.ofport,
-                actions='normal'
+                actions='resubmit(,%d)' % (
+                    ovs_consts.ACCEPTED_EGRESS_TRAFFIC_TABLE)
             )
 
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver
@@ -728,7 +745,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
             table=fwaas_ovs_consts.FW_RULES_EGRESS_TABLE,
             priority=50,
             ct_state=fwaas_ovs_consts.OF_STATE_INVALID,
-            actions='drop'
+            actions='resubmit(,%d)' % ovs_consts.DROPPED_TRAFFIC_TABLE
         )
         # Drop traffic for removed fwg rules
         self._add_flow(
@@ -736,7 +753,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
             priority=50,
             reg_port=port.ofport,
             ct_mark=fwaas_ovs_consts.CT_MARK_INVALID,
-            actions='drop'
+            actions='resubmit(,%d)' % ovs_consts.DROPPED_TRAFFIC_TABLE
         )
 
         for state in (
@@ -750,14 +767,15 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
                 ct_mark=fwaas_ovs_consts.CT_MARK_NORMAL,
                 reg_port=port.ofport,
                 ct_zone=port.vlan_tag,
-                actions='normal'
+                actions='resubmit(,%d)' % (
+                    ovs_consts.ACCEPTED_EGRESS_TRAFFIC_TABLE)
             )
         self._add_flow(
             table=fwaas_ovs_consts.FW_RULES_EGRESS_TABLE,
             priority=40,
             reg_port=port.ofport,
             ct_state=fwaas_ovs_consts.OF_STATE_NOT_ESTABLISHED,
-            actions='drop'
+            actions='resubmit(,%d)' % ovs_consts.DROPPED_TRAFFIC_TABLE
         )
         for ethertype in [constants.ETHERTYPE_IP, constants.ETHERTYPE_IPV6]:
             self._add_flow(
@@ -784,7 +802,9 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
                 dl_type=constants.ETHERTYPE_IPV6,
                 nw_proto=lib_const.PROTO_NUM_IPV6_ICMP,
                 icmp_type=icmp_type,
-                actions='output:{:d}'.format(port.ofport),
+                actions='output:{:d},resubmit(,{:d})'.format(
+                    port.ofport,
+                    ovs_consts.ACCEPTED_INGRESS_TRAFFIC_TABLE),
             )
 
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver
@@ -796,7 +816,9 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
             priority=100,
             dl_type=constants.ETHERTYPE_ARP,
             reg_port=port.ofport,
-            actions='output:{:d}'.format(port.ofport),
+            actions='output:{:d},resubmit(,{:d})'.format(
+                port.ofport,
+                ovs_consts.ACCEPTED_INGRESS_TRAFFIC_TABLE),
         )
         self._initialize_ingress_ipv6_icmp(port)
 
@@ -812,7 +834,9 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
                 nw_proto=lib_const.PROTO_NUM_UDP,
                 tp_src=src_port,
                 tp_dst=dst_port,
-                actions='output:{:d}'.format(port.ofport),
+                actions='output:{:d},resubmit(,{:d})'.format(
+                    port.ofport,
+                    ovs_consts.ACCEPTED_INGRESS_TRAFFIC_TABLE),
             )
 
         # Track untracked
@@ -844,7 +868,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
             table=fwaas_ovs_consts.FW_RULES_INGRESS_TABLE,
             priority=50,
             ct_state=fwaas_ovs_consts.OF_STATE_INVALID,
-            actions='drop'
+            actions='resubmit(,%d)' % ovs_consts.DROPPED_TRAFFIC_TABLE
         )
         # Drop traffic for removed fwg rules
         self._add_flow(
@@ -852,7 +876,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
             priority=50,
             reg_port=port.ofport,
             ct_mark=fwaas_ovs_consts.CT_MARK_INVALID,
-            actions='drop'
+            actions='resubmit(,%d)' % ovs_consts.DROPPED_TRAFFIC_TABLE
         )
 
         # Allow established and related connections
@@ -865,14 +889,16 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
                 ct_state=state,
                 ct_mark=fwaas_ovs_consts.CT_MARK_NORMAL,
                 ct_zone=port.vlan_tag,
-                actions='output:{:d}'.format(port.ofport)
+                actions='output:{:d},resubmit(,{:d})'.format(
+                    port.ofport,
+                    ovs_consts.ACCEPTED_INGRESS_TRAFFIC_TABLE)
             )
         self._add_flow(
             table=fwaas_ovs_consts.FW_RULES_INGRESS_TABLE,
             priority=40,
             reg_port=port.ofport,
             ct_state=fwaas_ovs_consts.OF_STATE_NOT_ESTABLISHED,
-            actions='drop'
+            actions='resubmit(,%d)' % ovs_consts.DROPPED_TRAFFIC_TABLE
         )
         for ethertype in [constants.ETHERTYPE_IP, constants.ETHERTYPE_IPV6]:
             self._add_flow(
