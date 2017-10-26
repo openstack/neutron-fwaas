@@ -244,7 +244,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
 
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver
     def _accept_flow(self, **flow):
-        for f in rules.create_accept_flows(flow):
+        for f in rules.create_accept_flows(flow, self.sg_enabled):
             self._add_flow(**f)
 
     def _drop_flow(self, **flow):
@@ -289,6 +289,9 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
     # differs in constants
     def _drop_all_unmatched_flows(self):
         for table in fwaas_ovs_consts.OVS_FIREWALL_TABLES:
+            if (table == fwaas_ovs_consts.FW_ACCEPT_OR_INGRESS_TABLE and
+                self.sg_enabled):
+                continue
             self.int_br.br.add_flow(table=table, priority=0, actions='drop')
 
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver
@@ -492,6 +495,19 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
         self._initialize_egress(port)
         self._initialize_ingress(port)
 
+    def _fwaas_process_colocated_ingress(self, port):
+        for mac_addr in port.all_allowed_macs:
+            self._add_flow(
+                table=ovs_consts.ACCEPT_OR_INGRESS_TABLE,
+                priority=105,
+                dl_dst=mac_addr,
+                reg_net=port.vlan_tag,
+                actions='set_field:{:d}->reg{:d},resubmit(,{:d})'.format(
+                    port.ofport,
+                    fwaas_ovs_consts.REG_PORT,
+                    fwaas_ovs_consts.FW_BASE_INGRESS_TABLE),
+            )
+
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver
     # which differs in constants (table numbers)
     def _initialize_egress_ipv6_icmp(self, port):
@@ -615,6 +631,9 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
             )
 
         # DHCP discovery
+        accept_or_ingress = fwaas_ovs_consts.FW_ACCEPT_OR_INGRESS_TABLE
+        if self.sg_enabled:
+            accept_or_ingress = ovs_consts.ACCEPT_OR_INGRESS_TABLE
         for dl_type, src_port, dst_port in (
                 (constants.ETHERTYPE_IP, 68, 67),
                 (constants.ETHERTYPE_IPV6, 546, 547)):
@@ -627,8 +646,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
                 nw_proto=lib_const.PROTO_NUM_UDP,
                 tp_src=src_port,
                 tp_dst=dst_port,
-                actions='resubmit(,{:d})'.format(
-                    fwaas_ovs_consts.FW_ACCEPT_OR_INGRESS_TABLE)
+                actions='resubmit(,{:d})'.format(accept_or_ingress)
             )
         # Ban dhcp service running on an instance
         for dl_type, src_port, dst_port in (
@@ -670,33 +688,37 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
 
         # Fill in accept_or_ingress table by checking that traffic is ingress
         # and if not, accept it
-        for mac_addr in port.all_allowed_macs:
+        if self.sg_enabled:
+            self._fwaas_process_colocated_ingress(port)
+        else:
+            for mac_addr in port.all_allowed_macs:
+                self._add_flow(
+                    table=fwaas_ovs_consts.FW_ACCEPT_OR_INGRESS_TABLE,
+                    priority=100,
+                    dl_dst=mac_addr,
+                    reg_net=port.vlan_tag,
+                    actions='set_field:{:d}->reg{:d},resubmit(,{:d})'.format(
+                        port.ofport,
+                        fwaas_ovs_consts.REG_PORT,
+                        fwaas_ovs_consts.FW_BASE_INGRESS_TABLE),
+                )
+            for ethertype in [constants.ETHERTYPE_IP,
+                    constants.ETHERTYPE_IPV6]:
+                self._add_flow(
+                    table=fwaas_ovs_consts.FW_ACCEPT_OR_INGRESS_TABLE,
+                    priority=90,
+                    dl_type=ethertype,
+                    reg_port=port.ofport,
+                    ct_state=fwaas_ovs_consts.OF_STATE_NEW_NOT_ESTABLISHED,
+                    actions='ct(commit,zone=NXM_NX_REG{:d}[0..15]),normal'.
+                    format(fwaas_ovs_consts.REG_NET)
+                )
             self._add_flow(
                 table=fwaas_ovs_consts.FW_ACCEPT_OR_INGRESS_TABLE,
-                priority=100,
-                dl_dst=mac_addr,
-                reg_net=port.vlan_tag,
-                actions='set_field:{:d}->reg{:d},resubmit(,{:d})'.format(
-                    port.ofport,
-                    fwaas_ovs_consts.REG_PORT,
-                    fwaas_ovs_consts.FW_BASE_INGRESS_TABLE),
-            )
-        for ethertype in [constants.ETHERTYPE_IP, constants.ETHERTYPE_IPV6]:
-            self._add_flow(
-                table=fwaas_ovs_consts.FW_ACCEPT_OR_INGRESS_TABLE,
-                priority=90,
-                dl_type=ethertype,
+                priority=80,
                 reg_port=port.ofport,
-                ct_state=fwaas_ovs_consts.OF_STATE_NEW_NOT_ESTABLISHED,
-                actions='ct(commit,zone=NXM_NX_REG{:d}[0..15]),normal'.format(
-                    fwaas_ovs_consts.REG_NET)
+                actions='normal'
             )
-        self._add_flow(
-            table=fwaas_ovs_consts.FW_ACCEPT_OR_INGRESS_TABLE,
-            priority=80,
-            reg_port=port.ofport,
-            actions='normal'
-        )
 
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver
     # which differs in constants (table numbers)
@@ -935,13 +957,17 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
     # which differs in constants (table numbers)
     def delete_all_port_flows(self, port):
         """Delete all flows for given port"""
+        accept_or_ingress = fwaas_ovs_consts.FW_ACCEPT_OR_INGRESS_TABLE
+        if self.sg_enabled:
+            accept_or_ingress = ovs_consts.ACCEPT_OR_INGRESS_TABLE
+
         for mac_addr in port.all_allowed_macs:
             self._strict_delete_flow(priority=95,
                                      table=ovs_consts.TRANSIENT_TABLE,
                                      dl_dst=mac_addr,
                                      dl_vlan=port.vlan_tag)
             self._delete_flows(
-                table=fwaas_ovs_consts.FW_ACCEPT_OR_INGRESS_TABLE,
+                table=accept_or_ingress,
                 dl_dst=mac_addr, reg_net=port.vlan_tag)
         self._strict_delete_flow(priority=105,
                                  table=ovs_consts.TRANSIENT_TABLE,

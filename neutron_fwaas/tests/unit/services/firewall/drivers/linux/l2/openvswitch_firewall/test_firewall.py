@@ -447,6 +447,45 @@ class TestOVSFirewallDriver(base.BaseTestCase):
         for call in exp_ingress_classifier, exp_egress_classifier, filter_rule:
             self.assertIn(call, calls)
 
+    def test_prepare_port_filter_in_coexistence_mode(self):
+        port_dict = {'device': 'port-id',
+                     'firewall_group': 1,
+                     'fixed_ips': [{'subnet_id': "some_subnet_id_here",
+                                    'ip_address': "10.0.0.1"}],
+                     'lvlan': TESTING_VLAN_TAG}
+        self._prepare_firewall_group()
+        self.firewall.sg_enabled = True
+        self.firewall.prepare_port_filter(port_dict)
+        exp_egress_classifier = mock.call(
+            actions='set_field:{:d}->reg5,set_field:{:d}->reg6,'
+                    'resubmit(,{:d})'.format(
+                        self.port_ofport, TESTING_VLAN_TAG,
+                        fwaas_ovs_consts.FW_BASE_EGRESS_TABLE),
+            in_port=self.port_ofport,
+            priority=105,
+            table=ovs_consts.TRANSIENT_TABLE)
+        exp_ingress_classifier = mock.call(
+            actions='set_field:{:d}->reg5,set_field:{:d}->reg6,'
+                    'strip_vlan,resubmit(,{:d})'.format(
+                        self.port_ofport, TESTING_VLAN_TAG,
+                        fwaas_ovs_consts.FW_BASE_INGRESS_TABLE),
+            dl_dst=self.port_mac,
+            dl_vlan='0x%x' % TESTING_VLAN_TAG,
+            priority=95,
+            table=ovs_consts.TRANSIENT_TABLE)
+        filter_rule = mock.call(
+            actions='resubmit(,{:d})'.format(ovs_consts.RULES_INGRESS_TABLE),
+            dl_type="0x{:04x}".format(n_const.ETHERTYPE_IP),
+            nw_proto=constants.PROTO_NUM_TCP,
+            priority=70,
+            reg5=self.port_ofport,
+            ct_state=fwaas_ovs_consts.OF_STATE_NEW_NOT_ESTABLISHED,
+            table=fwaas_ovs_consts.FW_RULES_INGRESS_TABLE,
+            tcp_dst='0x007b')
+        calls = self.mock_bridge.br.add_flow.call_args_list
+        for call in exp_ingress_classifier, exp_egress_classifier, filter_rule:
+            self.assertIn(call, calls)
+
     def test_prepare_port_filter_port_security_disabled(self):
         port_dict = {'device': 'port-id',
                      'firewall_group': 1,
@@ -496,6 +535,44 @@ class TestOVSFirewallDriver(base.BaseTestCase):
             mock.call(
                 actions='resubmit(,{:d})'.format(
                     fwaas_ovs_consts.FW_ACCEPT_OR_INGRESS_TABLE),
+                ct_state=fwaas_ovs_consts.OF_STATE_ESTABLISHED_NOT_REPLY,
+                dl_type=mock.ANY,
+                nw_proto=6,
+                priority=70, reg5=self.port_ofport,
+                table=fwaas_ovs_consts.FW_RULES_EGRESS_TABLE)]
+        self.mock_bridge.br.add_flow.assert_has_calls(filter_rules,
+                                                      any_order=True)
+
+    def test_update_port_filter_in_coexistence_mode(self):
+        port_dict = {'device': 'port-id',
+                     'firewall_group': 1,
+                     'lvlan': TESTING_VLAN_TAG}
+        self._prepare_firewall_group()
+        self.firewall.sg_enabled = True
+        self.firewall.prepare_port_filter(port_dict)
+        port_dict['firewall_group'] = 2
+        self.mock_bridge.reset_mock()
+
+        self.firewall.update_port_filter(port_dict)
+        self.assertTrue(self.mock_bridge.br.delete_flows.called)
+        filter_rules = [
+            mock.call(
+                actions='resubmit(,{:d})'.format(
+                    ovs_consts.RULES_EGRESS_TABLE),
+                dl_type="0x{:04x}".format(n_const.ETHERTYPE_IP),
+                nw_proto=constants.PROTO_NUM_UDP,
+                priority=71,
+                ct_state=fwaas_ovs_consts.OF_STATE_NEW_NOT_ESTABLISHED,
+                reg5=self.port_ofport,
+                table=fwaas_ovs_consts.FW_RULES_EGRESS_TABLE),
+            # XXX FIXME NOTE(ivasilevskaya) this test originally tested that
+            # flows for SG with remote_group=this group were generated with
+            # proper conjunction action. If the original idea that conj_manager
+            # isn't needed for firewall groups proves to be wrong this needs to
+            # be revizited and properly fixed/covered with tests
+            mock.call(
+                actions='resubmit(,{:d})'.format(
+                    ovs_consts.RULES_EGRESS_TABLE),
                 ct_state=fwaas_ovs_consts.OF_STATE_ESTABLISHED_NOT_REPLY,
                 dl_type=mock.ANY,
                 nw_proto=6,

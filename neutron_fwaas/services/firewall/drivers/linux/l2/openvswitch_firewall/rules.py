@@ -19,6 +19,8 @@ from oslo_log import log as logging
 
 from neutron.agent import firewall
 from neutron.common import utils
+from neutron.plugins.ml2.drivers.openvswitch.agent.common import constants \
+    as ovs_consts
 from neutron_fwaas.services.firewall.drivers.linux.l2.openvswitch_firewall \
     import constants as fwaas_ovs_consts
 
@@ -167,11 +169,24 @@ def create_icmp_flows(flow_template, rule):
     return [flow]
 
 
-def create_accept_flows(flow):
+def resubmit_to_sg(flow):
+    if flow['table'] == fwaas_ovs_consts.FW_RULES_EGRESS_TABLE:
+        flow['actions'] = 'resubmit(,{:d})'.format(
+            ovs_consts.RULES_EGRESS_TABLE)
+    if flow['table'] == fwaas_ovs_consts.FW_RULES_INGRESS_TABLE:
+        flow['actions'] = 'resubmit(,{:d})'.format(
+            ovs_consts.RULES_INGRESS_TABLE)
+
+
+def create_accept_flows(flow, sg_enabled=False):
     flow['ct_state'] = CT_STATES[0]
+    if sg_enabled:
+        resubmit_to_sg(flow)
     result = [flow.copy()]
     flow['ct_state'] = CT_STATES[1]
-    if flow['table'] == fwaas_ovs_consts.FW_RULES_INGRESS_TABLE:
+    if sg_enabled:
+        resubmit_to_sg(flow)
+    elif flow['table'] == fwaas_ovs_consts.FW_RULES_INGRESS_TABLE:
         flow['actions'] = (
             'ct(commit,zone=NXM_NX_REG{:d}[0..15]),{:s}'.format(
                 fwaas_ovs_consts.REG_NET, flow['actions']))
