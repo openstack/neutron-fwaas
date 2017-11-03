@@ -22,6 +22,7 @@ from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
 from tempest import test
 
+from neutron_fwaas.common import fwaas_constants
 from neutron_fwaas.tests.tempest_plugin.tests.api import v2_base
 
 CONF = config.CONF
@@ -336,3 +337,19 @@ class FWaaSv2ExtensionTestJSON(v2_base.BaseFWaaSTest):
 
         # Delete firewall_group
         self.firewall_groups_client.delete_firewall_group(fwg_id)
+
+    @decorators.idempotent_id('a1f524d8-5336-4769-aa7b-0830bb4df6c8')
+    def test_error_on_create_firewall_group_name_default(self):
+        try:
+            # Create firewall_group with name == reserved default fwg
+            self.firewall_groups_client.create_firewall_group(
+                name=fwaas_constants.DEFAULT_FWG)
+        except lib_exc.Conflict:
+            pass
+
+    @decorators.idempotent_id('fd24db16-c8cb-4cb4-ba60-b0cd18a66b83')
+    def test_default_fwg_created_on_list_firewall_groups(self):
+        fw_groups = self.firewall_groups_client.list_firewall_groups()
+        fw_groups = fw_groups['firewall_groups']
+        self.assertIn(fwaas_constants.DEFAULT_FWG,
+                      [g['name'] for g in fw_groups])

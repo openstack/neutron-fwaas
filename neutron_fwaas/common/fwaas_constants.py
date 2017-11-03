@@ -20,3 +20,8 @@ FIREWALL_V2 = 'FIREWALL_V2'
 FIREWALL_PLUGIN = 'q-firewall-plugin'
 FW_AGENT = 'firewall_agent'
 FIREWALL_RULE_LIST = 'firewall_rule_list'
+
+# V2 Constants
+DEFAULT_FWG = 'default'
+DEFAULT_FWP_INGRESS = 'default ingress'
+DEFAULT_FWP_EGRESS = 'default egress'
