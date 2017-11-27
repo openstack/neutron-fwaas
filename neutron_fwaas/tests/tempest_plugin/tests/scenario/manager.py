@@ -14,11 +14,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import json
 import subprocess
 
 import netaddr
 from oslo_log import log
-from oslo_serialization import jsonutils
 from oslo_utils import netutils
 
 from tempest.common import compute
@@ -472,7 +472,7 @@ class ScenarioTest(tempest.test.BaseTestCase):
 
         bdm = image_props.get('block_device_mapping')
         if bdm:
-            bdm = jsonutils.loads(bdm)
+            bdm = json.loads(bdm)
             if bdm and 'snapshot_id' in bdm[0]:
                 snapshot_id = bdm[0]['snapshot_id']
                 self.addCleanup(
