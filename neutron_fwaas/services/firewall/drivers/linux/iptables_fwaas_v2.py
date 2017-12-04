@@ -58,9 +58,6 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
         LOG.debug("Initializing fwaas iptables driver")
         self.pre_firewall = None
 
-    def initialize(self):
-        pass
-
     def _get_intf_name(self, if_prefix, port_id):
         _name = "%s%s" % (if_prefix, port_id)
         return _name[:MAX_INTF_NAME_LEN]
