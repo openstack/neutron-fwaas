@@ -10,11 +10,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from alembic import script as alembic_script
 from neutron.db.migration.alembic_migrations import external
 from neutron.db.migration import cli as migration
 from neutron.tests.functional.db import test_migrations
 from neutron.tests.unit import testlib_api
 from oslo_config import cfg
+import sqlalchemy
 
 from neutron_fwaas.db.models import head
 
@@ -59,3 +61,39 @@ class TestModelsMigrationsPostgresql(testlib_api.PostgreSQLTestCaseMixin,
                                      _TestModelsMigrationsFWaaS,
                                      testlib_api.SqlTestCaseLight):
     pass
+
+
+class TestSanityCheck(testlib_api.SqlTestCaseLight):
+    BUILD_SCHEMA = False
+
+    def setUp(self):
+        super(TestSanityCheck, self).setUp()
+
+        for conf in migration.get_alembic_configs():
+            self.alembic_config = conf
+            self.alembic_config.neutron_config = cfg.CONF
+
+    def _drop_table(self, table):
+        with self.engine.begin() as conn:
+            table.drop(conn)
+
+    def test_check_sanity_f24e0d5e5bff(self):
+        current_revision = "f24e0d5e5bff"
+        fwg_port_association = sqlalchemy.Table(
+            'firewall_group_port_associations_v2', sqlalchemy.MetaData(),
+            sqlalchemy.Column('firewall_group_id', sqlalchemy.String(36)),
+            sqlalchemy.Column('port_id', sqlalchemy.String(36)))
+
+        with self.engine.connect() as conn:
+            fwg_port_association.create(conn)
+            self.addCleanup(self._drop_table, fwg_port_association)
+            conn.execute(fwg_port_association.insert(), [
+                {'firewall_group_id': '1234', 'port_id': '12345'},
+                {'firewall_group_id': '12343', 'port_id': '12345'}
+            ])
+            script_dir = alembic_script.ScriptDirectory.from_config(
+                self.alembic_config)
+            script = script_dir.get_revision(current_revision).module
+            self.assertRaises(
+                script.DuplicatePortRecordinFirewallGroupPortAssociation,
+                script.check_sanity, conn)

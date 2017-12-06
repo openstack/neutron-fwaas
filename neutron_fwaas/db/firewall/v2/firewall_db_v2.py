@@ -125,6 +125,7 @@ class FirewallGroupPortAssociation(model_base.BASEV2):
                                   primary_key=True)
     port_id = sa.Column(sa.String(db_constants.UUID_FIELD_SIZE),
                         sa.ForeignKey('ports.id', ondelete="CASCADE"),
+                        unique=True,
                         primary_key=True)
 
 
@@ -818,12 +819,19 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
         port_id_list = fwg['ports']
         if not port_id_list:
             return
-        with context.session.begin(subtransactions=True):
-            for port_id in port_id_list:
-                fwg_port_db = FirewallGroupPortAssociation(
-                    firewall_group_id=fwg_db['id'],
-                    port_id=port_id)
-                context.session.add(fwg_port_db)
+
+        exc_ports = []
+        for port_id in port_id_list:
+            try:
+                with context.session.begin(subtransactions=True):
+                    fwg_port_db = FirewallGroupPortAssociation(
+                        firewall_group_id=fwg_db['id'],
+                        port_id=port_id)
+                    context.session.add(fwg_port_db)
+            except db_exc.DBDuplicateEntry:
+                exc_ports.append(port_id)
+        if exc_ports:
+            raise f_exc.FirewallGroupPortInUse(port_ids=exc_ports)
 
     def _get_ports_in_firewall_group(self, context, firewall_group_id):
         """Get the Ports associated with the  firewall group."""
