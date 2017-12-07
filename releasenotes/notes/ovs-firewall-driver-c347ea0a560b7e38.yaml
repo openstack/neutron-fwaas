@@ -1,0 +1,16 @@
+---
+issues:
+  - |
+    Currently, the FWaaSv2 L2 driver can be configured as:
+
+        ``firewall_driver = ovs``
+
+    And the Security Group driver is specified as:
+
+        ``firewall_driver = openvswitch``
+
+    If both are configured, the packet will still only hit the FWaaS table in
+    OVS and will not traverse the rules in the SG table. There are some fixes
+    needed to support this model which are being tested and will be merged
+    shortly. Currently there are no checks to allow only one of FWaaS L2 or SG
+    to be configured.
