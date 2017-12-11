@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from neutron_lib import constants
 from oslo_log import log as logging
 
 from neutron_fwaas.privileged import netlink_lib as nl_lib
@@ -110,16 +111,21 @@ class ConntrackNetlink(conntrack_base.ConntrackDriverBase):
         ENTRY_MATCHES = 0
         ENTRY_IS_HIGHER = 1
         rule_ipversion = rule_filter[0]
+
         if entry[0] < rule_ipversion:
             return ENTRY_IS_LOWER
         elif entry[0] > rule_ipversion:
             return ENTRY_IS_HIGHER
         rule_protocol = rule_filter[1]
+
         if rule_protocol:
+            if rule_protocol == constants.PROTO_NAME_IPV6_ICMP:
+                rule_protocol = constants.PROTO_NAME_IPV6_ICMP_LEGACY
             if entry[1] < rule_protocol:
                 return ENTRY_IS_LOWER
             elif entry[1] > rule_protocol:
                 return ENTRY_IS_HIGHER
+
         sport_range = rule_filter[2]
         if sport_range:
             sport_range = [int(port) for port in sport_range]
