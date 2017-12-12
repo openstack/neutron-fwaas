@@ -72,10 +72,6 @@ function neutron_fwaas_generate_config_files {
 function init_fwaas() {
     # Initialize and start the service.
     :
-    if [ ! -d /etc/neutron/policy.d ]; then
-        mkdir /etc/neutron/policy.d
-    fi
-    cp $DEST/neutron-fwaas/etc/neutron/policy.d/neutron-fwaas.json /etc/neutron/policy.d/neutron-fwaas.json
     # Using sudo to gain the root privilege to be able to copy file to rootwrap.d
     sudo cp $DEST/neutron-fwaas/etc/neutron/rootwrap.d/fwaas-privsep.filters /etc/neutron/rootwrap.d/fwaas-privsep.filters
 }

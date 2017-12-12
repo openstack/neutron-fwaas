@@ -18,6 +18,7 @@ import contextlib
 import mock
 from neutron.api import extensions as api_ext
 from neutron.common import config
+from neutron.tests.unit.db import test_db_base_plugin_v2 as test_db_plugin
 from neutron_lib.api.definitions import firewall
 from neutron_lib import constants as nl_constants
 from neutron_lib import context
@@ -33,7 +34,6 @@ import webob.exc
 from neutron_fwaas.db.firewall import firewall_db as fdb
 from neutron_fwaas import extensions
 from neutron_fwaas.services.firewall import fwaas_plugin
-from neutron_fwaas.tests import base
 
 
 DB_FW_PLUGIN_KLASS = (
@@ -73,7 +73,7 @@ class FakeAgentApi(fwaas_plugin.FirewallCallbacks):
         self.firewall_deleted(context, firewall['id'], **kwargs)
 
 
-class FirewallPluginDbTestCase(base.NeutronDbPluginV2TestCase):
+class FirewallPluginDbTestCase(test_db_plugin.NeutronDbPluginV2TestCase):
     resource_prefix_map = dict(
         (k, firewall.API_PREFIX)
         for k in firewall.RESOURCE_ATTRIBUTE_MAP.keys()
