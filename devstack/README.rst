@@ -14,7 +14,8 @@ version you with to run.
 How to run FWaaS V2 in DevStack
 ===============================
 
-Add the following to the localrc section of your local.conf to configure FWaaS v2.
+Add the following to the localrc section of your local.conf to configure
+FWaaS v2.
 
 .. code-block:: none
 
@@ -35,7 +36,8 @@ testing.
 How to run FWaaS V1 in DevStack
 ===============================
 
-Add the following to the localrc section of your local.conf to configure FWaaS v1.
+Add the following to the localrc section of your local.conf to configure
+FWaaS v1.
 
 .. code-block:: none
 
