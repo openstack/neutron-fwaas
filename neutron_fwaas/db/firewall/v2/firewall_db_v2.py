@@ -845,12 +845,25 @@ class FirewallPluginDb(common_db_mixin.CommonDbMixin):
         return None
 
     def get_fwg_attached_to_port(self, context, port_id):
-        """Return a firewall group ID is associated to a port"""
+        """Return a firewall group ID that is attached to a given port"""
         fwg_port = self._model_query(context, FirewallGroupPortAssociation).\
             filter_by(port_id=port_id).first()
         if fwg_port:
             return fwg_port.firewall_group_id
         return None
+
+    def get_fwg_ports_in_tenant(self, context, tenant_id):
+        """Return a list of ports under a given tenant"""
+        try:
+            fwg_id = FirewallGroupPortAssociation.firewall_group_id
+            with context.session.begin(subtransactions=True):
+                port_qry = context.session.query(
+                    FirewallGroupPortAssociation.port_id).join(
+                    FirewallGroup, FirewallGroup.id == fwg_id).filter(
+                    FirewallGroup.tenant_id == tenant_id).all()
+                return list({port for (port,) in port_qry})
+        except exc.NoResultFound:
+            return []
 
     def _ensure_default_firewall_group(self, context, tenant_id):
         """Create a default firewall group if one doesn't exist for a tenant
