@@ -15,6 +15,7 @@
 
 from neutron.agent.linux import iptables_manager
 from neutron.common import utils
+from neutron_lib import constants
 from neutron_lib.exceptions import firewall_v2 as fw_ext
 from oslo_log import log as logging
 
@@ -28,17 +29,16 @@ FWAAS_DEFAULT_CHAIN = 'fwaas-default-policy'
 FWAAS_TO_IPTABLE_ACTION_MAP = {'allow': 'ACCEPT',
                                'deny': 'DROP',
                                'reject': 'REJECT'}
-INGRESS_DIRECTION = 'ingress'
-EGRESS_DIRECTION = 'egress'
-CHAIN_NAME_PREFIX = {INGRESS_DIRECTION: 'i',
-                     EGRESS_DIRECTION: 'o'}
+
+CHAIN_NAME_PREFIX = {constants.INGRESS_DIRECTION: 'i',
+                     constants.EGRESS_DIRECTION: 'o'}
 
 """ Firewall rules are applied on internal-interfaces of Neutron router.
     The packets ingressing tenant's network will be on the output
     direction on internal-interfaces.
 """
-IPTABLES_DIR = {INGRESS_DIRECTION: '-o',
-                EGRESS_DIRECTION: '-i'}
+IPTABLES_DIR = {constants.INGRESS_DIRECTION: '-o',
+                constants.EGRESS_DIRECTION: '-i'}
 IPV4 = 'ipv4'
 IPV6 = 'ipv6'
 IP_VER_TAG = {IPV4: 'v4',
@@ -212,8 +212,10 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
                 table = ipt_mgr.ipv4['filter']
             else:
                 table = ipt_mgr.ipv6['filter']
-            ichain_name = self._get_chain_name(fwid, ver, INGRESS_DIRECTION)
-            ochain_name = self._get_chain_name(fwid, ver, EGRESS_DIRECTION)
+            ichain_name = self._get_chain_name(
+                fwid, ver, constants.INGRESS_DIRECTION)
+            ochain_name = self._get_chain_name(
+                fwid, ver, constants.EGRESS_DIRECTION)
             for name in [ichain_name, ochain_name]:
                 table.add_chain(name)
                 table.add_rule(name, invalid_rule)
@@ -229,7 +231,8 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
             else:
                 ver = IPV6
                 table = ipt_mgr.ipv6['filter']
-            ichain_name = self._get_chain_name(fwid, ver, INGRESS_DIRECTION)
+            ichain_name = self._get_chain_name(
+                fwid, ver, constants.INGRESS_DIRECTION)
             table.add_rule(ichain_name, iptbl_rule)
 
         for rule in egress_rule_list:
@@ -242,7 +245,8 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
             else:
                 ver = IPV6
                 table = ipt_mgr.ipv6['filter']
-            ochain_name = self._get_chain_name(fwid, ver, EGRESS_DIRECTION)
+            ochain_name = self._get_chain_name(
+                fwid, ver, constants.EGRESS_DIRECTION)
             table.add_rule(ochain_name, iptbl_rule)
 
         self._enable_policy_chain(fwid, ipt_if_prefix, router_fw_ports)
@@ -311,7 +315,8 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
     def _remove_chains(self, fwid, ipt_mgr):
         """Remove fwaas policy chain."""
         for ver in [IPV4, IPV6]:
-            for direction in [INGRESS_DIRECTION, EGRESS_DIRECTION]:
+            for direction in [constants.INGRESS_DIRECTION,
+                              constants.EGRESS_DIRECTION]:
                 chain_name = self._get_chain_name(fwid, ver, direction)
                 self._remove_chain_by_name(ver, chain_name, ipt_mgr)
 
@@ -342,7 +347,8 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
 
         for (ver, tbl) in [(IPV4, ipt_mgr.ipv4['filter']),
                            (IPV6, ipt_mgr.ipv6['filter'])]:
-            for direction in [INGRESS_DIRECTION, EGRESS_DIRECTION]:
+            for direction in [constants.INGRESS_DIRECTION,
+                              constants.EGRESS_DIRECTION]:
                 chain_name = self._get_chain_name(fwid, ver, direction)
                 chain_name = iptables_manager.get_chain_name(chain_name)
                 if chain_name in tbl.chains:
