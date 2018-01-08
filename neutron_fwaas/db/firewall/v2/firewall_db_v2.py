@@ -972,7 +972,7 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
         return self._create_firewall_group(context, firewall_group, status)
 
     def update_firewall_group(self, context, id, firewall_group):
-        LOG.debug("update_firewall() called")
+        LOG.debug("update_firewall_group() called")
         fwg = firewall_group['firewall_group']
         # make sure that no group can be updated to have name=default
         self._ensure_not_default_resource(firewall_group, 'firewall_group')
