@@ -15,9 +15,9 @@
 
 import testscenarios
 
+from tempest.common import utils
 from tempest import config
 from tempest.lib import decorators
-from tempest import test
 
 from neutron_fwaas.tests.tempest_plugin.tests.scenario import base
 
@@ -42,7 +42,7 @@ class TestFWaaS(base.FWaaSScenarioTest):
         if self.router_insertion:
             required_exts.append('fwaasrouterinsertion')
         for ext in required_exts:
-            if not test.is_extension_enabled(ext, 'network'):
+            if not utils.is_extension_enabled(ext, 'network'):
                 msg = "%s Extension not enabled." % ext
                 raise self.skipException(msg)
         self._router_ids = None

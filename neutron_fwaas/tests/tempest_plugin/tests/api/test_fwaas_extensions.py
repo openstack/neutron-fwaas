@@ -14,12 +14,12 @@
 
 import six
 
+from tempest.common import utils
 from tempest import config
 from tempest.lib.common.utils import data_utils
 from tempest.lib.common.utils import test_utils
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
-from tempest import test
 
 from neutron_fwaas.tests.tempest_plugin.tests.api import base
 
@@ -56,7 +56,7 @@ class FWaaSExtensionTestJSON(base.BaseFWaaSTest):
     @classmethod
     def resource_setup(cls):
         super(FWaaSExtensionTestJSON, cls).resource_setup()
-        if not test.is_extension_enabled('fwaas', 'network'):
+        if not utils.is_extension_enabled('fwaas', 'network'):
             msg = "FWaaS Extension not enabled."
             raise cls.skipException(msg)
 

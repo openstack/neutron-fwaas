@@ -15,12 +15,12 @@
 import netaddr
 import six
 
+from tempest.common import utils
 from tempest import config
 from tempest.lib.common.utils import data_utils
 from tempest.lib.common.utils import test_utils
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
-from tempest import test
 
 from neutron_fwaas.common import fwaas_constants
 from neutron_fwaas.tests.tempest_plugin.tests.api import v2_base
@@ -58,7 +58,7 @@ class FWaaSv2ExtensionTestJSON(v2_base.BaseFWaaSTest):
     @classmethod
     def resource_setup(cls):
         super(FWaaSv2ExtensionTestJSON, cls).resource_setup()
-        if not test.is_extension_enabled('fwaas_v2', 'network'):
+        if not utils.is_extension_enabled('fwaas_v2', 'network'):
             msg = "FWaaS v2  Extension not enabled."
             raise cls.skipException(msg)
 
