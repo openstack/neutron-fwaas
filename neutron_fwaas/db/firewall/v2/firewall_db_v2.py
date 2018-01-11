@@ -844,6 +844,14 @@ class FirewallPluginDb(common_db_mixin.CommonDbMixin):
             return default_fwg.id
         return None
 
+    def get_fwg_attached_to_port(self, context, port_id):
+        """Return a firewall group ID is associated to a port"""
+        fwg_port = self._model_query(context, FirewallGroupPortAssociation).\
+            filter_by(port_id=port_id).first()
+        if fwg_port:
+            return fwg_port.firewall_group_id
+        return None
+
     def _ensure_default_firewall_group(self, context, tenant_id):
         """Create a default firewall group if one doesn't exist for a tenant
 
