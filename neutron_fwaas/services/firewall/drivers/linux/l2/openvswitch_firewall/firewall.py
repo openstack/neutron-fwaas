@@ -943,13 +943,13 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
         # add direction field
         offset = len(port.fw_group.ingress_rules) - 1
         for rule in port.fw_group.ingress_rules:
-            inject_fields(rule, firewall.INGRESS_DIRECTION, offset)
+            inject_fields(rule, lib_const.INGRESS_DIRECTION, offset)
             offset -= 1
             yield rule
 
         offset = len(port.fw_group.egress_rules) - 1
         for rule in port.fw_group.egress_rules:
-            inject_fields(rule, firewall.EGRESS_DIRECTION, offset)
+            inject_fields(rule, lib_const.EGRESS_DIRECTION, offset)
             offset -= 1
             yield rule
 
