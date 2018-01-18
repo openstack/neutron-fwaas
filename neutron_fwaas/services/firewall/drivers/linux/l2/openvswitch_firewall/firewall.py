@@ -228,7 +228,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver.
     # This driver won't have any conj_manager logic because there is no concept
     # of remote_group_id for firewall groups (that I know of at least)
-    def __init__(self, integration_bridge, sg_enabled=False):
+    def __init__(self, integration_bridge, sg_with_ovs=False):
         """Initialize object
 
         :param integration_bridge: Bridge on which openflow rules will be
@@ -239,13 +239,13 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
         self.fwg_port_map = FWGPortMap()
         self.fwg_to_delete = set()
         self._deferred = False
-        self.sg_enabled = sg_enabled
+        self.sg_with_ovs = sg_with_ovs
         self._drop_all_unmatched_flows()
         self._initialize_third_party_tables()
 
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver
     def _accept_flow(self, **flow):
-        for f in rules.create_accept_flows(flow, self.sg_enabled):
+        for f in rules.create_accept_flows(flow, self.sg_with_ovs):
             self._add_flow(**f)
 
     def _drop_flow(self, **flow):
@@ -291,7 +291,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
     def _drop_all_unmatched_flows(self):
         for table in fwaas_ovs_consts.OVS_FIREWALL_TABLES:
             if (table == fwaas_ovs_consts.FW_ACCEPT_OR_INGRESS_TABLE and
-                self.sg_enabled):
+                self.sg_with_ovs):
                 continue
             self.int_br.br.add_flow(table=table, priority=0, actions='drop')
 
@@ -354,7 +354,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
     def prepare_port_filter(self, port):
         # NOTE(annp): port no security should be handled by security group in
         # co-existence mode, otherwise(standalone mode) fwg will handle it.
-        if not firewall.port_sec_enabled(port) and not self.sg_enabled:
+        if not firewall.port_sec_enabled(port) and not self.sg_with_ovs:
             self._initialize_egress_no_port_security(port)
             return
         old_of_port = self.get_ofport(port)
@@ -381,12 +381,12 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
         co-existence mode, otherwise fwg will handle it.
 
         """
-        if not firewall.port_sec_enabled(port) and not self.sg_enabled:
+        if not firewall.port_sec_enabled(port) and not self.sg_with_ovs:
             self.remove_port_filter(port)
             self._initialize_egress_no_port_security(port)
             return
         elif not self.is_port_managed(port):
-            if not self.sg_enabled:
+            if not self.sg_with_ovs:
                 self._remove_egress_no_port_security(port['device'])
             self.prepare_port_filter(port)
             return
@@ -646,7 +646,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
 
         # DHCP discovery
         accept_or_ingress = fwaas_ovs_consts.FW_ACCEPT_OR_INGRESS_TABLE
-        if self.sg_enabled:
+        if self.sg_with_ovs:
             accept_or_ingress = ovs_consts.ACCEPT_OR_INGRESS_TABLE
         for dl_type, src_port, dst_port in (
                 (constants.ETHERTYPE_IP, 68, 67),
@@ -702,7 +702,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
 
         # Fill in accept_or_ingress table by checking that traffic is ingress
         # and if not, accept it
-        if self.sg_enabled:
+        if self.sg_with_ovs:
             self._fwaas_process_colocated_ingress(port)
         else:
             for mac_addr in port.all_allowed_macs:
@@ -984,7 +984,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
     def delete_all_port_flows(self, port):
         """Delete all flows for given port"""
         accept_or_ingress = fwaas_ovs_consts.FW_ACCEPT_OR_INGRESS_TABLE
-        if self.sg_enabled:
+        if self.sg_with_ovs:
             accept_or_ingress = ovs_consts.ACCEPT_OR_INGRESS_TABLE
 
         for mac_addr in port.all_allowed_macs:

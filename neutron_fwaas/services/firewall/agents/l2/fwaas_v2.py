@@ -32,6 +32,7 @@ from neutron_fwaas.services.firewall.agents import firewall_agent_api as api
 LOG = logging.getLogger(__name__)
 
 FWAAS_L2_DRIVER = 'neutron.agent.l2.firewall_drivers'
+SG_OVS_DRIVER = 'openvswitch'
 
 
 class FWaaSL2PluginApi(api.FWaaSPluginApiMixin):
@@ -72,8 +73,10 @@ class FWaaSV2AgentExtension(l2_extension.L2AgentExtension):
         self.vlan_manager = vlanmanager.LocalVlanManager()
         fw_l2_driver_cls = self._load_l2_driver_class(driver_type)
         sg_enabled = securitygroups_rpc.is_firewall_enabled()
+        sg_firewall_driver = self.conf.SECURITYGROUP.firewall_driver
+        sg_with_ovs = sg_enabled and (sg_firewall_driver == SG_OVS_DRIVER)
         self.driver = manager.NeutronManager.load_class_for_provider(
-            FWAAS_L2_DRIVER, fw_l2_driver_cls)(int_br, sg_enabled)
+            FWAAS_L2_DRIVER, fw_l2_driver_cls)(int_br, sg_with_ovs)
         self.plugin_rpc = FWaaSL2PluginApi(
             consts.FIREWALL_PLUGIN, self.conf.host)
         self.start_rpc_listeners()
