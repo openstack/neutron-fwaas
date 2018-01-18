@@ -1,0 +1,13 @@
+---
+prelude: >
+    Adding new tables for future consumption.
+features:
+  - |
+    New tables ``ACCEPTED_EGRESS_TRAFFIC_TABLE=91``
+    and ``ACCEPTED_INGRESS_TRAFFIC_TABLE=92`` & ``DROPPED_TRAFFIC_TABLE=93``
+    are added to OVS based FWaaS L2 driver for future comsumption like logging
+    service.
+fixes:
+  - |
+    The limitation related to logging for security group in case of
+    co-existence between SG and FWG is also fixed.

@@ -16,6 +16,8 @@ import mock
 from neutron_lib import constants
 
 from neutron.common import constants as n_const
+from neutron.plugins.ml2.drivers.openvswitch.agent.common import constants \
+    as ovs_consts
 from neutron.tests import base
 
 from neutron_fwaas.services.firewall.drivers.linux.l2.openvswitch_firewall \
@@ -187,7 +189,8 @@ class TestCreateProtocolFlows(base.BaseTestCase):
         rule = {'protocol': constants.PROTO_NUM_TCP}
         expected_flows = [{
             'table': fwaas_ovs_consts.FW_RULES_INGRESS_TABLE,
-            'actions': 'output:1',
+            'actions': 'output:1,resubmit(,%d)' % (
+                ovs_consts.ACCEPTED_INGRESS_TRAFFIC_TABLE),
             'nw_proto': constants.PROTO_NUM_TCP,
         }]
         self._test_create_protocol_flows_helper(

@@ -87,7 +87,9 @@ def populate_flow_common(direction, flow_template, port):
     """Initialize common flow fields."""
     if direction == n_consts.INGRESS_DIRECTION:
         flow_template['table'] = fwaas_ovs_consts.FW_RULES_INGRESS_TABLE
-        flow_template['actions'] = "output:{:d}".format(port.ofport)
+        flow_template['actions'] = "output:{:d},resubmit(,{:d})".format(
+            port.ofport,
+            ovs_consts.ACCEPTED_INGRESS_TRAFFIC_TABLE)
     elif direction == n_consts.EGRESS_DIRECTION:
         flow_template['table'] = fwaas_ovs_consts.FW_RULES_EGRESS_TABLE
         # Traffic can be both ingress and egress, check that no ingress rules
@@ -196,5 +198,9 @@ def create_accept_flows(flow, sg_enabled=False):
 def create_drop_flows(flow):
     if flow['table'] in [fwaas_ovs_consts.FW_RULES_INGRESS_TABLE,
                          fwaas_ovs_consts.FW_RULES_EGRESS_TABLE]:
-        flow['actions'] = 'drop'
-    return [flow]
+        flow['actions'] = 'resubmit(,%d)' % ovs_consts.DROPPED_TRAFFIC_TABLE
+        flow['ct_state'] = fwaas_ovs_consts.OF_STATE_NEW_NOT_ESTABLISHED
+        result = [flow.copy()]
+        flow['ct_state'] = fwaas_ovs_consts.OF_STATE_ESTABLISHED_NOT_REPLY
+        result.append(flow)
+    return result
