@@ -1,0 +1,8 @@
+---
+prelude: >
+    Validating if a port is supported by FWaaS V2
+fixes:
+  - |
+    [`bug 1746855 <https://bugs.launchpad.net/neutron/+bug/1746855>`__]
+    Now, FWaaS V2 will validate if a port is supported before adding it
+    to a FWG. This helps to make sure FWaaS V2 API works as expected.

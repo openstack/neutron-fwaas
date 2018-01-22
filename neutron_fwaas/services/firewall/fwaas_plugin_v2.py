@@ -29,6 +29,7 @@ from oslo_config import cfg
 from oslo_log import log as logging
 import oslo_messaging
 
+from neutron_fwaas.common import exceptions
 from neutron_fwaas.common import fwaas_constants
 from neutron_fwaas.db.firewall.v2 import firewall_db_v2
 
@@ -247,6 +248,34 @@ class FirewallPluginV2(
                 and not device_owner.startswith(
                     nl_constants.DEVICE_OWNER_COMPUTE_PREFIX)):
                 raise f_exc.FirewallGroupPortInvalid(port_id=port_id)
+            if (device_owner.startswith(
+                    nl_constants.DEVICE_OWNER_COMPUTE_PREFIX) and not
+                self._is_supported_by_fw_l2_driver(context, port_id)):
+                raise exceptions.FirewallGroupPortNotSupported(port_id=port_id)
+
+    def _is_supported_by_fw_l2_driver(self, context, port_id):
+        """Whether this port is supported by firewall l2 driver"""
+
+        # Re-fetch to get up-to-date data from db
+        port = self._core_plugin.get_port(context, id=port_id)
+
+        # Skip port binding is unbound or failed
+        if port[pb_def.VIF_TYPE] in [pb_def.VIF_TYPE_UNBOUND,
+                                     pb_def.VIF_TYPE_BINDING_FAILED]:
+            return False
+
+        if not port['port_security_enabled']:
+            return True
+
+        if port[pb_def.VIF_TYPE] == pb_def.VIF_TYPE_OVS:
+            # TODO(annp): remove these lines after we fully support for hybrid
+            # port
+            if not port[pb_def.VIF_DETAILS][pb_def.OVS_HYBRID_PLUG]:
+                return True
+            LOG.warning("Doesn't support hybrid port at the moment")
+        else:
+            LOG.warning("Doesn't support vif type %s", port[pb_def.VIF_TYPE])
+        return False
 
     def _check_no_need_pending(self, context, fwg_id, fwg_body):
         fwg_db = self._get_firewall_group(context, fwg_id)
@@ -304,11 +333,12 @@ class FirewallPluginV2(
             # only attach security group to vm port.
             return
 
-        if updated_port[pb_def.VIF_TYPE] in [pb_def.VIF_TYPE_UNBOUND,
-                                             pb_def.VIF_TYPE_BINDING_FAILED]:
-            return
         context = kwargs['context']
         port_id = updated_port['id']
+        # Check port is supported by firewall l2 driver or not
+        if not self._is_supported_by_fw_l2_driver(context, port_id):
+            return
+
         project_id = updated_port['project_id']
         LOG.debug("Try to associate port %s at %s", port_id, project_id)
         self.set_port_for_default_firewall_group(context, port_id, project_id)

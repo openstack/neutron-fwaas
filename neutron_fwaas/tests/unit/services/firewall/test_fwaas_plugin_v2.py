@@ -233,6 +233,8 @@ class TestFirewallPluginBasev2(TestFirewallRouterPortBase,
     def setUp(self):
         super(TestFirewallPluginBasev2, self).setUp(fw_plugin=FW_PLUGIN_KLASS)
         fake_notifier.reset()
+        mock.patch.object(self.plugin, '_is_supported_by_fw_l2_driver',
+                          return_value=True).start()
 
     @property
     def _self_context(self):
