@@ -48,13 +48,13 @@ class FirewallDefaultParameterExists(exceptions.InUse):
     Occurs when user creates/updates any existing firewall resource with
     reserved parameter names.
     """
-    message = _("Operation cannot be performed since '%(name)s' "
-                "is a reserved name for %(resource_type)s.")
+    message = ("Operation cannot be performed since '%(name)s' "
+               "is a reserved name for %(resource_type)s.")
 
 
 class FirewallDefaultObjectUpdateRestricted(FirewallDefaultParameterExists):
-    message = _("Operation cannot be performed on default object "
-                "'%(resource_id)s' of type %(resource_type)s.")
+    message = ("Operation cannot be performed on default object "
+               "'%(resource_id)s' of type %(resource_type)s.")
 
 
 class HasName(object):
@@ -978,14 +978,18 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
         self._ensure_not_default_resource(firewall_group, 'firewall_group')
         with context.session.begin(subtransactions=True):
             fwg_db = self.get_firewall_group(context, id)
-            # XXX NOTE(ivasilevskaya) because delete_firewall_group method in
-            # plugin calls DB's update_firewall_group when fw has rules
-            # the check above is necessary for admin to be able to delete
-            # default group. It's clumsy and should be improved I believe
-            if (not context.is_admin or
-                    fwg.get("status", "") != nl_constants.PENDING_DELETE):
-                self._ensure_not_default_resource(fwg_db,
-                                             'firewall_group', action="update")
+            if _is_default(fwg_db):
+                attrs = [
+                    'name', 'description', 'admin_state_up',
+                    'ingress_firewall_policy_id', 'egress_firewall_policy_id'
+                ]
+                if context.is_admin:
+                    attrs = ['name']
+                for attr in attrs:
+                    if attr in fwg:
+                        raise FirewallDefaultObjectUpdateRestricted(
+                            resource_type='Firewall Group',
+                            resource_id=fwg_db['id'])
             self._validate_tenant_for_fwg_policies(context,
                                                    fwg, fwg_db['tenant_id'])
             if 'ports' in fwg:
@@ -993,10 +997,12 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
                 self._delete_ports_in_firewall_group(context, id)
                 self._set_ports_for_firewall_group(context, fwg_db, fwg)
                 del fwg['ports']
-            count = context.session.query(
-                FirewallGroup).filter_by(id=id).update(fwg)
-            if not count:
-                raise f_exc.FirewallGroupNotFound(firewall_id=id)
+            # If fwg is empty, skip updating
+            if fwg:
+                count = context.session.query(
+                    FirewallGroup).filter_by(id=id).update(fwg)
+                if not count:
+                    raise f_exc.FirewallGroupNotFound(firewall_id=id)
         return self.get_firewall_group(context, id)
 
     def update_firewall_group_status(self, context, id, status, not_in=None):
@@ -1016,9 +1022,6 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
         # Note: Plugin should ensure that it's okay to delete if the
         # firewall is active
         LOG.debug("delete_firewall_group() called")
-
-        def _is_default(fwg_db):
-            return fwg_db['name'] == const.DEFAULT_FWG
 
         with context.session.begin(subtransactions=True):
             # if no such group exists -> don't raise an exception according to
@@ -1115,3 +1118,7 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
             self._set_ports_for_firewall_group(context, def_fwg_db, fwg_ports)
             return self._make_firewall_group_dict_with_rules(
                 context, def_fwg_db['id'])
+
+
+def _is_default(fwg_db):
+    return fwg_db['name'] == const.DEFAULT_FWG

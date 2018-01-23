@@ -1380,35 +1380,101 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
                                     egress_firewall_policy_id=None,
                                     expected_res_status=409)
 
-    def test_update_default_firewall_group(self):
+    def test_update_default_firewall_group_with_non_admin_success(self):
         ctx = self._get_nonadmin_context()
-        # try to rename a default group
         def_fwg_id = self._build_default_fwg(ctx=ctx)['id']
-        data = {'firewall_group': {'name': 'not-default-anymore'}}
-        req = self.new_update_request('firewall_groups', data, def_fwg_id,
-                                      context=ctx)
-        res = req.get_response(self.ext_api)
-        self.assertEqual(409, res.status_int)
-        # create non default group and try to make it default by renaming
-        with self.firewall_group(name="not-default-at-all",
-                                 tenant_id=ctx.tenant_id,
-                                 context=ctx) as not_default:
-            data = {'firewall_group': {'name': constants.DEFAULT_FWG}}
-            req = self.new_update_request('firewall_groups',
-                                          data,
-                                          not_default['firewall_group']['id'],
-                                          context=ctx)
-            res = req.get_response(self.ext_api)
-            self.assertEqual(409, res.status_int)
+        with self.port(
+            device_owner=nl_constants.DEVICE_OWNER_ROUTER_INTF,
+            ctx=ctx) as dummy_port:
+            port_id = dummy_port['port']['id']
+            success_cases = [
+                    {'ports': [port_id]},
+                    {'ports': []},
+                    {'ports': None},
+                    {},
+            ]
+            for attr in success_cases:
+                data = {'firewall_group': attr}
+                req = self.new_update_request(
+                    'firewall_groups', data, def_fwg_id)
+                req.environ['neutron.context'] = ctx
+                res = req.get_response(self.ext_api)
+                self.assertEqual(200, res.status_int)
 
-    def test_update_default_firewall_group_with_non_admin(self):
+    def test_update_default_firewall_group_with_non_admin_failure(self):
         ctx = self._get_nonadmin_context()
         def_fwg_id = self._build_default_fwg(ctx=ctx)['id']
-        data = {'firewall_group': {'name': 'default'}}
-        req = self.new_update_request('firewall_groups', data, def_fwg_id)
-        req.environ['neutron.context'] = ctx
-        res = req.get_response(self.ext_api)
-        self.assertEqual(409, res.status_int)
+        with self.port(
+            device_owner=nl_constants.DEVICE_OWNER_ROUTER_INTF,
+            ctx=ctx) as dummy_port:
+            port_id = dummy_port['port']['id']
+            conflict_cases = [
+                    {'name': ''},
+                    {'name': 'default'},
+                    {'name': 'non-default'},
+                    {'ingress_firewall_policy_id': None},
+                    {'egress_firewall_policy_id': None},
+                    {'description': 'try to modify'},
+                    {'admin_state_up': True},
+                    {'ports': [port_id], 'name': ''},
+                    {'ports': [], 'name': 'default'},
+                    {'ports': None, 'name': 'non-default'},
+            ]
+            for attr in conflict_cases:
+                data = {'firewall_group': attr}
+                req = self.new_update_request(
+                    'firewall_groups', data, def_fwg_id)
+                req.environ['neutron.context'] = ctx
+                res = req.get_response(self.ext_api)
+                self.assertEqual(409, res.status_int)
+
+    def test_update_default_firewall_group_with_admin_success(self):
+        ctx = self._get_admin_context()
+        with self.port(
+            device_owner=nl_constants.DEVICE_OWNER_ROUTER_INTF,
+            ctx=ctx) as dummy_port:
+            port_id = dummy_port['port']['id']
+            def_fwg_id = self._build_default_fwg(ctx=ctx)['id']
+            success_cases = [
+                    {'ports': [port_id]},
+                    {'ports': []},
+                    {'ports': None},
+                    {'ingress_firewall_policy_id': None},
+                    {'egress_firewall_policy_id': None},
+                    {'description': 'try to modify'},
+                    {'admin_state_up': True},
+                    {},
+            ]
+            for attr in success_cases:
+                data = {'firewall_group': attr}
+                req = self.new_update_request(
+                    'firewall_groups', data, def_fwg_id)
+                req.environ['neutron.context'] = ctx
+                res = req.get_response(self.ext_api)
+                self.assertEqual(200, res.status_int)
+
+    def test_update_default_firewall_group_with_admin_failure(self):
+        ctx = self._get_admin_context()
+        with self.port(
+            device_owner=nl_constants.DEVICE_OWNER_ROUTER_INTF,
+            ctx=ctx) as dummy_port:
+            port_id = dummy_port['port']['id']
+            def_fwg_id = self._build_default_fwg(ctx=ctx)['id']
+            conflict_cases = [
+                    {'name': 'default'},
+                    {'name': 'non-default'},
+                    {'name': ''},
+                    {'ports': [port_id], 'name': ''},
+                    {'ports': [], 'name': 'default'},
+                    {'ports': None, 'name': 'non-default'},
+            ]
+            for attr in conflict_cases:
+                data = {'firewall_group': attr}
+                req = self.new_update_request(
+                    'firewall_groups', data, def_fwg_id)
+                req.environ['neutron.context'] = ctx
+                res = req.get_response(self.ext_api)
+                self.assertEqual(409, res.status_int)
 
     def test_update_firewall_group_with_fwp(self):
         ctx = self._get_nonadmin_context()

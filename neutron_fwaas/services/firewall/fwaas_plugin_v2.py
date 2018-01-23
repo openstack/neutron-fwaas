@@ -38,7 +38,7 @@ FW_V2_OPTS = [
     cfg.BoolOpt(
         'auto_associate_default_firewall_group',
         default=False,
-        help=_("Apply default fwg to all new VM ports within a project")),
+        help=("Apply default fwg to all new VM ports within a project")),
 ]
 cfg.CONF.register_opts(FW_V2_OPTS, 'fwaas')
 
