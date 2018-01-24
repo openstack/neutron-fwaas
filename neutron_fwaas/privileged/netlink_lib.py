@@ -56,6 +56,7 @@ DATA_CALLBACK = None
 
 ATTR_POSITIONS = {
     'icmp': [('type', 6), ('code', 7), ('src', 4), ('dst', 5), ('id', 8)],
+    'icmpv6': [('type', 6), ('code', 7), ('src', 4), ('dst', 5), ('id', 8)],
     'tcp': [('sport', 7), ('dport', 8), ('src', 5), ('dst', 6)],
     'udp': [('sport', 6), ('dport', 7), ('src', 4), ('dst', 5)]
 }
@@ -91,10 +92,10 @@ class ConntrackManager(object):
     def __init__(self, family_socket=None):
         self.family_socket = family_socket
         self.set_functions = {
-            'src': {4: nfct.nfct_set_attr_u32,
-                    6: nfct.nfct_set_attr_u64},
-            'dst': {4: nfct.nfct_set_attr_u32,
-                    6: nfct.nfct_set_attr_u64},
+            'src': {4: nfct.nfct_set_attr,
+                    6: nfct.nfct_set_attr},
+            'dst': {4: nfct.nfct_set_attr,
+                    6: nfct.nfct_set_attr},
             'ipversion': {4: nfct.nfct_set_attr_u8,
                           6: nfct.nfct_set_attr_u8},
             'protocol': {4: nfct.nfct_set_attr_u8,
@@ -109,8 +110,8 @@ class ConntrackManager(object):
                       6: nfct.nfct_set_attr_u16},
             'dport': {4: nfct.nfct_set_attr_u16,
                       6: nfct.nfct_set_attr_u16}, }
-        self.converters = {'src': libc.inet_addr,
-                      'dst': libc.inet_addr,
+        self.converters = {'src': str,
+                      'dst': str,
                       'ipversion': nl_constants.IPVERSION_SOCKET.get,
                       'protocol': constants.IP_PROTOCOL_MAP.get,
                       'code': int,
@@ -164,12 +165,22 @@ class ConntrackManager(object):
         if result == nl_constants.NFCT_CB_FAILURE:
             LOG.warning("Netlink query failed")
 
+    def _convert_text_to_binary(self, source, addr_family):
+        dest = ctypes.create_string_buffer(
+            nl_constants.IPVERSION_BUFFER[addr_family])
+        libc.inet_pton(nl_constants.IPVERSION_SOCKET[addr_family],
+                       source, dest)
+        return dest.raw
+
     def _set_attributes(self, conntrack, entry):
         ipversion = entry.get('ipversion', 4)
         for attr, value in entry.items():
             set_function = self.set_functions[attr][ipversion]
             target = TARGET[attr][ipversion]
             converter = self.converters[attr]
+            if attr in ['src', 'dst']:
+                # convert src and dst of IPv4 and IPv6 into same format
+                value = self._convert_text_to_binary(value, ipversion)
             set_function(conntrack, target, converter(value))
 
     def _callback_register(self, message_type, callback_func, data):
