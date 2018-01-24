@@ -1,0 +1,22 @@
+- project:
+    check:
+      jobs:
+        - neutron-fwaas-networking-midonet-cross-py35:
+            voting: false
+
+- job:
+    name: neutron-fwaas-networking-midonet-cross-py35
+    parent: openstack-tox-py35
+    description: |
+      Run Python 35 tests on networking-midonet repository.
+    vars:
+      zuul_work_dir: src/git.openstack.org/openstack/networking-midonet
+    required-projects:
+      - openstack/requirements
+      - openstack/networking-midonet
+      - openstack/neutron
+      - openstack/neutron-vpnaas
+      - openstack/neutron-lbaas
+      - openstack/neutron-dynamic-routing
+      - openstack/networking-l2gw
+      - openstack/tap-as-a-service
