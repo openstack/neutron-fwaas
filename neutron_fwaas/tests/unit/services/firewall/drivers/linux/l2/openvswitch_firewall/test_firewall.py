@@ -456,7 +456,7 @@ class TestOVSFirewallDriver(base.BaseTestCase):
                                     'ip_address': "10.0.0.1"}],
                      'lvlan': TESTING_VLAN_TAG}
         self._prepare_firewall_group()
-        self.firewall.sg_enabled = True
+        self.firewall.sg_with_ovs = True
         self.firewall.prepare_port_filter(port_dict)
         exp_egress_classifier = mock.call(
             actions='set_field:{:d}->reg5,set_field:{:d}->reg6,'
@@ -550,7 +550,7 @@ class TestOVSFirewallDriver(base.BaseTestCase):
                      'firewall_group': 1,
                      'lvlan': TESTING_VLAN_TAG}
         self._prepare_firewall_group()
-        self.firewall.sg_enabled = True
+        self.firewall.sg_with_ovs = True
         self.firewall.prepare_port_filter(port_dict)
         port_dict['firewall_group'] = 2
         self.mock_bridge.reset_mock()
