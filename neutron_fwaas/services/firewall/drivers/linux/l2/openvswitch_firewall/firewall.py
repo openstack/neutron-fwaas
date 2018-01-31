@@ -445,6 +445,21 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
 
             self.fwg_port_map.delete_fwg(fwg_id)
 
+    def process_trusted_ports(self, ports):
+        """Pass packets from these ports directly to ingress pipeline."""
+        if self.sg_with_ovs:
+            return
+
+        for port in ports:
+            self._initialize_egress_no_port_security(port)
+
+    def remove_trusted_ports(self, port_ids):
+        if self.sg_with_ovs:
+            return
+
+        for port_id in port_ids:
+            self._remove_egress_no_port_security(port_id)
+
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver
     def filter_defer_apply_on(self):
         self._deferred = True
@@ -1001,8 +1016,8 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
         self._delete_flows(reg_port=port.ofport)
 
     def create_firewall_group(self, ports_for_fwg, firewall_group):
-        ingress_rules = firewall_group['egress_rule_list']
-        egress_rules = firewall_group['ingress_rule_list']
+        egress_rules = firewall_group['egress_rule_list']
+        ingress_rules = firewall_group['ingress_rule_list']
         fwg_id = firewall_group['id']
 
         self.update_firewall_group_rules(fwg_id, ingress_rules, egress_rules)

@@ -1,4 +1,4 @@
-# Copyright 2017 FUJITSU LIMITED
+# Copyright 2017-2018 FUJITSU LIMITED
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may
 # not use this file except in compliance with the License. You may obtain
@@ -24,6 +24,7 @@ from neutron.plugins.ml2.drivers.openvswitch.agent import vlanmanager
 from neutron_lib.agent import l2_extension
 from neutron_lib import constants as nl_const
 from neutron_lib.exceptions import firewall_v2 as f_exc
+from neutron_lib.utils import net as nl_net
 
 from neutron_fwaas._i18n import _
 from neutron_fwaas.common import fwaas_constants as consts
@@ -288,6 +289,9 @@ class FWaaSV2AgentExtension(l2_extension.L2AgentExtension):
     @lockutils.synchronized('fwg')
     def create_firewall_group(self, context, firewall_group, host):
         """Handles create firewall group event"""
+
+        # TODO(chandanc): Fix agent RPC endpoint to remove host arg
+        host = cfg.CONF.host
         with self.driver.defer_apply():
             try:
                 self._create_firewall_group(context, firewall_group, host)
@@ -300,6 +304,9 @@ class FWaaSV2AgentExtension(l2_extension.L2AgentExtension):
     @lockutils.synchronized('fwg')
     def delete_firewall_group(self, context, firewall_group, host):
         """Handles delete firewall group event"""
+
+        # TODO(chandanc): Fix agent RPC endpoint to remove host arg
+        host = cfg.CONF.host
         with self.driver.defer_apply():
             try:
                 self._delete_firewall_group(context, firewall_group, host)
@@ -312,6 +319,9 @@ class FWaaSV2AgentExtension(l2_extension.L2AgentExtension):
     @lockutils.synchronized('fwg')
     def update_firewall_group(self, context, firewall_group, host):
         """Handles update firewall group event"""
+
+        # TODO(chandanc): Fix agent RPC endpoint to remove host arg
+        host = cfg.CONF.host
         with self.driver.defer_apply():
             try:
                 self._delete_firewall_group(
@@ -327,6 +337,12 @@ class FWaaSV2AgentExtension(l2_extension.L2AgentExtension):
     @lockutils.synchronized('fwg-port')
     def handle_port(self, context, port):
         """Handle port update event"""
+
+        # Check if port is trusted and called at once.
+        if nl_net.is_port_trusted(port) and not self.fwg_map.get_port(port):
+            self._add_rule_for_trusted_port(port)
+            self.fwg_map.set_port(port)
+            return
 
         if not self._is_port_layer2(port):
             return
@@ -348,6 +364,13 @@ class FWaaSV2AgentExtension(l2_extension.L2AgentExtension):
         self._send_fwg_status(
             context, fwg_id=fwg['id'], status=status, host=self.conf.host)
 
+    def _add_rule_for_trusted_port(self, port):
+        self._add_local_vlan_to_ports([port])
+        self.driver.process_trusted_ports([port])
+
+    def _delete_rule_for_trusted_port(self, port):
+        self.driver.remove_trusted_ports([port['port_id']])
+
     def delete_port(self, context, port):
         """This is being called when a port is deleted by the agent. """
 
@@ -358,6 +381,12 @@ class FWaaSV2AgentExtension(l2_extension.L2AgentExtension):
             return
 
         port = self.fwg_map.get_port(port)
+
+        if port and nl_net.is_port_trusted(port):
+            self._delete_rule_for_trusted_port(port)
+            self.fwg_map.remove_port(port)
+            return
+
         if not self._is_port_layer2(port):
             return
 
@@ -381,11 +410,13 @@ class FWaaSV2AgentExtension(l2_extension.L2AgentExtension):
 
 
 class PortFirewallGroupMap(object):
-    """Store relations between Port and FirewallGroup
+    """Store relations between Port and Firewall Group and trusted port
 
     This map is used in deleting firewall_group because the firewall_group has
     been deleted at that time.  Therefore, it is impossible to refer 'ports'.
     This map enables to refer 'ports' for specified firewall_group.
+    Furthermore, it is necessary to check 'device_owner' for trusted port, this
+    Map also stores trusted port data.
     """
     def __init__(self):
         self.known_fwgs = {}
@@ -412,6 +443,11 @@ class PortFirewallGroupMap(object):
         if fwg_id:
             return self.get_fwg(fwg_id)
 
+    def set_port(self, port):
+        """Add a new port into port_detail"""
+        port_id = self.port_id(port)
+        self.port_detail[port_id] = port
+
     def set_port_fwg(self, port, fwg):
         """Add a new port into fwg['ports']"""
         port_id = self.port_id(port)
@@ -436,6 +472,11 @@ class PortFirewallGroupMap(object):
         if port_id in self.port_fwg:
             fwg_id = self.port_fwg.get(port_id)
             if not fwg_id:
+                # This case is trusted port. Try to delete port_detail dict
+                try:
+                    del self.port_detail[port_id]
+                except KeyError:
+                    pass
                 return
             new_fwg = self.known_fwgs[fwg_id]
             new_fwg['ports'] = [p for p in new_fwg['ports'] if p != port_id]

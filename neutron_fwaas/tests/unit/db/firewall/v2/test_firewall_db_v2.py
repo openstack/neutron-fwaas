@@ -1976,3 +1976,49 @@ class TestFirewallDBPluginV2(FirewallPluginV2DbTestCase):
         with self.firewall_group(name='fireWall1') as fw:
             res = self._show('firewall_groups', fw['firewall_group']['id'])
             self.assertEqual('fireWall1', res['firewall_group']['name'])
+
+    def test_set_port_in_use_for_firewall_group(self):
+        fwg_db = {'id': 'fake_id'}
+        new_ports = {'ports': ['fake_port1', 'fake_port2']}
+        m_context = context.get_admin_context()
+        with mock.patch.object(m_context.session, 'add',
+                               side_effect=[None, f_exc.FirewallGroupPortInUse(
+                                    port_ids=['fake_port2'])]):
+            self.assertRaises(f_exc.FirewallGroupPortInUse,
+                              self.plugin._set_ports_for_firewall_group,
+                              m_context,
+                              fwg_db,
+                              new_ports)
+
+    def test_set_port_for_default_firewall_group(self):
+        ctx = self._get_nonadmin_context()
+        self._build_default_fwg(ctx=ctx)
+        with self.port(project_id=ctx.tenant_id) as port1, \
+            self.port(project_id=ctx.tenant_id) as port2:
+            port1_id = port1['port']['id']
+            port2_id = port2['port']['id']
+            port_ids = [port1_id, port2_id]
+            project_id = ctx.tenant_id
+
+            self.plugin.set_port_for_default_firewall_group(
+                ctx, port1_id, project_id)
+            self.plugin.set_port_for_default_firewall_group(
+                ctx, port2_id, project_id)
+            def_fwg_db = self.plugin._get_default_fwg(ctx, project_id)
+            self.assertEqual('PENDING_UPDATE', def_fwg_db['status'])
+            self.assertEqual(sorted(port_ids), sorted(def_fwg_db['ports']))
+
+    def test_set_port_for_default_firewall_group_raised_port_in_use(self):
+        ctx = self._get_nonadmin_context()
+        self._build_default_fwg(ctx=ctx)
+        self.plugin.update_firewall_group_status = mock.Mock()
+        with self.port(project_id=ctx.tenant_id) as port1:
+            port1_id = port1['port']['id']
+            port_ids = [port1_id]
+            self.plugin._set_ports_for_firewall_group = mock.Mock(
+                side_effect=f_exc.FirewallGroupPortInUse(port_ids=port_ids))
+            project_id = ctx.tenant_id
+
+            self.plugin.set_port_for_default_firewall_group(
+                ctx, port1_id, project_id)
+            self.plugin.update_firewall_group_status.assert_not_called()

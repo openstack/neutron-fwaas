@@ -775,33 +775,66 @@ class TestFirewallPluginBasev2(TestFirewallRouterPortBase,
                         None)
 
 
-class TestEnabledAutomaticAssociation(TestFirewallPluginBasev2):
+class TestAutomaticAssociation(TestFirewallPluginBasev2):
 
     def setUp(self):
-        # set auto association fwg
-        cfg.CONF.set_override(
-            'auto_associate_default_firewall_group', True, 'fwaas')
-        super(TestEnabledAutomaticAssociation, self).setUp()
+        # TODO(yushiro): Replace constant value for this test class
+        # Set auto association fwg
+        super(TestAutomaticAssociation, self).setUp()
         self.agent_rpc = self.plugin.agent_rpc
-
-    def test_enabled_auto_association_fwg(self):
-        fwg_with_rule = {'id': 'fake_id',
-                         'name': 'default'}
-        self.plugin.set_port_for_default_firewall_group = \
-            mock.Mock(return_value=fwg_with_rule)
+        self.plugin.set_port_for_default_firewall_group = mock.Mock()
         self.plugin._get_fwg_port_details = mock.Mock()
-        self.agent_rpc.update_firewall_group = mock.Mock()
-        m_context = mock.ANY
+
+    def test_vm_port(self):
+        self.plugin._get_fwg_port_details = mock.Mock()
         kwargs = {
-            "context": m_context,
+            "context": mock.ANY,
             "port": {"id": "fake_port",
-                     "project_id": "fake_project"}
+                     "device_owner": "compute:nova",
+                     "binding:vif_type": "ovs",
+                     "project_id": "fake_project"},
+            "original_port": {"binding:vif_type": "unbound"}
         }
-        self.plugin.handle_create_port_event(
-            "PORT", "after_create", "test_plugin", **kwargs)
+        self.plugin.handle_update_port(
+            "PORT", "after_update", "test_plugin", **kwargs)
         self.plugin.set_port_for_default_firewall_group.\
-            assert_called_once_with(m_context,
+            assert_called_once_with(mock.ANY,
                                     kwargs['port']['id'],
                                     kwargs['port']['project_id'])
-        self.agent_rpc.update_firewall_group.assert_called_once_with(
-            m_context, fwg_with_rule)
+
+    def test_vm_port_not_newly_created(self):
+        # Just updated for VM port(name or description...etc.)
+        kwargs = {
+            "context": mock.ANY,
+            "port": {
+                "id": "fake_port",
+                "device_owner": "compute:nova",
+                "binding:vif_type": "ovs",
+                "project_id": "fake_project"
+            },
+            "original_port": {
+                "device_owner": "compute:nova",
+                "binding:vif_type": "ovs",
+                "project_id": "fake_project"
+            }
+        }
+        self.plugin.handle_update_port(
+            "PORT", "after_update", "test_plugin", **kwargs)
+        self.plugin.set_port_for_default_firewall_group.assert_not_called()
+
+    def test_not_vm_port(self):
+        for device_owner in ["network:router_interface",
+                             "network:router_gateway",
+                             "network:dhcp"]:
+            kwargs = {
+                "context": mock.ANY,
+                "port": {"id": "fake_port",
+                         "device_owner": device_owner,
+                         "project_id": "fake_project"},
+                "original_port": {"device_owner": device_owner,
+                                  "binding:vif_type": "unbound",
+                                  "project_id": "fake_project"}
+            }
+            self.plugin.handle_update_port(
+                "PORT", "after_update", "test_plugin", **kwargs)
+            self.plugin.set_port_for_default_firewall_group.assert_not_called()

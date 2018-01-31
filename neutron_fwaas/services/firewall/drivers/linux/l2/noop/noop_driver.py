@@ -30,3 +30,11 @@ class NoopFirewallL2Driver(driver_base.FirewallL2DriverBase):
     @log_helpers.log_method_call
     def delete_firewall_group(self, ports, firewall_group):
         pass
+
+    @log_helpers.log_method_call
+    def process_trusted_ports(self, ports):
+        pass
+
+    @log_helpers.log_method_call
+    def remove_trusted_ports(self, port_ids):
+        pass

@@ -1,0 +1,10 @@
+---
+prelude: >
+    Taking security for VM instance into consideration, we've removed an option
+    to disable automatic association with default firewall group feature.
+    Therefore, `auto_associate_default_firewall_group` has been removed.
+fixes:
+  - |
+    There is no validation to check if an updated port is for VM or not so far.
+    After this fix, default firewall group association is called only for
+    VM ports which are newly created.

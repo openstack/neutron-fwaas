@@ -80,6 +80,7 @@ class TestHandlePort(TestFWaasV2AgentExtensionBase):
         self.l2._apply_fwg_rules = mock.Mock(return_value=True)
         self.l2._send_fwg_status = mock.Mock()
         self.ctx = context.get_admin_context()
+        self.l2._add_rule_for_trusted_port = mock.Mock()
 
     def test_normal(self):
         self.l2.fwg_map.get_port_fwg.return_value = None
@@ -127,6 +128,24 @@ class TestHandlePort(TestFWaasV2AgentExtensionBase):
         self.l2.fwg_map.set_port_fwg.assert_not_called()
         self.l2._send_fwg_status.assert_not_called()
 
+    def test_trusted_port(self):
+        self.l2.fwg_map.get_port.return_value = None
+        self.port['device_owner'] = 'network:foo'
+        self.l2.handle_port(self.ctx, self.port)
+
+        self.l2._add_rule_for_trusted_port.assert_called_once_with(self.port)
+        self.l2.fwg_map.set_port.assert_called_once_with(self.port)
+        self.rpc.get_firewall_group_for_port.assert_not_called()
+
+    def test_trusted_port_registered_map(self):
+        self.port['device_owner'] = 'network:dhcp'
+        self.l2.fwg_map.get_port.return_value = self.port
+        self.l2.handle_port(self.ctx, self.port)
+
+        self.l2._add_rule_for_trusted_port.assert_not_called()
+        self.l2.fwg_map.set_port.assert_not_called()
+        self.rpc.get_firewall_group_for_port.assert_not_called()
+
 
 class TestDeletePort(TestFWaasV2AgentExtensionBase):
 
@@ -135,6 +154,7 @@ class TestDeletePort(TestFWaasV2AgentExtensionBase):
         self.l2._compute_status = mock.Mock(return_value=nl_consts.ACTIVE)
         self.l2._apply_fwg_rules = mock.Mock(return_value=True)
         self.l2._send_fwg_status = mock.Mock()
+        self.l2._delete_rule_for_trusted_port = mock.Mock()
 
         self.l2.fwg_map.get_port_fwg = mock.Mock(return_value=self.fwg)
         self.l2.fwg_map.set_fwg = mock.Mock()
@@ -184,6 +204,15 @@ class TestDeletePort(TestFWaasV2AgentExtensionBase):
 
         self.l2.fwg_map.get_port_fwg.assert_called_once_with(self.port)
         self.l2._apply_fwg_rules.assert_not_called()
+
+    def test_trusted_port_with_map(self):
+        self.port['device_owner'] = 'network:dhcp'
+        self.l2.fwg_map.get_port.return_value = self.port
+        self.l2.delete_port(self.ctx, self.port_minimal)
+
+        self.l2._delete_rule_for_trusted_port.assert_called_once_with(
+            self.port)
+        self.l2.fwg_map.remove_port.assert_called_once_with(self.port)
 
 
 class TestCreateFirewallGroup(TestFWaasV2AgentExtensionBase):
@@ -713,13 +742,21 @@ class TestPortFirewallGroupMap(base.BaseTestCase):
         self.assertIsNone(self.map.get_port(port2))
         self.assertEqual([], self.map.get_fwg(self.fwg_id)['ports'])
 
+    def test_remove_non_exist_port(self):
+        port1 = self.port
+        port2 = self.fake.create('port')
+        self.map.set_port_fwg(port1, self.fwg)
+
+        self.map.remove_port(port2)
+        self.assertIsNone(self.map.get_port(port2))
+
     def test_illegal_remove_port_no_relation_with_fwg(self):
         port1 = self.port
         port1_id = port1['port_id']
         self.map.set_port_fwg(port1, self.fwg)
         self.map.port_fwg[port1_id] = None
         self.map.remove_port(port1)
-        self.assertEqual(port1, self.map.get_port(port1))
+        self.assertIsNone(self.map.get_port(port1))
 
     def test_remove_fwg(self):
         self.map.set_fwg(self.fwg)

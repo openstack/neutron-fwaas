@@ -34,14 +34,6 @@ from neutron_fwaas.db.firewall.v2 import firewall_db_v2
 
 LOG = logging.getLogger(__name__)
 
-FW_V2_OPTS = [
-    cfg.BoolOpt(
-        'auto_associate_default_firewall_group',
-        default=False,
-        help=("Apply default fwg to all new VM ports within a project")),
-]
-cfg.CONF.register_opts(FW_V2_OPTS, 'fwaas')
-
 
 def add_provider_configuration(type_manager, service_type):
     type_manager.add_provider_configuration(
@@ -185,10 +177,6 @@ class FirewallPluginV2(
             cfg.CONF.host
         )
 
-        self.apply_default_fwg = (
-            cfg.CONF.fwaas.auto_associate_default_firewall_group
-        )
-
     @property
     def _core_plugin(self):
         return directory.get_plugin()
@@ -300,22 +288,30 @@ class FirewallPluginV2(
         """Returns an ID of project for specified port_id. """
         return self._core_plugin.get_port(context, port_id)['project_id']
 
-    @registry.receives(resources.PORT, [events.AFTER_CREATE])
-    def handle_create_port_event(self, resource, event, trigger, **kwargs):
+    @registry.receives(resources.PORT, [events.AFTER_UPDATE])
+    def handle_update_port(self, resource, event, trigger, **kwargs):
 
-        if not self.apply_default_fwg:
+        updated_port = kwargs['port']
+        if not updated_port['device_owner'].startswith(
+                nl_constants.DEVICE_OWNER_COMPUTE_PREFIX):
+            return
+
+        if (kwargs.get('original_port')[pb_def.VIF_TYPE] !=
+                pb_def.VIF_TYPE_UNBOUND):
+            # Checking newly vm port binding allows us to avoid call to DB
+            # when a port update_event like restart, setting name, etc...
+            # Moreover, that will help us in case of tenant admin wants to
+            # only attach security group to vm port.
+            return
+
+        if updated_port[pb_def.VIF_TYPE] in [pb_def.VIF_TYPE_UNBOUND,
+                                             pb_def.VIF_TYPE_BINDING_FAILED]:
             return
         context = kwargs['context']
-        port_id = kwargs['port']['id']
-        project_id = kwargs['port']['project_id']
-        fwg_with_rules = self.set_port_for_default_firewall_group(
-            context, port_id, project_id)
-        fwg_with_rules['add-port-ids'] = port_id
-        fwg_with_rules['del-ports-ids'] = []
-        fwg_with_rules['port_details'] = self._get_fwg_port_details(
-            context, port_id)
-
-        self.agent_rpc.update_firewall_group(context, fwg_with_rules)
+        port_id = updated_port['id']
+        project_id = updated_port['project_id']
+        LOG.debug("Try to associate port %s at %s", port_id, project_id)
+        self.set_port_for_default_firewall_group(context, port_id, project_id)
 
     def create_firewall_group(self, context, firewall_group):
         LOG.debug("create_firewall_group() called")
@@ -351,7 +347,7 @@ class FirewallPluginV2(
             self._make_firewall_group_dict_with_rules(context, fwg['id']))
 
         fwg_with_rules['add-port-ids'] = fwg_ports
-        fwg_with_rules['del-ports-ids'] = []
+        fwg_with_rules['del-port-ids'] = []
         fwg_with_rules['port_details'] = self._get_fwg_port_details(
             context, fwg_ports)
 

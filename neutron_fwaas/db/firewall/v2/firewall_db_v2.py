@@ -1108,16 +1108,30 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
         query = self._model_query(context, DefaultFirewallGroup)
         def_fwg_id = query.filter_by(
             project_id=project_id).one().firewall_group_id
-        return self._get_firewall_group(context, def_fwg_id)
+        return self.get_firewall_group(context, def_fwg_id)
 
-    def set_port_for_default_firewall_group(self, context, port, project_id):
+    def set_port_for_default_firewall_group(self, context, port_id,
+                                            project_id):
+        """Set a port into default firewall group
+
+        :param context: Context object
+        :param port_id: Port ID
+        :param project_id: ProjectID
+        """
         with context.session.begin(subtransactions=True):
             def_fwg_db = self._get_default_fwg(context, project_id)
-            new_ports = [p.port_id for p in def_fwg_db['ports']] + [port]
-            fwg_ports = {'ports': new_ports}
-            self._set_ports_for_firewall_group(context, def_fwg_db, fwg_ports)
-            return self._make_firewall_group_dict_with_rules(
-                context, def_fwg_db['id'])
+            try:
+                self._set_ports_for_firewall_group(
+                    context, def_fwg_db, {'ports': [port_id]})
+            except f_exc.FirewallGroupPortInUse:
+                LOG.warning("Port %s has been already associated with default "
+                            "firewall group %s and skip association", port_id,
+                            def_fwg_db['id'])
+            else:
+                # Update default fwg status to PENDING_UPDATE to wait updating
+                # from agent
+                self.update_firewall_group_status(
+                    context, def_fwg_db['id'], nl_constants.PENDING_UPDATE)
 
 
 def _is_default(fwg_db):
