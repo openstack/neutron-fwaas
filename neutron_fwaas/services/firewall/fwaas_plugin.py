@@ -14,8 +14,8 @@
 #    under the License.
 
 from neutron.common import rpc as n_rpc
-from neutron.common import utils as n_utils
 from neutron_lib.api.definitions import firewall as fw_ext
+from neutron_lib.api import extensions
 from neutron_lib import constants as nl_constants
 from neutron_lib import context as neutron_context
 from neutron_lib.exceptions import firewall_v1 as f_exc
@@ -175,7 +175,7 @@ class FirewallPlugin(
         """Returns all hosts to send notification about firewall update"""
         l3_plugin = directory.get_plugin(plugin_constants.L3)
         no_broadcast = (
-            n_utils.is_extension_supported(
+            extensions.is_extension_supported(
                 l3_plugin, nl_constants.L3_AGENT_SCHEDULER_EXT_ALIAS) and
             getattr(l3_plugin, 'get_l3_agents_hosting_routers', False))
         if no_broadcast:
