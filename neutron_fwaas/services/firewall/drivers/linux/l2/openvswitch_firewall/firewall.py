@@ -228,13 +228,10 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver.
     # This driver won't have any conj_manager logic because there is no concept
     # of remote_group_id for firewall groups (that I know of at least)
-    def __init__(self, integration_bridge, sg_with_ovs=False):
-        """Initialize object
+    def __init__(self, agent_api, sg_with_ovs=False):
+        """Initialize object"""
 
-        :param integration_bridge: Bridge on which openflow rules will be
-                                   applied
-
-        """
+        integration_bridge = agent_api.request_int_br()
         self.int_br = self.initialize_bridge(integration_bridge)
         self.fwg_port_map = FWGPortMap()
         self.fwg_to_delete = set()
