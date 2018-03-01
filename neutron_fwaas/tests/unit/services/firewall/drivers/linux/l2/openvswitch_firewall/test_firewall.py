@@ -20,6 +20,8 @@ from neutron.agent.common import ovs_lib
 from neutron.common import constants as n_const
 from neutron.plugins.ml2.drivers.openvswitch.agent.common import constants \
     as ovs_consts
+from neutron.plugins.ml2.drivers.openvswitch.agent import \
+    ovs_agent_extension_api as ovs_ext_api
 from neutron.tests import base
 
 from neutron_fwaas.services.firewall.drivers.linux.l2.openvswitch_firewall \
@@ -261,7 +263,10 @@ class TestOVSFirewallDriver(base.BaseTestCase):
         super(TestOVSFirewallDriver, self).setUp()
         mock_bridge = mock.patch.object(
             ovs_lib, 'OVSBridge', autospec=True).start()
-        self.firewall = ovsfw.OVSFirewallDriver(mock_bridge)
+        mock_agent_api = mock.patch.object(
+            ovs_ext_api.OVSAgentExtensionAPI, 'request_int_br',
+            return_value=mock_bridge).start()
+        self.firewall = ovsfw.OVSFirewallDriver(mock_agent_api)
         self.mock_bridge = self.firewall.int_br
         self.mock_bridge.reset_mock()
         self.fake_ovs_port = FakeOVSPort('port', 1, '00:00:00:00:00:00')
