@@ -80,7 +80,6 @@ FW_RULES = [
 ICMP_ENTRY = (4, 'icmp', 8, 0, '1.1.1.1', '2.2.2.2', '1234')
 TCP_ENTRY = (4, 'tcp', 1, 2, '1.1.1.1', '2.2.2.2')
 UDP_ENTRY = (4, 'udp', 1, 2, '1.1.1.1', '2.2.2.2')
-UNKNOWN_ENTRY = (4, 'unknown', 1, 2, '1.1.1.1', '2.2.2.2')
 
 ROUTER_NAMESPACE = 'qrouter-fake-namespace'
 
@@ -113,7 +112,7 @@ class ConntrackLegacyTestCase(base.BaseTestCase):
 
     def test_delete_entries(self):
         self.conntrack_driver.list_entries.return_value = [
-            ICMP_ENTRY, TCP_ENTRY, UDP_ENTRY, UNKNOWN_ENTRY]
+            ICMP_ENTRY, TCP_ENTRY, UDP_ENTRY]
         self.conntrack_driver.delete_entries(FW_RULES, ROUTER_NAMESPACE)
         calls = [
             mock.call(['ip', 'netns', 'exec', ROUTER_NAMESPACE,
