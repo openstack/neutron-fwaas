@@ -18,6 +18,7 @@ import testtools
 
 from neutron.tests import base
 from neutron_fwaas.services.firewall.drivers.linux import legacy_conntrack
+from neutron_lib import constants
 
 
 FW_RULES = [
@@ -81,6 +82,13 @@ ICMP_ENTRY = (4, 'icmp', 8, 0, '1.1.1.1', '2.2.2.2', '1234')
 TCP_ENTRY = (4, 'tcp', 1, 2, '1.1.1.1', '2.2.2.2')
 UDP_ENTRY = (4, 'udp', 1, 2, '1.1.1.1', '2.2.2.2')
 
+CONNTRACK_LIST = '''\
+icmp     1 27 src=1.1.1.1 dst=2.2.2.2 type=8 code=0 id=18127 src=2.2.2.2 dst=1.1.1.1 type=0 code=0 id=18127 mark=0 use=1
+tcp      6 88 SYN_SENT src=1.1.1.1 dst=2.2.2.2 sport=36567 dport=5000 [UNREPLIED] src=2.2.2.2 dst=1.1.1.1 sport=5000 dport=36567 mark=0 use=1
+unknown  2 551 src=0.0.0.0 dst=224.0.0.1 [UNREPLIED] src=224.0.0.1 dst=0.0.0.0 mark=0 use=1
+udp      17 28 src=0.0.0.0 dst=255.255.255.255 sport=68 dport=67 [UNREPLIED] src=255.255.255.255 dst=0.0.0.0 sport=67 dport=68 mark=0 use=1
+'''  # nopep8
+
 ROUTER_NAMESPACE = 'qrouter-fake-namespace'
 
 
@@ -90,11 +98,6 @@ class ConntrackLegacyTestCase(base.BaseTestCase):
         self.utils_exec = mock.Mock()
         self.conntrack_driver = legacy_conntrack.ConntrackLegacy()
         self.conntrack_driver.initialize(execute=self.utils_exec)
-
-        list_entries_mock = mock.patch(
-            'neutron_fwaas.services.firewall.drivers.linux'
-            '.legacy_conntrack.ConntrackLegacy.list_entries')
-        self.list_entries = list_entries_mock.start()
 
     def test_excecute_command_failed(self):
         with testtools.ExpectedException(RuntimeError):
@@ -110,7 +113,25 @@ class ConntrackLegacyTestCase(base.BaseTestCase):
                 extra_ok_codes=[1],
                 run_as_root=True)
 
+    def test_list_entries(self):
+        def get_contrack_entries(conntrack_cmd):
+            if 'ipv' + str(constants.IP_VERSION_4) in conntrack_cmd:
+                return CONNTRACK_LIST
+            return ''
+
+        self.conntrack_driver._execute_command = mock.Mock(
+            side_effect=get_contrack_entries)
+        entries = self.conntrack_driver.list_entries(ROUTER_NAMESPACE)
+        protocols = set([entry[1] for entry in entries])
+        supported_protocols = set(legacy_conntrack.ATTR_POSITIONS.keys())
+        self.assertTrue(protocols.issubset(supported_protocols))
+
     def test_delete_entries(self):
+        list_entries_mock = mock.patch(
+            'neutron_fwaas.services.firewall.drivers.linux'
+            '.legacy_conntrack.ConntrackLegacy.list_entries')
+        self.list_entries = list_entries_mock.start()
+
         self.conntrack_driver.list_entries.return_value = [
             ICMP_ENTRY, TCP_ENTRY, UDP_ENTRY]
         self.conntrack_driver.delete_entries(FW_RULES, ROUTER_NAMESPACE)
