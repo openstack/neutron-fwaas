@@ -41,7 +41,7 @@ sys.path.insert(0, ROOT_DIR)
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc',
+extensions = ['sphinxcontrib.apidoc',
               'sphinx.ext.coverage',
               'sphinx.ext.ifconfig',
               'sphinx.ext.graphviz',
@@ -51,6 +51,15 @@ extensions = ['sphinx.ext.autodoc',
               'openstackdocstheme',]
 
 todo_include_todos = True
+
+# sphinxcontrib.apidoc options
+apidoc_module_dir = '../../neutron_fwaas'
+apidoc_output_dir = 'contributor/api'
+apidoc_excluded_paths = [
+    'setup.py',
+    'tests/*',
+    'tests']
+apidoc_separate_modules = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = []
