@@ -39,6 +39,6 @@ class NeutronDbPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
 
         ## our own stuff
         dirpath = os.path.join(os.path.dirname(__file__),
-                            './../../etc/neutron/policy.d')
+                               'etc/neutron/policy.d')
         args.extend(['--config-dir', dirpath])
         self.config_parse(args=args)

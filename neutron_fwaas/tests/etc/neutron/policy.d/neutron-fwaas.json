@@ -1,0 +1,52 @@
+{
+    "shared_firewalls": "field:firewalls:shared=True",
+    "shared_firewall_policies": "field:firewall_policies:shared=True",
+    "shared_firewall_rules": "field:firewall_rules:shared=True",
+
+    "create_firewall": "",
+    "update_firewall": "rule:admin_or_owner",
+    "delete_firewall": "rule:admin_or_owner",
+
+    "create_firewall:shared": "rule:admin_only",
+    "update_firewall:shared": "rule:admin_only",
+    "delete_firewall:shared": "rule:admin_only",
+
+    "get_firewall": "rule:admin_or_owner or rule:shared_firewalls",
+
+    "shared_firewall_groups": "field:firewall_groups:shared=True",
+    "shared_firewall_policies": "field:firewall_policies:shared=True",
+    "shared_firewall_rules": "field:firewall_rules:shared=True",
+
+    "create_firewall_group": "",
+    "update_firewall_group": "rule:admin_or_owner",
+    "delete_firewall_group": "rule:admin_or_owner",
+
+    "create_firewall_group:shared": "rule:admin_only",
+    "update_firewall_group:shared": "rule:admin_only",
+    "delete_firewall_group:shared": "rule:admin_only",
+
+    "get_firewall_group": "rule:admin_or_owner or rule:shared_firewall_groups",
+
+    "create_firewall_policy": "",
+    "update_firewall_policy": "rule:admin_or_owner",
+    "delete_firewall_policy": "rule:admin_or_owner",
+
+    "create_firewall_policy:shared": "rule:admin_only",
+    "update_firewall_policy:shared": "rule:admin_only",
+    "delete_firewall_policy:shared": "rule:admin_only",
+
+    "get_firewall_policy": "rule:admin_or_owner or rule:shared_firewall_policies",
+
+    "insert_rule": "rule:admin_or_owner",
+    "remove_rule": "rule:admin_or_owner",
+
+    "create_firewall_rule": "",
+    "update_firewall_rule": "rule:admin_or_owner",
+    "delete_firewall_rule": "rule:admin_or_owner",
+
+    "create_firewall_rule:shared": "rule:admin_only",
+    "update_firewall_rule:shared": "rule:admin_only",
+    "delete_firewall_rule:shared": "rule:admin_only",
+
+    "get_firewall_rule": "rule:admin_or_owner or rule:shared_firewall_rules"
+}
