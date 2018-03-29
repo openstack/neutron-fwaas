@@ -120,9 +120,6 @@ class Firewall_v2(extensions.APIExtensionDescriptor):
 @six.add_metaclass(abc.ABCMeta)
 class Firewallv2PluginBase(service_base.ServicePluginBase):
 
-    def get_plugin_name(self):
-        return fwaas_constants.FIREWALL_V2
-
     def get_plugin_type(self):
         return fwaas_constants.FIREWALL_V2
 
