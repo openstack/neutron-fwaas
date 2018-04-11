@@ -21,10 +21,6 @@ Create Date: 2017-01-26 23:47:42.795504
 
 """
 
-# revision identifiers, used by Alembic.
-revision = '876782258a43'
-down_revision = 'd6a12e637e28'
-
 from alembic import op
 from neutron_lib.db import constants as db_constants
 from neutron_lib import exceptions
@@ -33,6 +29,10 @@ import sqlalchemy as sa
 from neutron_fwaas._i18n import _
 from neutron_fwaas.common import fwaas_constants as const
 from neutron_fwaas.common import resources
+
+# revision identifiers, used by Alembic.
+revision = '876782258a43'
+down_revision = 'd6a12e637e28'
 
 
 class DuplicateDefaultFirewallGroup(exceptions.Conflict):
