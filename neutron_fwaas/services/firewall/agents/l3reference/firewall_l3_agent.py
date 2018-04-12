@@ -73,7 +73,7 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
     def start_rpc_listeners(self, conf):
         self.endpoints = [self]
 
-        self.conn = n_rpc.create_connection()
+        self.conn = n_rpc.Connection()
         self.conn.create_consumer(
             fwaas_constants.FW_AGENT, self.endpoints, fanout=False)
         return self.conn.consume_in_threads()

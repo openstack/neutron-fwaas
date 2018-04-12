@@ -60,7 +60,7 @@ class TestFWaasV2AgentExtension(TestFWaasV2AgentExtensionBase):
         cfg.CONF.set_override('firewall_l2_driver', 'ovs', group='fwaas')
 
     def test_initialize(self):
-        with mock.patch('neutron.common.rpc.create_connection') as conn:
+        with mock.patch('neutron.common.rpc.Connection') as conn:
             self.l2.initialize(None, 'ovs')
         self.driver.assert_called_with('neutron.agent.l2.firewall_drivers',
                                        'ovs')

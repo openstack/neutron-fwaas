@@ -185,7 +185,7 @@ class FirewallPluginV2(
     def start_rpc_listeners(self):
         self.endpoints = [FirewallCallbacks(self)]
 
-        self.conn = n_rpc.create_connection()
+        self.conn = n_rpc.Connection()
         self.conn.create_consumer(
             fwaas_constants.FIREWALL_PLUGIN, self.endpoints, fanout=False)
         return self.conn.consume_in_threads()

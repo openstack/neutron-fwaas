@@ -86,7 +86,7 @@ class FWaaSV2AgentExtension(l2_extension.L2AgentExtension):
         self.agent_api = agent_api
 
     def start_rpc_listeners(self):
-        self.conn = n_rpc.create_connection()
+        self.conn = n_rpc.Connection()
         endpoints = [self]
         self.conn.create_consumer(consts.FW_AGENT, endpoints, fanout=False)
         return self.conn.consume_in_threads()
