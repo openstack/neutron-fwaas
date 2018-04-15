@@ -31,7 +31,6 @@ from neutron_lib.plugins import directory
 from oslo_config import cfg
 from oslo_utils import uuidutils
 import six
-import testtools
 from webob import exc
 
 from neutron_fwaas.db.firewall import firewall_db as fdb
@@ -456,29 +455,6 @@ class TestFirewallPluginBase(TestFirewallRouterInsertionBase,
                     for k, v in six.iteritems(attrs):
                         self.assertEqual(v, res['firewall'][k])
 
-    @testtools.skip('bug/1622694')
-    def test_update_firewall_shared_fails_for_non_admin(self):
-        ctx = context.get_admin_context()
-        with self.router(name='router1', admin_state_up=True,
-            tenant_id=self._tenant_id) as router1:
-            with self.firewall_policy() as fwp:
-                fwp_id = fwp['firewall_policy']['id']
-                with self.firewall(
-                    firewall_policy_id=fwp_id,
-                    admin_state_up=test_db_firewall.ADMIN_STATE_UP,
-                    tenant_id='noadmin',
-                    router_ids=[router1['router']['id']]
-                ) as firewall:
-                    fw_id = firewall['firewall']['id']
-                    self.callbacks.set_firewall_status(ctx, fw_id,
-                                                   nl_constants.ACTIVE)
-                    data = {'firewall': {'shared': True}}
-                    req = self.new_update_request(
-                        'firewalls', data, fw_id,
-                        context=context.Context('', 'noadmin'))
-                    res = req.get_response(self.ext_api)
-                    self.assertEqual(exc.HTTPForbidden.code, res.status_int)
-
     def test_update_firewall_policy_fails_when_firewall_pending(self):
         name = "new_firewall1"
         attrs = self._get_test_firewall_attrs(name)
@@ -682,8 +658,7 @@ class TestFirewallPluginBase(TestFirewallRouterInsertionBase,
                 self.firewall(name='quota3'):
             data = {'firewall': {'name': 'quota4',
                                  'firewall_policy_id': None,
-                                 'tenant_id': self._tenant_id,
-                                 'shared': False}}
+                                 'tenant_id': self._tenant_id}}
             req = self.new_create_request('firewalls', data, 'json')
             res = req.get_response(self.ext_api)
             self.assertIn('Quota exceeded', res.body.decode('utf-8'))
@@ -703,8 +678,7 @@ class TestFirewallPluginBase(TestFirewallRouterInsertionBase,
                 self.firewall(name='quota10'):
             data = {'firewall': {'name': 'quota11',
                                  'firewall_policy_id': None,
-                                 'tenant_id': self._tenant_id,
-                                 'shared': False}}
+                                 'tenant_id': self._tenant_id}}
             req = self.new_create_request('firewalls', data, 'json')
             res = req.get_response(self.ext_api)
             self.assertIn('Quota exceeded', res.body.decode('utf-8'))
