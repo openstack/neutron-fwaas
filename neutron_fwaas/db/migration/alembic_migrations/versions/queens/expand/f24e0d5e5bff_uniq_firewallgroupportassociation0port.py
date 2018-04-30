@@ -21,15 +21,15 @@ Create Date: 2017-11-08 15:55:40.990272
 
 """
 
-# revision identifiers, used by Alembic.
-revision = 'f24e0d5e5bff'
-down_revision = '876782258a43'
-
 from alembic import op
 from neutron_lib import exceptions
 import sqlalchemy as sa
 
 from neutron._i18n import _
+
+# revision identifiers, used by Alembic.
+revision = 'f24e0d5e5bff'
+down_revision = '876782258a43'
 
 
 fwg_port_association = sa.Table(

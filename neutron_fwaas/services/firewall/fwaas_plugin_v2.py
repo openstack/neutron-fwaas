@@ -244,8 +244,8 @@ class FirewallPluginV2(
                 raise f_exc.FirewallGroupPortInvalidProject(
                     port_id=port_id, project_id=port_db['tenant_id'])
             device_owner = port_db.get('device_owner', '')
-            if (device_owner not in [nl_constants.DEVICE_OWNER_ROUTER_INTF]
-                and not device_owner.startswith(
+            if (device_owner not in [nl_constants.DEVICE_OWNER_ROUTER_INTF] and
+                not device_owner.startswith(
                     nl_constants.DEVICE_OWNER_COMPUTE_PREFIX)):
                 raise f_exc.FirewallGroupPortInvalid(port_id=port_id)
             if (device_owner.startswith(

@@ -20,12 +20,11 @@ Revises: start_neutron_fwaas
 Create Date: 2015-02-10 17:17:47.846764
 
 """
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = '4202e3047e47'
 down_revision = 'start_neutron_fwaas'
-
-from alembic import op
 
 TABLES = ['firewall_rules', 'firewalls', 'firewall_policies']
 
