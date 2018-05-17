@@ -24,6 +24,7 @@ from neutron_lib.callbacks import registry
 from neutron_lib.callbacks import resources
 from neutron_lib import constants as nl_constants
 from neutron_lib.exceptions import firewall_v2 as f_exc
+from neutron_lib.plugins import constants as plugin_const
 from neutron_lib.plugins import directory
 from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
@@ -32,6 +33,8 @@ from neutron_fwaas.common import exceptions
 from neutron_fwaas.common import fwaas_constants
 from neutron_fwaas.extensions.firewall_v2 import Firewallv2PluginBase
 from neutron_fwaas.services.firewall.service_drivers import driver_api
+from neutron_fwaas.services.logapi.agents.drivers.iptables \
+    import driver as logging_driver
 
 LOG = logging.getLogger(__name__)
 
@@ -69,6 +72,13 @@ class FirewallPluginV2(Firewallv2PluginBase):
         if isinstance(self.driver, driver_api.FirewallDriverRPCMixin):
             rpc_worker = service.RpcWorker([self], worker_process_count=0)
             self.add_worker(rpc_worker)
+
+        log_plugin = directory.get_plugin(plugin_const.LOG_API)
+        logging_driver.register()
+        # If log_plugin was loaded before firewall plugin
+        if log_plugin:
+            # Register logging driver with LoggingServiceDriverManager again
+            log_plugin.driver_manager.register_driver(logging_driver.DRIVER)
 
     def start_rpc_listeners(self):
         return self.driver.start_rpc_listener()
