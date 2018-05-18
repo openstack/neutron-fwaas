@@ -43,6 +43,9 @@ function configure_fwaas_v1() {
 function configure_fwaas_v2() {
     # Add conf file
     cp $NEUTRON_FWAAS_DIR/etc/neutron_fwaas.conf.sample $NEUTRON_FWAAS_CONF
+    inicomment $NEUTRON_FWAAS_CONF service_providers service_provider
+    iniadd $NEUTRON_FWAAS_CONF service_providers service_provider $NEUTRON_FWAAS_SERVICE_PROVIDERV2
+
     neutron_fwaas_configure_driver fwaas_v2
     iniset_multiline $Q_L3_CONF_FILE fwaas agent_version v2
     iniset_multiline $Q_L3_CONF_FILE fwaas driver $FWAAS_DRIVER_V2

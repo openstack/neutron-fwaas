@@ -10,19 +10,25 @@
 #  License for the specific language governing permissions and limitations
 #  under the License.
 
+import neutron.conf.services.provider_configuration
+
+import neutron_fwaas.services.firewall.service_drivers.agents.\
+    firewall_agent_api
 import neutron_fwaas.extensions.firewall
-import neutron_fwaas.services.firewall.agents.firewall_agent_api
 
 
 def list_agent_opts():
     return [
         ('fwaas',
-         neutron_fwaas.services.firewall.agents.firewall_agent_api.FWaaSOpts)
+         neutron_fwaas.services.firewall.service_drivers.agents.
+            firewall_agent_api.FWaaSOpts),
     ]
 
 
 def list_opts():
     return [
         ('quotas',
-         neutron_fwaas.extensions.firewall.firewall_quota_opts)
+         neutron_fwaas.extensions.firewall.firewall_quota_opts),
+        ('service_providers',
+         neutron.conf.services.provider_configuration.serviceprovider_opts),
     ]

@@ -16,16 +16,16 @@
 import copy
 
 import netaddr
+
+from neutron.db import _model_query as model_query
 from neutron.db import api as db_api
-from neutron.db import common_db_mixin as base_db
+from neutron.db import common_db_mixin
 from neutron_lib.api.definitions import constants as fw_const
-from neutron_lib.api import validators
 from neutron_lib import constants as nl_constants
 from neutron_lib.db import constants as db_constants
 from neutron_lib.db import model_base
 from neutron_lib import exceptions
 from neutron_lib.exceptions import firewall_v2 as f_exc
-from oslo_config import cfg
 from oslo_db import exception as db_exc
 from oslo_log import log as logging
 from oslo_utils import uuidutils
@@ -36,7 +36,6 @@ from sqlalchemy import orm
 from sqlalchemy.orm import exc
 
 from neutron_fwaas.common import fwaas_constants as const
-from neutron_fwaas.extensions import firewall_v2 as fw_ext
 
 
 LOG = logging.getLogger(__name__)
@@ -86,7 +85,7 @@ class FirewallRuleV2(model_base.BASEV2, model_base.HasId, HasName,
 class FirewallGroup(model_base.BASEV2, model_base.HasId, HasName,
                     HasDescription, model_base.HasProject):
     __tablename__ = 'firewall_groups_v2'
-    ports = orm.relationship(
+    port_associations = orm.relationship(
         'FirewallGroupPortAssociation',
         backref=orm.backref('firewall_group_port_associations_v2',
                             cascade='all, delete'))
@@ -162,7 +161,42 @@ class FirewallPolicy(model_base.BASEV2, model_base.HasId, HasName,
     shared = sa.Column(sa.Boolean)
 
 
-class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
+def _list_firewall_groups_result_filter_hook(query, filters):
+    values = filters and filters.get('ports', [])
+    if values:
+        query = query.join(FirewallGroupPortAssociation)
+        query = query.filter(FirewallGroupPortAssociation.port_id.in_(values))
+
+    return query
+
+
+def _list_firewall_policies_result_filter_hook(query, filters):
+    values = filters and filters.get('firewall_rules', [])
+    if values:
+        query = query.join(FirewallPolicyRuleAssociation)
+        query = query.filter(
+            FirewallPolicyRuleAssociation.firewall_rule_id.in_(values))
+
+    return query
+
+
+class FirewallPluginDb(common_db_mixin.CommonDbMixin):
+
+    def __new__(cls, *args, **kwargs):
+        model_query.register_hook(
+            FirewallGroup,
+            "firewall_group_v2_filter_by_port_association",
+            query_hook=None,
+            filter_hook=None,
+            result_filters=_list_firewall_groups_result_filter_hook)
+
+        model_query.register_hook(
+            FirewallPolicy,
+            "firewall_policy_v2_filter_by_firewall_rule_association",
+            query_hook=None,
+            filter_hook=None,
+            result_filters=_list_firewall_policies_result_filter_hook)
+        return super(FirewallPluginDb, cls).__new__(cls, *args, **kwargs)
 
     def _get_firewall_group(self, context, id):
         try:
@@ -267,22 +301,21 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
                'shared': firewall_policy['shared']}
         return self._fields(res, fields)
 
-    def _make_firewall_group_dict(self, firewall_group, fields=None):
-        fwg_ports = [
-            port_assoc.port_id for port_assoc in firewall_group['ports']
-        ]
-        res = {'id': firewall_group['id'],
-               'tenant_id': firewall_group['tenant_id'],
-               'name': firewall_group['name'],
-               'description': firewall_group['description'],
+    def _make_firewall_group_dict(self, firewall_group_db, fields=None):
+        fwg_ports = [port_assoc.port_id for port_assoc in
+                     firewall_group_db.port_associations]
+        res = {'id': firewall_group_db['id'],
+               'tenant_id': firewall_group_db['tenant_id'],
+               'name': firewall_group_db['name'],
+               'description': firewall_group_db['description'],
                'ingress_firewall_policy_id':
-                   firewall_group['ingress_firewall_policy_id'],
+                   firewall_group_db['ingress_firewall_policy_id'],
                'egress_firewall_policy_id':
-                   firewall_group['egress_firewall_policy_id'],
-               'admin_state_up': firewall_group['admin_state_up'],
+                   firewall_group_db['egress_firewall_policy_id'],
+               'admin_state_up': firewall_group_db['admin_state_up'],
                'ports': fwg_ports,
-               'status': firewall_group['status'],
-               'shared': firewall_group['shared']}
+               'status': firewall_group_db['status'],
+               'shared': firewall_group_db['shared']}
         return self._fields(res, fields)
 
     def _get_policy_ordered_rules(self, context, policy_id):
@@ -292,7 +325,7 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
                  .order_by(FirewallPolicyRuleAssociation.position))
         return [self._make_firewall_rule_dict(rule) for rule in query]
 
-    def _make_firewall_group_dict_with_rules(self, context, firewall_group_id):
+    def make_firewall_group_dict_with_rules(self, context, firewall_group_id):
         firewall_group = self.get_firewall_group(context, firewall_group_id)
         ingress_policy_id = firewall_group['ingress_firewall_policy_id']
         if ingress_policy_id:
@@ -359,7 +392,7 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
     def _get_policy_rule_association(self, context, firewall_policy_id,
                                      firewall_rule_id):
         """Returns the association between a firewall rule and a firewall
-        policy. Throws an exception if the assocaition does not exist.
+        policy. Throws an exception if the assocition does not exist.
         """
         try:
             return self._get_policy_rule_association_query(
@@ -374,7 +407,7 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
         # configuration file makes sense. Can be done some time later
 
         # 1. Drop any IPv4 packets for ingress traffic
-        in_fwr_v4 = {'firewall_rule': {
+        in_fwr_v4 = {
             'description': 'default ingress rule for IPv4',
             'name': 'default ingress ipv4 (deny all)',
             'shared': False,
@@ -387,28 +420,25 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
             'source_ip_address': None,
             'destination_port': None,
             'destination_ip_address': None,
-        }}
+        }
 
         # 2. Drop any IPv6 packets for ingress traffic
         in_fwr_v6 = copy.deepcopy(in_fwr_v4)
-        in_fwr_v6[
-            'firewall_rule']['description'] = 'default ingress rule for IPv6'
-        in_fwr_v6['firewall_rule']['name'] = 'default ingress ipv6 (deny all)'
-        in_fwr_v6['firewall_rule']['ip_version'] = nl_constants.IP_VERSION_6
+        in_fwr_v6['description'] = 'default ingress rule for IPv6'
+        in_fwr_v6['name'] = 'default ingress ipv6 (deny all)'
+        in_fwr_v6['ip_version'] = nl_constants.IP_VERSION_6
 
         # 3. Allow any IPv4 packets for egress traffic
         eg_fwr_v4 = copy.deepcopy(in_fwr_v4)
-        eg_fwr_v4[
-            'firewall_rule']['description'] = 'default egress rule for IPv4'
-        eg_fwr_v4['firewall_rule']['action'] = fw_const.FWAAS_ALLOW
-        eg_fwr_v4['firewall_rule']['name'] = 'default egress ipv4 (allow all)'
+        eg_fwr_v4['description'] = 'default egress rule for IPv4'
+        eg_fwr_v4['action'] = fw_const.FWAAS_ALLOW
+        eg_fwr_v4['name'] = 'default egress ipv4 (allow all)'
 
         # 4. Allow any IPv6 packets for egress traffic
         eg_fwr_v6 = copy.deepcopy(in_fwr_v6)
-        eg_fwr_v6[
-            'firewall_rule']['description'] = 'default egress rule for IPv6'
-        eg_fwr_v6['firewall_rule']['name'] = 'default egress ipv6 (allow all)'
-        eg_fwr_v6['firewall_rule']['action'] = fw_const.FWAAS_ALLOW
+        eg_fwr_v6['description'] = 'default egress rule for IPv6'
+        eg_fwr_v6['name'] = 'default egress ipv6 (allow all)'
+        eg_fwr_v6['action'] = fw_const.FWAAS_ALLOW
 
         return {
             'in_ipv4': self.create_firewall_rule(context, in_fwr_v4)['id'],
@@ -418,8 +448,7 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
         }
 
     def create_firewall_rule(self, context, firewall_rule):
-        LOG.debug("create_firewall_rule() called")
-        fwr = firewall_rule['firewall_rule']
+        fwr = firewall_rule
         self._validate_fwr_protocol_parameters(fwr)
         self._validate_fwr_src_dst_ip_version(fwr)
         if not fwr['protocol'] and (fwr['source_port'] or
@@ -450,8 +479,7 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
         return self._make_firewall_rule_dict(fwr_db)
 
     def update_firewall_rule(self, context, id, firewall_rule):
-        LOG.debug("update_firewall_rule() called")
-        fwr = firewall_rule['firewall_rule']
+        fwr = firewall_rule
         fwr_db = self._get_firewall_rule(context, id)
         self._validate_fwr_protocol_parameters(fwr, fwr_db=fwr_db)
         self._validate_fwr_src_dst_ip_version(fwr, fwr_db=fwr_db)
@@ -478,24 +506,21 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
                     raise f_exc.FirewallRuleWithPortWithoutProtocolInvalid()
             fwr_db.update(fwr)
             # if the rule on a policy, fix audited flag
-            fwp_ids = self._get_policies_with_rule(context, id)
+            fwp_ids = self.get_policies_with_rule(context, id)
             for fwp_id in fwp_ids:
                 fwp_db = self._get_firewall_policy(context, fwp_id)
                 fwp_db['audited'] = False
         return self._make_firewall_rule_dict(fwr_db)
 
     def delete_firewall_rule(self, context, id):
-        LOG.debug("delete_firewall_rule() called")
         with context.session.begin(subtransactions=True):
             fwr = self._get_firewall_rule(context, id)
             # make sure rule is not associated with any policy
-            if self._get_policies_with_rule(context, id):
+            if self.get_policies_with_rule(context, id):
                 raise f_exc.FirewallRuleInUse(firewall_rule_id=id)
             context.session.delete(fwr)
 
     def insert_rule(self, context, id, rule_info):
-        LOG.debug("insert_rule() called")
-        self._validate_insert_remove_rule_request(rule_info)
         firewall_rule_id = rule_info['firewall_rule_id']
         # ensure rule is not already assigned to the policy
         self._ensure_rule_not_already_associated(context, id, firewall_rule_id)
@@ -534,8 +559,6 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
                                                  position, None)
 
     def remove_rule(self, context, id, rule_info):
-        LOG.debug("remove_rule() called")
-        self._validate_insert_remove_rule_request(rule_info)
         firewall_rule_id = rule_info['firewall_rule_id']
         with context.session.begin(subtransactions=True):
             self._get_firewall_rule(context, firewall_rule_id)
@@ -545,29 +568,14 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
                                                  None, fwpra_db)
 
     def get_firewall_rule(self, context, id, fields=None):
-        LOG.debug("get_firewall_rule() called")
         fwr = self._get_firewall_rule(context, id)
-        policies = self._get_policies_with_rule(context, id) or None
+        policies = self.get_policies_with_rule(context, id) or None
         return self._make_firewall_rule_dict(fwr, fields, policies=policies)
 
     def get_firewall_rules(self, context, filters=None, fields=None):
-        LOG.debug("get_firewall_rules() called")
         return self._get_collection(context, FirewallRuleV2,
                                     self._make_firewall_rule_dict,
                                     filters=filters, fields=fields)
-
-    def _validate_insert_remove_rule_request(self, rule_info):
-        """Validate rule_info dict
-
-        Check that all mandatory fields are present, otherwise raise
-        proper exception.
-        """
-        if not rule_info or 'firewall_rule_id' not in rule_info:
-            raise f_exc.FirewallRuleInfoMissing()
-        # Validator doesn't return anything if the check passes
-        if validators.validate_uuid(rule_info['firewall_rule_id']):
-            raise f_exc.FirewallRuleNotFound(
-                firewall_rule_id=rule_info['firewall_rule_id'])
 
     def _get_rules_in_policy(self, context, fwpid):
         """Gets rules in a firewall policy"""
@@ -578,7 +586,7 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
             fwp_rules = [entry.firewall_rule_id for entry in fw_pol_rule_qry]
         return fwp_rules
 
-    def _get_policies_with_rule(self, context, fwrid):
+    def get_policies_with_rule(self, context, fwrid):
         """Gets rules in a firewall policy"""
         with context.session.begin(subtransactions=True):
             fw_pol_rule_qry = context.session.query(
@@ -644,7 +652,7 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
                         firewall_rule_id=fwr_db['id'],
                         firewall_policy_id=fwp_db['id'])
 
-    def _get_fwgs_with_policy(self, context, fwp_id):
+    def get_fwgs_with_policy(self, context, fwp_id):
         with context.session.begin(subtransactions=True):
             fwg_ing_pol_qry = context.session.query(
                 FirewallGroup).filter_by(
@@ -719,18 +727,18 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
         description = kwargs.get('description', '')
         name = (const.DEFAULT_FWP_INGRESS
                 if policy_type == 'ingress' else const.DEFAULT_FWP_EGRESS)
-        firewall_policy = {'firewall_policy': {
+        firewall_policy = {
             'name': name,
             'description': description,
             'audited': False,
             'shared': False,
             'firewall_rules': fwrs,
             'tenant_id': tenant_id,
-        }}
+        }
         return self._do_create_firewall_policy(context, firewall_policy)
 
     def _do_create_firewall_policy(self, context, firewall_policy):
-        fwp = firewall_policy['firewall_policy']
+        fwp = firewall_policy
         with context.session.begin(subtransactions=True):
             fwp_db = FirewallPolicy(
                 id=uuidutils.generate_uuid(),
@@ -744,13 +752,11 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
         return self._make_firewall_policy_dict(fwp_db)
 
     def create_firewall_policy(self, context, firewall_policy):
-        LOG.debug("create_firewall_policy() called")
         self._ensure_not_default_resource(firewall_policy, 'firewall_policy')
         return self._do_create_firewall_policy(context, firewall_policy)
 
     def update_firewall_policy(self, context, id, firewall_policy):
-        LOG.debug("update_firewall_policy() called")
-        fwp = firewall_policy['firewall_policy']
+        fwp = firewall_policy
         with context.session.begin(subtransactions=True):
             fwp_db = self._get_firewall_policy(context, id)
             self._ensure_not_default_resource(fwp_db, 'firewall_policy',
@@ -772,7 +778,6 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
         return self._make_firewall_policy_dict(fwp_db)
 
     def delete_firewall_policy(self, context, id):
-        LOG.debug("delete_firewall_policy() called")
         with context.session.begin(subtransactions=True):
             fwp_db = self._get_firewall_policy(context, id)
             # check if policy in use
@@ -786,34 +791,13 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
                 context.session.delete(fwp_db)
 
     def get_firewall_policy(self, context, id, fields=None):
-        LOG.debug("get_firewall_policy() called")
         fwp = self._get_firewall_policy(context, id)
         return self._make_firewall_policy_dict(fwp, fields)
 
     def get_firewall_policies(self, context, filters=None, fields=None):
-        LOG.debug("get_firewall_policies() called")
         return self._get_collection(context, FirewallPolicy,
                                     self._make_firewall_policy_dict,
                                     filters=filters, fields=fields)
-
-    def _validate_tenant_for_fwg_policies(self, context, fwg, fwg_tenant_id):
-        # On updates, all keys will not be present so fetch and validate.
-        if 'ingress_firewall_policy_id' in fwg:
-            fwp_id = fwg['ingress_firewall_policy_id']
-            if fwp_id is not None:
-                fwp = self._get_firewall_policy(context, fwp_id)
-                if fwg_tenant_id != fwp['tenant_id'] and not fwp['shared']:
-                    raise f_exc.FirewallPolicyConflict(
-                        firewall_policy_id=fwp_id)
-
-        if 'egress_firewall_policy_id' in fwg:
-            fwp_id = fwg['egress_firewall_policy_id']
-            if fwp_id is not None:
-                fwp = self._get_firewall_policy(context, fwp_id)
-                if fwg_tenant_id != fwp['tenant_id'] and not fwp['shared']:
-                    raise f_exc.FirewallPolicyConflict(
-                        firewall_policy_id=fwp_id)
-        return
 
     def _set_ports_for_firewall_group(self, context, fwg_db, fwg):
         port_id_list = fwg['ports']
@@ -833,7 +817,7 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
         if exc_ports:
             raise f_exc.FirewallGroupPortInUse(port_ids=exc_ports)
 
-    def _get_ports_in_firewall_group(self, context, firewall_group_id):
+    def get_ports_in_firewall_group(self, context, firewall_group_id):
         """Get the Ports associated with the  firewall group."""
         with context.session.begin(subtransactions=True):
             fw_group_port_qry = context.session.query(
@@ -852,27 +836,13 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
                 firewall_group_id=firewall_group_id).delete()
         return
 
-    def _validate_if_firewall_group_on_ports(
-            self, context, port_ids, fwg_id=None):
-        """Validate if ports are not associated with any firewall_group.
-        If any of the ports in the list is already associated with
-        a firewall_group, raise an exception else just return.
-        """
-        fwg_port_qry = context.session.query(
-            FirewallGroupPortAssociation.port_id)
-        fwg_ports = fwg_port_qry.filter(
-            FirewallGroupPortAssociation.port_id.in_(port_ids),
-            FirewallGroupPortAssociation.firewall_group_id != fwg_id).all()
-        if fwg_ports:
-            port_ids = [entry.port_id for entry in fwg_ports]
-            raise f_exc.FirewallGroupPortInUse(port_ids=port_ids)
-
     def _get_default_fwg_id(self, context, tenant_id):
         """Returns an id of default firewall group for given tenant or None"""
         default_fwg = self._model_query(context, FirewallGroup).filter_by(
             project_id=tenant_id, name=const.DEFAULT_FWG).first()
         if default_fwg:
             return default_fwg.id
+        return None
 
     def _ensure_default_firewall_group(self, context, tenant_id):
         """Create a default firewall group if one doesn't exist for a tenant
@@ -905,19 +875,18 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
                     context, tenant_id, 'egress', **egress_fwp)
 
                 fwg = {
-                    'firewall_group':
-                        {'name': const.DEFAULT_FWG,
-                         'tenant_id': tenant_id,
-                         'ingress_firewall_policy_id': ingress_fwp_db['id'],
-                         'egress_firewall_policy_id': egress_fwp_db['id'],
-                         'ports': [],
-                         'shared': False,
-                         'admin_state_up': True,
-                         'description': 'Default firewall group'}
+                    'name': const.DEFAULT_FWG,
+                    'tenant_id': tenant_id,
+                    'ingress_firewall_policy_id': ingress_fwp_db['id'],
+                    'egress_firewall_policy_id': egress_fwp_db['id'],
+                    'ports': [],
+                    'shared': False,
+                    'status': nl_constants.INACTIVE,
+                    'admin_state_up': True,
+                    'description': 'Default firewall group',
                 }
                 fwg_db = self._create_firewall_group(
-                    context, fwg, status=nl_constants.INACTIVE,
-                    default_fwg=True)
+                    context, fwg, default_fwg=True)
                 context.session.add(DefaultFirewallGroup(
                     firewall_group_id=fwg_db['id'],
                     project_id=tenant_id))
@@ -928,37 +897,36 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
             LOG.debug("Default FWG was concurrently created")
             return self._get_default_fwg_id(context, tenant_id)
 
-    def _create_firewall_group(self, context, firewall_group, status=None,
+    def _create_firewall_group(self, context, firewall_group,
                                default_fwg=False):
         """Create a firewall group
 
         If default_fwg is True then a default firewall group is being created
         for a given tenant.
         """
-        fwg = firewall_group['firewall_group']
+        fwg = firewall_group
         tenant_id = fwg['tenant_id']
-        if not status:
-            status = (nl_constants.CREATED if cfg.CONF.router_distributed
-                      else nl_constants.PENDING_CREATE)
+        if firewall_group.get('status') is None:
+            fwg['status'] = nl_constants.CREATED
+
         if default_fwg:
             # A default firewall group is being created.
             default_fwg_id = self._get_default_fwg_id(context, tenant_id)
             if default_fwg_id is not None:
                 # Default fwg for a given tenant exists, fetch it and return
-                return self.get_firewall_group(default_fwg_id)
+                return self.get_firewall_group(context, default_fwg_id)
         else:
             # An ordinary firewall group is being created BUT let's make sure
             # that a default firewall group for given tenant exists
             self._ensure_default_firewall_group(context, tenant_id)
 
-        self._validate_tenant_for_fwg_policies(context, fwg, tenant_id)
         with context.session.begin(subtransactions=True):
             fwg_db = FirewallGroup(
                 id=uuidutils.generate_uuid(),
                 tenant_id=tenant_id,
                 name=fwg['name'],
                 description=fwg['description'],
-                status=status,
+                status=fwg['status'],
                 ingress_firewall_policy_id=fwg['ingress_firewall_policy_id'],
                 egress_firewall_policy_id=fwg['egress_firewall_policy_id'],
                 admin_state_up=fwg['admin_state_up'],
@@ -967,15 +935,14 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
             self._set_ports_for_firewall_group(context, fwg_db, fwg)
         return self._make_firewall_group_dict(fwg_db)
 
-    def create_firewall_group(self, context, firewall_group, status=None):
+    def create_firewall_group(self, context, firewall_group):
         self._ensure_not_default_resource(firewall_group, 'firewall_group')
-        return self._create_firewall_group(context, firewall_group, status)
+        return self._create_firewall_group(context, firewall_group)
 
     def update_firewall_group(self, context, id, firewall_group):
-        LOG.debug("update_firewall_group() called")
-        fwg = firewall_group['firewall_group']
+        fwg = firewall_group
         # make sure that no group can be updated to have name=default
-        self._ensure_not_default_resource(firewall_group, 'firewall_group')
+        self._ensure_not_default_resource(fwg, 'firewall_group')
         with context.session.begin(subtransactions=True):
             fwg_db = self.get_firewall_group(context, id)
             if _is_default(fwg_db):
@@ -990,8 +957,6 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
                         raise FirewallDefaultObjectUpdateRestricted(
                             resource_type='Firewall Group',
                             resource_id=fwg_db['id'])
-            self._validate_tenant_for_fwg_policies(context,
-                                                   fwg, fwg_db['tenant_id'])
             if 'ports' in fwg:
                 LOG.debug("Ports are updated in Firewall Group")
                 self._delete_ports_in_firewall_group(context, id)
@@ -1021,7 +986,6 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
     def delete_firewall_group(self, context, id):
         # Note: Plugin should ensure that it's okay to delete if the
         # firewall is active
-        LOG.debug("delete_firewall_group() called")
 
         with context.session.begin(subtransactions=True):
             # if no such group exists -> don't raise an exception according to
@@ -1077,12 +1041,10 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
                     resource_type='Firewall Policy', name=resource['name'])
 
     def get_firewall_group(self, context, id, fields=None):
-        LOG.debug("get_firewall_group() called")
         fw = self._get_firewall_group(context, id)
         return self._make_firewall_group_dict(fw, fields)
 
     def get_firewall_groups(self, context, filters=None, fields=None):
-        LOG.debug("get_firewall_groups() called")
         if context.tenant_id:
             tenant_id = filters.get('tenant_id') if filters else None
             tenant_id = tenant_id[0] if tenant_id else context.tenant_id
@@ -1090,48 +1052,6 @@ class Firewall_db_mixin_v2(fw_ext.Firewallv2PluginBase, base_db.CommonDbMixin):
         return self._get_collection(context, FirewallGroup,
                                     self._make_firewall_group_dict,
                                     filters=filters, fields=fields)
-
-    def get_firewall_group_for_port(self, context, port_id):
-        """Get firewall group is associated with a port
-
-        :param context: context object
-        :param port_id: Port ID.
-        """
-        filters = {'port_id': [port_id]}
-        fwg_port_binding = self._get_collection_query(
-            context, FirewallGroupPortAssociation, filters=filters).first()
-        if fwg_port_binding:
-            fwg_id = fwg_port_binding['firewall_group_id']
-            return self._make_firewall_group_dict_with_rules(context, fwg_id)
-
-    def _get_default_fwg(self, context, project_id):
-        query = self._model_query(context, DefaultFirewallGroup)
-        def_fwg_id = query.filter_by(
-            project_id=project_id).one().firewall_group_id
-        return self.get_firewall_group(context, def_fwg_id)
-
-    def set_port_for_default_firewall_group(self, context, port_id,
-                                            project_id):
-        """Set a port into default firewall group
-
-        :param context: Context object
-        :param port_id: Port ID
-        :param project_id: ProjectID
-        """
-        with context.session.begin(subtransactions=True):
-            def_fwg_db = self._get_default_fwg(context, project_id)
-            try:
-                self._set_ports_for_firewall_group(
-                    context, def_fwg_db, {'ports': [port_id]})
-            except f_exc.FirewallGroupPortInUse:
-                LOG.warning("Port %s has been already associated with default "
-                            "firewall group %s and skip association", port_id,
-                            def_fwg_db['id'])
-            else:
-                # Update default fwg status to PENDING_UPDATE to wait updating
-                # from agent
-                self.update_firewall_group_status(
-                    context, def_fwg_db['id'], nl_constants.PENDING_UPDATE)
 
 
 def _is_default(fwg_db):
