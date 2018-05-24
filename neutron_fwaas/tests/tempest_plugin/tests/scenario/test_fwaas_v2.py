@@ -140,7 +140,7 @@ class TestFWaaS_v2(base.FWaaSScenarioTest_V2):
             network, security_group=security_group)
         private_key = keys['private_key']
         server_floating_ip = self.create_floating_ip(server, pub_network_id)
-        fixed_ip = server['addresses'].values()[0][0]['addr']
+        fixed_ip = list(server['addresses'].values())[0][0]['addr']
         return server, private_key, fixed_ip, server_floating_ip
 
     def _create_topology(self):
