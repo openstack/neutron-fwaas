@@ -28,9 +28,16 @@ LOG = logging.getLogger(__name__)
 FWAAS_DRIVER_NAME = 'Fwaas iptables driver'
 FWAAS_DEFAULT_CHAIN = 'fwaas-default-policy'
 
-FWAAS_TO_IPTABLE_ACTION_MAP = {'allow': 'ACCEPT',
-                               'deny': 'DROP',
-                               'reject': 'REJECT'}
+# Introduce these chain for future processing like firewall logging
+ACCEPTED_CHAIN = 'accepted'
+DROPPED_CHAIN = 'dropped'
+REJECTED_CHAIN = 'rejected'
+
+FWAAS_TO_IPTABLE_ACTION_MAP = {
+    'allow': ACCEPTED_CHAIN,
+    'deny': DROPPED_CHAIN,
+    'reject': REJECTED_CHAIN
+}
 
 CHAIN_NAME_PREFIX = {constants.INGRESS_DIRECTION: 'i',
                      constants.EGRESS_DIRECTION: 'o'}
@@ -160,6 +167,11 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
                     self._remove_chains(fwid, ipt_mgr)
                     self._remove_default_chains(ipt_mgr)
 
+                    # Create accepted/dropped/rejected chain
+                    self._add_accepted_chain_v4v6(ipt_mgr)
+                    self._add_dropped_chain_v4v6(ipt_mgr)
+                    self._add_rejected_chain_v4v6(ipt_mgr)
+
                     # create default 'DROP ALL' policy chain
                     self._add_default_policy_chain_v4v6(ipt_mgr)
                     self._enable_policy_chain(fwid, ipt_if_prefix,
@@ -183,6 +195,11 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
                 # the following only updates local memory; no hole in FW
                 self._remove_chains(fwid, ipt_mgr)
                 self._remove_default_chains(ipt_mgr)
+
+                # Create accepted/dropped/rejected chain
+                self._add_accepted_chain_v4v6(ipt_mgr)
+                self._add_dropped_chain_v4v6(ipt_mgr)
+                self._add_rejected_chain_v4v6(ipt_mgr)
 
                 # create default 'DROP ALL' policy chain
                 self._add_default_policy_chain_v4v6(ipt_mgr)
@@ -323,16 +340,62 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
                 self._remove_chain_by_name(ver, chain_name, ipt_mgr)
 
     def _add_default_policy_chain_v4v6(self, ipt_mgr):
+        dropped_chain = self._get_action_chain(DROPPED_CHAIN)
         ipt_mgr.ipv4['filter'].add_chain(FWAAS_DEFAULT_CHAIN)
-        ipt_mgr.ipv4['filter'].add_rule(FWAAS_DEFAULT_CHAIN, '-j DROP')
+        ipt_mgr.ipv4['filter'].add_rule(
+            FWAAS_DEFAULT_CHAIN, '-j %s' % dropped_chain)
         ipt_mgr.ipv6['filter'].add_chain(FWAAS_DEFAULT_CHAIN)
-        ipt_mgr.ipv6['filter'].add_rule(FWAAS_DEFAULT_CHAIN, '-j DROP')
+        ipt_mgr.ipv6['filter'].add_rule(
+            FWAAS_DEFAULT_CHAIN, '-j %s' % dropped_chain)
+
+    def _add_accepted_chain_v4v6(self, ipt_mgr):
+        v4rules_in_chain = \
+            ipt_mgr.get_chain("filter", ACCEPTED_CHAIN, ip_version=4)
+        if not v4rules_in_chain:
+            ipt_mgr.ipv4['filter'].add_chain(ACCEPTED_CHAIN)
+            ipt_mgr.ipv4['filter'].add_rule(ACCEPTED_CHAIN, '-j ACCEPT')
+
+        v6rules_in_chain = \
+            ipt_mgr.get_chain("filter", ACCEPTED_CHAIN, ip_version=6)
+        if not v6rules_in_chain:
+            ipt_mgr.ipv6['filter'].add_chain(ACCEPTED_CHAIN)
+            ipt_mgr.ipv6['filter'].add_rule(ACCEPTED_CHAIN, '-j ACCEPT')
+
+    def _add_dropped_chain_v4v6(self, ipt_mgr):
+        v4rules_in_chain = \
+            ipt_mgr.get_chain("filter", DROPPED_CHAIN, ip_version=4)
+        if not v4rules_in_chain:
+            ipt_mgr.ipv4['filter'].add_chain(DROPPED_CHAIN)
+            ipt_mgr.ipv4['filter'].add_rule(DROPPED_CHAIN, '-j DROP')
+
+        v6rules_in_chain = \
+            ipt_mgr.get_chain("filter", DROPPED_CHAIN, ip_version=6)
+        if not v6rules_in_chain:
+            ipt_mgr.ipv6['filter'].add_chain(DROPPED_CHAIN)
+            ipt_mgr.ipv6['filter'].add_rule(DROPPED_CHAIN, '-j DROP')
+
+    def _add_rejected_chain_v4v6(self, ipt_mgr):
+        v4rules_in_chain = \
+            ipt_mgr.get_chain("filter", REJECTED_CHAIN, ip_version=4)
+        if not v4rules_in_chain:
+            ipt_mgr.ipv4['filter'].add_chain(REJECTED_CHAIN)
+            ipt_mgr.ipv4['filter'].add_rule(REJECTED_CHAIN, '-j REJECT')
+
+        v6rules_in_chain = \
+            ipt_mgr.get_chain("filter", REJECTED_CHAIN, ip_version=6)
+        if not v6rules_in_chain:
+            ipt_mgr.ipv6['filter'].add_chain(REJECTED_CHAIN)
+            ipt_mgr.ipv6['filter'].add_rule(REJECTED_CHAIN, '-j REJECT')
 
     def _remove_chain_by_name(self, ver, chain_name, ipt_mgr):
         if ver == IPV4:
             ipt_mgr.ipv4['filter'].remove_chain(chain_name)
         else:
             ipt_mgr.ipv6['filter'].remove_chain(chain_name)
+
+    def _remove_chain_by_name_v4v6(self, chain_name, ipt_mgr):
+        ipt_mgr.ipv4['filter'].remove_chain(chain_name)
+        ipt_mgr.ipv6['filter'].remove_chain(chain_name)
 
     def _add_rules_to_chain(self, ipt_mgr, ver, chain_name, rules):
         if ver == IPV4:
@@ -341,6 +404,11 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
             table = ipt_mgr.ipv6['filter']
         for rule in rules:
             table.add_rule(chain_name, rule)
+
+    def _get_action_chain(self, name):
+        binary_name = iptables_manager.binary_name
+        chain_name = iptables_manager.get_chain_name(name)
+        return '%s-%s' % (binary_name, chain_name)
 
     def _enable_policy_chain(self, fwid, ipt_if_prefix, router_fw_ports):
         bname = iptables_manager.binary_name
@@ -414,7 +482,8 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
         return iptables_rule
 
     def _drop_invalid_packets_rule(self):
-        return '-m state --state INVALID -j DROP'
+        dropped_chain = self._get_action_chain(DROPPED_CHAIN)
+        return '-m state --state INVALID -j %s' % dropped_chain
 
     def _allow_established_rule(self):
         return '-m state --state RELATED,ESTABLISHED -j ACCEPT'
@@ -423,7 +492,7 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
         if not action:
             return []
 
-        args = ['-j', action]
+        args = ['-j', self._get_action_chain(action)]
 
         return args
 
