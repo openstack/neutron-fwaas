@@ -54,6 +54,10 @@ function configure_fwaas_v2() {
     iniset /$NEUTRON_CORE_PLUGIN_CONF agent extensions fwaas_v2
 }
 
+function configure_l3_log_fwaas_v2(){
+    iniadd $Q_L3_CONF_FILE agent extensions fwaas_v2_log
+}
+
 function neutron_fwaas_generate_config_files {
     (cd $NEUTRON_FWAAS_DIR && exec ./tools/generate_config_file_samples.sh)
 }
@@ -113,6 +117,10 @@ if is_service_enabled q-svc neutron-api && is_service_enabled q-fwaas q-fwaas-v1
         elif is_service_enabled q-fwaas-v2 neutron-fwaas-v2; then
             echo_summary "Configuring neutron-fwaas for FWaaS v2"
             configure_fwaas_v2
+            if is_service_enabled q-log neutron-log; then
+                echo_summary "Configuring FwaaS V2 packet log for l3 extension"
+                configure_l3_log_fwaas_v2
+            fi
         else
             echo_summary "Configuring neutron-fwaas for FWaaS v1"
             configure_fwaas_v1
