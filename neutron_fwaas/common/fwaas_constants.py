@@ -34,3 +34,9 @@ CREATE_FWG = 'create_firewall_group'
 # Port events for L2 agent extension
 HANDLE_PORT = 'handle_port'
 DELETE_PORT = 'delete_port'
+
+# Resource name
+
+FIREWALL_GROUP = 'firewall_group'
+FIREWALL_RULE = 'firewall_rule'
+FIREWALL_POLICY = 'firewall_policy'

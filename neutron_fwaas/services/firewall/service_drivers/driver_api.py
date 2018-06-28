@@ -18,10 +18,13 @@ import copy
 
 import six
 
+from neutron_lib.callbacks import events
+from neutron_lib.callbacks import registry
 from neutron_lib import constants as nl_constants
 from neutron_lib.plugins import directory
 from oslo_log import log as logging
 
+from neutron_fwaas.common import fwaas_constants as const
 from neutron_fwaas.db.firewall.v2 import firewall_db_v2
 
 
@@ -136,6 +139,7 @@ class FirewallDriverDBMixin(FirewallDriver):
 
     # Firewall Group
     def create_firewall_group(self, context, firewall_group):
+        request_body = firewall_group
         with context.session.begin(subtransactions=True):
             firewall_group = self.firewall_db.create_firewall_group(
                 context, firewall_group)
@@ -143,6 +147,13 @@ class FirewallDriverDBMixin(FirewallDriver):
             self._update_resource_status(context, firewall_db_v2.FirewallGroup,
                                          firewall_group)
         self.create_firewall_group_postcommit(context, firewall_group)
+
+        payload = events.DBEventPayload(context=context,
+                                        resource_id=firewall_group['id'],
+                                        request_body=request_body,
+                                        states=(firewall_group,))
+        registry.publish(
+            const.FIREWALL_GROUP, events.AFTER_CREATE, self, payload=payload)
         return firewall_group
 
     @abc.abstractmethod
@@ -162,6 +173,12 @@ class FirewallDriverDBMixin(FirewallDriver):
             # lets driver deleting firewall group later
             self.firewall_db.delete_firewall_group(context, id)
         self.delete_firewall_group_postcommit(context, firewall_group)
+
+        payload = events.DBEventPayload(context=context,
+                                        resource_id=id,
+                                        states=(firewall_group,))
+        registry.publish(
+            const.FIREWALL_GROUP, events.AFTER_DELETE, self, payload=payload)
 
     @abc.abstractmethod
     def delete_firewall_group_precommit(self, context, firewall_group):
@@ -188,6 +205,14 @@ class FirewallDriverDBMixin(FirewallDriver):
             context, id, firewall_group_delta)
         self.update_firewall_group_postcommit(context, old_firewall_group,
                                               firewall_group)
+
+        payload = events.DBEventPayload(context=context,
+                                        resource_id=id,
+                                        states=(old_firewall_group,
+                                                new_firewall_group))
+        registry.publish(
+            const.FIREWALL_GROUP, events.AFTER_UPDATE, self, payload=payload)
+
         return firewall_group
 
     @abc.abstractmethod
@@ -202,11 +227,19 @@ class FirewallDriverDBMixin(FirewallDriver):
 
     # Firewall Policy
     def create_firewall_policy(self, context, firewall_policy):
+        request_body = firewall_policy
         with context.session.begin(subtransactions=True):
             firewall_policy = self.firewall_db.create_firewall_policy(
                 context, firewall_policy)
             self.create_firewall_policy_precommit(context, firewall_policy)
         self.create_firewall_policy_postcommit(context, firewall_policy)
+
+        payload = events.DBEventPayload(context=context,
+                                        resource_id=firewall_policy['id'],
+                                        request_body=request_body,
+                                        states=(firewall_policy,))
+        registry.publish(
+            const.FIREWALL_POLICY, events.AFTER_CREATE, self, payload=payload)
         return firewall_policy
 
     @abc.abstractmethod
@@ -222,6 +255,12 @@ class FirewallDriverDBMixin(FirewallDriver):
         self.delete_firewall_policy_precommit(context, firewall_policy)
         self.firewall_db.delete_firewall_policy(context, id)
         self.delete_firewall_policy_postcommit(context, firewall_policy)
+
+        payload = events.DBEventPayload(context=context,
+                                        resource_id=id,
+                                        states=(firewall_policy,))
+        registry.publish(
+            const.FIREWALL_POLICY, events.AFTER_UPDATE, self, payload=payload)
 
     @abc.abstractmethod
     def delete_firewall_policy_precommit(self, context, firewall_policy):
@@ -247,6 +286,12 @@ class FirewallDriverDBMixin(FirewallDriver):
             context, id, firewall_policy_delta)
         self.update_firewall_policy_postcommit(context, old_firewall_policy,
                                                firewall_policy)
+
+        payload = events.DBEventPayload(context=context,
+                                        resource_id=id,
+                                        states=(firewall_policy,))
+        registry.publish(
+            const.FIREWALL_POLICY, events.AFTER_UPDATE, self, payload=payload)
         return firewall_policy
 
     @abc.abstractmethod
@@ -261,11 +306,19 @@ class FirewallDriverDBMixin(FirewallDriver):
 
     # Firewall Rule
     def create_firewall_rule(self, context, firewall_rule):
+        request_body = firewall_rule
         with context.session.begin(subtransactions=True):
             firewall_rule = self.firewall_db.create_firewall_rule(
                 context, firewall_rule)
             self.create_firewall_rule_precommit(context, firewall_rule)
         self.create_firewall_rule_postcommit(context, firewall_rule)
+
+        payload = events.DBEventPayload(context=context,
+                                        resource_id=firewall_rule['id'],
+                                        request_body=request_body,
+                                        states=(firewall_rule,))
+        registry.publish(
+            const.FIREWALL_RULE, events.AFTER_CREATE, self, payload=payload)
         return firewall_rule
 
     @abc.abstractmethod
@@ -281,6 +334,12 @@ class FirewallDriverDBMixin(FirewallDriver):
         self.delete_firewall_rule_precommit(context, firewall_rule)
         self.firewall_db.delete_firewall_rule(context, id)
         self.delete_firewall_rule_postcommit(context, firewall_rule)
+
+        payload = events.DBEventPayload(context=context,
+                                        resource_id=id,
+                                        states=(firewall_rule,))
+        registry.publish(
+            const.FIREWALL_RULE, events.AFTER_DELETE, self, payload=payload)
 
     @abc.abstractmethod
     def delete_firewall_rule_precommit(self, context, firewall_rule):
@@ -306,6 +365,13 @@ class FirewallDriverDBMixin(FirewallDriver):
             context, id, firewall_rule_delta)
         self.update_firewall_rule_postcommit(context, old_firewall_rule,
                                              firewall_rule)
+
+        payload = events.DBEventPayload(context=context,
+                                        resource_id=id,
+                                        states=(firewall_rule,))
+        registry.publish(
+            const.FIREWALL_RULE, events.AFTER_UPDATE, self, payload=payload)
+
         return firewall_rule
 
     @abc.abstractmethod
@@ -323,6 +389,12 @@ class FirewallDriverDBMixin(FirewallDriver):
         firewall_policy = self.firewall_db.insert_rule(context, policy_id,
                                                        rule_info)
         self.insert_rule_postcommit(context, policy_id, rule_info)
+        payload = events.DBEventPayload(context=context,
+                                        resource_id=policy_id,
+                                        states=(firewall_policy,))
+        registry.publish(
+            const.FIREWALL_POLICY, events.AFTER_UPDATE, self, payload=payload)
+
         return firewall_policy
 
     @abc.abstractmethod
@@ -338,6 +410,12 @@ class FirewallDriverDBMixin(FirewallDriver):
         firewall_policy = self.firewall_db.remove_rule(context, policy_id,
                                                        rule_info)
         self.remove_rule_postcommit(context, policy_id, rule_info)
+        payload = events.DBEventPayload(context=context,
+                                        resource_id=policy_id,
+                                        states=(firewall_policy,))
+
+        registry.publish(
+            const.FIREWALL_POLICY, events.AFTER_UPDATE, self, payload=payload)
         return firewall_policy
 
     @abc.abstractmethod
