@@ -433,3 +433,16 @@ class FirewallDriverDB(FirewallDriverDBMixin):
 
     def remove_rule_postcommit(self, context, policy_id, rule_info):
         pass
+
+
+@six.add_metaclass(abc.ABCMeta)
+class FirewallDriverRPCMixin(object):
+    """FirewallAgent interface for driver with rpc callback listener.
+
+    Each firewall backend driver that needs a rpc callback listener should
+    inherit from this driver.
+    """
+
+    @abc.abstractmethod
+    def start_rpc_listener(self):
+        pass

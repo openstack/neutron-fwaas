@@ -154,7 +154,8 @@ class FirewallAgentApi(object):
                    firewall_group=firewall_group, host=self.host)
 
 
-class FirewallAgentDriver(driver_api.FirewallDriverDB):
+class FirewallAgentDriver(driver_api.FirewallDriverDB,
+                          driver_api.FirewallDriverRPCMixin):
     """Firewall driver to implement agent messages and callback methods
 
     Implement RPC Firewall v2 API and callback methods for agents based on
@@ -164,15 +165,13 @@ class FirewallAgentDriver(driver_api.FirewallDriverDB):
     def __init__(self, service_plugin):
         super(FirewallAgentDriver, self).__init__(service_plugin)
         self.agent_rpc = FirewallAgentApi(constants.FW_AGENT, cfg.CONF.host)
-        self.start_rpc_listeners()
 
-    def start_rpc_listeners(self):
+    def start_rpc_listener(self):
         self.endpoints = [FirewallAgentCallbacks(self.firewall_db)]
-
         self.rpc_connection = neutron_rpc.Connection()
         self.rpc_connection.create_consumer(constants.FIREWALL_PLUGIN,
                                             self.endpoints, fanout=False)
-        self.rpc_connection.consume_in_threads()
+        return self.rpc_connection.consume_in_threads()
 
     def _rpc_update_firewall_group(self, context, fwg_id):
         status_update = {"status": nl_constants.PENDING_UPDATE}

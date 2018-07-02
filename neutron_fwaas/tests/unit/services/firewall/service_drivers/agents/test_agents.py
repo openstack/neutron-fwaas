@@ -107,8 +107,8 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
             extra_service_plugins=l3_plugin,
             extra_extension_paths=neutron_extensions.__path__)
 
-        self.callbacks = self.plugin.driver.endpoints[0]
         self.db = self.plugin.driver.firewall_db
+        self.callbacks = agents.FirewallAgentCallbacks(self.db)
 
         router_distributed_opts = [
             cfg.BoolOpt(
