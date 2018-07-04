@@ -45,20 +45,17 @@ def in_namespace(namespace):
 
     org_netns_fd = os.open(PROCESS_NETNS, os.O_RDONLY)
     try:
-        new_netns_fd = pynetns.setns(namespace)
+        pynetns.setns(namespace)
         try:
-            try:
-                yield
-            finally:
-                try:
-                    # NOTE(cby): this code is not executed only if we fail to
-                    # move in target namespace
-                    pynetns.setns(org_netns_fd)
-                except Exception as e:
-                    msg = _('Failed to move back in original netns: %s') % e
-                    LOG.critical(msg)
-                    raise BackInNamespaceExit(msg)
+            yield
         finally:
-            os.close(new_netns_fd)
+            try:
+                # NOTE(cby): this code is not executed only if we fail to
+                # move in target namespace
+                pynetns.setns(org_netns_fd)
+            except Exception as e:
+                msg = _('Failed to move back in original netns: %s') % e
+                LOG.critical(msg)
+                raise BackInNamespaceExit(msg)
     finally:
         os.close(org_netns_fd)

@@ -39,25 +39,14 @@ class InNamespaceTest(base.BaseTestCase):
         self.addCleanup(close_patch.stop)
 
         self.setns_mock = mock.patch(
-            'pyroute2.netns.setns', side_effect=self.fake_setns
-        ).start()
-
-    def fake_setns(self, setns):
-        if setns is self.ORG_NETNS_FD:
-            return self.ORG_NETNS_FD
-        elif setns is self.NEW_NETNS:
-            return self.NEW_NETNS_FD
-        else:
-            self.fail('invalid netns name')
+            'pyroute2.netns.setns').start()
 
     def test_in_namespace(self):
         with utils.in_namespace(self.NEW_NETNS):
             self.setns_mock.assert_called_once_with(self.NEW_NETNS)
 
-        setns_calls = [mock.call(self.NEW_NETNS),
-                       mock.call(self.ORG_NETNS_FD)]
-        close_calls = [mock.call(self.NEW_NETNS_FD),
-                       mock.call(self.ORG_NETNS_FD)]
+        setns_calls = [mock.call(self.ORG_NETNS_FD)]
+        close_calls = [mock.call(self.ORG_NETNS_FD)]
         self.setns_mock.assert_has_calls(setns_calls)
         self.close_mock.assert_has_calls(close_calls)
 
@@ -74,10 +63,8 @@ class InNamespaceTest(base.BaseTestCase):
                 self.setns_mock.assert_called_once_with(self.NEW_NETNS)
                 raise ValueError
 
-        setns_calls = [mock.call(self.NEW_NETNS),
-                       mock.call(self.ORG_NETNS_FD)]
-        close_calls = [mock.call(self.NEW_NETNS_FD),
-                       mock.call(self.ORG_NETNS_FD)]
+        setns_calls = [mock.call(self.ORG_NETNS_FD)]
+        close_calls = [mock.call(self.ORG_NETNS_FD)]
         self.setns_mock.assert_has_calls(setns_calls)
         self.close_mock.assert_has_calls(close_calls)
 

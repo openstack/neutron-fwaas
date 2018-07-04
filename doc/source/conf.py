@@ -50,12 +50,19 @@ extensions = ['sphinxcontrib.apidoc',
               'oslo_config.sphinxconfiggen',
               'openstackdocstheme',]
 
+try:
+    import openstackdocstheme
+    extensions.append('openstackdocstheme')
+except ImportError:
+    openstackdocstheme = None
+
 todo_include_todos = True
 
 # sphinxcontrib.apidoc options
 apidoc_module_dir = '../../neutron_fwaas'
 apidoc_output_dir = 'contributor/api'
 apidoc_excluded_paths = [
+    'db/migration/alembic_migrations/*',
     'setup.py',
     'tests/*',
     'tests']
@@ -141,7 +148,10 @@ modindex_common_prefix = ['neutron_fwaas.']
 # Sphinx are currently 'default' and 'sphinxdoc'.
 # html_theme_path = ["."]
 # html_theme = '_theme'
-html_theme = 'openstackdocs'
+if openstackdocstheme is not None:
+    html_theme = 'openstackdocs'
+else:
+    html_theme = 'default'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -258,7 +268,7 @@ _config_generator_config_files = [
 ]
 
 
-def _get_config_generator_config_definition(config_file):
+def _get_config_generator_config_definition(conf):
     config_file_path = '../../etc/oslo-config-generator/%s' % conf
     # oslo_config.sphinxconfiggen appends '.conf.sample' to the filename,
     # strip file extentension (.conf or .ini).
