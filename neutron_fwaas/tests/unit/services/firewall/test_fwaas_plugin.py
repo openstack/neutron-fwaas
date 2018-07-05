@@ -96,7 +96,7 @@ class TestFirewallRouterInsertionBase(
 
         self.l3_plugin = directory.get_plugin(plugin_constants.L3)
         self.plugin = directory.get_plugin('FIREWALL')
-        self.callbacks = self.plugin.endpoints[0]
+        self.callbacks = fwaas_plugin.FirewallCallbacks(self.plugin)
 
     def restore_attribute_map(self):
         # Remove the fwaasrouterinsertion extension

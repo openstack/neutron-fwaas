@@ -54,6 +54,9 @@ class FWaaSPluginApiMixin(object):
     """Agent side of the FWaaS agent to FWaaS Plugin RPC API."""
 
     def __init__(self, topic, host):
+        # NOTE(annp): Mixin class should call super
+        super(FWaaSPluginApiMixin, self).__init__()
+
         self.host = host
         target = oslo_messaging.Target(topic=topic, version='1.0')
         self.client = n_rpc.get_client(target)

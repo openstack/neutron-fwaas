@@ -14,6 +14,7 @@
 #    under the License.
 
 from neutron.common import rpc as n_rpc
+from neutron import service
 from neutron_lib.api.definitions import firewall as fw_ext
 from neutron_lib.api import extensions
 from neutron_lib import constants as nl_constants
@@ -155,13 +156,15 @@ class FirewallPlugin(
 
     def __init__(self):
         """Do the initialization for the firewall service plugin here."""
-        self.start_rpc_listeners()
 
         self.agent_rpc = FirewallAgentApi(
             f_const.FW_AGENT,
             cfg.CONF.host
         )
         firewall_db.subscribe()
+
+        rpc_worker = service.RpcWorker([self], worker_process_count=0)
+        self.add_worker(rpc_worker)
 
     def start_rpc_listeners(self):
         self.endpoints = [FirewallCallbacks(self)]
