@@ -760,11 +760,25 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
         attrs = self._get_test_firewall_group_attrs("firewall1")
         self._test_create_firewall_group(attrs)
 
-    def test_create_firewall_group_with_ports(self):
+    def test_create_firewall_group_with_router_port(self):
         with self.port(
-            device_owner=nl_constants.DEVICE_OWNER_ROUTER_INTF) as dummy_port:
+            device_owner=nl_constants.DEVICE_OWNER_ROUTER_INTF) as port:
             attrs = self._get_test_firewall_group_attrs("fwg1")
-            attrs['ports'] = [dummy_port['port']['id']]
+            attrs['ports'] = [port['port']['id']]
+            self._test_create_firewall_group(attrs)
+
+    def test_create_firewall_group_with_dvr_port(self):
+        with self.port(
+            device_owner=nl_constants.DEVICE_OWNER_DVR_INTERFACE) as port:
+            attrs = self._get_test_firewall_group_attrs("fwg1")
+            attrs['ports'] = [port['port']['id']]
+            self._test_create_firewall_group(attrs)
+
+    def test_create_firewall_group_with_router_port_l3ha(self):
+        with self.port(
+            device_owner=nl_constants.DEVICE_OWNER_HA_REPLICATED_INT) as port:
+            attrs = self._get_test_firewall_group_attrs("fwg1")
+            attrs['ports'] = [port['port']['id']]
             self._test_create_firewall_group(attrs)
 
     def test_create_firewall_group_with_empty_ports(self):

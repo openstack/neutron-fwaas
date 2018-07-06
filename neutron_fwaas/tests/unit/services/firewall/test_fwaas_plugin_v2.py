@@ -418,6 +418,29 @@ class FirewallPluginV2TestCase(base.NeutronDbPluginV2TestCase):
 
 
 class TestFirewallPluginBasev2(FirewallPluginV2TestCase):
+
+    def _test_fwg_with_port(self, device_owner):
+        with self.port(device_owner=device_owner) as port:
+            with self.firewall_rule() as fwr:
+                fwr_id = fwr['firewall_rule']['id']
+                with self.firewall_policy(firewall_rules=[fwr_id]) as fwp:
+                    fwp_id = fwp['firewall_policy']['id']
+                    self.firewall_group(
+                        self.fmt,
+                        "firewall_group",
+                        self.DESCRIPTION,
+                        ports=[port['port']['id']],
+                        ingress_firewall_policy_id=fwp_id,
+                    )
+
+    def test_create_fwg_with_l3_ports(self):
+        for device_owner_for_l3 in nl_constants.ROUTER_INTERFACE_OWNERS:
+            self._test_fwg_with_port(device_owner_for_l3)
+
+    def test_create_fwg_with_l2_port(self):
+        device_owner_for_l2 = nl_constants.DEVICE_OWNER_COMPUTE_PREFIX + 'nova'
+        self._test_fwg_with_port(device_owner_for_l2)
+
     def test_create_firewall_group_with_port_on_different_project(self):
         with self.port(tenant_id='fake_project_id_1') as port:
             admin_ctx = context.get_admin_context()
@@ -473,9 +496,21 @@ class TestFirewallPluginBasev2(FirewallPluginV2TestCase):
                 res = req.get_response(self.ext_api)
                 self.assertEqual(webob.exc.HTTPConflict.code, res.status_int)
 
-    def test_create_firewall_group_with_port_already_in_use(self):
+    def test_create_firewall_group_with_router_port_already_in_use(self):
         with self.port(
                 device_owner=nl_constants.DEVICE_OWNER_ROUTER_INTF) as port:
+            with self.firewall_group(ports=[port['port']['id']]):
+                self._create_firewall_group(
+                    self.fmt,
+                    "firewall_group2",
+                    self.DESCRIPTION,
+                    ports=[port['port']['id']],
+                    expected_res_status=webob.exc.HTTPConflict.code,
+                )
+
+    def test_create_firewall_group_with_dvr_port_already_in_use(self):
+        with self.port(
+                device_owner=nl_constants.DEVICE_OWNER_DVR_INTERFACE) as port:
             with self.firewall_group(ports=[port['port']['id']]):
                 self._create_firewall_group(
                     self.fmt,
