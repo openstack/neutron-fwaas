@@ -17,7 +17,7 @@ How to run FWaaS V2 in DevStack
 Add the following to the localrc section of your local.conf to configure
 FWaaS v2.
 
-.. code-block:: none
+.. code-block:: ini
 
    [[local|localrc]]
    enable_plugin neutron-fwaas https://git.openstack.org/openstack/neutron-fwaas
@@ -27,7 +27,7 @@ To check a specific patchset that is currently under development, use a form
 like the below example, which is checking out change 214350 patch set 14 for
 testing.
 
-.. code-block:: none
+.. code-block:: ini
 
    [[local|localrc]]
    enable_plugin neutron-fwaas https://review.openstack.org/p/openstack/neutron-fwaas refs/changes/50/214350/14
@@ -39,7 +39,7 @@ How to run FWaaS V1 in DevStack
 Add the following to the localrc section of your local.conf to configure
 FWaaS v1.
 
-.. code-block:: none
+.. code-block:: ini
 
    [[local|localrc]]
    enable_plugin neutron-fwaas https://git.openstack.org/openstack/neutron-fwaas
@@ -49,7 +49,7 @@ To check a specific patchset that is currently under development, use a form
 like the below example, which is checking out change 214350 patch set 14 for
 testing.
 
-.. code-block:: none
+.. code-block:: ini
 
    [[local|localrc]]
    enable_plugin neutron-fwaas https://review.openstack.org/p/openstack/neutron-fwaas refs/changes/50/214350/14
