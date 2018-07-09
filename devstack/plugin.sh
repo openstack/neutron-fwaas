@@ -30,6 +30,7 @@ function install_fwaas() {
     # Install the service.
     :
     setup_develop $DEST/neutron-fwaas
+    install_package libnetfilter-log1
 }
 
 function configure_fwaas_v1() {
@@ -81,6 +82,7 @@ function shutdown_fwaas() {
 function cleanup_fwaas() {
     # Cleanup the service.
     :
+    uninstall_package libnetfilter-log1
 }
 
 function neutron_fwaas_configure_common {

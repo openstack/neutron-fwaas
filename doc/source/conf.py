@@ -63,8 +63,13 @@ apidoc_module_dir = '../../neutron_fwaas'
 apidoc_output_dir = 'contributor/api'
 # TODO(hoangcx): remove 'services/logapi/*' after next neutron release
 # (current release is Rocky-3)
+
+# NOTE(longkb): Due to libnetfilter_log library is not installed in sphinx-docs
+# gate, so we would like to ignore 'privileged/netfilter_log/*'.
+
 apidoc_excluded_paths = [
     'db/migration/alembic_migrations/*',
+    'privileged/netfilter_log/*',
     'services/logapi/*',
     'setup.py',
     'tests/*',
