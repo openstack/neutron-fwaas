@@ -45,10 +45,8 @@ class InNamespaceTest(base.BaseTestCase):
         with utils.in_namespace(self.NEW_NETNS):
             self.setns_mock.assert_called_once_with(self.NEW_NETNS)
 
-        setns_calls = [mock.call(self.ORG_NETNS_FD)]
-        close_calls = [mock.call(self.ORG_NETNS_FD)]
+        setns_calls = [mock.call(self.NEW_NETNS), mock.call(self.ORG_NETNS_FD)]
         self.setns_mock.assert_has_calls(setns_calls)
-        self.close_mock.assert_has_calls(close_calls)
 
     def test_in_no_namespace(self):
         for namespace in ('', None):
@@ -63,10 +61,8 @@ class InNamespaceTest(base.BaseTestCase):
                 self.setns_mock.assert_called_once_with(self.NEW_NETNS)
                 raise ValueError
 
-        setns_calls = [mock.call(self.ORG_NETNS_FD)]
-        close_calls = [mock.call(self.ORG_NETNS_FD)]
+        setns_calls = [mock.call(self.NEW_NETNS), mock.call(self.ORG_NETNS_FD)]
         self.setns_mock.assert_has_calls(setns_calls)
-        self.close_mock.assert_has_calls(close_calls)
 
     def test_in_namespace_enter_failed(self):
         self.setns_mock.side_effect = ValueError
@@ -75,7 +71,6 @@ class InNamespaceTest(base.BaseTestCase):
                 self.fail('It should fail before we reach this code')
 
         self.setns_mock.assert_called_once_with(self.NEW_NETNS)
-        self.close_mock.assert_called_once_with(self.ORG_NETNS_FD)
 
     def test_in_namespace_exit_failed(self):
         self.setns_mock.side_effect = [self.NEW_NETNS_FD, ValueError]
