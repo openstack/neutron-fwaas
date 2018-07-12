@@ -77,7 +77,8 @@ class ConntrackLegacy(conntrack_base.ConntrackDriverBase):
             raw_entries = self._execute_command(cmd).splitlines()
             for raw_entry in raw_entries:
                 parsed_entry = self._parse_entry(raw_entry.split(), ip_version)
-                parsed_entries.append(parsed_entry)
+                if parsed_entry is not None:
+                    parsed_entries.append(parsed_entry)
         return sorted(parsed_entries)
 
     def _get_conntrack_cmd_from_entry(self, entry, namespace):
@@ -101,7 +102,7 @@ class ConntrackLegacy(conntrack_base.ConntrackDriverBase):
     def _parse_entry(self, entry, ip_version):
         """Parse entry from text to Python tuple
 
-        :param entry: conntrack entry in text
+        :param entry: conntrack entry as a list of string
         :param ip_version: ip version 4 or 6
         :returns: conntrack entry in Python tuple
         for example: (4, 'tcp', 1, 2, '1.1.1.1', '2.2.2.2')
@@ -109,6 +110,11 @@ class ConntrackLegacy(conntrack_base.ConntrackDriverBase):
         and compare with firewall rule
         """
         protocol = entry[0]
+        if protocol not in ATTR_POSITIONS:
+            LOG.warning(
+                'Skipping conntrack entry %s with unsupported protocol', entry)
+            return None
+
         parsed_entry = [ip_version, protocol]
         for attr, position in ATTR_POSITIONS[protocol]:
             val = entry[position].partition('=')[2]
