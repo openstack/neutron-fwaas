@@ -98,7 +98,7 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
             if ri.snat_iptables_manager:
                 ipt_mgrs.append({'ipt': ri.snat_iptables_manager,
                                  'if_prefix': SNAT_INT_DEV_PREFIX})
-        if ri.dist_fip_count:
+        if ri.rtr_fip_connect:
             # handle the fip case on n/w or compute node.
             ipt_mgrs.append({'ipt': ri.iptables_manager,
                              'if_prefix': ROUTER_2_FIP_DEV_PREFIX})
