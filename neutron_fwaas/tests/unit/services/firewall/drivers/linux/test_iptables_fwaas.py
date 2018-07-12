@@ -121,7 +121,7 @@ class IptablesFwaasTestCase(base.BaseTestCase):
             router_info_inst.iptables_manager = iptables_inst
             router_info_inst.snat_iptables_manager = iptables_inst
             if distributed_mode == 'dvr':
-                router_info_inst.dist_fip_count = 1
+                router_info_inst.rtr_fip_connect = True
             router_info_inst.router = router_inst
             apply_list.append(router_info_inst)
             router_count -= 1
