@@ -25,3 +25,6 @@ Code is available on git.openstack.org at:
 
 Please refer to Neutron documentation for more information:
 `Neutron README.rst <https://git.openstack.org/cgit/openstack/neutron/tree/README.rst>`_
+
+Get release notes:
+`Neutron FWaaS Release Notes <https://docs.openstack.org/releasenotes/neutron-fwaas/>`_
