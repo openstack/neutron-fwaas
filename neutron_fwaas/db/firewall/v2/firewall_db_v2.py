@@ -18,10 +18,10 @@ import copy
 import netaddr
 
 from neutron.db import _model_query as model_query
-from neutron.db import api as db_api
 from neutron.db import common_db_mixin
 from neutron_lib.api.definitions import constants as fw_const
 from neutron_lib import constants as nl_constants
+from neutron_lib.db import api as db_api
 from neutron_lib.db import constants as db_constants
 from neutron_lib.db import model_base
 from neutron_lib import exceptions
