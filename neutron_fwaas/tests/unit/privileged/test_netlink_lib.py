@@ -110,12 +110,12 @@ class NetlinkLibTestCase(base.BaseTestCase):
             calls = [
                 mock.call(conntrack_filter,
                           nl_constants.ATTR_IPV4_SRC,
-                          str(conntrack._convert_text_to_binary(
-                              FAKE_ENTRY['src'], 4))),
+                          conntrack._convert_text_to_binary(
+                              FAKE_ENTRY['src'], 4)),
                 mock.call(conntrack_filter,
                           nl_constants.ATTR_IPV4_DST,
-                          str(conntrack._convert_text_to_binary(
-                              FAKE_ENTRY['dst'], 4))),
+                          conntrack._convert_text_to_binary(
+                              FAKE_ENTRY['dst'], 4)),
             ]
             nl_lib.nfct.nfct_set_attr.assert_has_calls(calls, any_order=True)
             nl_lib.nfct.nfct_destroy.assert_called_once()
@@ -152,12 +152,12 @@ class NetlinkLibTestCase(base.BaseTestCase):
             calls = [
                 mock.call(conntrack_filter,
                           nl_constants.ATTR_IPV6_SRC,
-                          str(conntrack._convert_text_to_binary(
-                              FAKE_ENTRY['src'], 6))),
+                          conntrack._convert_text_to_binary(
+                              FAKE_ENTRY['src'], 6)),
                 mock.call(conntrack_filter,
                           nl_constants.ATTR_IPV6_DST,
-                          str(conntrack._convert_text_to_binary(
-                              FAKE_ENTRY['dst'], 6))),
+                          conntrack._convert_text_to_binary(
+                              FAKE_ENTRY['dst'], 6)),
             ]
             nl_lib.nfct.nfct_set_attr.assert_has_calls(calls, any_order=True)
             nl_lib.nfct.nfct_destroy.assert_called_once()
@@ -192,12 +192,12 @@ class NetlinkLibTestCase(base.BaseTestCase):
             calls = [
                 mock.call(conntrack_filter,
                           nl_constants.ATTR_IPV4_SRC,
-                          str(conntrack._convert_text_to_binary(
-                              FAKE_UDP_ENTRY['src'], 4))),
+                          conntrack._convert_text_to_binary(
+                              FAKE_UDP_ENTRY['src'], 4)),
                 mock.call(conntrack_filter,
                           nl_constants.ATTR_IPV4_DST,
-                          str(conntrack._convert_text_to_binary(
-                              FAKE_UDP_ENTRY['dst'], 4))),
+                          conntrack._convert_text_to_binary(
+                              FAKE_UDP_ENTRY['dst'], 4)),
             ]
             nl_lib.nfct.nfct_set_attr.assert_has_calls(calls, any_order=True)
             nl_lib.nfct.nfct_destroy.assert_called_once()
@@ -232,12 +232,12 @@ class NetlinkLibTestCase(base.BaseTestCase):
             calls = [
                 mock.call(conntrack_filter,
                           nl_constants.ATTR_IPV4_SRC,
-                          str(conntrack._convert_text_to_binary(
-                              FAKE_TCP_ENTRY['src'], 4))),
+                          conntrack._convert_text_to_binary(
+                              FAKE_TCP_ENTRY['src'], 4)),
                 mock.call(conntrack_filter,
                           nl_constants.ATTR_IPV4_DST,
-                          str(conntrack._convert_text_to_binary(
-                              FAKE_TCP_ENTRY['dst'], 4))),
+                          conntrack._convert_text_to_binary(
+                              FAKE_TCP_ENTRY['dst'], 4)),
             ]
             nl_lib.nfct.nfct_set_attr.assert_has_calls(calls, any_order=True)
             nl_lib.nfct.nfct_destroy.assert_called_once()
@@ -301,28 +301,28 @@ class NetlinkLibTestCase(base.BaseTestCase):
             calls = [
                 mock.call(conntrack_filter,
                           nl_constants.ATTR_IPV4_SRC,
-                          str(conntrack._convert_text_to_binary(
-                              FAKE_TCP_ENTRY['src'], 4))),
+                          conntrack._convert_text_to_binary(
+                              FAKE_TCP_ENTRY['src'], 4)),
                 mock.call(conntrack_filter,
                           nl_constants.ATTR_IPV4_DST,
-                          str(conntrack._convert_text_to_binary(
-                              FAKE_TCP_ENTRY['dst'], 4))),
+                          conntrack._convert_text_to_binary(
+                              FAKE_TCP_ENTRY['dst'], 4)),
                 mock.call(conntrack_filter,
                           nl_constants.ATTR_IPV4_SRC,
-                          str(conntrack._convert_text_to_binary(
-                              FAKE_UDP_ENTRY['src'], 4))),
+                          conntrack._convert_text_to_binary(
+                              FAKE_UDP_ENTRY['src'], 4)),
                 mock.call(conntrack_filter,
                           nl_constants.ATTR_IPV4_DST,
-                          str(conntrack._convert_text_to_binary(
-                              FAKE_UDP_ENTRY['dst'], 4))),
+                          conntrack._convert_text_to_binary(
+                              FAKE_UDP_ENTRY['dst'], 4)),
                 mock.call(conntrack_filter,
                           nl_constants.ATTR_IPV4_SRC,
-                          str(conntrack._convert_text_to_binary(
-                              FAKE_ENTRY['src'], 4))),
+                          conntrack._convert_text_to_binary(
+                              FAKE_ENTRY['src'], 4)),
                 mock.call(conntrack_filter,
                           nl_constants.ATTR_IPV4_DST,
-                          str(conntrack._convert_text_to_binary(
-                              FAKE_UDP_ENTRY['dst'], 4))),
+                          conntrack._convert_text_to_binary(
+                              FAKE_UDP_ENTRY['dst'], 4)),
             ]
             nl_lib.nfct.nfct_set_attr.assert_has_calls(calls, any_order=True)
             nl_lib.nfct.nfct_destroy.assert_called_once()
