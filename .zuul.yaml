@@ -4,10 +4,22 @@
         - neutron-fwaas-networking-midonet-cross-py35:
             voting: false
 
-        - openstack-tox-lower-constraints
+        - openstack-tox-lower-constraints:
+            required-projects:
+              - openstack/neutron
+
+        - build-openstack-sphinx-docs:
+            required-projects:
+              - openstack/neutron
     gate:
       jobs:
-        - openstack-tox-lower-constraints
+        - openstack-tox-lower-constraints:
+            required-projects:
+              - openstack/neutron
+
+        - build-openstack-sphinx-docs:
+            required-projects:
+              - openstack/neutron
 - job:
     name: neutron-fwaas-networking-midonet-cross-py35
     parent: openstack-tox-py35
