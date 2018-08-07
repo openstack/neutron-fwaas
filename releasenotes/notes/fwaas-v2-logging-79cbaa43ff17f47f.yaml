@@ -1,0 +1,22 @@
+---
+prelude: >
+    Resource type **firewall group** has been supported for neutron packet
+    logging framework.  You can specify firewall group as ``--resource-type``
+    for logging API.
+features:
+  - |
+    Enable to collect network packet log for ACCEPT/DROP action from firewall
+    groups. Currently, packet logging supports only L3(router) ports.
+issues:
+  - |
+    [`bug 1720727 <https://bugs.launchpad.net/neutron/+bug/1720727>`__]
+    Currently, we cannot specify the following combination on CLI due to
+    missing validation of --resource-type:
+
+        - --resource-type firewall_group --resource <ID of firewall group>
+        - --resource-type firewall_group --resource <ID of firewall group> --target <ID of port>
+
+    Therefore, you can only run with following combinations:
+
+        - --resource-type firewall_group --target <ID of port>
+        - --resource-type firewall_group
