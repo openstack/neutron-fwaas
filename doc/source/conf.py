@@ -61,8 +61,11 @@ todo_include_todos = True
 # sphinxcontrib.apidoc options
 apidoc_module_dir = '../../neutron_fwaas'
 apidoc_output_dir = 'contributor/api'
+# TODO(hoangcx): remove 'services/logapi/*' after next neutron release
+# (current release is Rocky-3)
 apidoc_excluded_paths = [
     'db/migration/alembic_migrations/*',
+    'services/logapi/*',
     'setup.py',
     'tests/*',
     'tests']
