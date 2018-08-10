@@ -129,6 +129,22 @@ class BaseIptablesLogTestCase(base.BaseTestCase):
         self.log_driver.stop_logging(self.context, **fake_kwargs)
         self.log_driver._delete_firewall_group_log.assert_not_called()
 
+    def test_clean_up_unused_ipt_mgrs(self):
+        f_router_ids = ['r1', 'r2', 'r3']
+        self.log_driver.ipt_mgr_list = self._fake_ipt_mgr_list(f_router_ids)
+
+        # Test with a port is delete from router
+        self.log_driver.unused_port_ids = set(['r1_port1'])
+        self.log_driver._cleanup_unused_ipt_mgrs()
+        self.assertEqual(set(), self.log_driver.unused_port_ids)
+        self.assertIsNone(self.log_driver.ipt_mgr_list['r1'].get('r1_port1'))
+
+        # Test with all ports are deleted from router
+        self.log_driver.unused_port_ids = set(['r2_port1', 'r2_port2'])
+        self.log_driver._cleanup_unused_ipt_mgrs()
+        self.assertEqual(set(), self.log_driver.unused_port_ids)
+        self.assertIsNone(self.log_driver.ipt_mgr_list.get('r2'))
+
     def test_get_intf_name(self):
         fake_router = mock.Mock()
         fake_port_id = 'fake_router_port_id'
@@ -310,3 +326,16 @@ class BaseIptablesLogTestCase(base.BaseTestCase):
                           '-j NFLOG --nflog-prefix %s'
                           % (device, FAKE_RATE, FAKE_BURST, tag)]
         return v4_nflog_rule, v6_nflog_rule
+
+    def _fake_ipt_mgr_list(self, router_ids):
+        f_ipt_mgrs = defaultdict(dict)
+
+        for router_id in router_ids:
+            f_port_id1 = router_id + '_port1'
+            f_port_id2 = router_id + '_port2'
+            ipt_mgr = mock.Mock()
+            ipt_mgr.ns_name = 'ns_' + router_id
+            f_ipt_mgrs[router_id][f_port_id1] = ipt_mgr
+            f_ipt_mgrs[router_id][f_port_id2] = ipt_mgr
+
+        return f_ipt_mgrs
