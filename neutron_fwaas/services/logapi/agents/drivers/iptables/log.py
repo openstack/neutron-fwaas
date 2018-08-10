@@ -124,6 +124,8 @@ class IptablesLoggingDriver(log_ext.LoggingDriver):
         self.cleanup_table = defaultdict(set)
         # Handle NFLOG processing
         self.nflog_proc_map = {}
+        # A list of unused ports
+        self.unused_port_ids = set()
 
     def initialize(self, resource_rpc, **kwargs):
         self.resource_rpc = resource_rpc
@@ -195,7 +197,23 @@ class IptablesLoggingDriver(log_ext.LoggingDriver):
                 for prefix in self.prefixes_table[port_id]:
                     self._add_to_cleanup(port_id, prefix.id)
                 del self.prefixes_table[port_id]
+                self.unused_port_ids.add(port_id)
         return ipt_mgr_per_port
+
+    def _cleanup_unused_ipt_mgrs(self):
+
+        need_cleanup = set()
+        for port_id in self.unused_port_ids:
+            for router_id in self.ipt_mgr_list:
+                if port_id in self.ipt_mgr_list[router_id]:
+                    del self.ipt_mgr_list[router_id][port_id]
+                if not self.ipt_mgr_list[router_id]:
+                    need_cleanup.add(router_id)
+
+        for router_id in need_cleanup:
+            del self.ipt_mgr_list[router_id]
+
+        self.unused_port_ids.clear()
 
     def start_logging(self, context, **kwargs):
         LOG.debug("Start logging: %s", str(kwargs))
@@ -281,10 +299,14 @@ class IptablesLoggingDriver(log_ext.LoggingDriver):
 
         # Clean up NFLOG rules
         self._cleanup_nflog_rules(applied_ipt_mgrs)
+
         # Apply NFLOG rules into iptables managers
         for ipt_mgr in applied_ipt_mgrs:
             LOG.debug('Apply NFLOG rules in namespace %s', ipt_mgr.namespace)
             ipt_mgr.defer_apply_off()
+
+        # Clean up unused iptables managers from ports
+        self._cleanup_unused_ipt_mgrs()
 
     def _cleanup_prefixes_table(self, port_id, log_id):
 
@@ -296,11 +318,13 @@ class IptablesLoggingDriver(log_ext.LoggingDriver):
                 if prefix.is_empty:
                     self._add_to_cleanup(port_id, prefix.id)
                     self.prefixes_table[port_id].remove(prefix)
-            except KeyError:
+            except Exception:
                 pass
 
         if port_id in self.prefixes_table:
-            del self.prefixes_table[port_id]
+            if not self.prefixes_table[port_id]:
+                del self.prefixes_table[port_id]
+                self.unused_port_ids.add(port_id)
 
     def _cleanup_nflog_rules(self, applied_ipt_mgrs):
         for port_id, prefix_ids in self.cleanup_table.items():
@@ -323,9 +347,13 @@ class IptablesLoggingDriver(log_ext.LoggingDriver):
 
         # Clean NFLOG rules:
         self._cleanup_nflog_rules(applied_ipt_mgrs)
+
         # Apply NFLOG rules into iptables managers
         for ipt_mgr in applied_ipt_mgrs:
             ipt_mgr.defer_apply_off()
+
+        # Clean up unused iptables managers
+        self._cleanup_unused_ipt_mgrs()
 
     def _get_if_prefix(self, agent_mode, router):
         """Get the if prefix from router"""
