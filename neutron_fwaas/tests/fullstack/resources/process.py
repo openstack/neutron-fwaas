@@ -21,7 +21,7 @@ import fixtures
 from neutronclient.common import exceptions as nc_exc
 from neutronclient.v2_0 import client
 
-from neutron.agent.linux import async_process
+from neutron.agent.common import async_process
 from neutron.agent.linux import utils
 from neutron.common import utils as common_utils
 from neutron.tests import base
