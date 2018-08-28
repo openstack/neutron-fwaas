@@ -17,7 +17,6 @@ import mock
 from neutron.api import extensions as api_ext
 from neutron.common import config
 from neutron.tests.common import helpers
-from neutron.tests import fake_notifier
 from neutron.tests.unit.extensions import test_agent
 from neutron.tests.unit.extensions import test_l3 as test_l3_plugin
 from neutron_lib.api import attributes as attr
@@ -28,6 +27,7 @@ from neutron_lib import context
 from neutron_lib.exceptions import firewall_v1 as f_exc
 from neutron_lib.plugins import constants as plugin_constants
 from neutron_lib.plugins import directory
+from neutron_lib.tests.unit import fake_notifier
 from oslo_config import cfg
 from oslo_utils import uuidutils
 import six
