@@ -44,6 +44,7 @@ function configure_fwaas_v1() {
 function configure_fwaas_v2() {
     # Add conf file
     cp $NEUTRON_FWAAS_DIR/etc/neutron_fwaas.conf.sample $NEUTRON_FWAAS_CONF
+    neutron_server_config_add $NEUTRON_FWAAS_CONF
     inicomment $NEUTRON_FWAAS_CONF service_providers service_provider
     iniadd $NEUTRON_FWAAS_CONF service_providers service_provider $NEUTRON_FWAAS_SERVICE_PROVIDERV2
 
