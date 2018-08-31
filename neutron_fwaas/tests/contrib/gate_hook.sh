@@ -20,5 +20,10 @@ case $VENV in
     source $FWAAS_PATH/tools/configure_for_fwaas_func_testing.sh
 
     configure_host_for_func_testing
+    if is_ubuntu || is_suse; then
+        install_package libnetfilter-log1
+    elif is_fedora; then
+        install_package libnetfilter-log
+    fi
     ;;
 esac
