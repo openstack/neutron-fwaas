@@ -22,6 +22,7 @@ from oslo_utils import importutils
 
 from neutron_fwaas.common import fwaas_constants
 from neutron_fwaas.services.logapi.common import fwg_callback
+from neutron_fwaas.services.logapi.common import port_callback
 from neutron_fwaas.services.logapi import constants as fw_const
 from neutron_fwaas.services.logapi.rpc import log_server as rpc_server
 
@@ -64,4 +65,7 @@ def register():
     # Register resource callback handler
     manager.register(
         fwaas_constants.FIREWALL_GROUP, fwg_callback.FirewallGroupCallBack)
+    # Register resource callback handler for Neutron ports
+    manager.register(resources.PORT, port_callback.NeutronPortCallBack)
+
     LOG.debug('FWaaS L3 Logging driver based iptables registered')
