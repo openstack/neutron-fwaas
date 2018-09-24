@@ -13,11 +13,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from neutron.common import rpc as n_rpc
 from neutron_lib.agent import l3_extension
 from neutron_lib import constants as nl_constants
 from neutron_lib import context
 from neutron_lib.exceptions import firewall_v1 as fw_ext
+from neutron_lib import rpc as n_rpc
 from oslo_config import cfg
 from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
