@@ -272,7 +272,6 @@ class L3ConfigFixture(ConfigFixture):
                 'interface_driver': ('neutron.agent.linux.interface.'
                                      'OVSInterfaceDriver'),
                 'ovs_integration_bridge': integration_bridge,
-                'external_network_bridge': self._generate_external_bridge(),
             }
         })
 
@@ -286,9 +285,6 @@ class L3ConfigFixture(ConfigFixture):
 
     def _generate_external_bridge(self):
         return utils.get_rand_device_name(prefix='br-ex')
-
-    def get_external_bridge(self):
-        return self.config.DEFAULT.external_network_bridge
 
     def _generate_namespace_suffix(self):
         return utils.get_rand_name(prefix='test')

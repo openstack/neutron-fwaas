@@ -113,15 +113,15 @@ class Host(fixtures.Fixture):
             self.local_ip)
         self.useFixture(agent_cfg_fixture)
 
+        br_phys = self.useFixture(
+            net_helpers.OVSBridgeFixture(
+                agent_cfg_fixture.get_br_phys_name())).bridge
         if self.env_desc.tunneling_enabled:
             self.useFixture(
                 net_helpers.OVSBridgeFixture(
                     agent_cfg_fixture.get_br_tun_name())).bridge
             self.connect_to_internal_network_via_tunneling()
         else:
-            br_phys = self.useFixture(
-                net_helpers.OVSBridgeFixture(
-                    agent_cfg_fixture.get_br_phys_name())).bridge
             self.connect_to_internal_network_via_vlans(br_phys)
 
         self.ovs_agent = self.useFixture(
@@ -135,10 +135,6 @@ class Host(fixtures.Fixture):
                     self.env_desc, self.host_desc,
                     self.neutron_config.temp_dir,
                     self.ovs_agent.agent_cfg_fixture.get_br_int_name()))
-            br_ex = self.useFixture(
-                net_helpers.OVSBridgeFixture(
-                    self.l3_agent_cfg_fixture.get_external_bridge())).bridge
-            self.connect_to_external_network(br_ex)
 
     def setup_host_with_linuxbridge_agent(self):
         #First we need to provide connectivity for agent to prepare proper
