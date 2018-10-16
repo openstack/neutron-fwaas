@@ -18,12 +18,12 @@ from oslo_log import log as logging
 import six
 
 from neutron.agent import securitygroups_rpc
-from neutron.common import rpc as n_rpc
 from neutron import manager
 from neutron.plugins.ml2.drivers.openvswitch.agent import vlanmanager
 from neutron_lib.agent import l2_extension
 from neutron_lib import constants as nl_const
 from neutron_lib.exceptions import firewall_v2 as f_exc
+from neutron_lib import rpc as n_rpc
 from neutron_lib.utils import net as nl_net
 
 from neutron_fwaas._i18n import _

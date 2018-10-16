@@ -96,8 +96,8 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
             DELETEFW_PATH, create=True,
             new=FakeAgentApi().delete_firewall_group,
         ).start()
-        mock.patch.object(agents.neutron_rpc, 'get_client').start()
-        mock.patch.object(agents.neutron_rpc, 'Connection').start()
+        mock.patch.object(agents.n_rpc, 'get_client').start()
+        mock.patch.object(agents.n_rpc, 'Connection').start()
 
         l3_plugin_str = ('neutron.tests.unit.extensions.test_l3.'
                          'TestL3NatServicePlugin')

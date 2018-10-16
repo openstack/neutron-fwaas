@@ -13,11 +13,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from neutron.common import rpc as neutron_rpc
 from neutron_lib.api.definitions import portbindings as pb_def
 from neutron_lib import constants as nl_constants
 from neutron_lib import context as neutron_context
 from neutron_lib.exceptions import firewall_v2 as f_exc
+from neutron_lib import rpc as n_rpc
 from oslo_config import cfg
 from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
@@ -136,7 +136,7 @@ class FirewallAgentApi(object):
     def __init__(self, topic, host):
         self.host = host
         target = oslo_messaging.Target(topic=topic, version='1.0')
-        self.client = neutron_rpc.get_client(target)
+        self.client = n_rpc.get_client(target)
 
     def create_firewall_group(self, context, firewall_group):
         cctxt = self.client.prepare(fanout=True)
@@ -168,7 +168,7 @@ class FirewallAgentDriver(driver_api.FirewallDriverDB,
 
     def start_rpc_listener(self):
         self.endpoints = [FirewallAgentCallbacks(self.firewall_db)]
-        self.rpc_connection = neutron_rpc.Connection()
+        self.rpc_connection = n_rpc.Connection()
         self.rpc_connection.create_consumer(constants.FIREWALL_PLUGIN,
                                             self.endpoints, fanout=False)
         return self.rpc_connection.consume_in_threads()
