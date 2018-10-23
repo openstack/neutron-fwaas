@@ -17,7 +17,6 @@ import copy
 
 import netaddr
 
-from neutron_lib.api.definitions import constants as fw_const
 from neutron_lib import constants as nl_constants
 from neutron_lib.db import api as db_api
 from neutron_lib.db import constants as db_constants
@@ -26,6 +25,7 @@ from neutron_lib.db import model_query
 from neutron_lib.db import utils as db_utils
 from neutron_lib import exceptions
 from neutron_lib.exceptions import firewall_v2 as f_exc
+from oslo_config import cfg
 from oslo_db import exception as db_exc
 from oslo_log import log as logging
 from oslo_utils import uuidutils
@@ -409,39 +409,63 @@ class FirewallPluginDb(object):
         # NOTE(xgerman) Maybe generating the final set of rules from a
         # configuration file makes sense. Can be done some time later
 
-        # 1. Drop any IPv4 packets for ingress traffic
+        # 1. Firewall rule for ingress IPv4 packets (DROP by default)
         in_fwr_v4 = {
             'description': 'default ingress rule for IPv4',
-            'name': 'default ingress ipv4 (deny all)',
-            'shared': False,
-            'protocol': None,
+            'name': 'default ingress ipv4',
+            'shared': cfg.CONF.default_fwg_rules.shared,
+            'protocol': cfg.CONF.default_fwg_rules.protocol,
             'tenant_id': tenant_id,
             'ip_version': nl_constants.IP_VERSION_4,
-            'action': fw_const.FWAAS_DENY,
-            'enabled': True,
-            'source_port': None,
-            'source_ip_address': None,
-            'destination_port': None,
-            'destination_ip_address': None,
+            'action': cfg.CONF.default_fwg_rules.ingress_action,
+            'enabled': cfg.CONF.default_fwg_rules.enabled,
+            'source_port': cfg.CONF.default_fwg_rules.ingress_source_port,
+            'source_ip_address':
+                cfg.CONF.default_fwg_rules.ingress_source_ipv4_address,
+            'destination_port':
+                cfg.CONF.default_fwg_rules.ingress_destination_port,
+            'destination_ip_address':
+                cfg.CONF.default_fwg_rules.
+                    ingress_destination_ipv4_address,
         }
 
-        # 2. Drop any IPv6 packets for ingress traffic
+        # 2. Firewall rule for ingress IPv6 packets (DROP by default)
         in_fwr_v6 = copy.deepcopy(in_fwr_v4)
         in_fwr_v6['description'] = 'default ingress rule for IPv6'
-        in_fwr_v6['name'] = 'default ingress ipv6 (deny all)'
+        in_fwr_v6['name'] = 'default ingress ipv6'
         in_fwr_v6['ip_version'] = nl_constants.IP_VERSION_6
+        in_fwr_v6['source_ip_address'] = \
+            cfg.CONF.default_fwg_rules.ingress_source_ipv6_address
+        in_fwr_v6['destination_ip_address'] = \
+            cfg.CONF.default_fwg_rules.ingress_destination_ipv6_address
 
-        # 3. Allow any IPv4 packets for egress traffic
+        # 3. Firewall rule for egress IPv4 packets (ALLOW by default)
         eg_fwr_v4 = copy.deepcopy(in_fwr_v4)
         eg_fwr_v4['description'] = 'default egress rule for IPv4'
-        eg_fwr_v4['action'] = fw_const.FWAAS_ALLOW
-        eg_fwr_v4['name'] = 'default egress ipv4 (allow all)'
+        eg_fwr_v4['name'] = 'default egress ipv4'
+        eg_fwr_v4['action'] = cfg.CONF.default_fwg_rules.egress_action
+        eg_fwr_v4['source_port'] = \
+            cfg.CONF.default_fwg_rules.egress_source_port
+        eg_fwr_v4['source_ip_address'] = \
+            cfg.CONF.default_fwg_rules.egress_source_ipv4_address
+        eg_fwr_v4['destination_port'] = \
+            cfg.CONF.default_fwg_rules.egress_destination_port
+        eg_fwr_v4['destination_ip_address'] = \
+            cfg.CONF.default_fwg_rules.egress_destination_ipv4_address
 
-        # 4. Allow any IPv6 packets for egress traffic
+        # 4. Firewall rule for egress IPv6 packets (ALLOW by default)
         eg_fwr_v6 = copy.deepcopy(in_fwr_v6)
         eg_fwr_v6['description'] = 'default egress rule for IPv6'
-        eg_fwr_v6['name'] = 'default egress ipv6 (allow all)'
-        eg_fwr_v6['action'] = fw_const.FWAAS_ALLOW
+        eg_fwr_v6['name'] = 'default egress ipv6'
+        eg_fwr_v6['action'] = cfg.CONF.default_fwg_rules.egress_action
+        eg_fwr_v6['source_port'] = \
+            cfg.CONF.default_fwg_rules.egress_source_port
+        eg_fwr_v6['source_ip_address'] = \
+            cfg.CONF.default_fwg_rules.egress_source_ipv6_address
+        eg_fwr_v6['destination_port'] = \
+            cfg.CONF.default_fwg_rules.egress_destination_port
+        eg_fwr_v6['destination_ip_address'] = \
+            cfg.CONF.default_fwg_rules.egress_destination_ipv6_address
 
         return {
             'in_ipv4': self.create_firewall_rule(context, in_fwr_v4)['id'],

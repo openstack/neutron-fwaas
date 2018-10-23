@@ -20,6 +20,7 @@ import webob.exc
 
 from neutron_lib import constants as nl_constants
 from neutron_lib.exceptions import firewall_v2 as f_exc
+from oslo_config import cfg
 from oslo_utils import uuidutils
 
 from neutron_fwaas.common import fwaas_constants as constants
@@ -831,6 +832,87 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
         self.assertEqual(set([ctx_admin.tenant_id, ctx.tenant_id]),
                          set([r['tenant_id'] for r in res]))
 
+    def test_create_default_firewall_group_from_config(self):
+        group = 'default_fwg_rules'
+
+        cfg.CONF.set_override('shared', True, group)
+        cfg.CONF.set_override('protocol', 'tcp', group)
+        cfg.CONF.set_override('enabled', False, group)
+        cfg.CONF.set_override('ingress_action', 'allow', group)
+        cfg.CONF.set_override('egress_action', 'deny', group)
+        cfg.CONF.set_override('ingress_source_port', '7777', group)
+        cfg.CONF.set_override('egress_source_port', '8888', group)
+        cfg.CONF.set_override('ingress_destination_port', '6666', group)
+        cfg.CONF.set_override('egress_destination_port', '5555', group)
+        cfg.CONF.set_override('ingress_source_ipv4_address', '1.2.3.4', group)
+        cfg.CONF.set_override('ingress_source_ipv6_address', '1:2:3:4:5:6:7:8',
+                              group)
+        cfg.CONF.set_override('egress_source_ipv4_address', '4.3.2.1', group)
+        cfg.CONF.set_override('egress_source_ipv6_address', '8:7:6:5:4:3:2:1',
+                              group)
+        cfg.CONF.set_override('ingress_destination_ipv4_address',
+                              '251.252.253.254', group)
+        cfg.CONF.set_override('ingress_destination_ipv6_address',
+                              '88:99:aa:bb:cc:dd:ee:ff', group)
+        cfg.CONF.set_override('egress_destination_ipv4_address',
+                              '255.254.253.252', group)
+        cfg.CONF.set_override('egress_destination_ipv6_address',
+                              'ff:ee:dd:cc:bb:aa:99:88', group)
+
+        self._build_default_fwg()
+        results = self._list_req('firewall_rules')
+        for res in results:
+            res.pop('id')
+
+        base = {
+            'shared': True,
+            'protocol': 'tcp',
+            'enabled': False,
+            'tenant_id': 'admin-tenant',
+            'project_id': 'admin-tenant',
+            'firewall_policy_id': None
+        }
+
+        ingress_base = dict(base, **{
+            'source_port': '7777',
+            'destination_port': '6666',
+            'action': 'allow'
+        })
+
+        egress_base = dict(base, **{
+            'source_port': '8888',
+            'destination_port': '5555',
+            'action': 'deny'
+        })
+
+        expected = [dict(ingress_base, **{
+            'name': 'default ingress ipv4',
+            'description': 'default ingress rule for IPv4',
+            'ip_version': 4,
+            'source_ip_address': '1.2.3.4',
+            'destination_ip_address': '251.252.253.254',
+        }), dict(ingress_base, **{
+            'name': 'default ingress ipv6',
+            'description': 'default ingress rule for IPv6',
+            'ip_version': 6,
+            'source_ip_address': '1:2:3:4:5:6:7:8',
+            'destination_ip_address': '88:99:aa:bb:cc:dd:ee:ff',
+        }), dict(egress_base, **{
+            'name': 'default egress ipv4',
+            'description': 'default egress rule for IPv4',
+            'ip_version': 4,
+            'source_ip_address': '4.3.2.1',
+            'destination_ip_address': '255.254.253.252',
+        }), dict(egress_base, **{
+            'name': 'default egress ipv6',
+            'description': 'default egress rule for IPv6',
+            'ip_version': 6,
+            'source_ip_address': '8:7:6:5:4:3:2:1',
+            'destination_ip_address': 'ff:ee:dd:cc:bb:aa:99:88',
+        })]
+
+        self.assertEqual(expected, results)
+
     def test_create_default_firewall_group(self):
         self._build_default_fwg()
         result_map = {
@@ -849,13 +931,13 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
                          "ip_version", "name"],
                 "data": [
                     ("default ingress rule for IPv4", "deny", None, True, 4,
-                     "default ingress ipv4 (deny all)"),
+                     "default ingress ipv4"),
                     ("default egress rule for IPv4", "allow", None, True, 4,
-                     "default egress ipv4 (allow all)"),
+                     "default egress ipv4"),
                     ("default ingress rule for IPv6", "deny", None, True, 6,
-                     "default ingress ipv6 (deny all)"),
+                     "default ingress ipv6"),
                     ("default egress rule for IPv6", "allow", None, True, 6,
-                     "default egress ipv6 (allow all)")]
+                     "default egress ipv6")]
             }
         }
 

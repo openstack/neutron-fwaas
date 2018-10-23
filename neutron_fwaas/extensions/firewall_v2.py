@@ -21,8 +21,10 @@ from neutron_lib.api.definitions import firewall_v2
 from neutron_lib.api import extensions
 from neutron_lib.exceptions import firewall_v2 as f_exc
 from neutron_lib.services import base as service_base
+from oslo_config import cfg
 import six
 
+from neutron_fwaas._i18n import _
 from neutron_fwaas.common import fwaas_constants
 
 
@@ -85,6 +87,92 @@ FirewallRuleConflict = moves.moved_class(
 FirewallRuleAlreadyAssociated = moves.moved_class(
     f_exc.FirewallRuleAlreadyAssociated, 'FirewallRuleAlreadyAssociated',
     __name__)
+
+default_fwg_rules_opts = [
+    cfg.StrOpt('ingress_action',
+               default=api_const.FWAAS_DENY,
+               help=_('Firewall group rule action allow or '
+                      'deny or reject for ingress. '
+                      'Default is deny.')),
+    cfg.StrOpt('ingress_source_ipv4_address',
+               default=None,
+               help=_('IPv4 source address for ingress '
+                      '(address or address/netmask). '
+                      'Default is None.')),
+    cfg.StrOpt('ingress_source_ipv6_address',
+               default=None,
+               help=_('IPv6 source address for ingress '
+                      '(address or address/netmask). '
+                      'Default is None.')),
+    cfg.StrOpt('ingress_source_port',
+               default=None,
+               help=_('Source port number or range '
+                      '(min:max) for ingress. '
+                      'Default is None.')),
+    cfg.StrOpt('ingress_destination_ipv4_address',
+               default=None,
+               help=_('IPv4 destination address for ingress '
+                      '(address or address/netmask). '
+                      'Default is None.')),
+    cfg.StrOpt('ingress_destination_ipv6_address',
+               default=None,
+               help=_('IPv6 destination address for ingress '
+                      '(address or address/netmask). '
+                      'Default is deny.')),
+    cfg.StrOpt('ingress_destination_port',
+               default=None,
+               help=_('Destination port number or range '
+                      '(min:max) for ingress. '
+                      'Default is None.')),
+    cfg.StrOpt('egress_action',
+               default=api_const.FWAAS_ALLOW,
+               help=_('Firewall group rule action allow or '
+                      'deny or reject for egress. '
+                      'Default is allow.')),
+    cfg.StrOpt('egress_source_ipv4_address',
+               default=None,
+               help=_('IPv4 source address for egress '
+                      '(address or address/netmask). '
+                      'Default is None.')),
+    cfg.StrOpt('egress_source_ipv6_address',
+               default=None,
+               help=_('IPv6 source address for egress '
+                      '(address or address/netmask). '
+                      'Default is deny.')),
+    cfg.StrOpt('egress_source_port',
+               default=None,
+               help=_('Source port number or range '
+                      '(min:max) for egress. '
+                      'Default is None.')),
+    cfg.StrOpt('egress_destination_ipv4_address',
+               default=None,
+               help=_('IPv4 destination address for egress '
+                      '(address or address/netmask). '
+                      'Default is deny.')),
+    cfg.StrOpt('egress_destination_ipv6_address',
+               default=None,
+               help=_('IPv6 destination address for egress '
+                      '(address or address/netmask). '
+                      'Default is deny.')),
+    cfg.StrOpt('egress_destination_port',
+               default=None,
+               help=_('Destination port number or range '
+                      '(min:max) for egress. '
+                      'Default is None.')),
+    cfg.BoolOpt('shared',
+                default=False,
+                help=_('Firewall group rule shared. '
+                       'Default is False.')),
+    cfg.StrOpt('protocol',
+               default=None,
+               help=_('Network protocols (tcp, udp, ...). '
+                      'Default is None.')),
+    cfg.BoolOpt('enabled',
+                default=True,
+                help=_('Firewall group rule enabled. '
+                       'Default is True.')),
+]
+cfg.CONF.register_opts(default_fwg_rules_opts, 'default_fwg_rules')
 
 
 # TODO(Reedip): Remove the convert_to functionality after bug1706061 is fixed.
