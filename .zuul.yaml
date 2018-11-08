@@ -14,21 +14,17 @@
         - neutron-fwaas-networking-midonet-cross-py35:
             voting: false
         - legacy-neutron-fwaas-v2-dsvm-tempest
-        - legacy-neutron-fwaas-v1-dsvm-tempest
         - legacy-neutron-fwaas-dsvm-functional
         - legacy-grenade-dsvm-neutron-fwaas-multinode:
             voting: false
             irrelevant-files:
               - ^(test-|)requirements.txt$
               - ^setup.cfg$
-        - legacy-neutron-fwaas-v1-dsvm-tempest-multinode:
-            voting: false
         - legacy-neutron-fwaas-v2-dsvm-tempest-multinode:
             voting: false
     gate:
       jobs:
         - legacy-neutron-fwaas-v2-dsvm-tempest
-        - legacy-neutron-fwaas-v1-dsvm-tempest
         - legacy-neutron-fwaas-dsvm-functional
     experimental:
       jobs:

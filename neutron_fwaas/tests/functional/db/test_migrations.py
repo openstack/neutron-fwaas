@@ -22,9 +22,10 @@ from neutron_fwaas.db.models import head
 
 # EXTERNAL_TABLES should contain all names of tables that are not related to
 # current repo.
-EXTERNAL_TABLES = set(external.TABLES) - set(external.FWAAS_TABLES)
+EXTERNAL_TABLES = set(external.TABLES)
 # Model moved to vendor repo
 EXTERNAL_TABLES.update({'cisco_firewall_associations'})
+EXTERNAL_TABLES.update({'firewall_router_associations'})
 
 VERSION_TABLE = 'alembic_version_fwaas'
 

@@ -12,7 +12,6 @@
 
 import itertools
 
-from neutron_fwaas.policies import firewall
 from neutron_fwaas.policies import firewall_group
 from neutron_fwaas.policies import firewall_policy
 from neutron_fwaas.policies import firewall_rule
@@ -20,7 +19,6 @@ from neutron_fwaas.policies import firewall_rule
 
 def list_rules():
     return itertools.chain(
-        firewall.list_rules(),
         firewall_group.list_rules(),
         firewall_policy.list_rules(),
         firewall_rule.list_rules(),

@@ -1,0 +1,7 @@
+---
+prelude: >
+  - FWaaS V1 is being removed from the neutron-fwaas repo. Because FWaaS V2
+    has been available since the Newton release.
+upgrade:
+  - The FWaaS V1 source code will not be available in neutron-fwaas repo from
+    Stein. FWaaS team will provide a migration script to upgrade.

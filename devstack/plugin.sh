@@ -38,14 +38,6 @@ function install_fwaas() {
     fi
 }
 
-function configure_fwaas_v1() {
-    cp $NEUTRON_FWAAS_DIR/etc/neutron_fwaas.conf.sample $NEUTRON_FWAAS_CONF
-    neutron_fwaas_configure_driver fwaas
-    iniset_multiline $Q_L3_CONF_FILE fwaas agent_version v1
-    iniset_multiline $Q_L3_CONF_FILE fwaas conntrack_driver conntrack
-    iniset_multiline $Q_L3_CONF_FILE fwaas driver $FWAAS_DRIVER_V1
-}
-
 function configure_fwaas_v2() {
     # Add conf file
     cp $NEUTRON_FWAAS_DIR/etc/neutron_fwaas.conf.sample $NEUTRON_FWAAS_CONF
@@ -93,13 +85,7 @@ function cleanup_fwaas() {
 }
 
 function neutron_fwaas_configure_common {
-    if is_service_enabled q-fwaas-v1 neutron-fwaas-v1; then
-        neutron_service_plugin_class_add $FWAAS_PLUGIN_V1
-    elif is_service_enabled q-fwaas-v2 neutron-fwaas-v2; then
-        neutron_service_plugin_class_add $FWAAS_PLUGIN_V2
-    else
-        neutron_service_plugin_class_add $FWAAS_PLUGIN_V1
-    fi
+    neutron_service_plugin_class_add $FWAAS_PLUGIN_V2
 }
 
 function neutron_fwaas_configure_driver {
@@ -109,7 +95,7 @@ function neutron_fwaas_configure_driver {
 }
 
 # check for service enabled
-if is_service_enabled q-svc neutron-api && is_service_enabled q-fwaas q-fwaas-v1 q-fwaas-v2 neutron-fwaas-v1 neutron-fwaas-v2; then
+if is_service_enabled q-svc neutron-api && is_service_enabled q-fwaas q-fwaas-v2 neutron-fwaas-v2; then
 
     if [[ "$1" == "stack" && "$2" == "install" ]]; then
         # Perform installation of service source
@@ -120,19 +106,11 @@ if is_service_enabled q-svc neutron-api && is_service_enabled q-fwaas q-fwaas-v1
         # Configure after the other layer 1 and 2 services have been configured
         neutron_fwaas_configure_common
         neutron_fwaas_generate_config_files
-        if is_service_enabled q-fwaas-v1 neutron-fwaas-v1; then
-            echo_summary "Configuring neutron-fwaas for FWaaS v1"
-            configure_fwaas_v1
-        elif is_service_enabled q-fwaas-v2 neutron-fwaas-v2; then
-            echo_summary "Configuring neutron-fwaas for FWaaS v2"
-            configure_fwaas_v2
-            if is_service_enabled q-log neutron-log; then
-                echo_summary "Configuring FwaaS V2 packet log for l3 extension"
-                configure_l3_log_fwaas_v2
-            fi
-        else
-            echo_summary "Configuring neutron-fwaas for FWaaS v1"
-            configure_fwaas_v1
+        echo_summary "Configuring neutron-fwaas for FWaaS v2"
+        configure_fwaas_v2
+        if is_service_enabled q-log neutron-log; then
+            echo_summary "Configuring FwaaS V2 packet log for l3 extension"
+            configure_l3_log_fwaas_v2
         fi
 
     elif [[ "$1" == "stack" && "$2" == "extra" ]]; then

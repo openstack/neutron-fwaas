@@ -17,7 +17,6 @@ from tempest import config
 from tempest.lib.common import ssh
 from tempest.lib import exceptions as lib_exc
 
-from neutron_fwaas.tests.tempest_plugin.tests import fwaas_client
 from neutron_fwaas.tests.tempest_plugin.tests import fwaas_v2_client
 from neutron_fwaas.tests.tempest_plugin.tests.scenario import manager
 
@@ -62,12 +61,6 @@ class FWaaSScenarioTestBase(object):
             except lib_exc.SSHTimeout:
                 if should_connect:
                     raise
-
-
-class FWaaSScenarioTest(fwaas_client.FWaaSClientMixin,
-                        FWaaSScenarioTestBase,
-                        manager.NetworkScenarioTest):
-    pass
 
 
 class FWaaSScenarioTest_V2(fwaas_v2_client.FWaaSClientMixin,

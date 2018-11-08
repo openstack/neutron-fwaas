@@ -12,8 +12,6 @@
 
 from neutron_lib.db import model_base
 
-from neutron_fwaas.db.firewall import firewall_db  # noqa
-from neutron_fwaas.db.firewall import firewall_router_insertion_db  # noqa
 from neutron_fwaas.db.firewall.v2 import firewall_db_v2  # noqa
 
 
