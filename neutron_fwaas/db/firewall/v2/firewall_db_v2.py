@@ -17,13 +17,13 @@ import copy
 
 import netaddr
 
-from neutron.db import _model_query as model_query
 from neutron.db import common_db_mixin
 from neutron_lib.api.definitions import constants as fw_const
 from neutron_lib import constants as nl_constants
 from neutron_lib.db import api as db_api
 from neutron_lib.db import constants as db_constants
 from neutron_lib.db import model_base
+from neutron_lib.db import model_query
 from neutron_lib import exceptions
 from neutron_lib.exceptions import firewall_v2 as f_exc
 from oslo_db import exception as db_exc
@@ -838,7 +838,8 @@ class FirewallPluginDb(common_db_mixin.CommonDbMixin):
 
     def _get_default_fwg_id(self, context, tenant_id):
         """Returns an id of default firewall group for given tenant or None"""
-        default_fwg = self._model_query(context, FirewallGroup).filter_by(
+        default_fwg = model_query.query_with_hooks(
+            context, FirewallGroup).filter_by(
             project_id=tenant_id, name=const.DEFAULT_FWG).first()
         if default_fwg:
             return default_fwg.id
@@ -846,7 +847,8 @@ class FirewallPluginDb(common_db_mixin.CommonDbMixin):
 
     def get_fwg_attached_to_port(self, context, port_id):
         """Return a firewall group ID that is attached to a given port"""
-        fwg_port = self._model_query(context, FirewallGroupPortAssociation).\
+        fwg_port = model_query.query_with_hooks(
+            context, FirewallGroupPortAssociation).\
             filter_by(port_id=port_id).first()
         if fwg_port:
             return fwg_port.firewall_group_id
