@@ -27,7 +27,7 @@ FAKE_PROJECT_ID = 'fake_project_id'
 FAKE_PORT_ID = 'fake_port_id'
 FAKE_FWG_ID = 'fake_fwg_id'
 FAKE_LOG_ID = 'fake_log_id'
-FAKE_RESOUCE_TYPE = 'firewall_group'
+FAKE_RESOURCE_TYPE = 'firewall_group'
 
 FAKE_RATE = 100
 FAKE_BURST = 25
@@ -99,7 +99,7 @@ class BaseIptablesLogTestCase(base.BaseTestCase):
         self.log_driver.start_logging(self.context, **fake_kwargs)
         self.log_driver._create_firewall_group_log.\
             assert_called_once_with(self.context,
-                                    FAKE_RESOUCE_TYPE,
+                                    FAKE_RESOURCE_TYPE,
                                     ports=fake_router_info.internal_ports,
                                     router_id=fake_router_info.router_id)
 
@@ -111,7 +111,7 @@ class BaseIptablesLogTestCase(base.BaseTestCase):
         self.log_driver.start_logging(self.context, **fake_kwargs)
         self.log_driver._create_firewall_group_log. \
             assert_called_once_with(self.context,
-                                    FAKE_RESOUCE_TYPE,
+                                    FAKE_RESOURCE_TYPE,
                                     **fake_kwargs)
 
     def test_stop_logging(self):
