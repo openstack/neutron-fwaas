@@ -46,6 +46,12 @@ class FirewallDriver(object):
     def _core_plugin(self):
         return directory.get_plugin()
 
+    def is_supported_l2_port(self, port):
+        return False
+
+    def is_supported_l3_port(self, port):
+        return False
+
     # Firewall Group
     @abc.abstractmethod
     def create_firewall_group(self, context, firewall_group):

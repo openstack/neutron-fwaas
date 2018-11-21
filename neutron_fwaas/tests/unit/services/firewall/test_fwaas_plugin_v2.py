@@ -31,6 +31,8 @@ from oslo_utils import importutils
 from neutron_fwaas.common import fwaas_constants
 from neutron_fwaas import extensions
 from neutron_fwaas.services.firewall import fwaas_plugin_v2
+from neutron_fwaas.services.firewall.service_drivers.driver_api import \
+    FirewallDriverDB
 from neutron_fwaas.tests import base
 
 
@@ -39,6 +41,14 @@ def http_client_error(req, res):
                                                      req.body, res.body)
     return webob.exc.HTTPClientError(code=res.status_int,
                                      explanation=explanation)
+
+
+class DummyDriverDB(FirewallDriverDB):
+    def is_supported_l2_port(self, port):
+        return True
+
+    def is_supported_l3_port(self, port):
+        return True
 
 
 class FirewallPluginV2TestCase(base.NeutronDbPluginV2TestCase):
@@ -64,8 +74,8 @@ class FirewallPluginV2TestCase(base.NeutronDbPluginV2TestCase):
               extra_service_plugins=None, extra_extension_paths=None):
         provider = fwaas_constants.FIREWALL_V2
         if not service_provider:
-            provider += (':dummy:neutron_fwaas.services.firewall.'
-                         'service_drivers.driver_api.FirewallDriverDB:default')
+            provider += (':dummy:neutron_fwaas.tests.unit.services.firewall.'
+                         'test_fwaas_plugin_v2.DummyDriverDB:default')
         else:
             provider += ':test:' + service_provider + ':default'
 

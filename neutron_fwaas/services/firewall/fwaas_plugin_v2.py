@@ -66,6 +66,7 @@ class FirewallPluginV2(Firewallv2PluginBase):
                         "although running multiple drivers in parallel is "
                         "not yet supported")
 
+        self.driver_name = default_provider
         self.driver = drivers[default_provider]
 
         # start rpc listener if driver required
@@ -151,7 +152,8 @@ class FirewallPluginV2(Firewallv2PluginBase):
         """Validate firewall group associated ports
 
         Check if the firewall group associated ports have the same project
-        owner and is router interface type or a compute layer 2.
+        owner and is router interface type or a compute layer 2 and supported
+        by the firewall driver
         :param context: neutron context
         :param tenant_id: firewall group project ID
         :param fwg_ports: firewall group associated ports
@@ -164,19 +166,20 @@ class FirewallPluginV2(Firewallv2PluginBase):
                 raise f_exc.FirewallGroupPortInvalidProject(
                     port_id=port_id, project_id=port['tenant_id'])
             device_owner = port.get('device_owner', '')
-            if (device_owner not in nl_constants.ROUTER_INTERFACE_OWNERS and
-                not device_owner.startswith(
-                    nl_constants.DEVICE_OWNER_COMPUTE_PREFIX)):
+            if device_owner in nl_constants.ROUTER_INTERFACE_OWNERS:
+                if not self.driver.is_supported_l3_port(port):
+                    raise exceptions.FirewallGroupPortNotSupported(
+                        driver_name=self.driver_name, port_id=port_id)
+            elif device_owner.startswith(
+                    nl_constants.DEVICE_OWNER_COMPUTE_PREFIX):
+                if not self._is_supported_l2_port(context, port_id):
+                    raise exceptions.FirewallGroupPortNotSupported(
+                        driver_name=self.driver_name, port_id=port_id)
+            else:
                 raise f_exc.FirewallGroupPortInvalid(port_id=port_id)
-            if (device_owner.startswith(
-                    nl_constants.DEVICE_OWNER_COMPUTE_PREFIX) and not
-                self._is_supported_by_fw_l2_driver(context, port_id)):
-                raise exceptions.FirewallGroupPortNotSupported(port_id=port_id)
 
-    # TODO(ethuleau): move that check in the driver. Each driver can have
-    #                 different support
-    def _is_supported_by_fw_l2_driver(self, context, port_id):
-        """Whether this port is supported by firewall l2 driver"""
+    def _is_supported_l2_port(self, context, port_id):
+        """Whether this l2 port is supported"""
 
         # Re-fetch to get up-to-date data from db
         port = self._core_plugin.get_port(context, id=port_id)
@@ -186,18 +189,7 @@ class FirewallPluginV2(Firewallv2PluginBase):
                                      pb_def.VIF_TYPE_BINDING_FAILED]:
             return False
 
-        if not port['port_security_enabled']:
-            return True
-
-        if port[pb_def.VIF_TYPE] == pb_def.VIF_TYPE_OVS:
-            # TODO(annp): remove these lines after we fully support for hybrid
-            # port
-            if not port[pb_def.VIF_DETAILS][pb_def.OVS_HYBRID_PLUG]:
-                return True
-            LOG.warning("Doesn't support hybrid port at the moment")
-        else:
-            LOG.warning("Doesn't support vif type %s", port[pb_def.VIF_TYPE])
-        return False
+        return self.driver.is_supported_l2_port(port)
 
     def _validate_if_firewall_group_on_ports(self, context, firewall_group,
                                              id=None):
@@ -288,8 +280,8 @@ class FirewallPluginV2(Firewallv2PluginBase):
 
         context = kwargs['context']
         port_id = updated_port['id']
-        # Check port is supported by firewall l2 driver or not
-        if not self._is_supported_by_fw_l2_driver(context, port_id):
+        # Check port is supported by firewall driver
+        if not self._is_supported_l2_port(context, port_id):
             return
 
         project_id = updated_port['project_id']

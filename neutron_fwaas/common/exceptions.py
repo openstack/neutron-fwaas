@@ -20,5 +20,5 @@ from neutron_fwaas._i18n import _
 
 # TODO(annp): migrate to neutron-lib after Queen release
 class FirewallGroupPortNotSupported(n_exc.Conflict):
-    message = _("Port %(port_id)s is not supported by firewall L2 driver. "
-                "This may happen due to incompatible driver combination.")
+    message = _("Port %(port_id)s is not supported by firewall driver "
+                "'%(driver_name)s'.")

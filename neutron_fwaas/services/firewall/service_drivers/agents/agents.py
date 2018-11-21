@@ -166,6 +166,23 @@ class FirewallAgentDriver(driver_api.FirewallDriverDB,
         super(FirewallAgentDriver, self).__init__(service_plugin)
         self.agent_rpc = FirewallAgentApi(constants.FW_AGENT, cfg.CONF.host)
 
+    def is_supported_l2_port(self, port):
+        if port[pb_def.VIF_TYPE] == pb_def.VIF_TYPE_OVS:
+            if not port['port_security_enabled']:
+                return True
+
+            # TODO(annp): remove these lines after we fully support for hybrid
+            # port
+            if not port[pb_def.VIF_DETAILS][pb_def.OVS_HYBRID_PLUG]:
+                return True
+            LOG.warning("Doesn't support hybrid port at the moment")
+        else:
+            LOG.warning("Doesn't support vif type %s", port[pb_def.VIF_TYPE])
+        return False
+
+    def is_supported_l3_port(self, port):
+        return True
+
     def start_rpc_listener(self):
         self.endpoints = [FirewallAgentCallbacks(self.firewall_db)]
         self.rpc_connection = neutron_rpc.Connection()
