@@ -244,7 +244,7 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
             if not rule['enabled']:
                 continue
             iptbl_rule = self._convert_fwaas_to_iptables_rule(rule)
-            if rule['ip_version'] == 4:
+            if rule['ip_version'] == constants.IP_VERSION_4:
                 ver = IPV4
                 table = ipt_mgr.ipv4['filter']
             else:
@@ -258,7 +258,7 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
             if not rule['enabled']:
                 continue
             iptbl_rule = self._convert_fwaas_to_iptables_rule(rule)
-            if rule['ip_version'] == 4:
+            if rule['ip_version'] == constants.IP_VERSION_4:
                 ver = IPV4
                 table = ipt_mgr.ipv4['filter']
             else:
@@ -350,39 +350,45 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
 
     def _add_accepted_chain_v4v6(self, ipt_mgr):
         v4rules_in_chain = \
-            ipt_mgr.get_chain("filter", ACCEPTED_CHAIN, ip_version=4)
+            ipt_mgr.get_chain("filter", ACCEPTED_CHAIN,
+                              ip_version=constants.IP_VERSION_4)
         if not v4rules_in_chain:
             ipt_mgr.ipv4['filter'].add_chain(ACCEPTED_CHAIN)
             ipt_mgr.ipv4['filter'].add_rule(ACCEPTED_CHAIN, '-j ACCEPT')
 
         v6rules_in_chain = \
-            ipt_mgr.get_chain("filter", ACCEPTED_CHAIN, ip_version=6)
+            ipt_mgr.get_chain("filter", ACCEPTED_CHAIN,
+                              ip_version=constants.IP_VERSION_6)
         if not v6rules_in_chain:
             ipt_mgr.ipv6['filter'].add_chain(ACCEPTED_CHAIN)
             ipt_mgr.ipv6['filter'].add_rule(ACCEPTED_CHAIN, '-j ACCEPT')
 
     def _add_dropped_chain_v4v6(self, ipt_mgr):
         v4rules_in_chain = \
-            ipt_mgr.get_chain("filter", DROPPED_CHAIN, ip_version=4)
+            ipt_mgr.get_chain("filter", DROPPED_CHAIN,
+                              ip_version=constants.IP_VERSION_4)
         if not v4rules_in_chain:
             ipt_mgr.ipv4['filter'].add_chain(DROPPED_CHAIN)
             ipt_mgr.ipv4['filter'].add_rule(DROPPED_CHAIN, '-j DROP')
 
         v6rules_in_chain = \
-            ipt_mgr.get_chain("filter", DROPPED_CHAIN, ip_version=6)
+            ipt_mgr.get_chain("filter", DROPPED_CHAIN,
+                              ip_version=constants.IP_VERSION_6)
         if not v6rules_in_chain:
             ipt_mgr.ipv6['filter'].add_chain(DROPPED_CHAIN)
             ipt_mgr.ipv6['filter'].add_rule(DROPPED_CHAIN, '-j DROP')
 
     def _add_rejected_chain_v4v6(self, ipt_mgr):
         v4rules_in_chain = \
-            ipt_mgr.get_chain("filter", REJECTED_CHAIN, ip_version=4)
+            ipt_mgr.get_chain("filter", REJECTED_CHAIN,
+                              ip_version=constants.IP_VERSION_4)
         if not v4rules_in_chain:
             ipt_mgr.ipv4['filter'].add_chain(REJECTED_CHAIN)
             ipt_mgr.ipv4['filter'].add_rule(REJECTED_CHAIN, '-j REJECT')
 
         v6rules_in_chain = \
-            ipt_mgr.get_chain("filter", REJECTED_CHAIN, ip_version=6)
+            ipt_mgr.get_chain("filter", REJECTED_CHAIN,
+                              ip_version=constants.IP_VERSION_6)
         if not v6rules_in_chain:
             ipt_mgr.ipv6['filter'].add_chain(REJECTED_CHAIN)
             ipt_mgr.ipv6['filter'].add_rule(REJECTED_CHAIN, '-j REJECT')
@@ -457,7 +463,8 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
         # and readding rules.
         args = []
 
-        args += self._protocol_arg(rule.get('protocol'))
+        args += self._protocol_arg(rule.get('protocol'),
+                                   rule.get('ip_version'))
 
         args += self._ip_prefix_arg('s', rule.get('source_ip_address'))
         args += self._ip_prefix_arg('d', rule.get('destination_ip_address'))
@@ -496,9 +503,13 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
 
         return args
 
-    def _protocol_arg(self, protocol):
+    def _protocol_arg(self, protocol, ip_version):
         if not protocol:
             return []
+
+        if (protocol == constants.PROTO_NAME_ICMP and
+            ip_version == constants.IP_VERSION_6):
+            protocol = constants.PROTO_NAME_IPV6_ICMP
 
         args = ['-p', protocol]
 
@@ -508,15 +519,18 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
         if not protocol:
             return []
 
-        protocol_modules = {'udp': 'udp', 'tcp': 'tcp',
-                           'icmp': 'icmp', 'ipv6-icmp': 'icmp6'}
+        protocol_modules = {constants.PROTO_NAME_UDP: 'udp',
+                            constants.PROTO_NAME_TCP: 'tcp',
+                            constants.PROTO_NAME_ICMP: 'icmp',
+                            constants.PROTO_NAME_IPV6_ICMP: 'icmp6'}
         # iptables adds '-m protocol' when the port number is specified
         args = ['-m', protocol_modules[protocol]]
 
         return args
 
     def _port_arg(self, direction, protocol, port):
-        if protocol not in ['udp', 'tcp'] or port is None:
+        if protocol not in [constants.PROTO_NAME_UDP,
+                            constants.PROTO_NAME_TCP] or port is None:
             return []
 
         args = ['--%s' % direction, '%s' % port]
