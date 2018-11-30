@@ -29,9 +29,7 @@ from neutron_fwaas.tests.unit.services.firewall import test_fwaas_plugin_v2
 class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
 
     def setUp(self):
-        provider = ('neutron_fwaas.services.firewall.service_drivers.'
-                    'driver_api.FirewallDriverDB')
-        super(TestFirewallDBPluginV2, self).setUp(service_provider=provider)
+        super(TestFirewallDBPluginV2, self).setUp()
         self.db = self.plugin.driver.firewall_db
 
     def test_get_policy_ordered_rules(self):
@@ -1614,7 +1612,7 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
             'device_owner': 'compute:nova',
             'binding:vif_type': 'ovs',
         }
-        self.plugin._is_supported_by_fw_l2_driver = mock.Mock(
+        self.plugin._is_supported_l2_port = mock.Mock(
             return_value=True)
         with self.port(**port_args) as port1, self.port(**port_args) as port2:
             port1_id = port1['port']['id']
