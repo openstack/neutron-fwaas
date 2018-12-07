@@ -17,11 +17,11 @@
 import testscenarios
 
 from oslo_log import log as logging
+from tempest.common import utils
 from tempest import config
 from tempest.lib.common.utils import test_utils
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
-from tempest import test
 
 from neutron_fwaas.tests.tempest_plugin.tests.scenario import base
 
@@ -46,7 +46,7 @@ class TestFWaaS_v2(base.FWaaSScenarioTest_V2):
         # if self.router_insertion:
         #    required_exts.append('fwaasrouterinsertion')
         for ext in required_exts:
-            if not test.is_extension_enabled(ext, 'network'):
+            if not utils.is_extension_enabled(ext, 'network'):
                 msg = "%s Extension not enabled." % ext
                 raise self.skipException(msg)
         LOG.debug("FWaaSScenarioTest Setup done.")
