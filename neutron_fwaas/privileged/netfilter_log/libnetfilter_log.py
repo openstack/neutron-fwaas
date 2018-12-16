@@ -22,15 +22,15 @@ import cffi
 import eventlet
 from eventlet.green import zmq
 from neutron_lib.utils import runtime
+from os_ken.lib import addrconv
+from os_ken.lib.packet import arp
+from os_ken.lib.packet import ether_types
+from os_ken.lib.packet import ethernet
+from os_ken.lib.packet import ipv4
+from os_ken.lib.packet import ipv6
 from oslo_log import log as logging
 from oslo_serialization import jsonutils
 from oslo_utils import excutils
-from ryu.lib import addrconv
-from ryu.lib.packet import arp
-from ryu.lib.packet import ether_types
-from ryu.lib.packet import ethernet
-from ryu.lib.packet import ipv4
-from ryu.lib.packet import ipv6
 
 from neutron_fwaas._i18n import _
 from neutron_fwaas import privileged
@@ -131,7 +131,7 @@ def _payload(nfa):
 
 
 def decode(nfa):
-    """This function will analysis nflog packet by using ryu packet library."""
+    """This function analyses nflog packet by using os-ken packet library."""
 
     prefix = ffi.string(libnflog.nflog_get_prefix(nfa))
     packet_hdr = libnflog.nflog_get_msg_packet_hdr(nfa)
