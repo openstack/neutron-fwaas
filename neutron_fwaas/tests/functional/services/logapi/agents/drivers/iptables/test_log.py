@@ -239,8 +239,8 @@ class FWLoggingTestBase(framework.L3AgentTestFramework):
             with mock.patch.object(self.resource_rpc,
                                    'get_sg_log_info_for_port',
                                    return_value=log_info):
-                    self.log_driver.start_logging(self.context,
-                                                  router_info=router_info)
+                self.log_driver.start_logging(self.context,
+                                              router_info=router_info)
         elif log_resources:
             with mock.patch.object(self.resource_rpc,
                                    'get_sg_log_info_for_log_resources',

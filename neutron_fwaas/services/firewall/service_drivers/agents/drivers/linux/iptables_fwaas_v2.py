@@ -473,7 +473,7 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
         # or destination port number is specified
         if (rule.get('source_port') is not None or
             rule.get('destination_port') is not None):
-                args += self._match_arg(rule.get('protocol'))
+            args += self._match_arg(rule.get('protocol'))
 
         args += self._port_arg('sport',
                                rule.get('protocol'),

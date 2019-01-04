@@ -102,6 +102,7 @@ def convert_to_string(value):
         return str(value)
     return None
 
+
 firewall.RESOURCE_ATTRIBUTE_MAP[api_const.FIREWALL_RULES][
     'source_port']['convert_to'] = convert_to_string
 firewall.RESOURCE_ATTRIBUTE_MAP[api_const.FIREWALL_RULES][
