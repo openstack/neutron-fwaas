@@ -13,24 +13,27 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import os
-import re
+import pyroute2
 
 from neutron_fwaas import privileged
 from neutron_fwaas.privileged import utils
 
 
-def get_my_netns_inode():
-    link = os.readlink(utils.PROCESS_NETNS)
+def _get_ifname(link):
+    attr_dict = dict(link['attrs'])
+    return attr_dict['IFLA_IFNAME']
 
-    # NOTE(cby): link respects the format "net:[<inode>]"
-    return int(re.match('net:\[(\d+)\]', link).group(1))
+
+def list_interface_names():
+    iproute = pyroute2.IPRoute()
+    result = iproute.get_links()
+    return [_get_ifname(link) for link in result]
 
 
 @privileged.default.entrypoint
-def get_in_namespace_netns_inodes(namespace):
-    before = get_my_netns_inode()
+def get_in_namespace_interfaces(namespace):
+    before = list_interface_names()
     with utils.in_namespace(namespace):
-        inside = get_my_netns_inode()
-    after = get_my_netns_inode()
+        inside = list_interface_names()
+    after = list_interface_names()
     return before, inside, after

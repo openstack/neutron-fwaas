@@ -13,30 +13,41 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import os
-import unittest
-
+from neutron.agent.linux import ip_lib
+from neutron.common import utils as neutron_utils
 from neutron.tests.common import net_helpers
 from neutron.tests.functional import base
 
 from neutron_fwaas.privileged.tests.functional import utils
 
 
-def get_netns_inode(namespace):
-    return os.stat('/var/run/netns/%s' % namespace).st_ino
-
-
 class InNamespaceTest(base.BaseSudoTestCase):
 
-    @unittest.skip('Temporarily skipped until a fix against oslo.privsep 1.31')
+    def setUp(self):
+        super(InNamespaceTest, self).setUp()
+        self.namespace = self.useFixture(net_helpers.NamespaceFixture()).name
+
+        ip = ip_lib.IPWrapper()
+        root_dev_name = neutron_utils.get_rand_device_name()
+        netns_dev_name = neutron_utils.get_rand_device_name()
+        self.root_dev, self.netns_dev = ip.add_veth(
+            root_dev_name, netns_dev_name, namespace2=self.namespace)
+        self.addCleanup(self.root_dev.link.delete)
+
     def test_in_namespace(self):
-        namespace = self.useFixture(net_helpers.NamespaceFixture()).name
-        expected = get_netns_inode(namespace)
-        before, observed, after = utils.get_in_namespace_netns_inodes(
-            namespace)
-        self.assertEqual(expected, observed)
-        self.assertEqual(before, after)
+        before, observed, after = utils.get_in_namespace_interfaces(
+            self.namespace)
+        expected = ['lo', self.netns_dev.name]
+        self.assertItemsEqual(expected, observed)
+        # Other tests can create/delete devices, so we just checks
+        # self.root_dev_name is included in the root namespace result.
+        self.assertIn(self.root_dev.name, before)
+        self.assertIn(self.root_dev.name, after)
 
     def test_in_no_namespace(self):
-        inodes = utils.get_in_namespace_netns_inodes(None)
-        self.assertEqual(1, len(set(inodes)))
+        before, observed, after = utils.get_in_namespace_interfaces(None)
+        # Other tests can create/delete devices, so we just checks
+        # self.root_dev_name is included in the root namespace result.
+        self.assertIn(self.root_dev.name, observed)
+        self.assertIn(self.root_dev.name, before)
+        self.assertIn(self.root_dev.name, after)
