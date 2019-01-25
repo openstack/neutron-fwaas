@@ -21,6 +21,7 @@ import webob.exc
 
 from neutron.api import extensions as api_ext
 from neutron.db import servicetype_db as sdb
+from neutron.tests.unit.db import test_db_base_plugin_v2 as test_db_plugin
 from neutron_lib.api.definitions import firewall_v2
 from neutron_lib import constants as nl_constants
 from neutron_lib import context
@@ -33,7 +34,6 @@ from neutron_fwaas import extensions
 from neutron_fwaas.services.firewall import fwaas_plugin_v2
 from neutron_fwaas.services.firewall.service_drivers.driver_api import \
     FirewallDriverDB
-from neutron_fwaas.tests import base
 
 
 def http_client_error(req, res):
@@ -51,7 +51,7 @@ class DummyDriverDB(FirewallDriverDB):
         return True
 
 
-class FirewallPluginV2TestCase(base.NeutronDbPluginV2TestCase):
+class FirewallPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
     DESCRIPTION = 'default description'
     PROTOCOL = 'tcp'
     IP_VERSION = 4

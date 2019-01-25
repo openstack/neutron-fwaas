@@ -1,6 +1,3 @@
-# Copyright 2014 OpenStack Foundation.
-# All Rights Reserved.
-#
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
 #    a copy of the License at
@@ -12,10 +9,19 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-#
 
-from neutron.tests import base as n_base
+import itertools
+
+from neutron_fwaas.policies import firewall
+from neutron_fwaas.policies import firewall_group
+from neutron_fwaas.policies import firewall_policy
+from neutron_fwaas.policies import firewall_rule
 
 
-class BaseTestCase(n_base.BaseTestCase):
-    pass
+def list_rules():
+    return itertools.chain(
+        firewall.list_rules(),
+        firewall_group.list_rules(),
+        firewall_policy.list_rules(),
+        firewall_rule.list_rules(),
+    )
