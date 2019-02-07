@@ -697,6 +697,22 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
             res = req.get_response(self.ext_api)
             self.assertEqual(400, res.status_int)
 
+    def test_update_firewall_rule_protocol_icmp(self):
+        with self.firewall_rule(source_port=10000) as fwr:
+            data = {'firewall_rule': {'protocol': 'icmp'}}
+            req = self.new_update_request('firewall_rules', data,
+                                          fwr['firewall_rule']['id'])
+            res = req.get_response(self.ext_api)
+            self.assertEqual(webob.exc.HTTPBadRequest.code, res.status_int)
+
+    def test_update_firewall_rule_protocol_none(self):
+        with self.firewall_rule(source_port=10000) as fwr:
+            data = {'firewall_rule': {'protocol': None}}
+            req = self.new_update_request('firewall_rules', data,
+                                          fwr['firewall_rule']['id'])
+            res = req.get_response(self.ext_api)
+            self.assertEqual(webob.exc.HTTPBadRequest.code, res.status_int)
+
     def test_update_firewall_rule_with_policy_associated(self):
         name = "new_firewall_rule1"
         attrs = self._get_test_firewall_rule_attrs(name)
