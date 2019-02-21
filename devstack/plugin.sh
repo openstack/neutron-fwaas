@@ -46,15 +46,21 @@ function configure_fwaas_v2() {
     iniadd $NEUTRON_FWAAS_CONF service_providers service_provider $NEUTRON_FWAAS_SERVICE_PROVIDERV2
 
     neutron_fwaas_configure_driver fwaas_v2
-    iniset_multiline $Q_L3_CONF_FILE fwaas agent_version v2
-    iniset_multiline $Q_L3_CONF_FILE fwaas driver $FWAAS_DRIVER_V2
-    #TODO(hoangcx) we can remove the slashes below once neutron-legacy has gone
-    iniset /$NEUTRON_CORE_PLUGIN_CONF fwaas firewall_l2_driver $FW_L2_DRIVER
-    iniset /$NEUTRON_CORE_PLUGIN_CONF agent extensions fwaas_v2
+    if is_service_enabled q-l3; then
+        iniset_multiline $Q_L3_CONF_FILE fwaas agent_version v2
+        iniset_multiline $Q_L3_CONF_FILE fwaas driver $FWAAS_DRIVER_V2
+    fi
+    if is_service_enabled q-agt; then
+        # TODO(hoangcx) we can remove the slashes below once neutron-legacy has gone
+        iniset /$NEUTRON_CORE_PLUGIN_CONF fwaas firewall_l2_driver $FW_L2_DRIVER
+        iniset /$NEUTRON_CORE_PLUGIN_CONF agent extensions fwaas_v2
+    fi
 }
 
 function configure_l3_log_fwaas_v2(){
-    iniadd $Q_L3_CONF_FILE agent extensions fwaas_v2_log
+    if is_service_enabled q-l3; then
+        iniadd $Q_L3_CONF_FILE agent extensions fwaas_v2_log
+    fi
 }
 
 function neutron_fwaas_generate_config_files {
@@ -89,9 +95,11 @@ function neutron_fwaas_configure_common {
 }
 
 function neutron_fwaas_configure_driver {
-    plugin_agent_add_l3_agent_extension $1
-    configure_l3_agent
-    iniset_multiline $Q_L3_CONF_FILE fwaas enabled True
+    if is_service_enabled q-l3; then
+        plugin_agent_add_l3_agent_extension $1
+        configure_l3_agent
+        iniset_multiline $Q_L3_CONF_FILE fwaas enabled True
+    fi
 }
 
 # check for service enabled
