@@ -647,7 +647,7 @@ class FirewallPluginDb(common_db_mixin.CommonDbMixin):
             for entry in rules_in_db:
                 fwr_db = self._get_firewall_rule(context,
                                                  entry.firewall_rule_id)
-                if not fwp_db['shared']:
+                if not fwr_db['shared']:
                     raise f_exc.FirewallPolicySharingConflict(
                         firewall_rule_id=fwr_db['id'],
                         firewall_policy_id=fwp_db['id'])

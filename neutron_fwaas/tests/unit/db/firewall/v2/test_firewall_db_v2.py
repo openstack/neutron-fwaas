@@ -282,17 +282,29 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
                 res = req.get_response(self.ext_api)
                 self.assertEqual(webob.exc.HTTPNotFound.code, res.status_int)
 
-    def test_update_firewall_policy_with_shared_attr_exist_unshare_rule(self):
-        with self.firewall_rule(name='fwr1', shared=False) as fr:
-            fw_rule_ids = [fr['firewall_rule']['id']]
+    def test_update_firewall_policy_with_shared_attr_exist_unshared_rule(self):
+        with self.firewall_rule(name='fwr1', shared=False) as fwr:
+            fwr_ids = [fwr['firewall_rule']['id']]
             with self.firewall_policy(shared=False,
-                                      firewall_rules=fw_rule_ids) as fwp:
-                # update policy with shared attr
+                                      firewall_rules=fwr_ids) as fwp:
+                # Update policy with shared attr
                 data = {'firewall_policy': {'shared': self.SHARED}}
                 req = self.new_update_request('firewall_policies', data,
                                               fwp['firewall_policy']['id'])
                 res = req.get_response(self.ext_api)
                 self.assertEqual(webob.exc.HTTPConflict.code, res.status_int)
+
+    def test_update_firewall_policy_with_shared_and_shared_rules(self):
+        with self.firewall_rule(name='fwr1', shared=self.SHARED) as fwr:
+            fwr_ids = [fwr['firewall_rule']['id']]
+            with self.firewall_policy(shared=False,
+                                      firewall_rules=fwr_ids) as fwp:
+                # Update policy with shared attr
+                data = {'firewall_policy': {'shared': self.SHARED}}
+                req = self.new_update_request('firewall_policies', data,
+                                              fwp['firewall_policy']['id'])
+                res = req.get_response(self.ext_api)
+                self.assertEqual(webob.exc.HTTPOk.code, res.status_int)
 
     def test_update_firewall_policy_assoc_with_other_tenant_firewall(self):
         with self.firewall_policy(shared=self.SHARED,
