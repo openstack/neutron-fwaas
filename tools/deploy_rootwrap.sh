@@ -57,6 +57,8 @@ sed -i "s:^\(exec_dirs=.*\)$:\1,${target_bin_path}:" ${dst_conf}
 if [[ "$OS_SUDO_TESTING" = "1" ]]; then
     sed -i 's/use_syslog=False/use_syslog=True/g' ${dst_conf}
     sed -i 's/syslog_log_level=ERROR/syslog_log_level=DEBUG/g' ${dst_conf}
+    cp -p ${neutron_path}/neutron/tests/contrib/testing.filters \
+        ${dst_rootwrap_path}/
     cp -p ${fwaas_path}/neutron_fwaas/tests/contrib/functional-testing.filters \
         ${dst_rootwrap_path}/
 fi

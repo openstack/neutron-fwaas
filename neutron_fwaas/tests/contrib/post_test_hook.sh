@@ -26,7 +26,7 @@ function dsvm_functional_prep_func {
     :
 }
 
-if [[ "$venv" == dsvm-functional* ]] || [[ "$venv" == dsvm-fullstack* ]]
+if [[ "$venv" == dsvm-functional* ]]
 then
     owner=stack
     sudo_env=

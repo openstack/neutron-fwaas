@@ -26,36 +26,10 @@
         - legacy-neutron-fwaas-dsvm-functional
     experimental:
       jobs:
-        - legacy-neutron-fwaas-dsvm-fullstack
+        - neutron-fwaas-fullstack
 
 - job:
     name: neutron-fwaas-fullstack
-    parent: legacy-dsvm-base
-    run: playbooks/neutron-fwaas-fullstack/run.yaml
-    post-run: playbooks/neutron-fwaas-fullstack/post.yaml
-    timeout: 7800
-    required-projects:
-      - openstack/devstack-gate
-      - openstack/neutron
-    irrelevant-files:
-      - ^.*\.rst$
-      - ^doc/.*$
-      - ^neutron/locale/.*$
-      - ^releasenotes/.*$
-
-
-- job:
-    name: neutron-fwaas-fullstack-python35
-    parent: legacy-dsvm-base
-    run: playbooks/legacy/neutron-fullstack-python35/run.yaml
-    post-run: playbooks/legacy/neutron-fullstack-python35/post.yaml
-    timeout: 7800
-    required-projects:
-      - openstack/devstack-gate
-      - openstack/neutron
-    irrelevant-files:
-      - ^.*\.rst$
-      - ^doc/.*$
-      - ^neutron/locale/.*$
-      - ^releasenotes/.*$
-    voting: false
+    parent: neutron-fullstack
+    vars:
+      project_name: neutron-fwaas
