@@ -32,6 +32,7 @@ subunit.log
 !/.pylintrc
 !/.testr.conf
 !/.zuul.yaml
+!/.stestr.conf
 
 # Files created by releasenotes build
 releasenotes/build
