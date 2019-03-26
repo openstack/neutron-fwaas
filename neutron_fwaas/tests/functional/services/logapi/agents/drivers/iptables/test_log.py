@@ -18,9 +18,9 @@ import time
 import mock
 from neutron.agent.l3 import l3_agent_extension_api as l3_ext_api
 from neutron.agent.linux import utils as linux_utils
-from neutron.common import constants as n_const
 from neutron.services.logapi.common import constants as log_const
 from neutron.tests.functional.agent.l3 import framework
+from neutron_lib import constants
 from neutron_lib import context as neutron_context
 from oslo_config import cfg
 from oslo_log import log as logging
@@ -167,7 +167,7 @@ class FWLoggingTestBase(framework.L3AgentTestFramework):
             ports_log = log_info['ports_log']
 
             for port_id in ports_log:
-                device = (if_prefix + port_id)[:n_const.LINUX_DEV_LEN]
+                device = (if_prefix + port_id)[:constants.LINUX_DEV_LEN]
                 if event in [ACCEPT, ALL]:
                     # Generate iptables rules for ACCEPT action
                     prefix = self._get_log_prefix(port_id, ACCEPT)

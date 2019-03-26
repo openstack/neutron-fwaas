@@ -17,7 +17,6 @@ from neutron_lib import constants
 import testtools
 
 from neutron.agent.common import ovs_lib
-from neutron.common import constants as n_const
 from neutron.plugins.ml2.drivers.openvswitch.agent.common import constants \
     as ovs_consts
 from neutron.plugins.ml2.drivers.openvswitch.agent import \
@@ -443,7 +442,7 @@ class TestOVSFirewallDriver(base.BaseTestCase):
             'output:{:d},resubmit(,{:d})'.format(
                 self.port_ofport,
                 ovs_consts.ACCEPTED_INGRESS_TRAFFIC_TABLE),
-            dl_type="0x{:04x}".format(n_const.ETHERTYPE_IP),
+            dl_type="0x{:04x}".format(constants.ETHERTYPE_IP),
             nw_proto=constants.PROTO_NUM_TCP,
             priority=70,
             reg5=self.port_ofport,
@@ -482,7 +481,7 @@ class TestOVSFirewallDriver(base.BaseTestCase):
             table=ovs_consts.TRANSIENT_TABLE)
         filter_rule = mock.call(
             actions='resubmit(,{:d})'.format(ovs_consts.RULES_INGRESS_TABLE),
-            dl_type="0x{:04x}".format(n_const.ETHERTYPE_IP),
+            dl_type="0x{:04x}".format(constants.ETHERTYPE_IP),
             nw_proto=constants.PROTO_NUM_TCP,
             priority=70,
             reg5=self.port_ofport,
@@ -528,7 +527,7 @@ class TestOVSFirewallDriver(base.BaseTestCase):
             mock.call(
                 actions='resubmit(,{:d})'.format(
                     fwaas_ovs_consts.FW_ACCEPT_OR_INGRESS_TABLE),
-                dl_type="0x{:04x}".format(n_const.ETHERTYPE_IP),
+                dl_type="0x{:04x}".format(constants.ETHERTYPE_IP),
                 nw_proto=constants.PROTO_NUM_UDP,
                 priority=71,
                 ct_state=fwaas_ovs_consts.OF_STATE_NEW_NOT_ESTABLISHED,
@@ -566,7 +565,7 @@ class TestOVSFirewallDriver(base.BaseTestCase):
             mock.call(
                 actions='resubmit(,{:d})'.format(
                     ovs_consts.RULES_EGRESS_TABLE),
-                dl_type="0x{:04x}".format(n_const.ETHERTYPE_IP),
+                dl_type="0x{:04x}".format(constants.ETHERTYPE_IP),
                 nw_proto=constants.PROTO_NUM_UDP,
                 priority=71,
                 ct_state=fwaas_ovs_consts.OF_STATE_NEW_NOT_ESTABLISHED,
