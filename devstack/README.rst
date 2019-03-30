@@ -19,7 +19,6 @@ FWaaS v2.
 
    [[local|localrc]]
    enable_plugin neutron-fwaas https://git.openstack.org/openstack/neutron-fwaas
-   enable_service q-fwaas-v2
 
 To check a specific patchset that is currently under development, use a form
 like the below example, which is checking out change 214350 patch set 14 for
@@ -29,4 +28,3 @@ testing.
 
    [[local|localrc]]
    enable_plugin neutron-fwaas https://review.openstack.org/p/openstack/neutron-fwaas refs/changes/50/214350/14
-   enable_service q-fwaas-v2
