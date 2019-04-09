@@ -55,10 +55,12 @@ def _get_ports_being_logged(context, log_obj):
         # TODO(longkb): L2 ports will be supported in the future
         # Check whether a port is router port or not.
         if device_owner in nl_const.ROUTER_INTERFACE_OWNERS:
-            # Check whether a port is attached to firewall group or not
-            fwg = fw_plugin_db.get_fwg_attached_to_port(context, port_id)
-            if fwg:
-                filtered_port_ids.append(port_id)
+            # Checking port status
+            if port.get('status') == nl_const.PORT_STATUS_ACTIVE:
+                # Check whether a port is attached to firewall group or not
+                fwg = fw_plugin_db.get_fwg_attached_to_port(context, port_id)
+                if fwg:
+                    filtered_port_ids.append(port_id)
     return filtered_port_ids
 
 
@@ -74,6 +76,15 @@ def _make_log_info_dict(log_obj, port_ids):
 
 def get_logs_for_port(context, port_id):
     """Return a list of log_resources bound to a given port_id"""
+
+    global fw_plugin_db
+    if not fw_plugin_db:
+        fw_plugin = directory.get_plugin(fwaas_constants.FIREWALL_V2)
+
+        # NOTE(longkb): check whether fw plugin was loaded or not.
+        if not fw_plugin:
+            return []
+        fw_plugin_db = fw_plugin.driver.firewall_db
 
     logs_bounded = []
     port = port_objects.Port.get_object(context, id=port_id)
