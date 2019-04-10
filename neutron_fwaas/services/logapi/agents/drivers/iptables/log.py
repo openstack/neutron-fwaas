@@ -18,7 +18,6 @@ import signal
 import uuid
 
 from neutron.agent.linux import utils
-from neutron.common import constants as n_const
 from neutron.services.logapi.agent import log_extension as log_ext
 from neutron.services.logapi.common import constants as log_const
 from neutron_lib import constants
@@ -370,7 +369,7 @@ class IptablesLoggingDriver(log_ext.LoggingDriver):
         agent_mode = self.conf.agent_mode
         router = self.agent_api.get_router_hosting_port(port_id)
         if_prefix = self._get_if_prefix(agent_mode, router)
-        return (if_prefix + port_id)[:n_const.LINUX_DEV_LEN]
+        return (if_prefix + port_id)[:constants.LINUX_DEV_LEN]
 
     def _get_ipt_mgr_by_port(self, port_id):
 

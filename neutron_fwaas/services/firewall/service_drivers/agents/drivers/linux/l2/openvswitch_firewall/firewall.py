@@ -20,7 +20,6 @@ from oslo_log import log as logging
 from oslo_utils import netutils
 
 from neutron.agent import firewall
-from neutron.common import constants
 from neutron.plugins.ml2.drivers.openvswitch.agent.common import constants \
     as ovs_consts
 
@@ -541,7 +540,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
                 priority=95,
                 in_port=port.ofport,
                 reg_port=port.ofport,
-                dl_type=constants.ETHERTYPE_IPV6,
+                dl_type=lib_const.ETHERTYPE_IPV6,
                 nw_proto=lib_const.PROTO_NUM_IPV6_ICMP,
                 icmp_type=icmp_type,
                 actions='normal')
@@ -617,7 +616,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
                 in_port=port.ofport,
                 reg_port=port.ofport,
                 dl_src=mac_addr,
-                dl_type=constants.ETHERTYPE_ARP,
+                dl_type=lib_const.ETHERTYPE_ARP,
                 arp_spa=ip_addr,
                 actions='normal'
             )
@@ -626,7 +625,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
                 priority=65,
                 reg_port=port.ofport,
                 ct_state=fwaas_ovs_consts.OF_STATE_NOT_TRACKED,
-                dl_type=constants.ETHERTYPE_IP,
+                dl_type=lib_const.ETHERTYPE_IP,
                 in_port=port.ofport,
                 dl_src=mac_addr,
                 nw_src=ip_addr,
@@ -645,7 +644,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
                 reg_port=port.ofport,
                 in_port=port.ofport,
                 ct_state=fwaas_ovs_consts.OF_STATE_NOT_TRACKED,
-                dl_type=constants.ETHERTYPE_IPV6,
+                dl_type=lib_const.ETHERTYPE_IPV6,
                 dl_src=mac_addr,
                 ipv6_src=ip_addr,
                 actions='ct(table={:d},zone=NXM_NX_REG{:d}[0..15])'.format(
@@ -658,8 +657,8 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
         if self.sg_with_ovs:
             accept_or_ingress = ovs_consts.ACCEPT_OR_INGRESS_TABLE
         for dl_type, src_port, dst_port in (
-                (constants.ETHERTYPE_IP, 68, 67),
-                (constants.ETHERTYPE_IPV6, 546, 547)):
+                (lib_const.ETHERTYPE_IP, 68, 67),
+                (lib_const.ETHERTYPE_IPV6, 546, 547)):
             self._add_flow(
                 table=fwaas_ovs_consts.FW_BASE_EGRESS_TABLE,
                 priority=80,
@@ -673,8 +672,8 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
             )
         # Ban dhcp service running on an instance
         for dl_type, src_port, dst_port in (
-                (constants.ETHERTYPE_IP, 67, 68),
-                (constants.ETHERTYPE_IPV6, 547, 546)):
+                (lib_const.ETHERTYPE_IP, 67, 68),
+                (lib_const.ETHERTYPE_IPV6, 547, 546)):
             self._add_flow(
                 table=fwaas_ovs_consts.FW_BASE_EGRESS_TABLE,
                 priority=70,
@@ -693,7 +692,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
             priority=70,
             in_port=port.ofport,
             reg_port=port.ofport,
-            dl_type=constants.ETHERTYPE_IPV6,
+            dl_type=lib_const.ETHERTYPE_IPV6,
             nw_proto=lib_const.PROTO_NUM_IPV6_ICMP,
             icmp_type=lib_const.ICMPV6_TYPE_RA,
             actions='resubmit(,%d)' % ovs_consts.DROPPED_TRAFFIC_TABLE
@@ -725,8 +724,8 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
                         fwaas_ovs_consts.REG_PORT,
                         fwaas_ovs_consts.FW_BASE_INGRESS_TABLE),
                 )
-            for ethertype in [constants.ETHERTYPE_IP,
-                    constants.ETHERTYPE_IPV6]:
+            for ethertype in [lib_const.ETHERTYPE_IP,
+                    lib_const.ETHERTYPE_IPV6]:
                 self._add_flow(
                     table=fwaas_ovs_consts.FW_ACCEPT_OR_INGRESS_TABLE,
                     priority=90,
@@ -784,7 +783,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
             ct_state=fwaas_ovs_consts.OF_STATE_NOT_ESTABLISHED,
             actions='resubmit(,%d)' % ovs_consts.DROPPED_TRAFFIC_TABLE
         )
-        for ethertype in [constants.ETHERTYPE_IP, constants.ETHERTYPE_IPV6]:
+        for ethertype in [lib_const.ETHERTYPE_IP, lib_const.ETHERTYPE_IPV6]:
             self._add_flow(
                 table=fwaas_ovs_consts.FW_RULES_EGRESS_TABLE,
                 priority=40,
@@ -806,7 +805,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
                 priority=100,
                 reg_port=port.ofport,
                 dl_dst=port.mac,
-                dl_type=constants.ETHERTYPE_IPV6,
+                dl_type=lib_const.ETHERTYPE_IPV6,
                 nw_proto=lib_const.PROTO_NUM_IPV6_ICMP,
                 icmp_type=icmp_type,
                 actions='output:{:d}'.format(port.ofport)
@@ -819,7 +818,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
         self._add_flow(
             table=fwaas_ovs_consts.FW_BASE_INGRESS_TABLE,
             priority=100,
-            dl_type=constants.ETHERTYPE_ARP,
+            dl_type=lib_const.ETHERTYPE_ARP,
             reg_port=port.ofport,
             actions='output:{:d}'.format(port.ofport)
         )
@@ -827,8 +826,8 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
 
         # DHCP offers
         for dl_type, src_port, dst_port in (
-                (constants.ETHERTYPE_IP, 67, 68),
-                (constants.ETHERTYPE_IPV6, 547, 546)):
+                (lib_const.ETHERTYPE_IP, 67, 68),
+                (lib_const.ETHERTYPE_IPV6, 547, 546)):
             self._add_flow(
                 table=fwaas_ovs_consts.FW_BASE_INGRESS_TABLE,
                 priority=95,
@@ -841,7 +840,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
             )
 
         # Track untracked
-        for dl_type in (constants.ETHERTYPE_IP, constants.ETHERTYPE_IPV6):
+        for dl_type in (lib_const.ETHERTYPE_IP, lib_const.ETHERTYPE_IPV6):
             self._add_flow(
                 table=fwaas_ovs_consts.FW_BASE_INGRESS_TABLE,
                 priority=90,
@@ -899,7 +898,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
             ct_state=fwaas_ovs_consts.OF_STATE_NOT_ESTABLISHED,
             actions='resubmit(,%d)' % ovs_consts.DROPPED_TRAFFIC_TABLE
         )
-        for ethertype in [constants.ETHERTYPE_IP, constants.ETHERTYPE_IPV6]:
+        for ethertype in [lib_const.ETHERTYPE_IP, lib_const.ETHERTYPE_IPV6]:
             self._add_flow(
                 table=fwaas_ovs_consts.FW_RULES_INGRESS_TABLE,
                 priority=40,
