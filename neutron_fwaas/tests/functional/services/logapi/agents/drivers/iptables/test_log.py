@@ -87,7 +87,7 @@ class FWLoggingTestBase(framework.L3AgentTestFramework):
         }
 
     def _initialize_iptables_log(self):
-        self.agent_api = l3_ext_api.L3AgentExtensionAPI({})
+        self.agent_api = l3_ext_api.L3AgentExtensionAPI({}, None)
         log_driver = log.IptablesLoggingDriver(self.agent_api)
         log_driver.initialize(self.resource_rpc)
         log_driver.conf = self.conf
