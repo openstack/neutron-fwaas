@@ -40,7 +40,7 @@
     description: |
       Run Python 35 tests on networking-midonet repository.
     vars:
-      zuul_work_dir: src/git.openstack.org/openstack/networking-midonet
+      zuul_work_dir: src/opendev.org/openstack/networking-midonet
     required-projects:
       - openstack/requirements
       - openstack/networking-midonet
@@ -49,4 +49,4 @@
       - openstack/neutron-lbaas
       - openstack/neutron-dynamic-routing
       - openstack/networking-l2gw
-      - openstack/tap-as-a-service
+      - x/tap-as-a-service
