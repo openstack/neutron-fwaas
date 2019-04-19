@@ -36,7 +36,7 @@
     post-run: playbooks/neutron-fwaas-fullstack/post.yaml
     timeout: 7800
     required-projects:
-      - openstack-infra/devstack-gate
+      - openstack/devstack-gate
       - openstack/neutron
     irrelevant-files:
       - ^.*\.rst$
@@ -52,7 +52,7 @@
     post-run: playbooks/legacy/neutron-fullstack-python35/post.yaml
     timeout: 7800
     required-projects:
-      - openstack-infra/devstack-gate
+      - openstack/devstack-gate
       - openstack/neutron
     irrelevant-files:
       - ^.*\.rst$
