@@ -1,5 +1,5 @@
 # This file was shamelessly stolen from the neutron repository here:
-# http://git.openstack.org/cgit/openstack/neutron/tree/devstack/lib/l2_agent
+# https://opendev.org/openstack/neutron/src/branch/master/devstack/lib/l2_agent
 
 function plugin_agent_add_l2_agent_extension {
     local l2_agent_extension=$1

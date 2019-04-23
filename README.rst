@@ -21,10 +21,10 @@ site for asking for help, and filing bugs. We use a single Launchpad
 page for all Neutron projects.
 
 Code is available on git.openstack.org at:
-<https://git.openstack.org/cgit/openstack/neutron-fwaas>.
+<https://opendev.org/openstack/neutron-fwaas>.
 
 Please refer to Neutron documentation for more information:
-`Neutron README.rst <https://git.openstack.org/cgit/openstack/neutron/tree/README.rst>`_
+`Neutron README.rst <https://opendev.org/openstack/neutron/src/branch/master/README.rst>`_
 
 Get release notes:
 `Neutron FWaaS Release Notes <https://docs.openstack.org/releasenotes/neutron-fwaas/>`_
