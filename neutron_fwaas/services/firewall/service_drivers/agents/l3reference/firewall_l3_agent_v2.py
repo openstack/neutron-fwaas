@@ -297,7 +297,7 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
             self.services_sync_needed = True
 
     def update_router(self, context, updated_router):
-        """Handles agent restart and router add. Fetches firewall groups from
+        """Handles agent restart and router update. Fetches firewall groups from
         plugin and updates driver.
         """
         if not self.fwaas_enabled:
