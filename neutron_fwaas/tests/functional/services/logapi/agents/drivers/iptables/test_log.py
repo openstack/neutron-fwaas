@@ -18,10 +18,10 @@ import time
 import mock
 from neutron.agent.l3 import l3_agent_extension_api as l3_ext_api
 from neutron.agent.linux import utils as linux_utils
-from neutron.services.logapi.common import constants as log_const
 from neutron.tests.functional.agent.l3 import framework
 from neutron_lib import constants
 from neutron_lib import context as neutron_context
+from neutron_lib.services.logapi import constants as log_const
 from oslo_config import cfg
 from oslo_log import log as logging
 

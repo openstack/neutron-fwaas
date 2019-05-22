@@ -16,8 +16,8 @@
 from collections import defaultdict
 
 import mock
-from neutron.services.logapi.common import constants as log_const
 from neutron.tests.unit.api.v2 import test_base
+from neutron_lib.services.logapi import constants as log_const
 
 from neutron_fwaas.privileged.netfilter_log import libnetfilter_log as libnflog
 from neutron_fwaas.services.logapi.agents.drivers.iptables import log
