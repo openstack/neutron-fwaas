@@ -66,9 +66,6 @@ def _setup_test_agent_class(service_plugins):
         def delete_router(self, context, data):
             pass
 
-        def update_router(self, context, data):
-            pass
-
     return FWaasTestAgent
 
 
@@ -454,4 +451,52 @@ class TestFWaaSL3AgentExtension(base.BaseTestCase):
                 mock.call(mock.ANY, {'2'}, fwg2),
             ], mock_invoke_driver.call_args_list)
 
-    #TODO(Margaret) Add test for add_router method.
+    def test_add_router(self):
+        fw_agent = _setup_test_agent_class([fwaas_constants.FIREWALL])
+        cfg.CONF.set_override('enabled', True, 'fwaas')
+        new_router = {
+            '_interfaces': [{
+                'device_owner': 'network: router_interface',
+                'id': '1',
+                'tenant_id': 'demo_tenant_id',
+            }],
+            'tenant_id': 'demo_tenant_id',
+            'id': '0b109a4e-d228-479d-ad43-08bf3245adbb',
+            'name': 'demo_router'
+        }
+        with mock.patch('oslo_utils.importutils.import_object'):
+            agent = fw_agent(cfg.CONF)
+            agent.agent_api = mock.Mock()
+            agent.fwplugin_rpc = mock.Mock()
+            agent.conf.agent_mode = mock.Mock()
+            agent.fwaas_driver = iptables_fwaas_v2.IptablesFwaasDriver()
+            with mock.patch.object(agent,
+                                   '_process_router_update',
+                                   ) as mock_process_router_update:
+                agent.add_router(self.context, new_router)
+                mock_process_router_update.assert_called_with(new_router)
+
+    def test_update_router(self):
+        fw_agent = _setup_test_agent_class([fwaas_constants.FIREWALL])
+        cfg.CONF.set_override('enabled', True, 'fwaas')
+        updated_router = {
+            '_interfaces': [{
+                'device_owner': 'network: router_interface',
+                'id': '1',
+                'tenant_id': 'demo_tenant_id',
+            }],
+            'tenant_id': 'demo_tenant_id',
+            'id': '0b109a4e-d228-479d-ad43-08bf3245adbb',
+            'name': 'demo_router'
+        }
+        with mock.patch('oslo_utils.importutils.import_object'):
+            agent = fw_agent(cfg.CONF)
+            agent.agent_api = mock.Mock()
+            agent.fwplugin_rpc = mock.Mock()
+            agent.conf.agent_mode = mock.Mock()
+            agent.fwaas_driver = iptables_fwaas_v2.IptablesFwaasDriver()
+            with mock.patch.object(agent,
+                                   '_process_router_update',
+                                   ) as mock_process_router_update:
+                agent.update_router(self.context, updated_router)
+                mock_process_router_update.assert_called_with(updated_router)
