@@ -19,8 +19,8 @@ import uuid
 
 from neutron.agent.linux import utils
 from neutron.services.logapi.agent import log_extension as log_ext
-from neutron.services.logapi.common import constants as log_const
 from neutron_lib import constants
+from neutron_lib.services.logapi import constants as log_const
 from oslo_config import cfg
 from oslo_log import handlers
 from oslo_log import log as logging

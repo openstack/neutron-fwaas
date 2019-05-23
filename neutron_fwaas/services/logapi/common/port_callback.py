@@ -13,10 +13,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from neutron.services.logapi.common import constants as log_const
 from neutron.services.logapi.drivers import manager
 from neutron_lib.callbacks import events
 from neutron_lib import constants as nl_const
+from neutron_lib.services.logapi import constants as log_const
 
 from neutron_fwaas.services.logapi.common import log_db_api
 
