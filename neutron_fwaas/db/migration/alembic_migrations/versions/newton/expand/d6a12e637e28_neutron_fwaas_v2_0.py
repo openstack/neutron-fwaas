@@ -103,6 +103,10 @@ def upgrade():
                   sa.ForeignKey('ports.id', ondelete='CASCADE'),
                   nullable=False)
     )
+    op.create_primary_key(
+        'pk_firewall_group_port_associations_v2',
+        'firewall_group_port_associations_v2',
+        ['firewall_group_id', 'port_id'])
 
     op.create_table(
         'firewall_policy_rule_associations_v2',
