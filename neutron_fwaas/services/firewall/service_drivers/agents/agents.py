@@ -326,9 +326,10 @@ class FirewallAgentDriver(driver_api.FirewallDriverDB,
         )
 
         # last-port drives agent to ack with status to set state to INACTIVE
-        fwg_with_rules['last-port'] = not (
-            set(new_firewall_group['ports']) - set(old_firewall_group['ports'])
-        )
+        # Set last-port to True if there are no ports in the new group,
+        # but the old group had ports
+        fwg_with_rules['last-port'] = (old_firewall_group['ports'] and
+                                       not(new_firewall_group['ports']))
 
         LOG.debug("update_firewall_group %s: Add Ports: %s, Del Ports: %s",
             new_firewall_group['id'],
