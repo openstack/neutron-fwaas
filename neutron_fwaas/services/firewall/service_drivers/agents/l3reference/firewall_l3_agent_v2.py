@@ -473,7 +473,8 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
                            "for firewall group: %s")
                     LOG.exception(msg, firewall_group['id'])
                     status = nl_constants.ERROR
-            else:
+            elif not status:
+                # if status not set by now, set it to INACTIVE
                 status = nl_constants.INACTIVE
 
         # Return status to plugin.

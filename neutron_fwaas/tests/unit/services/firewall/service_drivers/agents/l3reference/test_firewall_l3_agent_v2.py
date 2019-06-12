@@ -281,6 +281,27 @@ class TestFWaaSL3AgentExtension(base.BaseTestCase):
         self.api.update_firewall_group(self.context, firewall_group,
                                        host='host')
 
+    def test_update_firewall_group_with_only_ports_removed(self):
+        firewall_group = {'id': 0, 'project_id': 1,
+                          'admin_state_up': True,
+                          'ports': [1, 2],
+                          'add-port-ids': [],
+                          'del-port-ids': ['1'],
+                          'last-port': False
+                          }
+        self.api.plugin_rpc = mock.Mock()
+        with mock.patch.object(self.api.fwaas_driver, 'update_firewall_group'
+                               ) as mock_driver_update_firewall_group, \
+                mock.patch.object(self.api.fwplugin_rpc,
+                                  'set_firewall_group_status'
+                                  ) as mock_set_firewall_group_status:
+
+            mock_driver_update_firewall_group.return_value = True
+            self.api.update_firewall_group(self.context, firewall_group,
+                                           host='host')
+            mock_set_firewall_group_status.assert_called_once_with(
+                    self.context, firewall_group['id'], 'ACTIVE')
+
     def test_delete_firewall_group(self):
         firewall_group = {'id': 0, 'project_id': 1,
                           'admin_state_up': True,
