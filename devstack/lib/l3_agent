@@ -12,5 +12,5 @@ function plugin_agent_add_l3_agent_extension {
 
 
 function configure_l3_agent {
-    iniset $Q_L3_CONF_FILE AGENT extensions "$L3_AGENT_EXTENSIONS"
+    iniset $Q_L3_CONF_FILE agent extensions "$L3_AGENT_EXTENSIONS"
 }
