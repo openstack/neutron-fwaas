@@ -32,6 +32,16 @@ ATTR_POSITIONS = {
 }
 
 
+def normalize_filters_tuple(rule_tuple):
+    new_rule = []
+    for el in rule_tuple:
+        if el is None:
+            new_rule.append('')
+        else:
+            new_rule.append(el)
+    return tuple(new_rule)
+
+
 class ConntrackLegacy(conntrack_base.ConntrackDriverBase):
     def initialize(self, execute=None):
         LOG.debug('Initialize Conntrack Legacy')
@@ -43,7 +53,9 @@ class ConntrackLegacy(conntrack_base.ConntrackDriverBase):
         self._execute_command(cmd)
 
     def delete_entries(self, rules, namespace):
-        rule_filters = sorted(self._get_filter_from_rule(r) for r in rules)
+        rule_filters = [self._get_filter_from_rule(r) for r in rules]
+        rule_filters.sort(key=normalize_filters_tuple)
+
         delete_entries = self._get_entries_to_delete(
             rule_filters, self.list_entries(namespace))
         for delete_entry in delete_entries:

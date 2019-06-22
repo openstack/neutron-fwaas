@@ -100,6 +100,16 @@ class ConntrackLegacyTestCase(base.BaseTestCase):
         self.conntrack_driver = legacy_conntrack.ConntrackLegacy()
         self.conntrack_driver.initialize(execute=self.utils_exec)
 
+    def test_normalize_filters_tuple(self):
+        self.assertEqual(
+            (4, 'udp', [], [], '', ''),
+            legacy_conntrack.normalize_filters_tuple(
+                (4, 'udp', [], [], None, None)))
+        self.assertEqual(
+            (4, '', [], [], '', ''),
+            legacy_conntrack.normalize_filters_tuple(
+                (4, None, [], [], None, None)))
+
     def test_excecute_command_failed(self):
         with testtools.ExpectedException(RuntimeError):
             self.conntrack_driver._execute_command(['fake', 'command'])
