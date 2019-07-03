@@ -12,7 +12,7 @@
     check:
       jobs:
         - neutron-fwaas-v2-dsvm-tempest
-        - legacy-neutron-fwaas-dsvm-functional
+        - neutron-fwaas-functional
         - legacy-grenade-dsvm-neutron-fwaas-multinode:
             voting: false
             irrelevant-files:
@@ -23,10 +23,16 @@
     gate:
       jobs:
         - neutron-fwaas-v2-dsvm-tempest
-        - legacy-neutron-fwaas-dsvm-functional
+        - neutron-fwaas-functional
     experimental:
       jobs:
         - neutron-fwaas-fullstack
+
+- job:
+    name: neutron-fwaas-functional
+    parent: neutron-functional
+    vars:
+      project_name: neutron-fwaas
 
 - job:
     name: neutron-fwaas-fullstack
