@@ -22,6 +22,7 @@ from neutron.services.logapi.agent import log_extension as log_ext
 from neutron_lib import constants
 from neutron_lib.services.logapi import constants as log_const
 from oslo_config import cfg
+from oslo_log import formatters
 from oslo_log import handlers
 from oslo_log import log as logging
 
@@ -46,12 +47,15 @@ def setup_logging():
 
     log_file = cfg.CONF.network_log.local_output_log_base
     if log_file:
-        import logging
-        log_file_handler = logging.handlers.WatchedFileHandler(log_file)
-        log_file_handler.setLevel(logging.INFO)
-        log_file_handler.setFormatter(logging.Formatter(
-            fmt="%(asctime)s %(message)s", datefmt=cfg.CONF.log_date_format))
+        from logging import handlers as watch_handler
+        log_file_handler = watch_handler.WatchedFileHandler(log_file)
+        log_file_handler.setLevel(
+            logging.DEBUG if cfg.CONF.debug else logging.INFO)
         LOG.logger.addHandler(log_file_handler)
+        log_file_handler.setFormatter(
+            formatters.ContextFormatter(
+                fmt=cfg.CONF.logging_default_format_string,
+                datefmt=cfg.CONF.log_date_format))
     elif cfg.CONF.use_journal:
         journal_handler = handlers.OSJournalHandler()
         LOG.logger.addHandler(journal_handler)
