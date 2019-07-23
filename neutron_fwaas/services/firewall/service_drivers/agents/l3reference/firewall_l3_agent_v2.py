@@ -142,8 +142,8 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
 
     def _get_firewall_group_ports(self, context, firewall_group,
             to_delete=False, require_new_plugin=False):
-        """Returns in-namespace ports, either from firewall group dict if newer
-           version of plugin or from project routers otherwise.
+        """Returns in-namespace ports, either from firewall group dict if ports
+           update or from project routers otherwise if only policies update.
 
            NOTE: Vernacular move from "tenant" to "project" doesn't yet appear
            as a key in router or firewall group objects.
@@ -154,7 +154,7 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
                 fwg_port_ids = firewall_group['del-port-ids']
             else:
                 fwg_port_ids = firewall_group['add-port-ids']
-        elif not require_new_plugin:
+        if not require_new_plugin and not fwg_port_ids:
             routers = self.agent_api.get_routers_in_project(
                     firewall_group['tenant_id'])
             for router in routers:

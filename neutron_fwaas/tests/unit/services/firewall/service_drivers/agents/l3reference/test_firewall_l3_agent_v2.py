@@ -250,11 +250,16 @@ class TestFWaaSL3AgentExtension(base.BaseTestCase):
                           'ports': [],
                           'add-port-ids': [],
                           'del-port-ids': [],
-                          'router_ids': []}
+                          'last-port': True}
 
         self.api.plugin_rpc = mock.Mock()
-        with mock.patch.object(self.api.fwaas_driver, 'update_firewall_group'
-                               ) as mock_driver_update_firewall_group, \
+        with mock.patch.object(self.api, '_get_firewall_group_ports'
+                               ) as mock_get_firewall_group_ports, \
+                mock.patch.object(self.api, '_get_in_ns_ports'
+                                  ) as mock_get_in_ns_ports, \
+                mock.patch.object(self.api.fwaas_driver,
+                                  'update_firewall_group'
+                                  ) as mock_driver_update_firewall_group, \
                 mock.patch.object(self.api.fwplugin_rpc,
                                   'set_firewall_group_status'
                                   ) as mock_set_firewall_group_status:
@@ -263,6 +268,15 @@ class TestFWaaSL3AgentExtension(base.BaseTestCase):
 
             self.api.update_firewall_group(self.context, firewall_group,
                     host='host')
+            calls = [
+                mock.call._get_firewall_group_ports(
+                    self.context, firewall_group, require_new_plugin=True,
+                    to_delete=True),
+                mock.call._get_firewall_group_ports(
+                    self.context, firewall_group)
+            ]
+            mock_get_firewall_group_ports.assert_has_calls(calls)
+            mock_get_in_ns_ports.assert_called
             mock_set_firewall_group_status.assert_called_once_with(
                     self.context, firewall_group['id'], 'INACTIVE')
 
@@ -275,8 +289,32 @@ class TestFWaaSL3AgentExtension(base.BaseTestCase):
                           'del-port-ids': [],
                           'last-port': False
                           }
-        self.api.update_firewall_group(self.context, firewall_group,
-                                       host='host')
+        with mock.patch.object(self.api, '_get_firewall_group_ports'
+                               ) as mock_get_firewall_group_ports, \
+                mock.patch.object(self.api, '_get_in_ns_ports'
+                                  ) as mock_get_in_ns_ports, \
+                mock.patch.object(self.api.fwaas_driver,
+                                  'update_firewall_group'
+                                  ) as mock_driver_update_firewall_group, \
+                mock.patch.object(self.api.fwplugin_rpc,
+                                  'set_firewall_group_status'
+                                  ) as mock_set_firewall_group_status:
+
+            mock_driver_update_firewall_group.return_value = True
+
+            self.api.update_firewall_group(self.context, firewall_group,
+                    host='host')
+            calls = [
+                mock.call._get_firewall_group_ports(
+                    self.context, firewall_group, require_new_plugin=True,
+                    to_delete=True),
+                mock.call._get_firewall_group_ports(
+                    self.context, firewall_group)
+            ]
+            mock_get_firewall_group_ports.assert_has_calls(calls)
+            mock_get_in_ns_ports.assert_called
+            mock_set_firewall_group_status.assert_called_once_with(
+                    self.context, firewall_group['id'], 'ACTIVE')
 
     def test_update_firewall_group_with_only_ports_removed(self):
         firewall_group = {'id': 0, 'project_id': 1,
@@ -287,15 +325,67 @@ class TestFWaaSL3AgentExtension(base.BaseTestCase):
                           'last-port': False
                           }
         self.api.plugin_rpc = mock.Mock()
-        with mock.patch.object(self.api.fwaas_driver, 'update_firewall_group'
-                               ) as mock_driver_update_firewall_group, \
+        with mock.patch.object(self.api, '_get_firewall_group_ports'
+                               ) as mock_get_firewall_group_ports, \
+                mock.patch.object(self.api, '_get_in_ns_ports'
+                                  ) as mock_get_in_ns_ports, \
+                mock.patch.object(self.api.fwaas_driver,
+                                  'update_firewall_group'
+                                  ) as mock_driver_update_firewall_group, \
                 mock.patch.object(self.api.fwplugin_rpc,
                                   'set_firewall_group_status'
                                   ) as mock_set_firewall_group_status:
 
             mock_driver_update_firewall_group.return_value = True
+
             self.api.update_firewall_group(self.context, firewall_group,
                                            host='host')
+            calls = [
+                mock.call._get_firewall_group_ports(
+                    self.context, firewall_group, require_new_plugin=True,
+                    to_delete=True),
+                mock.call._get_firewall_group_ports(
+                    self.context, firewall_group)
+            ]
+            mock_get_firewall_group_ports.assert_has_calls(calls)
+            mock_get_in_ns_ports.assert_called
+            mock_set_firewall_group_status.assert_called_once_with(
+                    self.context, firewall_group['id'], 'ACTIVE')
+
+    def test_update_firewall_group_with_only_policies_added_or_deleted(self):
+        firewall_group = {'id': 0, 'project_id': 1,
+                          'tenant_id': 1,
+                          'admin_state_up': True,
+                          'ports': [1, 2],
+                          'add-port-ids': [],
+                          'del-port-ids': [],
+                          'last-port': False
+                          }
+        self.api.plugin_rpc = mock.Mock()
+        with mock.patch.object(self.api, '_get_firewall_group_ports'
+                               ) as mock_get_firewall_group_ports, \
+                mock.patch.object(self.api, '_get_in_ns_ports'
+                                  ) as mock_get_in_ns_ports, \
+                mock.patch.object(self.api.fwaas_driver,
+                                  'update_firewall_group'
+                                  ) as mock_driver_update_firewall_group, \
+                mock.patch.object(self.api.fwplugin_rpc,
+                                  'set_firewall_group_status'
+                                  ) as mock_set_firewall_group_status:
+
+            mock_driver_update_firewall_group.return_value = True
+
+            self.api.update_firewall_group(self.context, firewall_group,
+                                           host='host')
+            calls = [
+                mock.call._get_firewall_group_ports(
+                    self.context, firewall_group, require_new_plugin=True,
+                    to_delete=True),
+                mock.call._get_firewall_group_ports(
+                    self.context, firewall_group)
+            ]
+            mock_get_firewall_group_ports.assert_has_calls(calls)
+            mock_get_in_ns_ports.assert_called
             mock_set_firewall_group_status.assert_called_once_with(
                     self.context, firewall_group['id'], 'ACTIVE')
 
