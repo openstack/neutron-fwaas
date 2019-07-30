@@ -271,6 +271,9 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
             ports_to_process = (set(firewall_group['add-port-ids'] +
                                     firewall_group['del-port-ids']) &
                                 all_router_ports)
+            # ensure no port in router is associated with the firewall group
+            if not ports_to_process:
+                continue
             # A port can have at most one firewall group.
             port_ids_to_exclude = ports_to_process & processed_ports
             if port_ids_to_exclude:
