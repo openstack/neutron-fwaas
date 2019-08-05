@@ -30,6 +30,7 @@ from os_ken.lib.packet import ipv4
 from os_ken.lib.packet import ipv6
 from oslo_log import log as logging
 from oslo_serialization import jsonutils
+from oslo_utils import encodeutils
 from oslo_utils import excutils
 
 from neutron_fwaas._i18n import _
@@ -166,7 +167,8 @@ def decode(nfa):
     else:
         msg += "Does not support hw_proto: " + str(hw_proto)
 
-    return {'prefix': str(prefix), 'msg': str(msg)}
+    return {'prefix': encodeutils.safe_decode(prefix),
+            'msg': encodeutils.safe_decode(msg)}
 
 
 class NFLogWrapper(object):
