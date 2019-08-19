@@ -10,19 +10,14 @@
       - release-notes-jobs-python3
     check:
       jobs:
-        - neutron-fwaas-v2-dsvm-tempest
         - neutron-fwaas-functional
-        - legacy-grenade-dsvm-neutron-fwaas-multinode:
-            voting: false
-            irrelevant-files:
-              - ^(test-|)requirements.txt$
-              - ^setup.cfg$
+        - neutron-tempest-plugin-fwaas
         - neutron-fwaas-v2-dsvm-tempest-multinode:
             voting: false
     gate:
       jobs:
-        - neutron-fwaas-v2-dsvm-tempest
         - neutron-fwaas-functional
+        - neutron-tempest-plugin-fwaas
     experimental:
       jobs:
         - neutron-fwaas-fullstack
@@ -39,29 +34,6 @@
     vars:
       project_name: neutron-fwaas
 
-
-- job:
-    name: neutron-fwaas-v2-dsvm-tempest
-    parent: devstack-tempest
-    roles:
-      - zuul: openstack/devstack
-    required-projects:
-      - openstack/devstack-gate
-      - openstack/neutron
-      - openstack/neutron-fwaas
-      - openstack/tempest
-    vars:
-      tox_envlist: all-plugin
-      tempest_test_regex: ^neutron_fwaas\.
-      devstack_plugins:
-        neutron: https://opendev.org/openstack/neutron.git
-        neutron-fwaas: https://opendev.org/openstack/neutron-fwaas.git
-      devstack_services:
-        q-fwaas-v2: true
-      devstack_localrc:
-        USE_PYTHON3: true
-        NETWORK_API_EXTENSIONS: "agent,binding,dhcp_agent_scheduler,external-net,ext-gw-mode,extra_dhcp_opts,quotas,router,security-group,subnet_allocation,network-ip-availability,auto-allocated-topology,timestamp_core,tag,service-type,rbac-policies,standard-attr-description,pagination,sorting,project-id,fwaas_v2"
-
 - job:
     name: neutron-fwaas-v2-dsvm-tempest-multinode
     parent: tempest-multinode-full-py3
@@ -71,13 +43,15 @@
       - openstack/devstack-gate
       - openstack/neutron
       - openstack/neutron-fwaas
+      - openstack/neutron-tempest-plugin
       - openstack/tempest
     vars:
       tox_envlist: all-plugin
-      tempest_test_regex: ^neutron_fwaas\.
+      tempest_test_regex: ^neutron_tempest_plugin\.fwaas
       devstack_plugins:
         neutron: https://opendev.org/openstack/neutron.git
         neutron-fwaas: https://opendev.org/openstack/neutron-fwaas.git
+        neutron-tempest-plugin: https://opendev.org/openstack/neutron-tempest-plugin.git
       devstack_services:
         q-fwaas-v2: true
       devstack_localrc:
