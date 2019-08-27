@@ -2,8 +2,6 @@
 neutron-fwaas documentation
 ===========================
 
-General Information and Other Project References:
-
 .. toctree::
    :glob:
    :maxdepth: 2
@@ -12,8 +10,10 @@ General Information and Other Project References:
    configuration/index
    contributor/index
 
-.. rubric:: Indices and tables
+.. only:: html
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   .. rubric:: Indices and tables
+
+   * :ref:`genindex`
+   * :ref:`modindex`
+   * :ref:`search`
