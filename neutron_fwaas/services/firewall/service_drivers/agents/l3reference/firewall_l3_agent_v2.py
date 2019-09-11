@@ -142,25 +142,12 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
 
     def _get_firewall_group_ports(self, context, firewall_group,
             to_delete=False, require_new_plugin=False):
-        """Returns in-namespace ports, either from firewall group dict if ports
-           update or from project routers otherwise if only policies update.
-
-           NOTE: Vernacular move from "tenant" to "project" doesn't yet appear
-           as a key in router or firewall group objects.
+        """Get ports in namespace by firewall_group
         """
-        fwg_port_ids = []
-        if self._has_port_insertion_fields(firewall_group):
-            if to_delete:
-                fwg_port_ids = firewall_group['del-port-ids']
-            else:
-                fwg_port_ids = firewall_group['add-port-ids']
-        if not require_new_plugin and not fwg_port_ids:
-            routers = self.agent_api.get_routers_in_project(
-                    firewall_group['tenant_id'])
-            for router in routers:
-                if router.router['tenant_id'] == firewall_group['tenant_id']:
-                    fwg_port_ids.extend([p['id'] for p in
-                            router.internal_ports])
+        if to_delete:
+            fwg_port_ids = firewall_group['del-port-ids']
+        else:
+            fwg_port_ids = firewall_group['ports']
 
         # Return in-namespace port objects.
         return self._get_in_ns_ports(fwg_port_ids)
@@ -404,8 +391,7 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
 
         # Get the list of in-namespace ports from which to delete the firewall
         # group.
-        del_fwg_ports = self._get_firewall_group_ports(
-            context, firewall_group, to_delete=True, require_new_plugin=True)
+        del_fwg_ports = self._get_firewall_group_ports(context, firewall_group, to_delete=True)
         add_fwg_ports = self._get_firewall_group_ports(context, firewall_group)
 
         port_ids = (firewall_group.get('del-port-ids') +
