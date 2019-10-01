@@ -179,9 +179,18 @@ class FirewallPlugin(
                 l3_plugin, nl_constants.L3_AGENT_SCHEDULER_EXT_ALIAS) and
             getattr(l3_plugin, 'get_l3_agents_hosting_routers', False))
         if no_broadcast:
+            # This call checks for all scheduled routers to the network node
             agents = l3_plugin.get_l3_agents_hosting_routers(
                 context, router_ids, admin_state_up=True, active=True)
-            return [a.host for a in agents]
+            scheduled_rtr_hosts = set([a.host for a in agents])
+            # Now check for unscheduled DVR router on distributed compute hosts
+            unscheduled_dvr_hosts = set()
+            for router_id in router_ids:
+                hosts = set(l3_plugin._get_dvr_hosts_for_router(
+                    context, router_id))
+                unscheduled_dvr_hosts |= hosts
+            total_hosts = scheduled_rtr_hosts.union(unscheduled_dvr_hosts)
+            return total_hosts
 
         # NOTE(blallau): default: FirewallAgentAPI performs RPC broadcast
         return [None]
