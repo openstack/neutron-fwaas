@@ -376,6 +376,33 @@ class TestFirewallPluginBase(TestFirewallRouterInsertionBase,
                 self.assertEqual('other-tenant', fw1['firewall']['tenant_id'])
                 self.assertEqual(self._tenant_id, fw2['firewall']['tenant_id'])
 
+    def test_update_firewall_calls_get_dvr_hosts_for_router(self):
+        ctx = context.get_admin_context()
+        name = "user_fw"
+        attrs = self._get_test_firewall_attrs(name)
+        with self.router(name='router1', admin_state_up=True,
+                tenant_id=self._tenant_id) as router1:
+            with self.firewall_policy() as fwp:
+                fwp_id = fwp['firewall_policy']['id']
+                attrs['firewall_policy_id'] = fwp_id
+                with self.firewall(
+                    firewall_policy_id=fwp_id,
+                    admin_state_up=test_db_firewall.ADMIN_STATE_UP,
+                    router_ids=[router1['router']['id']]
+                ) as firewall:
+                    fw_id = firewall['firewall']['id']
+                    self.callbacks.set_firewall_status(ctx, fw_id,
+                                                       nl_constants.ACTIVE)
+                    with mock.patch.object(
+                            self.l3_plugin,
+                            'get_l3_agents_hosting_routers') as s_hosts, \
+                        mock.patch.object(
+                            self.l3_plugin,
+                            '_get_dvr_hosts_for_router') as u_hosts:
+                        self.plugin.update_firewall(ctx, fw_id, firewall)
+                        self.assertTrue(u_hosts.called)
+                        self.assertTrue(s_hosts.called)
+
     def test_update_firewall(self):
         ctx = context.get_admin_context()
         name = "new_firewall1"
