@@ -380,6 +380,13 @@ class TestFirewallPluginBase(TestFirewallRouterInsertionBase,
         ctx = context.get_admin_context()
         name = "user_fw"
         attrs = self._get_test_firewall_attrs(name)
+        check_attr1 = getattr(self.l3_plugin,
+                              "get_l3_agents_hosting_routers", False)
+        check_attr2 = getattr(self.l3_plugin,
+                              "_get_dvr_hosts_for_router", False)
+        # For third-party L3-service plugins do not run this test
+        if check_attr1 is False or check_attr2 is False:
+            return
         with self.router(name='router1', admin_state_up=True,
                 tenant_id=self._tenant_id) as router1:
             with self.firewall_policy() as fwp:
@@ -397,9 +404,13 @@ class TestFirewallPluginBase(TestFirewallRouterInsertionBase,
                             self.l3_plugin,
                             'get_l3_agents_hosting_routers') as s_hosts, \
                         mock.patch.object(
+                            self.plugin,
+                            '_check_dvr_extensions') as dvr_exts, \
+                        mock.patch.object(
                             self.l3_plugin,
                             '_get_dvr_hosts_for_router') as u_hosts:
                         self.plugin.update_firewall(ctx, fw_id, firewall)
+                        dvr_exts.return_value = True
                         self.assertTrue(u_hosts.called)
                         self.assertTrue(s_hosts.called)
 

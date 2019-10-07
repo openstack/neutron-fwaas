@@ -174,6 +174,14 @@ class FirewallPlugin(
             f_const.FIREWALL_PLUGIN, self.endpoints, fanout=False)
         return self.conn.consume_in_threads()
 
+    def _check_dvr_extensions(self, l3plugin):
+        return (
+            extensions.is_extension_supported(
+                l3plugin, nl_constants.L3_AGENT_SCHEDULER_EXT_ALIAS) and
+            extensions.is_extension_supported(
+                l3plugin, nl_constants.L3_DISTRIBUTED_EXT_ALIAS) and
+            getattr(l3plugin, '_get_dvr_hosts_for_router', False))
+
     def _get_hosts_to_notify(self, context, router_ids):
         """Returns all hosts to send notification about firewall update"""
         l3_plugin = directory.get_plugin(plugin_constants.L3)
@@ -181,19 +189,24 @@ class FirewallPlugin(
             extensions.is_extension_supported(
                 l3_plugin, nl_constants.L3_AGENT_SCHEDULER_EXT_ALIAS) and
             getattr(l3_plugin, 'get_l3_agents_hosting_routers', False))
+        scheduled_hosts = set()
         if no_broadcast:
             # This call checks for all scheduled routers to the network node
             agents = l3_plugin.get_l3_agents_hosting_routers(
                 context, router_ids, admin_state_up=True, active=True)
-            scheduled_rtr_hosts = set([a.host for a in agents])
-            # Now check for unscheduled DVR router on distributed compute hosts
-            unscheduled_dvr_hosts = set()
+            scheduled_hosts = set([a.host for a in agents])
+
+        # Now check for unscheduled DVR router on distributed compute hosts
+        unscheduled_dvr_hosts = set()
+        dvr_broadcast = self._check_dvr_extensions(l3_plugin)
+        if (dvr_broadcast):
             for router_id in router_ids:
                 hosts = set(l3_plugin._get_dvr_hosts_for_router(
                     context, router_id))
                 unscheduled_dvr_hosts |= hosts
-            total_hosts = scheduled_rtr_hosts.union(unscheduled_dvr_hosts)
-            return total_hosts
+        if no_broadcast or dvr_broadcast:
+            scheduled_hosts = scheduled_hosts.union(unscheduled_dvr_hosts)
+            return scheduled_hosts
 
         # NOTE(blallau): default: FirewallAgentAPI performs RPC broadcast
         return [None]
