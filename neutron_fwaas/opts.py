@@ -14,7 +14,6 @@ import neutron.conf.services.provider_configuration
 
 import neutron_fwaas.services.firewall.service_drivers.agents.\
     firewall_agent_api
-import neutron_fwaas.extensions.firewall
 import neutron_fwaas.extensions.firewall_v2
 
 
@@ -29,7 +28,7 @@ def list_agent_opts():
 def list_opts():
     return [
         ('quotas',
-         neutron_fwaas.extensions.firewall.firewall_quota_opts),
+         neutron_fwaas.extensions.firewall_v2.firewall_quota_opts),
         ('service_providers',
          neutron.conf.services.provider_configuration.serviceprovider_opts),
         ('default_fwg_rules',
