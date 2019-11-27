@@ -30,7 +30,6 @@ subunit.log
 !/.gitreview
 !/.mailmap
 !/.pylintrc
-!/.testr.conf
 !/.zuul.yaml
 !/.stestr.conf
 
