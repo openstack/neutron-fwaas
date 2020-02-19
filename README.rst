@@ -7,6 +7,14 @@ Team and repository tags
 
 .. Change things from this point on
 
+.. warning::
+    Due to lack of maintainers this project is now deprecated in the Neutron
+    stadium and will be removed from stadium in ``W`` cycle.
+    If You want to step in and be maintainer of this project to keep it in the
+    Neutron stadium, please contact the ``neutron team`` via
+    openstack-discuss@lists.openstack.org or IRC channel #openstack-neutron
+    @freenode.
+
 Welcome!
 ========
 

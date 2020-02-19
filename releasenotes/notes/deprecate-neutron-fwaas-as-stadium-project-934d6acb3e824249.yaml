@@ -1,0 +1,14 @@
+---
+prelude: >
+    Neutron-fwaas project is now deprecated in the Neutron stadium.
+deprecations:
+  - |
+    Due to lack of maintainers neutron-fwaas project is now deprecated in the
+    Neutron stadium. There is no planned releases of this project in the
+    ``Victoria`` cycle.
+    In ``W`` cycle project will be moved out from the stadium to the unofficial
+    OpenStack projects.
+    If You want to step in and be maintainer of this project to keep it in the
+    Neutron stadium, please contact the ``neutron team`` via
+    openstack-discuss@lists.openstack.org or IRC channel #openstack-neutron
+    @freenode.
