@@ -957,7 +957,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
                     return
                 ports = range_str.split(':', 1)
                 rule[key_min] = int(ports[0])
-                rule['port_range_max'] = (
+                rule[key_max] = (
                     int(ports[1]) if len(ports) == 2 else int(ports[0]))
 
             add_range('destination_port', 'port_range_min', 'port_range_max')

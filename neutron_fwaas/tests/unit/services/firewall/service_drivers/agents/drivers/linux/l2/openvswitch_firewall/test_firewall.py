@@ -694,3 +694,90 @@ class TestOVSFirewallDriver(base.BaseTestCase):
         self.mock_bridge.br.db_get_val.return_value = {}
         self.firewall._remove_egress_no_port_security('port_id')
         self.assertFalse(self.mock_bridge.br.delete_flows.called)
+
+    def test_add_flows_from_rules_with_dst_large_than_src_port(self):
+        port_dict = {
+            'device': 'port-id',
+            'firewall_group': 123,
+            'lvlan': TESTING_VLAN_TAG,
+        }
+        port = self.firewall.get_or_create_ofport(port_dict)
+        ingress_rules = [{
+                'ip_version': 4,
+                'source_port': '4000',
+                'destination_port': '7000',
+                'protocol': 6,
+                'direction': 'ingress',
+                'ethertype': 'IPv4',
+                'offset': 1,
+                'port_range_min': 7000,
+                'port_range_max': 7000,
+                'source_port_range_min': 4000,
+                'source_port_range_max': 4000
+        }, {
+                'ip_version': 6,
+                'source_port': '4000',
+                'destination_port': '7000',
+                'protocol': 6,
+                'direction': 'ingress',
+                'ethertype': 'IPv6',
+                'offset': 0,
+                'port_range_min': 7000,
+                'port_range_max': 7000,
+                'source_port_range_min': 4000,
+                'source_port_range_max': 4000
+        }]
+        egress_rules = [{
+            'ip_version': 4,
+            'source_port': '4000',
+            'destination_port': '7000',
+            'protocol': 6,
+            'direction': 'egress',
+            'ethertype': 'IPv4',
+            'offset': 1,
+            'port_range_min': 7000,
+            'port_range_max': 7000,
+            'source_port_range_min': 4000,
+            'source_port_range_max': 4000
+        }, {
+            'ip_version': 6,
+            'source_port': '4000',
+            'destination_port': '7000',
+            'protocol': 6,
+            'direction': 'egress',
+            'ethertype': 'IPv6',
+            'offset': 0,
+            'port_range_min': 7000,
+            'port_range_max': 7000,
+            'source_port_range_min': 4000,
+            'source_port_range_max': 4000
+        }]
+        port.fw_group.ingress_rules = [{
+                'ip_version': 4,
+                'source_port': '4000',
+                'destination_port': '7000',
+                'protocol': 6
+        },
+            {
+                'ip_version': 6,
+                'source_port': '4000',
+                'destination_port': '7000',
+                'protocol': 6
+        }
+        ]
+        port.fw_group.egress_rules = [{
+                'ip_version': 4,
+                'source_port': '4000',
+                'destination_port': '7000',
+                'protocol': 6
+        },
+            {
+                'ip_version': 6,
+                'source_port': '4000',
+                'destination_port': '7000',
+                'protocol': 6
+        }
+        ]
+        self.firewall.add_flows_from_rules(port)
+        self.assertEqual(ingress_rules, port.fw_group.ingress_rules)
+        self.assertEqual(egress_rules, port.fw_group.egress_rules)
