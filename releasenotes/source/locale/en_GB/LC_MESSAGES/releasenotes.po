@@ -1,25 +1,51 @@
 # Andi Chandler <andi@gowling.com>, 2017. #zanata
 # Andi Chandler <andi@gowling.com>, 2018. #zanata
+# Andi Chandler <andi@gowling.com>, 2020. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: neutron-fwaas\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-04-18 08:25+0000\n"
+"POT-Creation-Date: 2020-01-24 00:17+0000\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"PO-Revision-Date: 2018-04-30 10:06+0000\n"
+"PO-Revision-Date: 2020-04-16 12:40+0000\n"
 "Last-Translator: Andi Chandler <andi@gowling.com>\n"
 "Language-Team: English (United Kingdom)\n"
 "Language: en_GB\n"
 "X-Generator: Zanata 4.3.3\n"
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
 
+msgid "--resource-type firewall_group"
+msgstr "--resource-type firewall_group"
+
+msgid "--resource-type firewall_group --resource <ID of firewall group>"
+msgstr "--resource-type firewall_group --resource <ID of firewall group>"
+
+msgid ""
+"--resource-type firewall_group --resource <ID of firewall group> --target "
+"<ID of port>"
+msgstr ""
+"--resource-type firewall_group --resource <ID of firewall group> --target "
+"<ID of port>"
+
+msgid "--resource-type firewall_group --target <ID of port>"
+msgstr "--resource-type firewall_group --target <ID of port>"
+
 msgid "11.0.0"
 msgstr "11.0.0"
 
 msgid "12.0.0"
 msgstr "12.0.0"
+
+msgid "13.0.0"
+msgstr "13.0.0"
+
+msgid "14.0.0"
+msgstr "14.0.0"
+
+msgid "15.0.0-9"
+msgstr "15.0.0-9"
 
 msgid "7.0.2"
 msgstr "7.0.2"
@@ -86,6 +112,20 @@ msgstr ""
 
 msgid "Enable quotas for FWaaS."
 msgstr "Enable quotas for FWaaS."
+
+msgid ""
+"Enable to collect network packet log for ACCEPT/DROP action from firewall "
+"groups. Currently, packet logging supports only L3(router) ports."
+msgstr ""
+"Enable to collect network packet log for ACCEPT/DROP action from firewall "
+"groups. Currently, packet logging supports only L3(router) ports."
+
+msgid ""
+"FWaaS V1 is being removed from the neutron-fwaas repo. Because FWaaS V2 has "
+"been available since the Newton release."
+msgstr ""
+"FWaaS V1 is being removed from the neutron-fwaas repo. Because FWaaS V2 has "
+"been available since the Newton release."
 
 msgid ""
 "FWaaS v1 can not be enabled at the same time as FWaaS v2; one or the other "
@@ -209,12 +249,34 @@ msgstr "Pike Series Release Notes"
 msgid "Prelude"
 msgstr "Prelude"
 
+msgid ""
+"Python 2.7 support has been dropped. The minimum version of Python now "
+"supported by neutron-fwaas is Python 3.6."
+msgstr ""
+"Python 2.7 support has been dropped. The minimum version of Python now "
+"supported by neutron-fwaas is Python 3.6."
+
 msgid "Queens Series Release Notes"
 msgstr "Queens Series Release Notes"
+
+msgid ""
+"Resource type **firewall group** has been supported for neutron packet "
+"logging framework.  You can specify firewall group as ``--resource-type`` "
+"for logging API."
+msgstr ""
+"Resource type **firewall group** has been supported for neutron packet "
+"logging framework.  You can specify firewall group as ``--resource-type`` "
+"for logging API."
+
+msgid "Rocky Series Release Notes"
+msgstr "Rocky Series Release Notes"
 
 msgid "Start using reno to manage release notes."
 msgstr "Start using Reno to manage release notes."
 
+msgid "Stein Series Release Notes"
+msgstr "Stein Series Release Notes"
+
 msgid ""
 "Taking security for VM instance into consideration, we've removed an option "
 "to disable automatic association with default firewall group feature. "
@@ -246,6 +308,15 @@ msgid ""
 msgstr ""
 "The Cisco Firewall Driver is being moved from the FWaaS repo to the Cisco "
 "specific repo: https://github.com/openstack/networking-cisco"
+
+msgid ""
+"The FWaaS V1 source code will not be available in neutron-fwaas repo from "
+"Stein. neutron-fwaas-migrate-v1-to-v2 can be used for migrating V1 object to "
+"V2 model."
+msgstr ""
+"The FWaaS V1 source code will not be available in neutron-fwaas repo from "
+"Stein. neutron-fwaas-migrate-v1-to-v2 can be used for migrating V1 object to "
+"V2 model."
 
 msgid ""
 "The FWaaS extension can register quotas. The default values for "
@@ -345,6 +416,9 @@ msgid ""
 msgstr ""
 "There is not currently a defined upgrade path from FWaaS v1 to FWaaS v2."
 
+msgid "Therefore, you can only run with following combinations:"
+msgstr "Therefore, you can only run with following combinations:"
+
 msgid "Upgrade Notes"
 msgstr "Upgrade Notes"
 
@@ -367,6 +441,15 @@ msgstr ""
 "correctly and only entries associated with the first port number were clean "
 "up. Note that this bug is only applied to the reference L3 agent based "
 "implementation."
+
+msgid ""
+"[`bug 1720727 <https://bugs.launchpad.net/neutron/+bug/1720727>`__] "
+"Currently, we cannot specify the following combination on CLI due to missing "
+"validation of --resource-type:"
+msgstr ""
+"[`bug 1720727 <https://bugs.launchpad.net/neutron/+bug/1720727>`__] "
+"Currently, we cannot specify the following combination on CLI due to missing "
+"validation of --resource-type:"
 
 msgid ""
 "[`bug 1746855 <https://bugs.launchpad.net/neutron/+bug/1746855>`__] Now, "
