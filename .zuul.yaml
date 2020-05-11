@@ -10,13 +10,13 @@
     check:
       jobs:
         - neutron-fwaas-functional
-        - neutron-tempest-plugin-fwaas
+        - neutron-tempest-plugin-fwaas-ussuri
         - neutron-fwaas-v2-dsvm-tempest-multinode:
             voting: false
     gate:
       jobs:
         - neutron-fwaas-functional
-        - neutron-tempest-plugin-fwaas
+        - neutron-tempest-plugin-fwaas-ussuri
     experimental:
       jobs:
         - neutron-fwaas-fullstack
@@ -36,6 +36,7 @@
 - job:
     name: neutron-fwaas-v2-dsvm-tempest-multinode
     parent: tempest-multinode-full-py3
+    override-checkout: stable/ussuri
     roles:
       - zuul: openstack/devstack
     required-projects:
@@ -45,6 +46,7 @@
       - openstack/neutron-tempest-plugin
       - openstack/tempest
     vars:
+      branch_override: stable/ussuri
       tox_envlist: all-plugin
       tempest_test_regex: ^neutron_tempest_plugin\.fwaas
       devstack_plugins:
