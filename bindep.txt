@@ -8,3 +8,6 @@ libpq-dev [test]
 # Packages required e.g. in functional tests
 libnetfilter-log1 [platform:dpkg platform:suse]
 libnetfilter-log [platform:rpm !platform:suse]
+
+# PDF Docs package dependencies
+tex-gyre [platform:dpkg doc]

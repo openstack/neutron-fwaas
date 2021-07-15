@@ -2,7 +2,6 @@
     templates:
       - check-requirements
       - openstack-cover-jobs-neutron
-      - openstack-lower-constraints-jobs-neutron
       - openstack-python3-ussuri-jobs-neutron
       - periodic-stable-jobs-neutron
       - publish-openstack-docs-pti
@@ -13,10 +12,14 @@
         - neutron-tempest-plugin-fwaas-ussuri
         - neutron-fwaas-v2-dsvm-tempest-multinode:
             voting: false
+        - build-openstack-releasenotes:
+            voting: false
     gate:
       jobs:
         - neutron-fwaas-functional
         - neutron-tempest-plugin-fwaas-ussuri
+        - build-openstack-releasenotes:
+            voting: false
     experimental:
       jobs:
         - neutron-fwaas-fullstack
