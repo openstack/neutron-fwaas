@@ -1,0 +1,77 @@
+- project:
+    templates:
+      - check-requirements
+      - openstack-cover-jobs-neutron
+      - openstack-lower-constraints-jobs-neutron
+      - openstack-python3-ussuri-jobs-neutron
+      - periodic-stable-jobs-neutron
+      - publish-openstack-docs-pti
+      - release-notes-jobs-python3
+    check:
+      jobs:
+        - neutron-fwaas-functional
+        - neutron-fwaas-v2-dsvm-tempest-multinode:
+            voting: false
+    gate:
+      jobs:
+        - neutron-fwaas-functional
+    experimental:
+      jobs:
+        - neutron-fwaas-fullstack
+
+- job:
+    name: neutron-fwaas-functional
+    parent: neutron-functional
+    timeout: 2400
+    pre-run: playbooks/configure_functional_job.yaml
+    vars:
+      project_name: neutron-fwaas
+      devstack_services:
+        INSTALL_OVN: false
+
+- job:
+    name: neutron-fwaas-fullstack
+    parent: neutron-fullstack
+    vars:
+      project_name: neutron-fwaas
+
+- job:
+    name: neutron-fwaas-v2-dsvm-tempest-multinode
+    parent: neutron-ovs-tempest-multinode-full
+    roles:
+      - zuul: openstack/devstack
+    required-projects:
+      - openstack/devstack-gate
+      - openstack/neutron
+      - openstack/neutron-fwaas
+      - openstack/neutron-tempest-plugin
+      - openstack/tempest
+    vars:
+      tox_envlist: all-plugin
+      tempest_test_regex: ^neutron_tempest_plugin\.fwaas
+      devstack_plugins:
+        neutron: https://opendev.org/openstack/neutron.git
+        neutron-fwaas: https://opendev.org/openstack/neutron-fwaas.git
+        neutron-tempest-plugin: https://opendev.org/openstack/neutron-tempest-plugin.git
+      devstack_services:
+        q-fwaas-v2: true
+      devstack_localrc:
+        NETWORK_API_EXTENSIONS: "agent,binding,dhcp_agent_scheduler,external-net,ext-gw-mode,extra_dhcp_opts,quotas,router,security-group,subnet_allocation,network-ip-availability,auto-allocated-topology,timestamp_core,tag,service-type,rbac-policies,standard-attr-description,pagination,sorting,project-id,fwaas_v2"
+        Q_AGENT: openvswitch
+        Q_ML2_TENANT_NETWORK_TYPE: vxlan
+        Q_ML2_PLUGIN_MECHANISM_DRIVERS: openvswitch
+    group-vars:
+      subnode:
+        devstack_services:
+          q-agt: true
+        devstack_localrc:
+          USE_PYTHON3: true
+        devstack_local_conf:
+          post-config:
+            # NOTE(slaweq): We can get rid of this hardcoded absolute path when
+            # devstack-tempest job will be switched to use lib/neutron instead of
+            # lib/neutron-legacy
+            "/$NEUTRON_CORE_PLUGIN_CONF":
+              ovs:
+                tunnel_bridge: br-tun
+                bridge_mappings: public:br-ex

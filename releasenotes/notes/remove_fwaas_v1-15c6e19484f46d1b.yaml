@@ -1,0 +1,8 @@
+---
+prelude: >
+  - FWaaS V1 is being removed from the neutron-fwaas repo. Because FWaaS V2
+    has been available since the Newton release.
+upgrade:
+  - The FWaaS V1 source code will not be available in neutron-fwaas repo from
+    Stein.
+    neutron-fwaas-migrate-v1-to-v2 can be used for migrating V1 object to V2 model.

@@ -1,0 +1,16 @@
+---
+prelude: >
+    Coexistence between security group and firewall group.
+features:
+  - L2 firewall group driver based OVS can work in coexistence mode.
+    That means, if a port is associated with both firewall group and
+    security group, then a packet must be allowed by both features.
+other:
+  - If a port is associated with both firewall group & security group and
+    there is a security group logging, which is enabled to collect ``DROP``
+    events for this port, then most of invalid packets will be dropped at
+    firewall group for performance reason except first dropped packet, which
+    is allowed by firewall group but not accepted by security group. So not
+    every dropped packet will be logged (like in case of security group
+    works in standalone mode).
+

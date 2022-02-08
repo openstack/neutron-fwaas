@@ -1,0 +1,7 @@
+[run]
+branch = True
+source = neutron_fwaas
+omit = neutron_fwaas/tests/*
+
+[report]
+ignore_errors = True

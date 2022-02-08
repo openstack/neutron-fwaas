@@ -1,0 +1,21 @@
+- shell:
+    cmd: |
+        set -e
+        set -x
+        GATE_STACK_USER={{ ansible_user }}
+        IS_GATE=True
+
+        BASE_DIR={{ base_dir }}
+        GATE_DEST={{ gate_dest_dir }}
+        PROJECT_NAME={{ project_name }}
+        NEUTRON_PATH={{ neutron_dir }}
+        NEUTRON_FWAAS_PATH={{ neutron_fwaas_dir }}
+        DEVSTACK_PATH={{ devstack_dir }}
+        VENV={{ tests_venv }}
+
+        source $DEVSTACK_PATH/functions
+        source $DEVSTACK_PATH/lib/neutron_plugins/ovs_source
+        source $NEUTRON_FWAAS_PATH/tools/configure_for_fwaas_func_testing.sh
+
+        configure_host_for_fwaas_func_testing
+    executable: /bin/bash

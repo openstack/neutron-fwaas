@@ -1,0 +1,12 @@
+FWAAS_DRIVER_V2=${FWAAS_DRIVER_V2:-iptables_v2}
+FW_L2_DRIVER=${FW_L2_DRIVER:-noop}
+FWAAS_PLUGIN_V2=${FWAAS_PLUGIN:-firewall_v2}
+
+NEUTRON_FWAAS_DIR=$DEST/neutron-fwaas
+NEUTRON_FWAAS_CONF_FILE=neutron_fwaas.conf
+
+NEUTRON_FWAAS_CONF=$NEUTRON_CONF_DIR/$NEUTRON_FWAAS_CONF_FILE
+
+NEUTRON_FWAAS_SERVICE_PROVIDERV2=${NEUTRON_FWAAS_SERVICE_PROVIDERV2:-FIREWALL_V2:fwaas_db:neutron_fwaas.services.firewall.service_drivers.agents.agents.FirewallAgentDriver:default}
+
+enable_service q-fwaas-v2

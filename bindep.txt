@@ -1,0 +1,10 @@
+# This file contains runtime (non-python) dependencies
+# More info at: http://docs.openstack.org/infra/bindep/readme.html
+
+# MySQL and PostgreSQL databases since some jobs are set up in
+# OpenStack infra that need these like
+libpq-dev [test]
+
+# Packages required e.g. in functional tests
+libnetfilter-log1 [platform:dpkg platform:suse]
+libnetfilter-log [platform:rpm !platform:suse]

@@ -1,0 +1,18 @@
+---
+prelude: >
+  The FWaaS team is pleased to release FWaaS v2.0.  This release of FWaaS
+  supports either the original FWaaS v1 or the new FWaaS v2.
+features:
+  - In FWaaS v2 firewall policies are applied to router ports, as opposed to
+    applying to routers in FWaaS v1.
+  - Earlier the FWaaS agent integrated with the L3 agent by having the L3 Agent
+    class inherit from the FWaaS Agent class. This meant that other service
+    agents could not also integrate with the L3 agent.  Now, using the L3 agent
+    extensions mechanism, FWaaS (v1 and v2) plugs in to the L3 agent.  This
+    means that it can interoperate peacefully with other L3 advanced services
+    that also implement the L3 agent extension mechanism, all without any code
+    changes to Neutron.
+upgrade:
+  - There is not currently a defined upgrade path from FWaaS v1 to FWaaS v2.
+  - FWaaS v1 can not be enabled at the same time as FWaaS v2; one or the other
+    must be chosen.

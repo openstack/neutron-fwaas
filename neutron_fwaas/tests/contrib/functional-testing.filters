@@ -1,0 +1,10 @@
+# neutron-rootwrap command filters to support functional testing.  It
+# is NOT intended to be used outside of a test environment.
+#
+# This file should be owned by (and only-writeable by) the root user
+
+[Filters]
+# enable ping from namespace
+ping_filter: CommandFilter, ping, root
+ping6_filter: CommandFilter, ping6, root
+ping_kill: KillFilter, root, ping, -2

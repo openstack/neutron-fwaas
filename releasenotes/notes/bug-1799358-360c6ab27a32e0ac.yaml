@@ -1,0 +1,7 @@
+---
+fixes:
+  - |
+    There was no way to define default firewall group rules.
+    Default firewall group rules can be now defined in neutron_fwaas.conf
+    in section ``default_fwg_rules``.
+    Default firewall group rules are same as hardcoded values before.
