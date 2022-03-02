@@ -14,6 +14,7 @@ coverage==4.0
 debtcollector==1.2.0
 decorator==4.1.0
 deprecation==1.0
+ddt==1.0.1
 doc8==0.6.0
 docutils==0.11
 dogpile.cache==0.6.2

@@ -10,11 +10,13 @@
     check:
       jobs:
         - neutron-fwaas-functional
+        - neutron-tempest-plugin-fwaas
         - neutron-fwaas-v2-dsvm-tempest-multinode:
             voting: false
     gate:
       jobs:
         - neutron-fwaas-functional
+        - neutron-tempest-plugin-fwaas
     experimental:
       jobs:
         - neutron-fwaas-fullstack

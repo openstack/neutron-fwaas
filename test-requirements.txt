@@ -18,5 +18,6 @@ WebTest>=2.0.27 # MIT
 oslotest>=3.2.0 # Apache-2.0
 PyMySQL>=0.7.6 # MIT License
 psycopg2>=2.7.3 # LGPL/ZPL
+ddt>=1.0.1 # MIT
 doc8>=0.6.0 # Apache-2.0
 Pygments>=2.2.0 # BSD
