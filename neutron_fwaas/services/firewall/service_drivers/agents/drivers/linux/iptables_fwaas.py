@@ -358,7 +358,8 @@ class IptablesFwaasDriver(fwaas_base.FwaasDriverBase):
         # and readding rules.
         args = []
 
-        args += self._protocol_arg(rule.get('protocol'))
+        args += self._protocol_arg(rule.get('protocol'),
+                                   rule.get('ip_version'))
 
         args += self._ip_prefix_arg('s', rule.get('source_ip_address'))
         args += self._ip_prefix_arg('d', rule.get('destination_ip_address'))
@@ -396,9 +397,13 @@ class IptablesFwaasDriver(fwaas_base.FwaasDriverBase):
 
         return args
 
-    def _protocol_arg(self, protocol):
+    def _protocol_arg(self, protocol, ip_version=constants.IP_VERSION_4):
         if not protocol:
             return []
+
+        if (protocol == constants.PROTO_NAME_ICMP and
+            ip_version == constants.IP_VERSION_6):
+            protocol = constants.PROTO_NAME_IPV6_ICMP
 
         args = ['-p', protocol]
 
