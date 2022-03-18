@@ -263,6 +263,7 @@ class TestOVSFirewallDriver(base.BaseTestCase):
         self._mock_ovs_br = mock.patch.object(
             ovs_lib, 'OVSBridge', autospec=True)
         mock_bridge = self._mock_ovs_br.start()
+        self.addCleanup(self._mock_ovs_br.stop)
         mock_agent_api = mock.patch.object(
             ovs_ext_api.OVSAgentExtensionAPI, 'request_int_br',
             return_value=mock_bridge).start()
@@ -272,10 +273,6 @@ class TestOVSFirewallDriver(base.BaseTestCase):
         self.fake_ovs_port = FakeOVSPort('port', 1, '00:00:00:00:00:00')
         self.mock_bridge.br.get_vif_port_by_id.return_value = \
             self.fake_ovs_port
-
-    def tearDown(self):
-        self._mock_ovs_br.stop()
-        super(TestOVSFirewallDriver, self).tearDown()
 
     def _prepare_firewall_group(self):
         ingress_rules = [

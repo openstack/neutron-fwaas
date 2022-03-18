@@ -97,8 +97,10 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
             new=FakeAgentApi().delete_firewall_group,
         )
         self.agentapi_del_fw_p = self._mock_agentapi_del_fw_p.start()
+        self.addCleanup(self._mock_agentapi_del_fw_p.stop)
         self._mock_get_client = mock.patch.object(agents.n_rpc, 'get_client')
         self._mock_get_client.start()
+        self.addCleanup(self._mock_get_client.stop)
         mock.patch.object(agents.n_rpc, 'Connection').start()
 
         l3_plugin_str = ('neutron.tests.unit.extensions.test_l3.'
@@ -120,11 +122,6 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
                        "that tenants can create. Only admin can override.")),
         ]
         cfg.CONF.register_opts(router_distributed_opts)
-
-    def tearDown(self):
-        self._mock_get_client.stop()
-        self._mock_agentapi_del_fw_p.stop()
-        super(TestAgentDriver, self).tearDown()
 
     @property
     def _self_context(self):

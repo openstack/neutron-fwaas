@@ -47,16 +47,13 @@ class TestFWaasV2AgentExtensionBase(base.BaseTestCase):
         self._driver_mock = mock.patch(
             'neutron.manager.NeutronManager.load_class_for_provider')
         self.driver = self._driver_mock.start()
+        self.addCleanup(self._driver_mock.stop)
         self.l2.initialize(None, 'ovs')
         self.l2.vlan_manager = mock.Mock()
         self.conf = cfg.ConfigOpts()
         self.l2.fwg_map = mock.Mock()
         self.l2.conf.host = self.host
         self.rpc = self.l2.plugin_rpc
-
-    def tearDown(self):
-        self._driver_mock.stop()
-        super(TestFWaasV2AgentExtensionBase, self).tearDown()
 
 
 class TestFWaasV2AgentExtension(TestFWaasV2AgentExtensionBase):

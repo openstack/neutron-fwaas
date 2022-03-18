@@ -34,6 +34,7 @@ class FireWallDriverDBMixinTestCase(test_fwaas_plugin_v2.
         self._mp_registry_publish = mock.patch(
             'neutron_lib.callbacks.registry.publish')
         self.mock_registry_publish = self._mp_registry_publish.start()
+        self.addCleanup(self._mp_registry_publish.stop)
         self.driver_api = self.plugin.driver
         self.ctx = context.get_admin_context()
         self.firewall_db = self.plugin.driver.firewall_db
@@ -41,6 +42,7 @@ class FireWallDriverDBMixinTestCase(test_fwaas_plugin_v2.
         self._mock_payload = mock.patch(
             'neutron_lib.callbacks.events.DBEventPayload')
         m_db_event_payload = self._mock_payload.start()
+        self.addCleanup(self._mock_payload.stop)
         m_db_event_payload.return_value = self.m_payload
         self.fake_fwg = {
             'id': 'fake_fwg_id',
@@ -63,11 +65,6 @@ class FireWallDriverDBMixinTestCase(test_fwaas_plugin_v2.
             'firewall_policy_id': [],
             'project_id': 'fake_project_id'
         }
-
-    def tearDown(self):
-        self._mock_payload.stop()
-        self._mp_registry_publish.stop()
-        super(FireWallDriverDBMixinTestCase, self).tearDown()
 
     # Test Firewall Group
     def test_create_firewall_group(self):

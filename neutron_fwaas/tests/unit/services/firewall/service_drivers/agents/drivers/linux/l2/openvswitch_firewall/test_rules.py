@@ -61,10 +61,7 @@ class TestCreateFlowsFromRuleAndPort(base.BaseTestCase):
         self._mock_create_flows = mock.patch.object(
             rules, 'create_protocol_flows')
         self.create_flows_mock = self._mock_create_flows.start()
-
-    def tearDown(self):
-        self._mock_create_flows.stop()
-        super(TestCreateFlowsFromRuleAndPort, self).tearDown()
+        self.addCleanup(self._mock_create_flows.stop)
 
     @property
     def passed_flow_template(self):
