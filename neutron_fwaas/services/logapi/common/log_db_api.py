@@ -150,9 +150,9 @@ def get_fwg_log_info_for_port(context, port_ids):
 
         [
             {
-                'event': u'ALL',
+                'event': 'ALL',
                 'id': '733e0499-e69e-4106-a84a-635fbc5fbbc0',
-                'project_id': u'46f70361-ba71-4bd0-9769-3573fd227c4b',
+                'project_id': '46f70361-ba71-4bd0-9769-3573fd227c4b',
                 'ports_log':
                     [
                         port1_id,
@@ -194,9 +194,9 @@ def get_fwg_log_info_for_log_resources(context, log_resources):
 
         [
             {
-                'event': u'ALL',
+                'event': 'ALL',
                 'id': '733e0499-e69e-4106-a84a-635fbc5fbbc0',
-                'project_id': u'46f70361-ba71-4bd0-9769-3573fd227c4b',
+                'project_id': '46f70361-ba71-4bd0-9769-3573fd227c4b',
                 'ports_log':
                     [
                         port1_id,

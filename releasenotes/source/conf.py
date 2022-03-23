@@ -55,8 +55,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Neutron FWaaS Release Notes'
-copyright = u'2015, Neutron FWaaS Developers'
+project = 'Neutron FWaaS Release Notes'
+copyright = '2015, Neutron FWaaS Developers'
 
 # Release notes are version independent.
 # The full version, including alpha/beta/rc tags.
@@ -207,8 +207,8 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     ('index', 'NeutronFWaaSReleaseNotes.tex',
-     u'Neutron FWaaS Release Notes Documentation',
-     u'Neutron FWaaS Developers', 'manual'),
+     'Neutron FWaaS Release Notes Documentation',
+     'Neutron FWaaS Developers', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -237,8 +237,8 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'neutronfwaasreleasenotes', u'Neutron FWaaS Release Notes '
-     'Documentation', [u'Neutron FWaaS Developers'], 1)
+    ('index', 'neutronfwaasreleasenotes', 'Neutron FWaaS Release Notes '
+     'Documentation', ['Neutron FWaaS Developers'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -251,9 +251,9 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    ('index', 'NeutronFWaaSReleaseNotes', u'Neutron FWaaS Release Notes '
+    ('index', 'NeutronFWaaSReleaseNotes', 'Neutron FWaaS Release Notes '
      'Documentation',
-     u'Neutron FWaaS Developers', 'NeutronFWaaSReleaseNotes',
+     'Neutron FWaaS Developers', 'NeutronFWaaSReleaseNotes',
      'One line description of project.',
      'Miscellaneous'),
 ]

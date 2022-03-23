@@ -93,8 +93,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Neutron FWaaS'
-copyright = u'2011-present, OpenStack Foundation.'
+project = 'Neutron FWaaS'
+copyright = '2011-present, OpenStack Foundation.'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -146,11 +146,11 @@ modindex_common_prefix = ['neutron_fwaas.']
 # -- Options for man page output --------------------------------------------
 
 # Grouping the document tree for man pages.
-# List of tuples 'sourcefile', 'target', u'title', u'Authors name', 'manual'
+# List of tuples 'sourcefile', 'target', 'title', 'Authors name', 'manual'
 
 #man_pages = [
-#    ('man/neutron-server', 'neutron-server', u'Neutron Server',
-#     [u'OpenStack'], 1)
+#    ('man/neutron-server', 'neutron-server', 'Neutron Server',
+#     ['OpenStack'], 1)
 #]
 
 
@@ -247,8 +247,8 @@ html_last_updated_fmt = '%Y-%m-%d %H:%M'
 # documentclass [howto/manual]).
 latex_documents = [
     ('index', 'doc-neutron-fwaas.tex',
-     u'Neutron Firewall-as-s-Service Documentation',
-     u'Neutron development team', 'manual'),
+     'Neutron Firewall-as-s-Service Documentation',
+     'Neutron development team', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
