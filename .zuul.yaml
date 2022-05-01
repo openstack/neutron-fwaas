@@ -2,7 +2,6 @@
     templates:
       - check-requirements
       - openstack-cover-jobs-neutron
-      - openstack-lower-constraints-jobs-neutron
       - openstack-python3-ussuri-jobs-neutron
       - periodic-stable-jobs-neutron
       - publish-openstack-docs-pti
