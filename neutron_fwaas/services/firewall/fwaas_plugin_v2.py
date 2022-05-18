@@ -23,6 +23,7 @@ from neutron_lib.callbacks import events
 from neutron_lib.callbacks import registry
 from neutron_lib.callbacks import resources
 from neutron_lib import constants as nl_constants
+from neutron_lib.db import api as db_api
 from neutron_lib.exceptions import firewall_v2 as f_exc
 from neutron_lib.plugins import constants as plugin_const
 from neutron_lib.plugins import directory
@@ -312,6 +313,7 @@ class FirewallPluginV2(Firewallv2PluginBase):
 
     # Firewall Group
     @log_helpers.log_method_call
+    @db_api.CONTEXT_WRITER
     def create_firewall_group(self, context, firewall_group):
         firewall_group = firewall_group['firewall_group']
         ports = firewall_group.get('ports', [])
@@ -328,6 +330,7 @@ class FirewallPluginV2(Firewallv2PluginBase):
         return self.driver.create_firewall_group(context, firewall_group)
 
     @log_helpers.log_method_call
+    @db_api.CONTEXT_WRITER
     def delete_firewall_group(self, context, id):
         # if no such group exists -> don't raise an exception according to
         # 80fe2ba1, return None
@@ -342,14 +345,17 @@ class FirewallPluginV2(Firewallv2PluginBase):
         self.driver.delete_firewall_group(context, id)
 
     @log_helpers.log_method_call
+    @db_api.CONTEXT_READER
     def get_firewall_group(self, context, id, fields=None):
         return self.driver.get_firewall_group(context, id, fields=fields)
 
     @log_helpers.log_method_call
+    @db_api.CONTEXT_WRITER
     def get_firewall_groups(self, context, filters=None, fields=None):
         return self.driver.get_firewall_groups(context, filters, fields)
 
     @log_helpers.log_method_call
+    @db_api.CONTEXT_WRITER
     def update_firewall_group(self, context, id, firewall_group):
         firewall_group = firewall_group['firewall_group']
         ports = firewall_group.get('ports', [])
@@ -370,23 +376,28 @@ class FirewallPluginV2(Firewallv2PluginBase):
 
     # Firewall Policy
     @log_helpers.log_method_call
+    @db_api.CONTEXT_WRITER
     def create_firewall_policy(self, context, firewall_policy):
         firewall_policy = firewall_policy['firewall_policy']
         return self.driver.create_firewall_policy(context, firewall_policy)
 
     @log_helpers.log_method_call
+    @db_api.CONTEXT_WRITER
     def delete_firewall_policy(self, context, id):
         self.driver.delete_firewall_policy(context, id)
 
     @log_helpers.log_method_call
+    @db_api.CONTEXT_READER
     def get_firewall_policy(self, context, id, fields=None):
         return self.driver.get_firewall_policy(context, id, fields)
 
     @log_helpers.log_method_call
+    @db_api.CONTEXT_READER
     def get_firewall_policies(self, context, filters=None, fields=None):
         return self.driver.get_firewall_policies(context, filters, fields)
 
     @log_helpers.log_method_call
+    @db_api.CONTEXT_WRITER
     def update_firewall_policy(self, context, id, firewall_policy):
         firewall_policy = firewall_policy['firewall_policy']
         self._ensure_update_firewall_policy(context, id)
@@ -394,35 +405,42 @@ class FirewallPluginV2(Firewallv2PluginBase):
 
     # Firewall Rule
     @log_helpers.log_method_call
+    @db_api.CONTEXT_WRITER
     def create_firewall_rule(self, context, firewall_rule):
         firewall_rule = firewall_rule['firewall_rule']
         return self.driver.create_firewall_rule(context, firewall_rule)
 
     @log_helpers.log_method_call
+    @db_api.CONTEXT_WRITER
     def delete_firewall_rule(self, context, id):
         self.driver.delete_firewall_rule(context, id)
 
     @log_helpers.log_method_call
+    @db_api.CONTEXT_READER
     def get_firewall_rule(self, context, id, fields=None):
         return self.driver.get_firewall_rule(context, id, fields)
 
     @log_helpers.log_method_call
+    @db_api.CONTEXT_READER
     def get_firewall_rules(self, context, filters=None, fields=None):
         return self.driver.get_firewall_rules(context, filters, fields)
 
     @log_helpers.log_method_call
+    @db_api.CONTEXT_WRITER
     def update_firewall_rule(self, context, id, firewall_rule):
         firewall_rule = firewall_rule['firewall_rule']
         self._ensure_update_firewall_rule(context, id)
         return self.driver.update_firewall_rule(context, id, firewall_rule)
 
     @log_helpers.log_method_call
+    @db_api.CONTEXT_WRITER
     def insert_rule(self, context, policy_id, rule_info):
         self._ensure_update_firewall_policy(context, policy_id)
         self._validate_insert_remove_rule_request(rule_info)
         return self.driver.insert_rule(context, policy_id, rule_info)
 
     @log_helpers.log_method_call
+    @db_api.CONTEXT_WRITER
     def remove_rule(self, context, policy_id, rule_info):
         self._ensure_update_firewall_policy(context, policy_id)
         self._validate_insert_remove_rule_request(rule_info)

@@ -16,6 +16,7 @@
 from neutron_lib.api.definitions import portbindings as pb_def
 from neutron_lib import constants as nl_constants
 from neutron_lib import context as neutron_context
+from neutron_lib.db import api as db_api
 from neutron_lib.exceptions import firewall_v2 as f_exc
 from neutron_lib import rpc as n_rpc
 from oslo_config import cfg
@@ -37,6 +38,7 @@ class FirewallAgentCallbacks(object):
         self.firewall_db = firewall_db
 
     @log_helpers.log_method_call
+    @db_api.CONTEXT_WRITER
     def set_firewall_group_status(self, context, fwg_id, status, **kwargs):
         """Agent uses this to set a firewall_group's status."""
         # Sanitize status first
@@ -56,6 +58,7 @@ class FirewallAgentCallbacks(object):
         return updated and to_update != nl_constants.ERROR
 
     @log_helpers.log_method_call
+    @db_api.CONTEXT_WRITER
     def firewall_group_deleted(self, context, fwg_id, **kwargs):
         """Agent uses this to indicate firewall is deleted."""
         try:
@@ -76,6 +79,7 @@ class FirewallAgentCallbacks(object):
             return True
 
     @log_helpers.log_method_call
+    @db_api.CONTEXT_WRITER
     def get_firewall_groups_for_project(self, context, **kwargs):
         """Gets all firewall_groups and rules on a project."""
         fwg_list = []
@@ -97,6 +101,7 @@ class FirewallAgentCallbacks(object):
         return fwg_list
 
     @log_helpers.log_method_call
+    @db_api.CONTEXT_WRITER
     def get_projects_with_firewall_groups(self, context, **kwargs):
         """Get all projects that have firewall_groups."""
         ctx = neutron_context.get_admin_context()
@@ -105,6 +110,7 @@ class FirewallAgentCallbacks(object):
         return fwg_project_list
 
     @log_helpers.log_method_call
+    @db_api.CONTEXT_WRITER
     def get_firewall_group_for_port(self, context, **kwargs):
         """Get firewall_group is associated with a port."""
         ctx = context.elevated()
