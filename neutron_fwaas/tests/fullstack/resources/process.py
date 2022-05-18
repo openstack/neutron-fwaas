@@ -13,8 +13,8 @@
 #    under the License.
 
 import datetime
-from distutils import spawn
 import os
+import shutil
 import signal
 
 import fixtures
@@ -53,7 +53,7 @@ class ProcessFixture(fixtures.Fixture):
 
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d--%H-%M-%S-%f")
         log_file = "%s--%s.log" % (self.process_name, timestamp)
-        cmd = [spawn.find_executable(self.exec_name),
+        cmd = [shutil.which(self.exec_name),
                '--log-dir', log_dir,
                '--log-file', log_file]
         for filename in self.config_filenames:
@@ -160,7 +160,7 @@ class OVSAgentFixture(fixtures.Fixture):
         self.process_fixture = self.useFixture(ProcessFixture(
             test_name=self.test_name,
             process_name=self.NEUTRON_OVS_AGENT,
-            exec_name=spawn.find_executable(
+            exec_name=shutil.which(
                 'ovs_agent.py',
                 path=os.path.join(base.ROOTDIR, 'common', 'agents')),
             config_filenames=config_filenames,
@@ -223,7 +223,7 @@ class L3AgentFixture(fixtures.Fixture):
             ProcessFixture(
                 test_name=self.test_name,
                 process_name=self.NEUTRON_L3_AGENT,
-                exec_name=spawn.find_executable(
+                exec_name=shutil.which(
                     'l3_agent.py',
                     path=os.path.join(base.ROOTDIR, 'common', 'agents')),
                 config_filenames=config_filenames,
