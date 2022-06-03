@@ -22,7 +22,6 @@ from neutron_lib.api import extensions
 from neutron_lib.exceptions import firewall_v2 as f_exc
 from neutron_lib.services import base as service_base
 from oslo_config import cfg
-import six
 
 from neutron_fwaas._i18n import _
 from neutron_fwaas.common import fwaas_constants
@@ -221,8 +220,9 @@ class Firewall_v2(extensions.APIExtensionDescriptor):
         return Firewallv2PluginBase
 
 
-@six.add_metaclass(abc.ABCMeta)
-class Firewallv2PluginBase(service_base.ServicePluginBase):
+class Firewallv2PluginBase(
+    service_base.ServicePluginBase,
+    metaclass=abc.ABCMeta):
 
     def get_plugin_type(self):
         return fwaas_constants.FIREWALL_V2

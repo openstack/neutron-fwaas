@@ -15,7 +15,6 @@
 
 import abc
 
-import six
 
 from neutron_lib.utils import runtime
 from oslo_config import cfg
@@ -38,8 +37,7 @@ def load_and_init_conntrack_driver(*args, **kwargs):
     return conntrack_driver
 
 
-@six.add_metaclass(abc.ABCMeta)
-class ConntrackDriverBase(object):
+class ConntrackDriverBase(object, metaclass=abc.ABCMeta):
     """Base Driver for Conntrack"""
 
     @abc.abstractmethod

@@ -15,11 +15,8 @@
 import abc
 import contextlib
 
-import six
 
-
-@six.add_metaclass(abc.ABCMeta)
-class FirewallL2DriverBase(object):
+class FirewallL2DriverBase(object, metaclass=abc.ABCMeta):
     """Abstract firewall L2 driver base"""
 
     def __init__(self, integration_bridge, sg_enabled=False):

@@ -16,7 +16,6 @@
 import abc
 import copy
 
-import six
 
 from neutron_lib.callbacks import events
 from neutron_lib.callbacks import registry
@@ -31,8 +30,7 @@ from neutron_fwaas.db.firewall.v2 import firewall_db_v2
 LOG = logging.getLogger(__name__)
 
 
-@six.add_metaclass(abc.ABCMeta)
-class FirewallDriver(object):
+class FirewallDriver(object, metaclass=abc.ABCMeta):
     """Firewall v2 interface for driver
 
     That driver interface does not persist Firewall v2 data in any database.
@@ -124,8 +122,7 @@ class FirewallDriver(object):
         pass
 
 
-@six.add_metaclass(abc.ABCMeta)
-class FirewallDriverDBMixin(FirewallDriver):
+class FirewallDriverDBMixin(FirewallDriver, metaclass=abc.ABCMeta):
     """FirewallDriverDB mixin to provision the database on behalf of the driver
 
     That driver interface persists Firewall data in its database and forwards
@@ -519,8 +516,7 @@ class FirewallDriverDB(FirewallDriverDBMixin):
         pass
 
 
-@six.add_metaclass(abc.ABCMeta)
-class FirewallDriverRPCMixin(object):
+class FirewallDriverRPCMixin(object, metaclass=abc.ABCMeta):
     """FirewallAgent interface for driver with rpc callback listener.
 
     Each firewall backend driver that needs a rpc callback listener should
