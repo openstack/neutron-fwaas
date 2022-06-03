@@ -16,7 +16,6 @@
 import contextlib
 
 import mock
-import six
 import webob.exc
 
 from neutron.api import extensions as api_ext
@@ -424,7 +423,7 @@ class FirewallPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
                 admin_state_up=self.ADMIN_STATE_UP,
                 ports=attrs['ports'] if 'ports' in attrs else None,
             ) as firewall_group:
-                for k, v in six.iteritems(attrs):
+                for k, v in attrs.items():
                     self.assertEqual(v, firewall_group['firewall_group'][k])
 
 

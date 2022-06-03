@@ -14,7 +14,6 @@
 #    under the License.
 
 import mock
-import six
 
 from neutron import extensions as neutron_extensions
 from neutron.tests.unit.extensions import test_l3
@@ -526,7 +525,7 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
                             fwr['firewall_rule']['id'])
                         res = self.deserialize(self.fmt,
                                                req.get_response(self.ext_api))
-                        for k, v in six.iteritems(attrs):
+                        for k, v in attrs.items():
                             self.assertEqual(v, res['firewall_rule'][k])
 
     def test_update_firewall_rule_on_pending_create_fwg(self):

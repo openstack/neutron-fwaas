@@ -15,7 +15,6 @@
 from oslo_concurrency import lockutils
 from oslo_config import cfg
 from oslo_log import log as logging
-import six
 
 from neutron.agent import securitygroups_rpc
 from neutron import manager
@@ -426,7 +425,7 @@ class PortFirewallGroupMap(object):
         # information. Need to consider map initialization in __init__()
 
     def port_id(self, port):
-        return (port if isinstance(port, six.string_types)
+        return (port if isinstance(port, str)
                 else port.get('port_id', port.get('id')))
 
     def get_fwg(self, fwg_id):
