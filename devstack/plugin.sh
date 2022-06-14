@@ -38,12 +38,21 @@ function install_fwaas() {
     fi
 }
 
+function is_ovn_enabled {
+    [[ $Q_AGENT == "ovn" ]] && return 0
+    return 1
+}
+
 function configure_fwaas_v2() {
     # Add conf file
     cp $NEUTRON_FWAAS_DIR/etc/neutron_fwaas.conf.sample $NEUTRON_FWAAS_CONF
     neutron_server_config_add $NEUTRON_FWAAS_CONF
     inicomment $NEUTRON_FWAAS_CONF service_providers service_provider
-    iniadd $NEUTRON_FWAAS_CONF service_providers service_provider $NEUTRON_FWAAS_SERVICE_PROVIDERV2
+    if is_ovn_enabled; then
+        iniadd $NEUTRON_FWAAS_CONF service_providers service_provider $NEUTRON_FWAAS_SERVICE_PROVIDERV2_OVN
+    else
+        iniadd $NEUTRON_FWAAS_CONF service_providers service_provider $NEUTRON_FWAAS_SERVICE_PROVIDERV2
+    fi
 
     neutron_fwaas_configure_driver fwaas_v2
     if is_service_enabled q-l3; then
