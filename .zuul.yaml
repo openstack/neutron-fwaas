@@ -19,6 +19,11 @@
     experimental:
       jobs:
         - neutron-fwaas-fullstack
+    periodic-weekly:
+      jobs:
+        - openstack-tox-py39
+        - neutron-fwaas-functional
+        - neutron-tempest-plugin-fwaas
 
 - job:
     name: neutron-fwaas-functional
