@@ -4,6 +4,7 @@
 # MySQL and PostgreSQL databases since some jobs are set up in
 # OpenStack infra that need these like
 libpq-dev [test]
+libczmq4 [test]
 
 # Packages required e.g. in functional tests
 libnetfilter-log1 [platform:dpkg platform:suse]
