@@ -16,9 +16,8 @@
 import netaddr
 
 from neutron.common import utils
-from neutron.plugins.ml2.drivers.openvswitch.agent.common import constants \
-    as ovs_consts
 from neutron_lib import constants as n_consts
+from neutron_lib.plugins.ml2 import ovs_constants as ovs_consts
 from oslo_log import log as logging
 
 from neutron_fwaas.services.firewall.service_drivers.agents.drivers.linux.l2.\
