@@ -14,11 +14,10 @@
 
 import mock
 from neutron_lib import constants
+from neutron_lib.plugins.ml2 import ovs_constants as ovs_consts
 import testtools
 
 from neutron.agent.common import ovs_lib
-from neutron.plugins.ml2.drivers.openvswitch.agent.common import constants \
-    as ovs_consts
 from neutron.plugins.ml2.drivers.openvswitch.agent import \
     ovs_agent_extension_api as ovs_ext_api
 from neutron.tests import base
