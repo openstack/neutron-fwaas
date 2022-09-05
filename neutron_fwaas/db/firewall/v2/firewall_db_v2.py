@@ -354,7 +354,7 @@ class FirewallPluginDb(object):
 
     def _process_rule_for_policy(self, context, firewall_policy_id,
                                  firewall_rule_id, position, association_db):
-        with context.session.begin(subtransactions=True):
+        with db_api.CONTEXT_READER.using(context):
             fwp_query = context.session.query(
                 FirewallPolicy).with_for_update()
             fwp_db = fwp_query.filter_by(id=firewall_policy_id).one()
@@ -483,7 +483,7 @@ class FirewallPluginDb(object):
             fwr['source_port'])
         dst_port_min, dst_port_max = self._get_min_max_ports_from_range(
             fwr['destination_port'])
-        with context.session.begin(subtransactions=True):
+        with db_api.CONTEXT_WRITER.using(context):
             fwr_db = FirewallRuleV2(
                 id=uuidutils.generate_uuid(),
                 tenant_id=fwr['tenant_id'],
@@ -523,7 +523,7 @@ class FirewallPluginDb(object):
             fwr['destination_port_range_min'] = dst_port_min
             fwr['destination_port_range_max'] = dst_port_max
             del fwr['destination_port']
-        with context.session.begin(subtransactions=True):
+        with db_api.CONTEXT_WRITER.using(context):
             fwr_db.update(fwr)
             # if the rule on a policy, fix audited flag
             fwp_ids = self.get_policies_with_rule(context, id)
@@ -533,7 +533,7 @@ class FirewallPluginDb(object):
         return self._make_firewall_rule_dict(fwr_db)
 
     def delete_firewall_rule(self, context, id):
-        with context.session.begin(subtransactions=True):
+        with db_api.CONTEXT_WRITER.using(context):
             fwr = self._get_firewall_rule(context, id)
             # make sure rule is not associated with any policy
             if self.get_policies_with_rule(context, id):
@@ -552,7 +552,7 @@ class FirewallPluginDb(object):
             # If insert_before is set, we will ignore insert_after.
             ref_firewall_rule_id = rule_info['insert_after']
             insert_before = False
-        with context.session.begin(subtransactions=True):
+        with db_api.CONTEXT_WRITER.using(context):
             fwr_db = self._get_firewall_rule(context, firewall_rule_id)
             fwp_db = self._get_firewall_policy(context, id)
             self._check_firewall_rule_conflict(fwr_db, fwp_db)
@@ -580,7 +580,7 @@ class FirewallPluginDb(object):
 
     def remove_rule(self, context, id, rule_info):
         firewall_rule_id = rule_info['firewall_rule_id']
-        with context.session.begin(subtransactions=True):
+        with db_api.CONTEXT_WRITER.using(context):
             self._get_firewall_rule(context, firewall_rule_id)
             fwpra_db = self._get_policy_rule_association(context, id,
                                                          firewall_rule_id)
@@ -599,7 +599,7 @@ class FirewallPluginDb(object):
 
     def _get_rules_in_policy(self, context, fwpid):
         """Gets rules in a firewall policy"""
-        with context.session.begin(subtransactions=True):
+        with db_api.CONTEXT_READER.using(context):
             fw_pol_rule_qry = context.session.query(
                 FirewallPolicyRuleAssociation).filter_by(
                 firewall_policy_id=fwpid)
@@ -608,7 +608,7 @@ class FirewallPluginDb(object):
 
     def get_policies_with_rule(self, context, fwrid):
         """Gets rules in a firewall policy"""
-        with context.session.begin(subtransactions=True):
+        with db_api.CONTEXT_READER.using(context):
             fw_pol_rule_qry = context.session.query(
                 FirewallPolicyRuleAssociation).filter_by(
                 firewall_rule_id=fwrid)
@@ -623,7 +623,7 @@ class FirewallPluginDb(object):
         if not rule_id_list:
             return
         position = 0
-        with context.session.begin(subtransactions=True):
+        with db_api.CONTEXT_WRITER.using(context):
             for rule_id in rule_id_list:
                 fw_pol_rul_db = FirewallPolicyRuleAssociation(
                     firewall_policy_id=fwp_db['id'],
@@ -673,7 +673,7 @@ class FirewallPluginDb(object):
                         firewall_policy_id=fwp_db['id'])
 
     def get_fwgs_with_policy(self, context, fwp_id):
-        with context.session.begin(subtransactions=True):
+        with db_api.CONTEXT_READER.using(context):
             fwg_ing_pol_qry = context.session.query(
                 FirewallGroup).filter_by(
                 ingress_firewall_policy_id=fwp_id)
@@ -687,7 +687,7 @@ class FirewallPluginDb(object):
     def _check_fwgs_associated_with_policy_in_same_project(self, context,
                                                            fwp_id,
                                                            fwp_tenant_id):
-        with context.session.begin(subtransactions=True):
+        with db_api.CONTEXT_READER.using(context):
             fwg_with_fwp_id_db = context.session.query(FirewallGroup).filter(
                 or_(FirewallGroup.ingress_firewall_policy_id == fwp_id,
                 FirewallGroup.egress_firewall_policy_id == fwp_id))
@@ -714,7 +714,7 @@ class FirewallPluginDb(object):
     def _set_rules_for_policy(self, context, firewall_policy_db, fwp):
         rule_id_list = fwp['firewall_rules']
         fwp_db = firewall_policy_db
-        with context.session.begin(subtransactions=True):
+        with db_api.CONTEXT_WRITER.using(context):
             if not rule_id_list:
                 self._delete_all_rules_from_policy(context, fwp_db)
                 return
@@ -759,7 +759,7 @@ class FirewallPluginDb(object):
 
     def _do_create_firewall_policy(self, context, firewall_policy):
         fwp = firewall_policy
-        with context.session.begin(subtransactions=True):
+        with db_api.CONTEXT_WRITER.using(context):
             fwp_db = FirewallPolicy(
                 id=uuidutils.generate_uuid(),
                 tenant_id=fwp['tenant_id'],
@@ -777,7 +777,7 @@ class FirewallPluginDb(object):
 
     def update_firewall_policy(self, context, id, firewall_policy):
         fwp = firewall_policy
-        with context.session.begin(subtransactions=True):
+        with db_api.CONTEXT_WRITER.using(context):
             fwp_db = self._get_firewall_policy(context, id)
             self._ensure_not_default_resource(fwp_db, 'firewall_policy',
                                          action="update")
@@ -798,7 +798,7 @@ class FirewallPluginDb(object):
         return self._make_firewall_policy_dict(fwp_db)
 
     def delete_firewall_policy(self, context, id):
-        with context.session.begin(subtransactions=True):
+        with db_api.CONTEXT_WRITER.using(context):
             fwp_db = self._get_firewall_policy(context, id)
             # check if policy in use
             qry = context.session.query(FirewallGroup)
@@ -839,7 +839,7 @@ class FirewallPluginDb(object):
 
     def get_ports_in_firewall_group(self, context, firewall_group_id):
         """Get the Ports associated with the  firewall group."""
-        with context.session.begin(subtransactions=True):
+        with db_api.CONTEXT_READER.using(context):
             fw_group_port_qry = context.session.query(
                 FirewallGroupPortAssociation)
             fw_group_port_rows = fw_group_port_qry.filter_by(
@@ -849,7 +849,7 @@ class FirewallPluginDb(object):
 
     def _delete_ports_in_firewall_group(self, context, firewall_group_id):
         """Delete the Ports associated with the  firewall group."""
-        with context.session.begin(subtransactions=True):
+        with db_api.CONTEXT_WRITER.using(context):
             fw_group_port_qry = context.session.query(
                 FirewallGroupPortAssociation)
             fw_group_port_qry.filter_by(
@@ -878,7 +878,7 @@ class FirewallPluginDb(object):
         """Return a list of ports under a given tenant"""
         try:
             fwg_id = FirewallGroupPortAssociation.firewall_group_id
-            with context.session.begin(subtransactions=True):
+            with db_api.CONTEXT_READER.using(context):
                 port_qry = context.session.query(
                     FirewallGroupPortAssociation.port_id).join(
                     FirewallGroup, FirewallGroup.id == fwg_id).filter(
@@ -963,7 +963,7 @@ class FirewallPluginDb(object):
             # that a default firewall group for given tenant exists
             self._ensure_default_firewall_group(context, tenant_id)
 
-        with context.session.begin(subtransactions=True):
+        with db_api.CONTEXT_WRITER.using(context):
             fwg_db = FirewallGroup(
                 id=uuidutils.generate_uuid(),
                 tenant_id=tenant_id,
@@ -986,7 +986,7 @@ class FirewallPluginDb(object):
         fwg = firewall_group
         # make sure that no group can be updated to have name=default
         self._ensure_not_default_resource(fwg, 'firewall_group')
-        with context.session.begin(subtransactions=True):
+        with db_api.CONTEXT_WRITER.using(context):
             fwg_db = self.get_firewall_group(context, id)
             if _is_default(fwg_db):
                 attrs = [
@@ -1020,7 +1020,7 @@ class FirewallPluginDb(object):
         """
         # filter in_ wants iterable objects, None isn't.
         not_in = not_in or []
-        with context.session.begin(subtransactions=True):
+        with db_api.CONTEXT_WRITER.using(context):
             return (context.session.query(FirewallGroup).
                     filter(FirewallGroup.id == id).
                     filter(~FirewallGroup.status.in_(not_in)).
@@ -1030,7 +1030,7 @@ class FirewallPluginDb(object):
         # Note: Plugin should ensure that it's okay to delete if the
         # firewall is active
 
-        with context.session.begin(subtransactions=True):
+        with db_api.CONTEXT_WRITER.using(context):
             # if no such group exists -> don't raise an exception according to
             # 80fe2ba1, return None
             try:

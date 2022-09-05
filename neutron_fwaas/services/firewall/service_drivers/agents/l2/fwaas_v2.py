@@ -169,17 +169,17 @@ class FWaaSV2AgentExtension(l2_extension.L2AgentExtension):
 
         return nl_const.INACTIVE
 
-    def _get_network_id(self, fwg_port):
+    def _get_network_and_segmentation_id(self, fwg_port):
         port_id = fwg_port.get('port_id', fwg_port.get('id'))
         port_details = fwg_port.get('port_details')
 
         if port_details:
             target = port_details.get(port_id)
             if target:
-                return target.get('network_id')
+                return target.get('network_id'), target.get('segmentation_id')
             return
 
-        return fwg_port.get('network_id')
+        return fwg_port.get('network_id'), fwg_port.get('segmentation_id')
 
     def _add_local_vlan_to_ports(self, fwg_ports):
         """Add local VLAN to ports if found
@@ -190,8 +190,9 @@ class FWaaSV2AgentExtension(l2_extension.L2AgentExtension):
         ports_with_lvlan = []
         for fwg_port in fwg_ports:
             try:
-                network_id = self._get_network_id(fwg_port)
-                l_vlan = self.vlan_manager.get(network_id).vlan
+                network_id, segm_id = self._get_network_and_segmentation_id(
+                    fwg_port)
+                l_vlan = self.vlan_manager.get(network_id, segm_id).vlan
                 fwg_port['lvlan'] = int(l_vlan)
             except vlanmanager.MappingNotFound:
                 LOG.warning("No Local VLAN found in network %s", network_id)

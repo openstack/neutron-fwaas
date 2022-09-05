@@ -620,6 +620,7 @@ class TestAddLocalVlanToPorts(TestFWaasV2AgentExtensionBase):
             'port_id': fake_data.PORT1,
             'id': fake_data.PORT1,
             'network_id': fake_data.NETWORK_ID,
+            'segmentation_id': 101,
             'port_details': {
                 fake_data.PORT1: {
                     'device': 'c12e5c1e-d68e-45bd-a2d3-1f2f32604e41',
@@ -643,7 +644,7 @@ class TestAddLocalVlanToPorts(TestFWaasV2AgentExtensionBase):
         actual = self.l2._add_local_vlan_to_ports([self.port_with_detail])
 
         self.l2.vlan_manager.get.assert_called_once_with(
-            self.port_with_detail['network_id'])
+            self.port_with_detail['network_id'], None)
         self.assertEqual(expect, actual)
 
     def test_port_has_detail_and_id(self):
@@ -653,7 +654,7 @@ class TestAddLocalVlanToPorts(TestFWaasV2AgentExtensionBase):
         actual = self.l2._add_local_vlan_to_ports([self.port_with_detail])
 
         self.l2.vlan_manager.get.assert_called_once_with(
-            self.port_with_detail['network_id'])
+            self.port_with_detail['network_id'], None)
         self.assertEqual(expect, actual)
 
     def test_port_has_no_detail(self):
@@ -663,7 +664,8 @@ class TestAddLocalVlanToPorts(TestFWaasV2AgentExtensionBase):
         actual = self.l2._add_local_vlan_to_ports([self.port_with_detail])
 
         self.l2.vlan_manager.get.assert_called_once_with(
-            self.port_with_detail['network_id'])
+            self.port_with_detail['network_id'],
+            self.port_with_detail['segmentation_id'])
         self.assertEqual(expect, actual)
 
 
