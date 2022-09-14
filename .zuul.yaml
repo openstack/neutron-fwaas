@@ -2,7 +2,7 @@
     templates:
       - check-requirements
       - openstack-cover-jobs-neutron
-      - openstack-python3-zed-jobs-neutron
+      - openstack-python3-jobs-neutron
       - periodic-stable-jobs-neutron
       - publish-openstack-docs-pti
       - release-notes-jobs-python3
