@@ -53,7 +53,7 @@
       - openstack/neutron-tempest-plugin
       - openstack/tempest
     vars:
-      tox_envlist: all-plugin
+      tox_envlist: all
       tempest_test_regex: ^neutron_tempest_plugin\.fwaas
       devstack_plugins:
         neutron: https://opendev.org/openstack/neutron.git
