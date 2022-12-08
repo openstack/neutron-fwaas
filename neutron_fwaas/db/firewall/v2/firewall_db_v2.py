@@ -22,6 +22,8 @@ from neutron_lib.db import api as db_api
 from neutron_lib.db import constants as db_constants
 from neutron_lib.db import model_base
 from neutron_lib.db import model_query
+from neutron_lib.db import resource_extend
+from neutron_lib.db import standard_attr
 from neutron_lib.db import utils as db_utils
 from neutron_lib import exceptions
 from neutron_lib.exceptions import firewall_v2 as f_exc
@@ -65,8 +67,8 @@ class HasDescription(object):
         sa.String(db_constants.LONG_DESCRIPTION_FIELD_SIZE))
 
 
-class FirewallRuleV2(model_base.BASEV2, model_base.HasId, HasName,
-                     HasDescription, model_base.HasProject):
+class FirewallRuleV2(standard_attr.HasStandardAttributes, model_base.BASEV2,
+                     model_base.HasId, HasName, model_base.HasProject):
     __tablename__ = "firewall_rules_v2"
     shared = sa.Column(sa.Boolean)
     protocol = sa.Column(sa.String(40))
@@ -80,18 +82,19 @@ class FirewallRuleV2(model_base.BASEV2, model_base.HasId, HasName,
     action = sa.Column(sa.Enum('allow', 'deny', 'reject',
                                name='firewallrules_action'))
     enabled = sa.Column(sa.Boolean)
+    api_collections = ['firewall_rules']
+    collection_resource_map = {"firewall_rules": "firewall_rule"}
+    tag_support = True
 
 
-class FirewallGroup(model_base.BASEV2, model_base.HasId, HasName,
-                    HasDescription, model_base.HasProject):
+class FirewallGroup(standard_attr.HasStandardAttributes, model_base.BASEV2,
+                    model_base.HasId, HasName, model_base.HasProject):
     __tablename__ = 'firewall_groups_v2'
     port_associations = orm.relationship(
         'FirewallGroupPortAssociation',
         backref=orm.backref('firewall_group_port_associations_v2',
                             cascade='all, delete'))
     name = sa.Column(sa.String(db_constants.NAME_FIELD_SIZE))
-    description = sa.Column(
-        sa.String(db_constants.LONG_DESCRIPTION_FIELD_SIZE))
     ingress_firewall_policy_id = sa.Column(
         sa.String(db_constants.UUID_FIELD_SIZE),
         sa.ForeignKey('firewall_policies_v2.id'))
@@ -101,6 +104,9 @@ class FirewallGroup(model_base.BASEV2, model_base.HasId, HasName,
     admin_state_up = sa.Column(sa.Boolean)
     status = sa.Column(sa.String(db_constants.STATUS_FIELD_SIZE))
     shared = sa.Column(sa.Boolean)
+    api_collections = ['firewall_groups']
+    collection_resource_map = {"firewall_groups": "firewall_group"}
+    tag_support = True
 
 
 class DefaultFirewallGroup(model_base.BASEV2, model_base.HasProjectPrimaryKey):
@@ -145,12 +151,10 @@ class FirewallPolicyRuleAssociation(model_base.BASEV2):
     position = sa.Column(sa.Integer)
 
 
-class FirewallPolicy(model_base.BASEV2, model_base.HasId, HasName,
-                     HasDescription, model_base.HasProject):
+class FirewallPolicy(standard_attr.HasStandardAttributes, model_base.BASEV2,
+                     model_base.HasId, HasName, model_base.HasProject):
     __tablename__ = 'firewall_policies_v2'
     name = sa.Column(sa.String(db_constants.NAME_FIELD_SIZE))
-    description = sa.Column(
-        sa.String(db_constants.LONG_DESCRIPTION_FIELD_SIZE))
     rule_count = sa.Column(sa.Integer)
     audited = sa.Column(sa.Boolean)
     rule_associations = orm.relationship(
@@ -159,6 +163,9 @@ class FirewallPolicy(model_base.BASEV2, model_base.HasId, HasName,
         order_by='FirewallPolicyRuleAssociation.position',
         collection_class=ordering_list('position', count_from=1))
     shared = sa.Column(sa.Boolean)
+    api_collections = ['firewall_policies']
+    collection_resource_map = {"firewall_policies": "firewall_policy"}
+    tag_support = True
 
 
 def _list_firewall_groups_result_filter_hook(query, filters):
@@ -289,6 +296,10 @@ class FirewallPluginDb(object):
                'action': firewall_rule['action'],
                'enabled': firewall_rule['enabled'],
                'shared': firewall_rule['shared']}
+        if hasattr(firewall_rule.standard_attr, 'id'):
+            res['standard_attr_id'] = firewall_rule.standard_attr.id
+            resource_extend.apply_funcs('firewall_rules', res,
+                                        firewall_rule)
         return db_utils.resource_fields(res, fields)
 
     def _make_firewall_policy_dict(self, firewall_policy, fields=None):
@@ -302,6 +313,10 @@ class FirewallPluginDb(object):
                'audited': firewall_policy['audited'],
                'firewall_rules': fw_rules,
                'shared': firewall_policy['shared']}
+        if hasattr(firewall_policy.standard_attr, 'id'):
+            res['standard_attr_id'] = firewall_policy.standard_attr.id
+            resource_extend.apply_funcs('firewall_policies', res,
+                                        firewall_policy)
         return db_utils.resource_fields(res, fields)
 
     def _make_firewall_group_dict(self, firewall_group_db, fields=None):
@@ -319,6 +334,10 @@ class FirewallPluginDb(object):
                'ports': fwg_ports,
                'status': firewall_group_db['status'],
                'shared': firewall_group_db['shared']}
+        if hasattr(firewall_group_db.standard_attr, 'id'):
+            res['standard_attr_id'] = firewall_group_db.standard_attr.id
+            resource_extend.apply_funcs('firewall_groups', res,
+                                        firewall_group_db)
         return db_utils.resource_fields(res, fields)
 
     def _get_policy_ordered_rules(self, context, policy_id):
@@ -988,7 +1007,7 @@ class FirewallPluginDb(object):
         # make sure that no group can be updated to have name=default
         self._ensure_not_default_resource(fwg, 'firewall_group')
         with db_api.CONTEXT_WRITER.using(context):
-            fwg_db = self.get_firewall_group(context, id)
+            fwg_db = self._get_firewall_group(context, id)
             if _is_default(fwg_db):
                 attrs = [
                     'name', 'description', 'admin_state_up',
@@ -1008,10 +1027,8 @@ class FirewallPluginDb(object):
                 del fwg['ports']
             # If fwg is empty, skip updating
             if fwg:
-                count = context.session.query(
-                    FirewallGroup).filter_by(id=id).update(fwg)
-                if not count:
-                    raise f_exc.FirewallGroupNotFound(firewall_id=id)
+                fwg_db.update(
+                    db_utils.filter_non_model_columns(fwg, FirewallGroup))
         return self.get_firewall_group(context, id)
 
     def update_firewall_group_status(self, context, id, status, not_in=None):

@@ -1,1 +1,2 @@
 NETWORK_API_EXTENSIONS+=,fwaas_v2
+NETWORK_API_EXTENSIONS+=,standard-attr-fwaas-v2
