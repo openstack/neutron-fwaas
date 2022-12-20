@@ -51,7 +51,6 @@ function configure_fwaas_v2() {
         iniset_multiline $Q_L3_CONF_FILE fwaas driver $FWAAS_DRIVER_V2
     fi
     if is_service_enabled q-agt; then
-        # TODO(hoangcx) we can remove the slashes below once neutron-legacy has gone
         iniset /$NEUTRON_CORE_PLUGIN_CONF fwaas firewall_l2_driver $FW_L2_DRIVER
         iniset /$NEUTRON_CORE_PLUGIN_CONF agent extensions fwaas_v2
     fi
