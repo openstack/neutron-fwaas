@@ -8,12 +8,20 @@
       - release-notes-jobs-python3
     check:
       jobs:
+        - openstack-tox-docs:
+            required-projects:
+              - openstack/neutron-lib
+              - openstack/neutron
         - neutron-fwaas-functional
         - neutron-tempest-plugin-fwaas
         - neutron-fwaas-v2-dsvm-tempest-multinode:
             voting: false
     gate:
       jobs:
+        - openstack-tox-docs:
+            required-projects:
+              - openstack/neutron-lib
+              - openstack/neutron
         - neutron-fwaas-functional
         - neutron-tempest-plugin-fwaas
     experimental:
