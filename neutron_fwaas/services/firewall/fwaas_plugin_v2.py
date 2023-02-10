@@ -355,6 +355,11 @@ class FirewallPluginV2(Firewallv2PluginBase):
         return self.driver.get_firewall_groups(context, filters, fields)
 
     @log_helpers.log_method_call
+    def get_firewall_groups_count(self, context, filters=None):
+        filters = filters or {}
+        return len(self.get_firewall_groups(context=context, filters=filters))
+
+    @log_helpers.log_method_call
     @db_api.CONTEXT_WRITER
     def update_firewall_group(self, context, id, firewall_group):
         firewall_group = firewall_group['firewall_group']
