@@ -856,6 +856,7 @@ class FirewallPluginDb(object):
                 firewall_group_id=firewall_group_id).delete()
         return
 
+    @db_api.CONTEXT_WRITER
     def _get_default_fwg_id(self, context, tenant_id):
         """Returns an id of default firewall group for given tenant or None"""
         default_fwg = model_query.query_with_hooks(
