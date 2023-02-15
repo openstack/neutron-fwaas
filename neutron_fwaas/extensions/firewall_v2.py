@@ -189,19 +189,6 @@ cfg.CONF.register_opts(default_fwg_rules_opts, 'default_fwg_rules')
 cfg.CONF.register_opts(firewall_quota_opts, 'QUOTAS')
 
 
-# TODO(Reedip): Remove the convert_to functionality after bug1706061 is fixed.
-def convert_to_string(value):
-    if value is not None:
-        return str(value)
-    return None
-
-
-firewall_v2.RESOURCE_ATTRIBUTE_MAP[api_const.FIREWALL_RULES][
-    'source_port']['convert_to'] = convert_to_string
-firewall_v2.RESOURCE_ATTRIBUTE_MAP[api_const.FIREWALL_RULES][
-    'destination_port']['convert_to'] = convert_to_string
-
-
 class Firewall_v2(extensions.APIExtensionDescriptor):
     api_definition = firewall_v2
 
