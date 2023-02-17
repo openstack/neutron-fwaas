@@ -14,8 +14,7 @@
               - openstack/neutron
         - neutron-fwaas-functional
         - neutron-tempest-plugin-fwaas
-        - neutron-fwaas-v2-dsvm-tempest-multinode:
-            voting: false
+        - neutron-fwaas-v2-dsvm-tempest-multinode
     gate:
       jobs:
         - openstack-tox-docs:
@@ -63,6 +62,7 @@
       - openstack/tempest
     vars:
       tox_envlist: all
+      tox_extra_args: --sitepackages
       tempest_test_regex: ^neutron_tempest_plugin\.fwaas
       devstack_plugins:
         neutron: https://opendev.org/openstack/neutron.git
