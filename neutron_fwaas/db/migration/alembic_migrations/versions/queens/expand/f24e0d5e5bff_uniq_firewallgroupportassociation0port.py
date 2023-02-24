@@ -64,7 +64,7 @@ def get_duplicate_port_records_in_fwg_port_association(connection):
     insp = sa.engine.reflection.Inspector.from_engine(connection)
     if 'firewall_group_port_associations_v2' not in insp.get_table_names():
         return []
-    session = sa.orm.Session(bind=connection.connect())
+    session = sa.orm.Session(bind=connection)
     query = (session.query(fwg_port_association.c.port_id)
              .group_by(fwg_port_association.c.port_id)
              .having(sa.func.count() > 1)).all()

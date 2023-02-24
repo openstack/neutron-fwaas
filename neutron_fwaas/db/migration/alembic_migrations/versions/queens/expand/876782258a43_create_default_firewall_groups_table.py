@@ -60,7 +60,7 @@ def check_sanity(connection):
     insp = sa.engine.reflection.Inspector.from_engine(connection)
     if 'firewall_groups_v2' not in insp.get_table_names():
         return []
-    session = sa.orm.Session(bind=connection.connect())
+    session = sa.orm.Session(bind=connection)
     default_fwg = session.query(resources.FIREWALL_GROUP.name).filter(
         resources.FIREWALL_GROUP.name == const.DEFAULT_FWG).first()
     if default_fwg:
