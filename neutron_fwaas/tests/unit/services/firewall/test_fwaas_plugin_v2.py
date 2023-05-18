@@ -128,31 +128,29 @@ class FirewallPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
         # matter some other time.
         return context.Context(user_id='admin',
                                tenant_id='admin-tenant',
-                               is_admin=True)
+                               is_admin=True).elevated()
 
     def _get_nonadmin_context(self, user_id='non-admin', tenant_id='tenant1'):
         return context.Context(user_id=user_id, tenant_id=tenant_id)
 
-    def _test_list_resources(self, resource, items,
-                             neutron_context=None,
-                             query_params=None):
+    def _test_list_resources(self, resource, items, neutron_context=None,
+                             query_params=None, as_admin=False):
         if resource.endswith('y'):
             resource_plural = resource.replace('y', 'ies')
         else:
             resource_plural = resource + 's'
 
-        res = self._list(resource_plural,
-                         neutron_context=neutron_context,
-                         query_params=query_params)
+        res = self._list(resource_plural, query_params=query_params,
+                         as_admin=as_admin)
         resource = resource.replace('-', '_')
         self.assertEqual(
             sorted([i[resource]['id'] for i in items]),
             sorted([i['id'] for i in res[resource_plural]]))
 
-    def _list_req(self, resource_plural, ctx=None):
+    def _list_req(self, resource_plural, ctx=None, as_admin=False):
         if not ctx:
             ctx = self._get_admin_context()
-        req = self.new_list_request(resource_plural)
+        req = self.new_list_request(resource_plural, as_admin=as_admin)
         req.environ['neutron.context'] = ctx
         return self.deserialize(
             self.fmt, req.get_response(self.ext_api))[resource_plural]
@@ -166,8 +164,8 @@ class FirewallPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
             self.fmt, req.get_response(self.ext_api))
         return res
 
-    def _build_default_fwg(self, ctx=None, is_one=True):
-        res = self._list_req('firewall_groups', ctx=ctx)
+    def _build_default_fwg(self, ctx=None, is_one=True, as_admin=False):
+        res = self._list_req('firewall_groups', ctx=ctx, as_admin=as_admin)
         if is_one:
             self.assertEqual(1, len(res))
             return res[0]
@@ -211,7 +209,8 @@ class FirewallPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
 
     def _create_firewall_policy(self, fmt, name, description, shared,
                                 firewall_rules, audited,
-                                expected_res_status=None, **kwargs):
+                                expected_res_status=None, as_admin=False,
+                                **kwargs):
         data = {'firewall_policy': {'name': name,
                                     'description': description,
                                     'firewall_rules': firewall_rules,
@@ -224,7 +223,7 @@ class FirewallPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
             data['firewall_policy'].update({'project_id': tenant_id})
 
         req = self.new_create_request('firewall_policies', data, fmt,
-                                      context=ctx)
+                                      context=ctx, as_admin=as_admin)
         res = req.get_response(self.ext_api)
         if expected_res_status:
             self.assertEqual(expected_res_status, res.status_int)
@@ -242,26 +241,29 @@ class FirewallPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
     def firewall_policy(self, fmt=None, name='firewall_policy1',
                         description=DESCRIPTION, shared=SHARED,
                         firewall_rules=None, audited=True,
-                        do_delete=True, **kwargs):
+                        do_delete=True, as_admin=False, **kwargs):
         if firewall_rules is None:
             firewall_rules = []
         if not fmt:
             fmt = self.fmt
         res = self._create_firewall_policy(fmt, name, description, shared,
-                                           firewall_rules, audited, **kwargs)
+                                           firewall_rules, audited,
+                                           as_admin=as_admin, **kwargs)
         if res.status_int >= 400:
             raise webob.exc.HTTPClientError(code=res.status_int)
         firewall_policy = self.deserialize(fmt or self.fmt, res)
         yield firewall_policy
         if do_delete:
             self._delete('firewall_policies',
-                         firewall_policy['firewall_policy']['id'])
+                         firewall_policy['firewall_policy']['id'],
+                         as_admin=True)
 
     def _create_firewall_rule(self, fmt, name, shared, protocol,
                               ip_version, source_ip_address,
                               destination_ip_address, source_port,
                               destination_port, action, enabled,
-                              expected_res_status=None, **kwargs):
+                              expected_res_status=None, as_admin=False,
+                              **kwargs):
         tenant_id = kwargs.get('tenant_id', self._tenant_id)
         data = {'firewall_rule': {'name': name,
                                   'protocol': protocol,
@@ -280,7 +282,8 @@ class FirewallPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
             data['firewall_rule'].update({'tenant_id': tenant_id})
             data['firewall_rule'].update({'project_id': tenant_id})
 
-        req = self.new_create_request('firewall_rules', data, fmt, context=ctx)
+        req = self.new_create_request('firewall_rules', data, fmt, context=ctx,
+                                      as_admin=as_admin)
         res = req.get_response(self.ext_api)
         if expected_res_status:
             self.assertEqual(expected_res_status, res.status_int)
@@ -297,27 +300,30 @@ class FirewallPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
                       source_port=SOURCE_PORT,
                       destination_port=DESTINATION_PORT,
                       action=ACTION, enabled=ENABLED,
-                      do_delete=True, **kwargs):
+                      do_delete=True, as_admin=False, **kwargs):
         if not fmt:
             fmt = self.fmt
         res = self._create_firewall_rule(fmt, name, shared, protocol,
                                          ip_version, source_ip_address,
                                          destination_ip_address,
                                          source_port, destination_port,
-                                         action, enabled, **kwargs)
+                                         action, enabled, as_admin=as_admin,
+                                         **kwargs)
         if res.status_int >= 400:
             raise webob.exc.HTTPClientError(code=res.status_int)
         firewall_rule = self.deserialize(fmt or self.fmt, res)
         yield firewall_rule
         if do_delete:
             self._delete('firewall_rules',
-                         firewall_rule['firewall_rule']['id'])
+                         firewall_rule['firewall_rule']['id'],
+                         as_admin=True)
 
     def _create_firewall_group(self, fmt, name, description,
                                ingress_firewall_policy_id=None,
                                egress_firewall_policy_id=None,
                                ports=None, admin_state_up=True,
-                               expected_res_status=None, **kwargs):
+                               expected_res_status=None,
+                               as_admin=False, **kwargs):
         if ingress_firewall_policy_id is None:
             default_policy = kwargs.get('default_policy', True)
             if default_policy:
@@ -328,6 +334,7 @@ class FirewallPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
                     shared=self.SHARED,
                     firewall_rules=[],
                     audited=self.AUDITED,
+                    as_admin=as_admin,
                 )
                 firewall_policy = self.deserialize(fmt or self.fmt, res)
                 fwp_id = firewall_policy["firewall_policy"]["id"]
@@ -346,7 +353,7 @@ class FirewallPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
             data['firewall_group'].update({'ports': ports})
 
         req = self.new_create_request('firewall_groups', data, fmt,
-                                      context=ctx)
+                                      context=ctx, as_admin=as_admin)
         res = req.get_response(self.ext_api)
         if expected_res_status:
             self.assertEqual(expected_res_status, res.status_int)
@@ -360,7 +367,7 @@ class FirewallPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
                        ingress_firewall_policy_id=None,
                        egress_firewall_policy_id=None,
                        ports=None, admin_state_up=True,
-                       do_delete=True, **kwargs):
+                       do_delete=True, as_admin=False, **kwargs):
         if not fmt:
             fmt = self.fmt
         res = self._create_firewall_group(fmt, name, description,
@@ -368,6 +375,7 @@ class FirewallPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
                                           egress_firewall_policy_id,
                                           ports=ports,
                                           admin_state_up=admin_state_up,
+                                          as_admin=as_admin,
                                           **kwargs)
         if res.status_int >= 400:
             raise webob.exc.HTTPClientError(code=res.status_int)
@@ -375,11 +383,12 @@ class FirewallPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
         yield firewall_group
         if do_delete:
             self._delete('firewall_groups',
-                         firewall_group['firewall_group']['id'])
+                         firewall_group['firewall_group']['id'],
+                         as_admin=True)
 
     def _rule_action(self, action, id, firewall_rule_id, insert_before=None,
                      insert_after=None, expected_code=webob.exc.HTTPOk.code,
-                     expected_body=None, body_data=None):
+                     expected_body=None, body_data=None, as_admin=False):
         # We intentionally do this check for None since we want to distinguish
         # from empty dictionary
         if body_data is None:
@@ -392,7 +401,7 @@ class FirewallPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
 
         req = self.new_action_request('firewall_policies',
                                       body_data, id,
-                                      "%s_rule" % action)
+                                      "%s_rule" % action, as_admin=as_admin)
         res = req.get_response(self.ext_api)
         self.assertEqual(expected_code, res.status_int)
         response = self.deserialize(self.fmt, res)
@@ -412,7 +421,7 @@ class FirewallPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
                 self.assertEqual(r2[k], rule[k])
 
     def _test_create_firewall_group(self, attrs):
-        with self.firewall_policy() as fwp:
+        with self.firewall_policy(as_admin=True) as fwp:
             fwp_id = fwp['firewall_policy']['id']
             attrs['ingress_firewall_policy_id'] = fwp_id
             attrs['egress_firewall_policy_id'] = fwp_id
@@ -431,9 +440,10 @@ class TestFirewallPluginBasev2(FirewallPluginV2TestCase):
 
     def _test_fwg_with_port(self, device_owner):
         with self.port(device_owner=device_owner) as port:
-            with self.firewall_rule() as fwr:
+            with self.firewall_rule(as_admin=True) as fwr:
                 fwr_id = fwr['firewall_rule']['id']
-                with self.firewall_policy(firewall_rules=[fwr_id]) as fwp:
+                with self.firewall_policy(firewall_rules=[fwr_id],
+                                          as_admin=True) as fwp:
                     fwp_id = fwp['firewall_policy']['id']
                     self.firewall_group(
                         self.fmt,
@@ -461,11 +471,12 @@ class TestFirewallPluginBasev2(FirewallPluginV2TestCase):
                 context=admin_ctx,
                 ports=[port['port']['id']],
                 expected_res_status=webob.exc.HTTPConflict.code,
+                as_admin=True,
             )
 
     def test_update_firewall_group_with_port_on_different_project(self):
         ctx = context.Context('not_admin', 'fake_project_id_1')
-        with self.firewall_group(ctx=ctx) as firewall_group:
+        with self.firewall_group(ctx=ctx, as_admin=True) as firewall_group:
             with self.port(tenant_id='fake_project_id_2') as port:
                 data = {
                     'firewall_group': {
@@ -476,6 +487,7 @@ class TestFirewallPluginBasev2(FirewallPluginV2TestCase):
                     'firewall_groups',
                     data,
                     firewall_group['firewall_group']['id'],
+                    as_admin=True,
                 )
                 res = req.get_response(self.ext_api)
                 self.assertEqual(webob.exc.HTTPConflict.code, res.status_int)
@@ -488,10 +500,11 @@ class TestFirewallPluginBasev2(FirewallPluginV2TestCase):
                 self.DESCRIPTION,
                 ports=[port['port']['id']],
                 expected_res_status=webob.exc.HTTPConflict.code,
+                as_admin=True,
             )
 
     def test_update_firewall_group_with_with_wrong_type_port(self):
-        with self.firewall_group() as firewall_group:
+        with self.firewall_group(as_admin=True) as firewall_group:
             with self.port(device_owner="wrong port type") as port:
                 data = {
                     'firewall_group': {
@@ -509,32 +522,37 @@ class TestFirewallPluginBasev2(FirewallPluginV2TestCase):
     def test_create_firewall_group_with_router_port_already_in_use(self):
         with self.port(
                 device_owner=nl_constants.DEVICE_OWNER_ROUTER_INTF) as port:
-            with self.firewall_group(ports=[port['port']['id']]):
+            with self.firewall_group(ports=[port['port']['id']],
+                                     as_admin=True):
                 self._create_firewall_group(
                     self.fmt,
                     "firewall_group2",
                     self.DESCRIPTION,
                     ports=[port['port']['id']],
                     expected_res_status=webob.exc.HTTPConflict.code,
+                    as_admin=True,
                 )
 
     def test_create_firewall_group_with_dvr_port_already_in_use(self):
         with self.port(
                 device_owner=nl_constants.DEVICE_OWNER_DVR_INTERFACE) as port:
-            with self.firewall_group(ports=[port['port']['id']]):
+            with self.firewall_group(ports=[port['port']['id']],
+                                     as_admin=True):
                 self._create_firewall_group(
                     self.fmt,
                     "firewall_group2",
                     self.DESCRIPTION,
                     ports=[port['port']['id']],
                     expected_res_status=webob.exc.HTTPConflict.code,
+                    as_admin=True,
                 )
 
     def test_update_firewall_group_with_port_already_in_use(self):
         with self.port(
                 device_owner=nl_constants.DEVICE_OWNER_ROUTER_INTF) as port:
-            with self.firewall_group(ports=[port['port']['id']]):
-                with self.firewall_group() as firewall_group:
+            with self.firewall_group(ports=[port['port']['id']],
+                                     as_admin=True):
+                with self.firewall_group(as_admin=True) as firewall_group:
                     data = {
                         'firewall_group': {
                             'ports': [port['port']['id']],
@@ -555,9 +573,10 @@ class TestFirewallPluginBasev2(FirewallPluginV2TestCase):
                           nl_constants.PENDING_DELETE]
 
         for status in pending_status:
-            with self.firewall_rule() as fwr:
+            with self.firewall_rule(as_admin=True) as fwr:
                 fwr_id = fwr['firewall_rule']['id']
-                with self.firewall_policy(firewall_rules=[fwr_id]) as fwp:
+                with self.firewall_policy(firewall_rules=[fwr_id],
+                                          as_admin=True) as fwp:
                     fwp_id = fwp['firewall_policy']['id']
                     with self.firewall_group(
                             ingress_firewall_policy_id=fwp_id) as fwg:
@@ -612,7 +631,8 @@ class TestFirewallPluginBasev2(FirewallPluginV2TestCase):
     def test_create_firewall_policy_with_other_project_shared_rule(self):
         admin_context = self._get_admin_context()
         project1_context = self._get_nonadmin_context(tenant_id='project1')
-        with self.firewall_rule(context=admin_context, shared=True) as fwr:
+        with self.firewall_rule(context=admin_context, shared=True,
+                                as_admin=True) as fwr:
             fwr_id = fwr['firewall_rule']['id']
             self.firewall_policy(
                 context=project1_context,

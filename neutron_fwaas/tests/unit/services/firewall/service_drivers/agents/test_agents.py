@@ -15,6 +15,7 @@
 
 import mock
 
+from neutron.conf import common as common_conf
 from neutron import extensions as neutron_extensions
 from neutron.tests.unit.extensions import test_l3
 from neutron_lib import constants as nl_constants
@@ -105,6 +106,7 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
         l3_plugin_str = ('neutron.tests.unit.extensions.test_l3.'
                          'TestL3NatServicePlugin')
         l3_plugin = {'l3_plugin_name': l3_plugin_str}
+        common_conf.register_core_common_config_opts(cfg=cfg.CONF)
         super(TestAgentDriver, self).setUp(
             service_provider=FIREWALL_AGENT_PLUGIN_KLASS,
             extra_service_plugins=l3_plugin,
@@ -133,7 +135,7 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
 
     def test_set_firewall_group_status(self):
         ctx = context.get_admin_context()
-        with self.firewall_policy() as fwp:
+        with self.firewall_policy(as_admin=True) as fwp:
             fwp_id = fwp['firewall_policy']['id']
             with self.firewall_group(
                 ingress_firewall_policy_id=fwp_id,
@@ -153,7 +155,7 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
 
     def test_firewall_group_deleted(self):
         ctx = context.get_admin_context()
-        with self.firewall_policy() as fwp:
+        with self.firewall_policy(as_admin=True) as fwp:
             fwp_id = fwp['firewall_policy']['id']
             with self.firewall_group(
                 ingress_firewall_policy_id=fwp_id,
@@ -186,12 +188,13 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
                     id=fwg_id).delete()
             return fwg_db
 
-        with self.firewall_policy() as fwp:
+        with self.firewall_policy(as_admin=True) as fwp:
             fwp_id = fwp['firewall_policy']['id']
             with self.firewall_group(
                 firewall_policy_id=fwp_id,
                 admin_state_up=self.ADMIN_STATE_UP,
-                do_delete=False
+                do_delete=False,
+                as_admin=True,
             ) as fwg:
                 fwg_id = fwg['firewall_group']['id']
                 with ctx.session.begin(subtransactions=True):
@@ -218,11 +221,12 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
 
     def test_firewall_group_deleted_error(self):
         ctx = context.get_admin_context()
-        with self.firewall_policy() as fwp:
+        with self.firewall_policy(as_admin=True) as fwp:
             fwp_id = fwp['firewall_policy']['id']
             with self.firewall_group(
                 firewall_policy_id=fwp_id,
                 admin_state_up=self.ADMIN_STATE_UP,
+                as_admin=True,
             ) as fwg:
                 fwg_id = fwg['firewall_group']['id']
                 observed = self.callbacks.firewall_group_deleted(
@@ -233,7 +237,7 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
 
     def test_create_firewall_group_ports_not_specified(self):
         """neutron firewall-create test-policy """
-        with self.firewall_policy() as fwp:
+        with self.firewall_policy(as_admin=True) as fwp:
             fwp_id = fwp['firewall_policy']['id']
             with self.firewall_group(
                 name='test',
@@ -264,7 +268,7 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
                 None)
             port_id2 = body['port_id']
             fwg_ports = [port_id1, port_id2]
-            with self.firewall_policy() as fwp:
+            with self.firewall_policy(as_admin=True) as fwp:
                 fwp_id = fwp['firewall_policy']['id']
                 with self.firewall_group(
                     name='test',
@@ -305,7 +309,7 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
                 port_id3 = body['port_id']
 
                 fwg_ports = [port_id1, port_id2, port_id3]
-                with self.firewall_policy() as fwp:
+                with self.firewall_policy(as_admin=True) as fwp:
                     fwp_id = fwp['firewall_policy']['id']
                     with self.firewall_group(
                         name='test',
@@ -425,7 +429,7 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
                 None)
             port_id3 = body['port_id']
 
-            with self.firewall_policy() as fwp:
+            with self.firewall_policy(as_admin=True) as fwp:
                 fwp_id = fwp['firewall_policy']['id']
                 with self.firewall_group(
                     name='test',
@@ -470,7 +474,7 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
                 None)
             port_id3 = body['port_id']
 
-            with self.firewall_policy() as fwp:
+            with self.firewall_policy(as_admin=True) as fwp:
                 fwp_id = fwp['firewall_policy']['id']
                 with self.firewall_group(
                     name='test',
@@ -505,9 +509,10 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
                 s1['subnet']['id'],
                 None)
             port_id1 = body['port_id']
-            with self.firewall_rule() as fwr:
+            with self.firewall_rule(as_admin=True) as fwr:
                 with self.firewall_policy(
-                    firewall_rules=[fwr['firewall_rule']['id']]) as fwp:
+                        firewall_rules=[fwr['firewall_rule']['id']],
+                        as_admin=True) as fwp:
                     fwp_id = fwp['firewall_policy']['id']
                     with self.firewall_group(
                         name='test',
@@ -541,9 +546,10 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
                 s1['subnet']['id'],
                 None)
             port_id1 = body['port_id']
-            with self.firewall_rule() as fwr:
+            with self.firewall_rule(as_admin=True) as fwr:
                 with self.firewall_policy(
-                    firewall_rules=[fwr['firewall_rule']['id']]) as fwp:
+                    firewall_rules=[fwr['firewall_rule']['id']],
+                    as_admin=True) as fwp:
                     fwp_id = fwp['firewall_policy']['id']
                     with self.firewall_group(
                         name='test',
@@ -609,9 +615,10 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
             port_id2 = body['port_id']
 
             fwg_ports = [port_id1, port_id2]
-            with self.firewall_rule() as fwr:
+            with self.firewall_rule(as_admin=True) as fwr:
                 with self.firewall_policy(
-                        firewall_rules=[fwr['firewall_rule']['id']]) as fwp:
+                        firewall_rules=[fwr['firewall_rule']['id']],
+                        as_admin=True) as fwp:
                     with self.firewall_group(
                             name='test',
                             default_policy=False,
