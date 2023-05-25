@@ -382,6 +382,22 @@ class FirewallPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
         firewall_group = self.deserialize(fmt or self.fmt, res)
         yield firewall_group
         if do_delete:
+            self.plugin.driver.firewall_db.update_firewall_group_status(
+                context.get_admin_context(),
+                firewall_group['firewall_group']['id'],
+                nl_constants.ACTIVE)
+            data = {
+                'firewall_group': {
+                    'ports': [],
+                },
+            }
+            req = self.new_update_request(
+                'firewall_groups',
+                data,
+                firewall_group['firewall_group']['id'],
+                as_admin=True,
+            )
+            req.get_response(self.ext_api)
             self._delete('firewall_groups',
                          firewall_group['firewall_group']['id'],
                          as_admin=True)

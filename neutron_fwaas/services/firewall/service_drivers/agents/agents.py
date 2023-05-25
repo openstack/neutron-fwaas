@@ -270,31 +270,6 @@ class FirewallAgentDriver(driver_api.FirewallDriverDB,
                 context, firewall_group['ports'])
             self.agent_rpc.create_firewall_group(context, fwg_with_rules)
 
-    def delete_firewall_group_precommit(self, context, firewall_group):
-        if firewall_group['status'] == nl_constants.ACTIVE:
-            raise f_exc.FirewallGroupInUse(firewall_id=firewall_group['id'])
-        elif firewall_group['status'] != nl_constants.INACTIVE:
-            # Firewall group is in inconsistent state, remove it
-            return
-        if not firewall_group['ports']:
-            # No associated port, can safety remove it
-            return
-
-        # Need to prevent agent to delete the firewall group before delete it
-        self.firewall_db.update_firewall_group_status(
-            context, firewall_group['id'], nl_constants.PENDING_DELETE)
-        firewall_group['status'] = nl_constants.PENDING_DELETE
-
-        fwg_with_rules = self.firewall_db.make_firewall_group_dict_with_rules(
-            context, firewall_group['id'])
-        fwg_with_rules['del-port-ids'] = firewall_group['ports']
-        fwg_with_rules['add-port-ids'] = []
-        # Reflect state change in fwg_with_rules
-        fwg_with_rules['status'] = nl_constants.PENDING_DELETE
-        fwg_with_rules['port_details'] = self._get_fwg_port_details(
-            context, fwg_with_rules['del-port-ids'])
-        self.agent_rpc.delete_firewall_group(context, fwg_with_rules)
-
     def _need_pending_update(self, old_firewall_group, new_firewall_group):
         port_updated = (set(new_firewall_group['ports']) !=
                         set(old_firewall_group['ports']))
