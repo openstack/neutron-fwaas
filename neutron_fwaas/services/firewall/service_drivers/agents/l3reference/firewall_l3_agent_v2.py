@@ -232,10 +232,10 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
                 LOG.exception(msg, {'status': firewall_group['status'],
                                     'fwg_id': firewall_group['id']})
                 status = nl_constants.ERROR
-
-            # Notify the plugin of firewall group's status.
-            self.fwplugin_rpc.set_firewall_group_status(
-                ctx, firewall_group['id'], status)
+            if firewall_group['status'] != status:
+                # Notify the plugin of firewall group's status.
+                self.fwplugin_rpc.set_firewall_group_status(
+                    ctx, firewall_group['id'], status)
 
     def _process_router_update(self, updated_router):
         """If a new or existing router in the local namespace is updated,
