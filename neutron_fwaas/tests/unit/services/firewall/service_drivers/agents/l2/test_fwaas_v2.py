@@ -14,7 +14,8 @@
 
 import copy
 
-import mock
+from unittest import mock
+
 from neutron_lib import constants as nl_consts
 from neutron_lib import context
 from neutron_lib.exceptions import firewall_v2 as f_exc

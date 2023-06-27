@@ -13,9 +13,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from unittest import mock
+
 import time
 
-import mock
 from neutron.agent.l3 import l3_agent_extension_api as l3_ext_api
 from neutron.agent.linux import utils as linux_utils
 from neutron.tests.functional.agent.l3 import framework

@@ -13,7 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import mock
+from unittest import mock
+
 from neutron.agent.l3 import l3_agent_extension_api as l3_agent_api
 from neutron.agent.l3 import router_info
 from neutron.agent.linux import ip_lib

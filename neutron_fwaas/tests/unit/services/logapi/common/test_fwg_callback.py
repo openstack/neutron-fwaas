@@ -13,7 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import mock
+from unittest import mock
+
 from neutron.objects import ports as port_objects
 from neutron.services.logapi.drivers import base as log_driver_base
 from neutron.services.logapi.drivers import manager as driver_mgr

@@ -15,7 +15,8 @@
 
 import copy
 
-import mock
+from unittest import mock
+
 from neutron_lib.callbacks import events
 from neutron_lib import context
 

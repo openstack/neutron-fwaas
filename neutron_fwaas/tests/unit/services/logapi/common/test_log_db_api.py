@@ -13,7 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import mock
+from unittest import mock
+
 from neutron.objects.logapi import logging_resource as log_object
 from neutron.objects import ports as port_objects
 from neutron.services.logapi.rpc import server as server_rpc

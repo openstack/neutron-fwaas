@@ -15,7 +15,8 @@
 
 from collections import defaultdict
 
-import mock
+from unittest import mock
+
 from neutron.tests.unit.api.v2 import test_base
 from neutron_lib.services.logapi import constants as log_const
 

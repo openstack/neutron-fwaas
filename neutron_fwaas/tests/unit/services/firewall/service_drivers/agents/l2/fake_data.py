@@ -16,7 +16,8 @@
 
 import copy
 
-import mock
+from unittest import mock
+
 from neutron_lib import constants as nl_consts
 from oslo_utils import uuidutils
 

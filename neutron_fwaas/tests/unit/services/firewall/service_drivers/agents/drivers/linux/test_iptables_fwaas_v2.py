@@ -15,7 +15,8 @@
 
 import copy
 
-import mock
+from unittest import mock
+
 from neutron.tests import base
 from neutron.tests.unit.api.v2 import test_base as test_api_v2
 

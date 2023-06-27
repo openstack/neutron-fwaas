@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import mock
+from unittest import mock
 
 from neutron import manager
 from neutron_fwaas.services.firewall.service_drivers.agents.drivers.linux.l2.\

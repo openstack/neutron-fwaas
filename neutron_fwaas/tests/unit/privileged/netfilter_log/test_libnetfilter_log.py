@@ -14,9 +14,9 @@
 #    under the License.
 
 import socket
+from unittest import mock
 
 import cffi
-import mock
 from neutron.tests import base
 from oslo_utils import importutils
 import testtools
