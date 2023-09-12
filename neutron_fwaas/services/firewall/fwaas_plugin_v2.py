@@ -339,7 +339,7 @@ class FirewallPluginV2(Firewallv2PluginBase):
         except f_exc.FirewallGroupNotFound:
             return
 
-        if fwg['status'] == nl_constants.ACTIVE:
+        if fwg['ports']:
             raise f_exc.FirewallGroupInUse(firewall_id=id)
 
         self.driver.delete_firewall_group(context, id)
