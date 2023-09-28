@@ -1,3 +1,15 @@
+- job:
+    name: neutron-fwaas-openstack-tox-py310-with-sqlalchemy-main
+    required-projects:
+      - name: github.com/sqlalchemy/sqlalchemy
+        override-checkout: main
+      - name: github.com/sqlalchemy/alembic
+        override-checkout: main
+      - openstack/oslo.db
+      - openstack/neutron
+      - openstack/neutron-lib
+    parent: openstack-tox-py310-with-oslo-master
+
 - project:
     templates:
       - check-requirements
@@ -26,10 +38,13 @@
     experimental:
       jobs:
         - neutron-fwaas-fullstack
+        - openstack-tox-py310-with-oslo-master
+        - neutron-fwaas-openstack-tox-py310-with-sqlalchemy-main
     periodic-weekly:
       jobs:
-        - openstack-tox-py39
-        - openstack-tox-py39-with-oslo-master
+        - openstack-tox-py311
+        - openstack-tox-py310-with-oslo-master
+        - neutron-fwaas-openstack-tox-py310-with-sqlalchemy-main
         - neutron-fwaas-functional
         - neutron-tempest-plugin-fwaas
 
@@ -62,7 +77,7 @@
       - openstack/tempest
     vars:
       tox_envlist: all
-      tempest_test_regex: ^neutron_tempest_plugin\.fwaas
+      tempest_test_regex: '^(neutron_tempest_plugin.fwaas)'
       devstack_plugins:
         neutron: https://opendev.org/openstack/neutron.git
         neutron-fwaas: https://opendev.org/openstack/neutron-fwaas.git
