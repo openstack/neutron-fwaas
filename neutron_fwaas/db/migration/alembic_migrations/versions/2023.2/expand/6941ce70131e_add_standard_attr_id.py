@@ -45,17 +45,16 @@ def generate_records_for_existing(table):
                      sa.Column('standard_attr_id', sa.BigInteger(),
                                nullable=True))
     session = sa.orm.Session(bind=op.get_bind())
-    with session.begin(subtransactions=True):
-        for row in session.query(model):
-            res = session.execute(
-                standardattrs.insert().values(resource_type=table,
-                                              description=row[1])
-            )
-            session.execute(
-                model.update().values(
-                    standard_attr_id=res.inserted_primary_key[0]).where(
-                        model.c.id == row[0])
-            )
+    for row in session.query(model):
+        res = session.execute(
+            standardattrs.insert().values(resource_type=table,
+                                          description=row[1])
+        )
+        session.execute(
+            model.update().values(
+                standard_attr_id=res.inserted_primary_key[0]).where(
+                    model.c.id == row[0])
+        )
     session.commit()
 
 

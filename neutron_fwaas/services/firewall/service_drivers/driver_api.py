@@ -20,6 +20,7 @@ import copy
 from neutron_lib.callbacks import events
 from neutron_lib.callbacks import registry
 from neutron_lib import constants as nl_constants
+from neutron_lib.db import api as db_api
 from neutron_lib.plugins import directory
 from oslo_log import log as logging
 
@@ -134,16 +135,16 @@ class FirewallDriverDBMixin(FirewallDriver, metaclass=abc.ABCMeta):
         self.firewall_db = firewall_db_v2.FirewallPluginDb()
 
     @staticmethod
+    @db_api.CONTEXT_READER
     def _update_resource_status(context, resource_type, resource_dict):
-        with context.session.begin(subtransactions=True):
-            context.session.query(resource_type).\
-                                  filter_by(id=resource_dict['id']).\
-                                  update({'status': resource_dict['status']})
+        context.session.query(resource_type).\
+                              filter_by(id=resource_dict['id']).\
+                              update({'status': resource_dict['status']})
 
     # Firewall Group
     def create_firewall_group(self, context, firewall_group):
         request_body = firewall_group
-        with context.session.begin(subtransactions=True):
+        with db_api.CONTEXT_WRITER.using(context):
             firewall_group = self.firewall_db.create_firewall_group(
                 context, firewall_group)
             self.create_firewall_group_precommit(context, firewall_group)
@@ -231,7 +232,7 @@ class FirewallDriverDBMixin(FirewallDriver, metaclass=abc.ABCMeta):
     # Firewall Policy
     def create_firewall_policy(self, context, firewall_policy):
         request_body = firewall_policy
-        with context.session.begin(subtransactions=True):
+        with db_api.CONTEXT_WRITER.using(context):
             firewall_policy = self.firewall_db.create_firewall_policy(
                 context, firewall_policy)
             self.create_firewall_policy_precommit(context, firewall_policy)
@@ -310,7 +311,7 @@ class FirewallDriverDBMixin(FirewallDriver, metaclass=abc.ABCMeta):
     # Firewall Rule
     def create_firewall_rule(self, context, firewall_rule):
         request_body = firewall_rule
-        with context.session.begin(subtransactions=True):
+        with db_api.CONTEXT_WRITER.using(context):
             firewall_rule = self.firewall_db.create_firewall_rule(
                 context, firewall_rule)
             self.create_firewall_rule_precommit(context, firewall_rule)

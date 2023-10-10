@@ -20,6 +20,7 @@ from neutron import extensions as neutron_extensions
 from neutron.tests.unit.extensions import test_l3
 from neutron_lib import constants as nl_constants
 from neutron_lib import context
+from neutron_lib.db import api as db_api
 from neutron_lib.exceptions import firewall_v2 as f_exc
 from neutron_lib.plugins import directory
 from oslo_config import cfg
@@ -163,7 +164,7 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
                 do_delete=False
             ) as fwg:
                 fwg_id = fwg['firewall_group']['id']
-                with ctx.session.begin(subtransactions=True):
+                with db_api.CONTEXT_WRITER.using(ctx):
                     fwg_db = self.db._get_firewall_group(ctx, fwg_id)
                     fwg_db['status'] = nl_constants.PENDING_DELETE
 
@@ -183,7 +184,7 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
         def getdelete(context, fwg_id):
             fwg_db = _get_firewall_group(context, fwg_id)
             # NOTE(cby): Use a different session to simulate a concurrent del
-            with alt_ctx.session.begin(subtransactions=True):
+            with db_api.CONTEXT_READER.using(alt_ctx):
                 alt_ctx.session.query(FirewallGroup).filter_by(
                     id=fwg_id).delete()
             return fwg_db
@@ -197,7 +198,7 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
                 as_admin=True,
             ) as fwg:
                 fwg_id = fwg['firewall_group']['id']
-                with ctx.session.begin(subtransactions=True):
+                with db_api.CONTEXT_WRITER.using(ctx):
                     fwg_db = self.db._get_firewall_group(ctx, fwg_id)
                     fwg_db['status'] = nl_constants.PENDING_DELETE
                     ctx.session.flush()

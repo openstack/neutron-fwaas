@@ -846,11 +846,10 @@ class FirewallPluginDb(object):
         exc_ports = []
         for port_id in port_id_list:
             try:
-                with context.session.begin(subtransactions=True):
-                    fwg_port_db = FirewallGroupPortAssociation(
-                        firewall_group_id=fwg_db['id'],
-                        port_id=port_id)
-                    context.session.add(fwg_port_db)
+                fwg_port_db = FirewallGroupPortAssociation(
+                    firewall_group_id=fwg_db['id'],
+                    port_id=port_id)
+                context.session.add(fwg_port_db)
             except db_exc.DBDuplicateEntry:
                 exc_ports.append(port_id)
         if exc_ports:
