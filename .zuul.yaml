@@ -62,12 +62,13 @@
       - openstack/tempest
     vars:
       tox_envlist: all
-      tox_extra_args: --sitepackages
       tempest_test_regex: ^neutron_tempest_plugin\.fwaas
       devstack_plugins:
         neutron: https://opendev.org/openstack/neutron.git
         neutron-fwaas: https://opendev.org/openstack/neutron-fwaas.git
         neutron-tempest-plugin: https://opendev.org/openstack/neutron-tempest-plugin.git
+      tempest_plugins:
+        - neutron-tempest-plugin
       devstack_services:
         q-fwaas-v2: true
       devstack_localrc:
