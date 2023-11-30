@@ -406,8 +406,6 @@ class TestIsPortLayer2(TestFWaasV2AgentExtensionBase):
             nl_consts.DEVICE_OWNER_DVR_INTERFACE,
             nl_consts.DEVICE_OWNER_AGENT_GW,
             nl_consts.DEVICE_OWNER_ROUTER_SNAT,
-            nl_consts.DEVICE_OWNER_LOADBALANCER,
-            nl_consts.DEVICE_OWNER_LOADBALANCERV2,
             'unknown device_owner',
             '']:
             self.port['device_owner'] = device_owner
