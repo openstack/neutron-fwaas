@@ -393,7 +393,8 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
                 self.assertEqual(webob.exc.HTTPConflict.code, res.status_int)
 
     def test_update_default_fwg_policy(self):
-        """
+        """Test that fw group associated policy can't be updated
+
         Make sure that neither admin nor non-admin can update policy
         associated with default firewall group
         """
@@ -835,21 +836,21 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
 
     def test_create_firewall_group_with_router_port(self):
         with self.port(
-            device_owner=nl_constants.DEVICE_OWNER_ROUTER_INTF) as port:
+                device_owner=nl_constants.DEVICE_OWNER_ROUTER_INTF) as port:
             attrs = self._get_test_firewall_group_attrs("fwg1")
             attrs['ports'] = [port['port']['id']]
             self._test_create_firewall_group(attrs)
 
     def test_create_firewall_group_with_dvr_port(self):
         with self.port(
-            device_owner=nl_constants.DEVICE_OWNER_DVR_INTERFACE) as port:
+                device_owner=nl_constants.DEVICE_OWNER_DVR_INTERFACE) as port:
             attrs = self._get_test_firewall_group_attrs("fwg1")
             attrs['ports'] = [port['port']['id']]
             self._test_create_firewall_group(attrs)
 
     def test_create_firewall_group_with_router_port_l3ha(self):
-        with self.port(
-            device_owner=nl_constants.DEVICE_OWNER_HA_REPLICATED_INT) as port:
+        dev_owner_ha_repl_int = nl_constants.DEVICE_OWNER_HA_REPLICATED_INT
+        with self.port(device_owner=dev_owner_ha_repl_int) as port:
             attrs = self._get_test_firewall_group_attrs("fwg1")
             attrs['ports'] = [port['port']['id']]
             self._test_create_firewall_group(attrs)
@@ -993,7 +994,7 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
                 for rule_id in policy['firewall_rules']:
                     rule = self._show_req(
                         'firewall_rules', rule_id)['firewall_rule']
-                    self.assertTrue(direction in rule["description"])
+                    self.assertIn(direction, rule["description"])
 
         for obj in result_map:
             res = self._list_req(obj)
@@ -1098,8 +1099,8 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
 
     def test_show_firewall_group_with_ports(self):
         attrs = self._get_test_firewall_group_attrs('fwg1')
-        with self.port(
-            device_owner=nl_constants.DEVICE_OWNER_ROUTER_INTF) as dummy_port:
+        dev_owner_router_intf = nl_constants.DEVICE_OWNER_ROUTER_INTF
+        with self.port(device_owner=dev_owner_router_intf) as dummy_port:
             attrs['ports'] = [dummy_port['port']['id']]
             self._test_show_firewall_group(attrs)
 
@@ -1161,8 +1162,8 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
         ctx = self._get_nonadmin_context()
         def_fwg_id = self._build_default_fwg(ctx=ctx)['id']
         with self.port(
-            device_owner=nl_constants.DEVICE_OWNER_ROUTER_INTF,
-            tenant_id=ctx.project_id) as dummy_port:
+                device_owner=nl_constants.DEVICE_OWNER_ROUTER_INTF,
+                tenant_id=ctx.project_id) as dummy_port:
             port_id = dummy_port['port']['id']
             success_cases = [
                     {'ports': [port_id]},
@@ -1182,8 +1183,8 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
         ctx = self._get_nonadmin_context()
         def_fwg_id = self._build_default_fwg(ctx=ctx)['id']
         with self.port(
-            device_owner=nl_constants.DEVICE_OWNER_ROUTER_INTF,
-            tenant_id=ctx.project_id) as dummy_port:
+                device_owner=nl_constants.DEVICE_OWNER_ROUTER_INTF,
+                tenant_id=ctx.project_id) as dummy_port:
             port_id = dummy_port['port']['id']
             conflict_cases = [
                     {'name': ''},
@@ -1208,8 +1209,8 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
     def test_update_default_firewall_group_with_admin_success(self):
         ctx = self._get_admin_context()
         with self.port(
-            device_owner=nl_constants.DEVICE_OWNER_ROUTER_INTF,
-            tenant_id=ctx.project_id) as dummy_port:
+                device_owner=nl_constants.DEVICE_OWNER_ROUTER_INTF,
+                tenant_id=ctx.project_id) as dummy_port:
             port_id = dummy_port['port']['id']
             def_fwg_id = self._build_default_fwg(ctx=ctx)['id']
             success_cases = [
@@ -1233,8 +1234,8 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
     def test_update_default_firewall_group_with_admin_failure(self):
         ctx = self._get_admin_context()
         with self.port(
-            device_owner=nl_constants.DEVICE_OWNER_ROUTER_INTF,
-            tenant_id=ctx.project_id) as dummy_port:
+                device_owner=nl_constants.DEVICE_OWNER_ROUTER_INTF,
+                tenant_id=ctx.project_id) as dummy_port:
             port_id = dummy_port['port']['id']
             def_fwg_id = self._build_default_fwg(ctx=ctx)['id']
             conflict_cases = [
@@ -1272,9 +1273,10 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
             self.assertEqual(200, res.status_int)
 
     def test_change_fwg_name_to_default(self):
-        """
-           Make sure that neither admin nor non-admin can change name of
-           existing firewall group to default
+        """Test that fw group name can't be changed
+
+        Make sure that neither admin nor non-admin can change name of
+        existing firewall group to default
         """
         admin_ctx = self._get_admin_context()
         nonadmin_ctx = self._get_nonadmin_context()

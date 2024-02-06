@@ -145,9 +145,8 @@ class Firewall_v2(extensions.APIExtensionDescriptor):
         return Firewallv2PluginBase
 
 
-class Firewallv2PluginBase(
-    service_base.ServicePluginBase,
-    metaclass=abc.ABCMeta):
+class Firewallv2PluginBase(service_base.ServicePluginBase,
+                           metaclass=abc.ABCMeta):
 
     def get_plugin_type(self):
         return fwaas_constants.FIREWALL_V2

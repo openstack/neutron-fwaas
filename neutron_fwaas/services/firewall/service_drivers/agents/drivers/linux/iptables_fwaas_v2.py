@@ -281,7 +281,7 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
             for pre_fw_rule in pre_fw_rules:
                 for fw_rule in fw_rules:
                     if (pre_fw_rule.get('id') == fw_rule.get('id') and
-                        pre_fw_rule != fw_rule):
+                            pre_fw_rule != fw_rule):
                         changed_rules.append(pre_fw_rule)
                         changed_rules.append(fw_rule)
         return changed_rules
@@ -476,7 +476,7 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
         # iptables adds '-m protocol' when any source
         # or destination port number is specified
         if (rule.get('source_port') is not None or
-            rule.get('destination_port') is not None):
+                rule.get('destination_port') is not None):
             args += self._match_arg(rule.get('protocol'))
 
         args += self._port_arg('sport',
@@ -512,7 +512,7 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
             return []
 
         if (protocol == constants.PROTO_NAME_ICMP and
-            ip_version == constants.IP_VERSION_6):
+                ip_version == constants.IP_VERSION_6):
             protocol = constants.PROTO_NAME_IPV6_ICMP
 
         args = ['-p', protocol]
@@ -543,7 +543,7 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
 
     def _ip_prefix_arg(self, direction, ip_prefix):
 
-        if not(ip_prefix):
+        if not ip_prefix:
             return []
 
         args = ['-%s' % direction, '%s' % utils.ip_to_cidr(ip_prefix)]

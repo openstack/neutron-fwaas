@@ -18,7 +18,7 @@ from neutron.services.logapi.agent import log_extension as log_ext
 from neutron.services.logapi.rpc import agent as agent_rpc
 from neutron_lib.agent import l3_extension
 
-#TODO(annp) move to neutron-lib
+# TODO(annp) move to neutron-lib
 FIREWALL_LOG_DRIVER_NAME = 'fwaas_v2_log'
 
 

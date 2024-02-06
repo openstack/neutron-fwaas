@@ -241,7 +241,7 @@ class FirewallAgentDriver(driver_api.FirewallDriverDB,
                 'status': port_db['status'],
             }
             if device_owner.startswith(
-                nl_constants.DEVICE_OWNER_COMPUTE_PREFIX):
+                    nl_constants.DEVICE_OWNER_COMPUTE_PREFIX):
                 port_details[port_id].update(
                     {'host': port_db[pb_def.HOST_ID]})
         return port_details
@@ -314,7 +314,7 @@ class FirewallAgentDriver(driver_api.FirewallDriverDB,
         # the old group had the same number of ports that need to be deleted.
         fwg_with_rules['last-port'] = (len(old_firewall_group['ports']) == len(
                                        fwg_with_rules['del-port-ids']) and
-                                       not(new_firewall_group['ports']))
+                                       not new_firewall_group['ports'])
 
         LOG.debug("update_firewall_group %s: Add Ports: %s, Del Ports: %s",
             new_firewall_group['id'],

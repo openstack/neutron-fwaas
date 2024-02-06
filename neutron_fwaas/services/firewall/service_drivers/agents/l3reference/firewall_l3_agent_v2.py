@@ -86,7 +86,7 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
         self.agent_api = agent_api
 
     def _register_rpc_consumers(self, connection):
-        #TODO(njohnston): Add RPC consumer connection loading here.
+        # TODO(njohnston): Add RPC consumer connection loading here.
         pass
 
     def start_rpc_listeners(self, host, conf):
@@ -309,7 +309,7 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
         try:
             self._process_router_update(updated_router)
         except Exception:
-            #TODO(njohnston): This repr should be replaced.
+            # TODO(njohnston): This repr should be replaced.
             LOG.exception(
                 "FWaaS router update RPC info call failed for %s",
                 repr(updated_router))
@@ -320,7 +320,7 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
         in the context of FWaaS with an IPTables driver; the namespace will
         already have been deleted, taking the IPTables rules with it.
         """
-        #TODO(njohnston): When another firewall driver is implemented, look at
+        # TODO(njohnston): When another firewall driver is implemented, look at
         # expanding this out so that the driver can handle deletion calls.
         pass
 

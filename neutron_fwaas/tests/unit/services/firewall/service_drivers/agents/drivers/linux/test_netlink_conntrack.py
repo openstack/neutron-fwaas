@@ -185,7 +185,8 @@ class ConntrackNetlinkTestCase(base.BaseTestCase):
         not_in_dport_range = [(4, 'tcp', 1, 2, '1.1.1.1', '2.2.2.2'),
                               (4, 'tcp', [1], ['3', '100']), -1]
         for entry, rule_filter, expect in [
-            wrong_ipv, wrong_proto, not_in_sport_range, not_in_dport_range]:
+                wrong_ipv, wrong_proto, not_in_sport_range,
+                not_in_dport_range]:
             self._test_entry_to_delete(rule_filter, entry, expect)
 
     def test_get_filter_from_rules(self):

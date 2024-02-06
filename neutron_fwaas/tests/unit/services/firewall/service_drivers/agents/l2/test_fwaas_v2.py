@@ -401,13 +401,13 @@ class TestIsPortLayer2(TestFWaasV2AgentExtensionBase):
 
     def test_not_vm_port(self):
         for device_owner in [nl_consts.DEVICE_OWNER_ROUTER_INTF,
-            nl_consts.DEVICE_OWNER_ROUTER_GW,
-            nl_consts.DEVICE_OWNER_DHCP,
-            nl_consts.DEVICE_OWNER_DVR_INTERFACE,
-            nl_consts.DEVICE_OWNER_AGENT_GW,
-            nl_consts.DEVICE_OWNER_ROUTER_SNAT,
-            'unknown device_owner',
-            '']:
+                nl_consts.DEVICE_OWNER_ROUTER_GW,
+                nl_consts.DEVICE_OWNER_DHCP,
+                nl_consts.DEVICE_OWNER_DVR_INTERFACE,
+                nl_consts.DEVICE_OWNER_AGENT_GW,
+                nl_consts.DEVICE_OWNER_ROUTER_SNAT,
+                'unknown device_owner',
+                '']:
             self.port['device_owner'] = device_owner
             self.assertFalse(self.l2._is_port_layer2(self.port))
 

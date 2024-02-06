@@ -137,8 +137,8 @@ class Host(fixtures.Fixture):
                     self.ovs_agent.agent_cfg_fixture.get_br_int_name()))
 
     def setup_host_with_linuxbridge_agent(self):
-        #First we need to provide connectivity for agent to prepare proper
-        #bridge mappings in agent's config:
+        # First we need to provide connectivity for agent to prepare proper
+        # bridge mappings in agent's config:
         self.host_namespace = self.useFixture(
             net_helpers.NamespaceFixture(prefix="host-")
         ).name
@@ -269,7 +269,8 @@ class Environment(fixtures.Fixture):
     """
 
     def __init__(self, env_desc, hosts_desc):
-        """
+        """Environment, represents a deployment topology
+
         :param env_desc: An EnvironmentDescription instance.
         :param hosts_desc: A list of HostDescription instances.
         """
@@ -308,13 +309,13 @@ class Environment(fixtures.Fixture):
     def _setUp(self):
         self.temp_dir = self.useFixture(fixtures.TempDir()).path
 
-        #we need this bridge before rabbit and neutron service will start
+        # we need this bridge before rabbit and neutron service will start
         self.central_data_bridge = self.useFixture(
             net_helpers.OVSBridgeFixture('cnt-data')).bridge
         self.central_external_bridge = self.useFixture(
             net_helpers.OVSBridgeFixture('cnt-ex')).bridge
 
-        #Get rabbitmq address (and cnt-data network)
+        # Get rabbitmq address (and cnt-data network)
         rabbitmq_ip_address = self._configure_port_for_rabbitmq()
         self.rabbitmq_environment = self.useFixture(
             process.RabbitmqEnvironmentFixture(host=rabbitmq_ip_address)
@@ -349,7 +350,7 @@ class Environment(fixtures.Fixture):
         return rabbitmq_ip
 
     def _get_network_range(self):
-        #NOTE(slaweq): We need to choose IP address on which rabbitmq will be
+        # NOTE(slaweq): We need to choose IP address on which rabbitmq will be
         # available because LinuxBridge agents are spawned in their own
         # namespaces and need to know where the rabbitmq server is listening.
         # For ovs agent it is not necessary because agents are spawned in

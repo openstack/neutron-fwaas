@@ -441,7 +441,7 @@ class FirewallDriverDB(FirewallDriverDBMixin):
     related records in the databases.
     """
 
-    #Firewal Group
+    # Firewall Group
     def create_firewall_group_precommit(self, context, firewall_group):
         pass
 
@@ -462,7 +462,7 @@ class FirewallDriverDB(FirewallDriverDBMixin):
     def delete_firewall_group_postcommit(self, context, firewall_group):
         pass
 
-    #Firewall Policy
+    # Firewall Policy
     def create_firewall_policy_precommit(self, context, firewall_policy):
         pass
 
@@ -483,7 +483,7 @@ class FirewallDriverDB(FirewallDriverDBMixin):
     def delete_firewall_policy_postcommit(self, context, firewall_policy):
         pass
 
-    #Firewall Rule
+    # Firewall Rule
     def create_firewall_rule_precommit(self, context, firewall_rule):
         pass
 

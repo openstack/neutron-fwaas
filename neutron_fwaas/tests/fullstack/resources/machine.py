@@ -99,7 +99,7 @@ class FakeFullstackMachine(machine_fixtures.FakeMachineBase):
 
     def _configure_ipaddress(self, fixed_ip):
         if (netaddr.IPAddress(fixed_ip['ip_address']).version ==
-            constants.IP_VERSION_6):
+                constants.IP_VERSION_6):
             # v6Address/default_route is auto-configured.
             self._ipv6 = fixed_ip['ip_address']
         else:

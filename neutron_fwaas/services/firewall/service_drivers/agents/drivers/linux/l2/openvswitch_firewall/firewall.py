@@ -287,7 +287,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
     def _drop_all_unmatched_flows(self):
         for table in fwaas_ovs_consts.OVS_FIREWALL_TABLES:
             if (table == fwaas_ovs_consts.FW_ACCEPT_OR_INGRESS_TABLE and
-                self.sg_with_ovs):
+                    self.sg_with_ovs):
                 continue
             self.int_br.br.add_flow(table=table, priority=0, actions='drop')
 

@@ -40,9 +40,10 @@ DELETEFW_PATH = (FIREWALL_AGENT_PLUGIN + '.FirewallAgentApi.'
 
 
 class FakeAgentApi(agents.FirewallAgentCallbacks):
-    """
-    This class used to mock the AgentAPI delete method inherits from
-    FirewallCallbacks because it needs access to the firewall_deleted method.
+    """This class used to mock the AgentAPI delete method
+
+    It inherits from FirewallCallbacks because it needs access to
+    the firewall_deleted method.
     The delete_firewall method belongs to the FirewallAgentApi, which has
     no access to the firewall_deleted method normally because it's not
     responsible for deleting the firewall from the DB. However, it needs
@@ -241,10 +242,10 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
         with self.firewall_policy(as_admin=True) as fwp:
             fwp_id = fwp['firewall_policy']['id']
             with self.firewall_group(
-                name='test',
-                ingress_firewall_policy_id=fwp_id,
-                egress_firewall_policy_id=fwp_id,
-                admin_state_up=True) as fwg1:
+                    name='test',
+                    ingress_firewall_policy_id=fwp_id,
+                    egress_firewall_policy_id=fwp_id,
+                    admin_state_up=True) as fwg1:
                 self.assertEqual(nl_constants.INACTIVE,
                     fwg1['firewall_group']['status'])
 
@@ -272,10 +273,10 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
             with self.firewall_policy(as_admin=True) as fwp:
                 fwp_id = fwp['firewall_policy']['id']
                 with self.firewall_group(
-                    name='test',
-                    ingress_firewall_policy_id=fwp_id,
-                    egress_firewall_policy_id=fwp_id, ports=fwg_ports,
-                    admin_state_up=True) as fwg1:
+                        name='test',
+                        ingress_firewall_policy_id=fwp_id,
+                        egress_firewall_policy_id=fwp_id, ports=fwg_ports,
+                        admin_state_up=True) as fwg1:
                     self.assertEqual(nl_constants.PENDING_CREATE,
                          fwg1['firewall_group']['status'])
 
@@ -313,11 +314,11 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
                 with self.firewall_policy(as_admin=True) as fwp:
                     fwp_id = fwp['firewall_policy']['id']
                     with self.firewall_group(
-                        name='test',
-                        ingress_firewall_policy_id=fwp_id,
-                        egress_firewall_policy_id=fwp_id,
-                        ports=fwg_ports,
-                        admin_state_up=True) as fwg1:
+                            name='test',
+                            ingress_firewall_policy_id=fwp_id,
+                            egress_firewall_policy_id=fwp_id,
+                            ports=fwg_ports,
+                            admin_state_up=True) as fwg1:
                         self.assertEqual(nl_constants.PENDING_CREATE,
                             fwg1['firewall_group']['status'])
 
@@ -343,10 +344,10 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
             port_id2 = body['port_id']
             fwg_ports = [port_id1, port_id2]
             with self.firewall_group(
-                name='test',
-                default_policy=False,
-                ports=fwg_ports,
-                admin_state_up=True) as fwg1:
+                    name='test',
+                    default_policy=False,
+                    ports=fwg_ports,
+                    admin_state_up=True) as fwg1:
                 self.assertEqual(nl_constants.INACTIVE,
                      fwg1['firewall_group']['status'])
 
@@ -381,10 +382,10 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
 
             fwg_ports = [port_id1, port_id2]
             with self.firewall_group(
-                name='test',
-                default_policy=False,
-                ports=fwg_ports,
-                admin_state_up=True) as fwg1:
+                    name='test',
+                    default_policy=False,
+                    ports=fwg_ports,
+                    admin_state_up=True) as fwg1:
                 self.assertEqual(nl_constants.INACTIVE,
                      fwg1['firewall_group']['status'])
                 data = {'firewall_group': {'ports': [port_id2, port_id3]}}
@@ -433,10 +434,10 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
             with self.firewall_policy(as_admin=True) as fwp:
                 fwp_id = fwp['firewall_policy']['id']
                 with self.firewall_group(
-                    name='test',
-                    ingress_firewall_policy_id=fwp_id,
-                    egress_firewall_policy_id=fwp_id, ports=fwg_ports,
-                    admin_state_up=True) as fwg1:
+                        name='test',
+                        ingress_firewall_policy_id=fwp_id,
+                        egress_firewall_policy_id=fwp_id, ports=fwg_ports,
+                        admin_state_up=True) as fwg1:
                     self.assertEqual(nl_constants.PENDING_CREATE,
                          fwg1['firewall_group']['status'])
                     data = {'firewall_group': {'ports': [port_id2, port_id3]}}
@@ -478,10 +479,10 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
             with self.firewall_policy(as_admin=True) as fwp:
                 fwp_id = fwp['firewall_policy']['id']
                 with self.firewall_group(
-                    name='test',
-                    ingress_firewall_policy_id=fwp_id,
-                    egress_firewall_policy_id=fwp_id, ports=fwg_ports,
-                    admin_state_up=True) as fwg1:
+                        name='test',
+                        ingress_firewall_policy_id=fwp_id,
+                        egress_firewall_policy_id=fwp_id, ports=fwg_ports,
+                        admin_state_up=True) as fwg1:
                     self.assertEqual(nl_constants.PENDING_CREATE,
                          fwg1['firewall_group']['status'])
 
@@ -516,10 +517,10 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
                         as_admin=True) as fwp:
                     fwp_id = fwp['firewall_policy']['id']
                     with self.firewall_group(
-                        name='test',
-                        ingress_firewall_policy_id=fwp_id,
-                        egress_firewall_policy_id=fwp_id, ports=[port_id1],
-                        admin_state_up=True) as fwg1:
+                            name='test',
+                            ingress_firewall_policy_id=fwp_id,
+                            egress_firewall_policy_id=fwp_id, ports=[port_id1],
+                            admin_state_up=True) as fwg1:
                         self.assertEqual(nl_constants.PENDING_CREATE,
                              fwg1['firewall_group']['status'])
 
@@ -549,14 +550,14 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
             port_id1 = body['port_id']
             with self.firewall_rule(as_admin=True) as fwr:
                 with self.firewall_policy(
-                    firewall_rules=[fwr['firewall_rule']['id']],
-                    as_admin=True) as fwp:
+                        firewall_rules=[fwr['firewall_rule']['id']],
+                        as_admin=True) as fwp:
                     fwp_id = fwp['firewall_policy']['id']
                     with self.firewall_group(
-                        name='test',
-                        ingress_firewall_policy_id=fwp_id,
-                        egress_firewall_policy_id=fwp_id, ports=[port_id1],
-                        admin_state_up=True) as fwg1:
+                            name='test',
+                            ingress_firewall_policy_id=fwp_id,
+                            egress_firewall_policy_id=fwp_id, ports=[port_id1],
+                            admin_state_up=True) as fwg1:
                         self.assertEqual(nl_constants.PENDING_CREATE,
                              fwg1['firewall_group']['status'])
 
@@ -597,8 +598,8 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
     def test_update_firewall_group_with_ports_and_policy(self):
         """neutron firewall_group create test-policy """
         with self.router(name='router1', admin_state_up=True,
-                         tenant_id=self._tenant_id) as r,\
-                self.subnet() as s1,\
+                         tenant_id=self._tenant_id) as r, \
+                self.subnet() as s1, \
                 self.subnet(cidr='20.0.0.0/24') as s2:
 
             body = self._router_interface_action(
