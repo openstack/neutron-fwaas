@@ -18,6 +18,7 @@ import copy
 import netaddr
 
 from neutron_lib import constants as nl_constants
+from neutron_lib import context as lib_context
 from neutron_lib.db import api as db_api
 from neutron_lib.db import constants as db_constants
 from neutron_lib.db import model_base
@@ -856,11 +857,10 @@ class FirewallPluginDb(object):
                 firewall_group_id=firewall_group_id).delete()
         return
 
-    @db_api.CONTEXT_WRITER
     def _get_default_fwg_id(self, context, tenant_id):
         """Returns an id of default firewall group for given tenant or None"""
         default_fwg = model_query.query_with_hooks(
-            context, FirewallGroup).filter_by(
+            context.elevated(), FirewallGroup).filter_by(
             project_id=tenant_id, name=const.DEFAULT_FWG).first()
         if default_fwg:
             return default_fwg.id
@@ -899,10 +899,11 @@ class FirewallPluginDb(object):
 
         try:
             # NOTE(cby): default fwg not created => we try to create it!
-            with db_api.CONTEXT_WRITER.using(context):
+            ctx = lib_context.get_admin_context()
+            with db_api.CONTEXT_WRITER.using(ctx):
 
                 fwr_ids = self._create_default_firewall_rules(
-                    context, tenant_id)
+                    ctx, tenant_id)
                 ingress_fwp = {
                     'description': 'Ingress firewall policy',
                     'firewall_rules': [fwr_ids['in_ipv4'],
@@ -914,9 +915,9 @@ class FirewallPluginDb(object):
                                        fwr_ids['eg_ipv6']],
                 }
                 ingress_fwp_db = self._create_default_firewall_policy(
-                    context, tenant_id, 'ingress', **ingress_fwp)
+                    ctx, tenant_id, 'ingress', **ingress_fwp)
                 egress_fwp_db = self._create_default_firewall_policy(
-                    context, tenant_id, 'egress', **egress_fwp)
+                    ctx, tenant_id, 'egress', **egress_fwp)
 
                 fwg = {
                     'name': const.DEFAULT_FWG,
@@ -930,8 +931,8 @@ class FirewallPluginDb(object):
                     'description': 'Default firewall group',
                 }
                 fwg_db = self._create_firewall_group(
-                    context, fwg, default_fwg=True)
-                context.session.add(DefaultFirewallGroup(
+                    ctx, fwg, default_fwg=True)
+                ctx.session.add(DefaultFirewallGroup(
                     firewall_group_id=fwg_db['id'],
                     project_id=tenant_id))
                 return fwg_db['id']
