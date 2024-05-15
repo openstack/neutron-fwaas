@@ -33,7 +33,10 @@ VERSION_TABLE = 'alembic_version_fwaas'
 class _TestModelsMigrationsFWaaS(test_migrations._TestModelsMigrations):
 
     def db_sync(self, engine):
-        cfg.CONF.set_override('connection', engine.url, group='database')
+        cfg.CONF.set_override(
+            'connection',
+            self.engine.url.render_as_string(hide_password=False),
+            group='database')
         for conf in migration.get_alembic_configs():
             self.alembic_config = conf
             self.alembic_config.neutron_config = cfg.CONF
