@@ -38,7 +38,7 @@ def setup_conf():
 def migrate_fwaas_v1_to_v2(db_session):
     # the entire migration process will be done under the same transaction to
     # allow full rollback in case of error
-    with db_session.begin(subtransactions=True):
+    with db_session.begin():
         # Read all V1 policies
         v1_policies = db_session.query(firewall_db_v1.FirewallPolicy)
 
@@ -131,7 +131,7 @@ def main():
     neutron_context_manager.configure(
         connection=cfg.CONF.neutron_db_connection)
     n_session_maker = neutron_context_manager.writer.get_sessionmaker()
-    n_session = n_session_maker(autocommit=True)
+    n_session = n_session_maker()
 
     # Run DB migration
     migrate_fwaas_v1_to_v2(n_session)
