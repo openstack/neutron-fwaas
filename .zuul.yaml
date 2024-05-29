@@ -9,13 +9,13 @@
     check:
       jobs:
         - neutron-fwaas-functional
-        - neutron-tempest-plugin-fwaas
+        - neutron-tempest-plugin-fwaas-zed
         - neutron-fwaas-v2-dsvm-tempest-multinode:
             voting: false
     gate:
       jobs:
         - neutron-fwaas-functional
-        - neutron-tempest-plugin-fwaas
+        - neutron-tempest-plugin-fwaas-zed
     experimental:
       jobs:
         - neutron-fwaas-fullstack
@@ -23,7 +23,7 @@
       jobs:
         - openstack-tox-py39
         - neutron-fwaas-functional
-        - neutron-tempest-plugin-fwaas
+        - neutron-tempest-plugin-fwaas-zed
 
 - job:
     name: neutron-fwaas-functional
@@ -47,7 +47,6 @@
     roles:
       - zuul: openstack/devstack
     required-projects:
-      - openstack/devstack-gate
       - openstack/neutron
       - openstack/neutron-fwaas
       - openstack/neutron-tempest-plugin
