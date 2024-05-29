@@ -13,7 +13,7 @@
               - openstack/neutron-lib
               - openstack/neutron
         - neutron-fwaas-functional
-        - neutron-tempest-plugin-fwaas
+        - neutron-tempest-plugin-fwaas-2023-2
         - neutron-fwaas-v2-dsvm-tempest-multinode
     gate:
       jobs:
@@ -22,7 +22,7 @@
               - openstack/neutron-lib
               - openstack/neutron
         - neutron-fwaas-functional
-        - neutron-tempest-plugin-fwaas
+        - neutron-tempest-plugin-fwaas-2023-2
     experimental:
       jobs:
         - neutron-fwaas-fullstack
@@ -31,7 +31,7 @@
         - openstack-tox-py39
         - openstack-tox-py39-with-oslo-master
         - neutron-fwaas-functional
-        - neutron-tempest-plugin-fwaas
+        - neutron-tempest-plugin-fwaas-2023-2
 
 - job:
     name: neutron-fwaas-functional
@@ -55,19 +55,19 @@
     roles:
       - zuul: openstack/devstack
     required-projects:
-      - openstack/devstack-gate
       - openstack/neutron
       - openstack/neutron-fwaas
       - openstack/neutron-tempest-plugin
       - openstack/tempest
     vars:
       tox_envlist: all
-      tox_extra_args: --sitepackages
       tempest_test_regex: ^neutron_tempest_plugin\.fwaas
       devstack_plugins:
         neutron: https://opendev.org/openstack/neutron.git
         neutron-fwaas: https://opendev.org/openstack/neutron-fwaas.git
         neutron-tempest-plugin: https://opendev.org/openstack/neutron-tempest-plugin.git
+      tempest_plugins:
+        - neutron-tempest-plugin
       devstack_services:
         q-fwaas-v2: true
       devstack_localrc:
