@@ -70,7 +70,6 @@
     roles:
       - zuul: openstack/devstack
     required-projects:
-      - openstack/devstack-gate
       - openstack/neutron
       - openstack/neutron-fwaas
       - openstack/neutron-tempest-plugin
