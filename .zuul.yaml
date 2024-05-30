@@ -42,6 +42,7 @@
         - neutron-fwaas-openstack-tox-py310-with-sqlalchemy-main
     periodic-weekly:
       jobs:
+        - openstack-tox-py312
         - openstack-tox-py311
         - openstack-tox-py310-with-oslo-master
         - neutron-fwaas-openstack-tox-py310-with-sqlalchemy-main
