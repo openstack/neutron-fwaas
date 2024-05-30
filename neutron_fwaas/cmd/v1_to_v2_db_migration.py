@@ -32,6 +32,7 @@ def setup_conf():
     ]
     conf = cfg.CONF
     conf.register_cli_opts(cli_opts)
+    logging.register_options(conf)
     conf()
 
 
