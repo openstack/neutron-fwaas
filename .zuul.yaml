@@ -25,7 +25,7 @@
               - openstack/neutron-lib
               - openstack/neutron
         - neutron-fwaas-functional
-        - neutron-tempest-plugin-fwaas
+        - neutron-tempest-plugin-fwaas-2024-1
         - neutron-fwaas-v2-dsvm-tempest-multinode
     gate:
       jobs:
@@ -34,7 +34,7 @@
               - openstack/neutron-lib
               - openstack/neutron
         - neutron-fwaas-functional
-        - neutron-tempest-plugin-fwaas
+        - neutron-tempest-plugin-fwaas-2024-1
     experimental:
       jobs:
         - neutron-fwaas-fullstack
@@ -46,7 +46,7 @@
         - openstack-tox-py310-with-oslo-master
         - neutron-fwaas-openstack-tox-py310-with-sqlalchemy-main
         - neutron-fwaas-functional
-        - neutron-tempest-plugin-fwaas
+        - neutron-tempest-plugin-fwaas-2024-1
 
 - job:
     name: neutron-fwaas-functional
