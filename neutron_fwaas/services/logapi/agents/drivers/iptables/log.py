@@ -56,6 +56,10 @@ def setup_logging():
             formatters.ContextFormatter(
                 fmt=cfg.CONF.logging_default_format_string,
                 datefmt=cfg.CONF.log_date_format))
+
+        # Prevent propagating flow logs into neutron_l3_agent's logs
+        LOG.logger.propagate = False
+
     elif cfg.CONF.use_journal:
         journal_handler = handlers.OSJournalHandler()
         LOG.logger.addHandler(journal_handler)
