@@ -1,0 +1,5 @@
+---
+upgrade:
+  - |
+    The ``neutron-fwaas-migrate-v1-to-v2`` tool has been removed. The migration
+    should be completed before Neutron FWaaS is upgraded.
