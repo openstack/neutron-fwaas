@@ -111,17 +111,32 @@ class FWLoggingTestBase(framework.L3AgentTestFramework):
     def _config_default_chains_v4v6(self, ipt_mgr):
         # Config default chains in iptables and ip6tables
         for action, chain in CHAIN_NAME_POSTFIX_MAP.items():
+            # NOTE: Adding a reject rule in the filter table results in a
+            # rule that looks like:
+            #
+            # '-j REJECT --reject-with icmp-port-unreachable'
+            #
+            # The iptables_fwaas_v2.py code adds it with that extended info,
+            # so we must do it here as well.
             v4rules_in_chain = \
                 ipt_mgr.get_chain("filter", chain, ip_version=4)
             if not v4rules_in_chain:
                 ipt_mgr.ipv4['filter'].add_chain(chain)
-                ipt_mgr.ipv4['filter'].add_rule(chain, '-j %s' % action)
+                if action == 'REJECT':
+                    ipt_mgr.ipv4['filter'].add_rule(chain,
+                        '-j REJECT --reject-with icmp-port-unreachable')
+                else:
+                    ipt_mgr.ipv4['filter'].add_rule(chain, '-j %s' % action)
 
             v6rules_in_chain = \
                 ipt_mgr.get_chain("filter", chain, ip_version=6)
             if not v6rules_in_chain:
                 ipt_mgr.ipv6['filter'].add_chain(chain)
-                ipt_mgr.ipv6['filter'].add_rule(chain, '-j %s' % action)
+                if action == 'REJECT':
+                    ipt_mgr.ipv6['filter'].add_rule(chain,
+                        '-j REJECT --reject-with icmp6-port-unreachable')
+                else:
+                    ipt_mgr.ipv6['filter'].add_rule(chain, '-j %s' % action)
 
     def _empty_default_chains_v4v6(self, ipt_mgr):
         # Empty default chains in iptables and ip6tables
