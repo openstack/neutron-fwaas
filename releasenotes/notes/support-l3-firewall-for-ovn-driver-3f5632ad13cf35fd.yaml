@@ -1,0 +1,15 @@
+---
+features:
+  - L3 stateless firewall support for ML2/OVN driver is implemented.
+issues:
+  - |
+    If the user configures stateful security group rules for VMs ports and
+    stateless L3 firewall rules for gateway ports like this:
+
+        - SG ingress rules: --remote_ip_prefix 0.0.0.0/0
+        - FW ingress rules: --destination_ip_address 0.0.0.0/0 --action allow
+
+    It only opens ingress traffic for another network to access VM, but the
+    reply traffic (egress direction) also passes because it matches the
+    committed conntrack entry.
+    So it only works well with stateless security groups for VMs.

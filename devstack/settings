@@ -8,5 +8,6 @@ NEUTRON_FWAAS_CONF_FILE=neutron_fwaas.conf
 NEUTRON_FWAAS_CONF=$NEUTRON_CONF_DIR/$NEUTRON_FWAAS_CONF_FILE
 
 NEUTRON_FWAAS_SERVICE_PROVIDERV2=${NEUTRON_FWAAS_SERVICE_PROVIDERV2:-FIREWALL_V2:fwaas_db:neutron_fwaas.services.firewall.service_drivers.agents.agents.FirewallAgentDriver:default}
+NEUTRON_FWAAS_SERVICE_PROVIDERV2_OVN=${NEUTRON_FWAAS_SERVICE_PROVIDERV2:-FIREWALL_V2:fwaas_db:neutron_fwaas.services.firewall.service_drivers.ovn.firewall_l3_driver.OVNFwaasDriver:default}
 
 enable_service q-fwaas-v2
