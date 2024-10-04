@@ -26,12 +26,11 @@
     experimental:
       jobs:
         - neutron-fwaas-fullstack
-        - openstack-tox-py310-with-oslo-master
+        - openstack-tox-py312-with-oslo-master
     periodic-weekly:
       jobs:
         - openstack-tox-py312
-        - openstack-tox-py311
-        - openstack-tox-py310-with-oslo-master
+        - openstack-tox-py312-with-oslo-master
         - neutron-fwaas-functional
         - neutron-tempest-plugin-fwaas
 
