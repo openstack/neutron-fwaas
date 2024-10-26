@@ -1,3 +1,6 @@
+# Requirements lower bounds listed here are our best effort to keep them up to
+# date but we do not test them so no guarantee of having them all correct. If
+# you find any incorrect lower bounds, let us know or propose a fix.
 eventlet!=0.18.3,!=0.20.1,>=0.18.2 # MIT
 netaddr>=0.7.18 # BSD
 SQLAlchemy>=1.4.23 # MIT
