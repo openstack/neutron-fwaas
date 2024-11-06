@@ -48,15 +48,15 @@ class TestCreateRegNumbers(base.BaseTestCase):
     def test_both_registers_defined(self):
         flow = {'foo': 'bar', 'reg_port': 1, 'reg_net': 2}
         expected_flow = {'foo': 'bar',
-                         'reg{:d}'.format(fwaas_ovs_consts.REG_PORT): 1,
-                         'reg{:d}'.format(fwaas_ovs_consts.REG_NET): 2}
+                         f'reg{fwaas_ovs_consts.REG_PORT:d}': 1,
+                         f'reg{fwaas_ovs_consts.REG_NET:d}': 2}
         ovsfw.create_reg_numbers(flow)
         self.assertEqual(expected_flow, flow)
 
 
 class TestFirewallGroup(base.BaseTestCase):
     def setUp(self):
-        super(TestFirewallGroup, self).setUp()
+        super().setUp()
         self.fwg = ovsfw.FirewallGroup('123')
         self.fwg.members = {'type': [1, 2, 3, 4]}
 
@@ -103,7 +103,7 @@ class TestFirewallGroup(base.BaseTestCase):
 
 class TestOFPort(base.BaseTestCase):
     def setUp(self):
-        super(TestOFPort, self).setUp()
+        super().setUp()
         self.ipv4_addresses = ['10.0.0.1', '192.168.0.1']
         self.ipv6_addresses = ['fe80::f816:3eff:fe2e:1']
         port_dict = {'device': 1,
@@ -165,7 +165,7 @@ class TestOFPort(base.BaseTestCase):
 
 class TestFWGPortMap(base.BaseTestCase):
     def setUp(self):
-        super(TestFWGPortMap, self).setUp()
+        super().setUp()
         self.map = ovsfw.FWGPortMap()
 
     def test_get_or_create_fwg_existing_fwg(self):
@@ -250,7 +250,7 @@ class TestFWGPortMap(base.BaseTestCase):
         self.map.update_members(42, [])
 
 
-class FakeOVSPort(object):
+class FakeOVSPort:
     def __init__(self, name, port, mac):
         self.port_name = name
         self.ofport = port
@@ -259,7 +259,7 @@ class FakeOVSPort(object):
 
 class TestOVSFirewallDriver(base.BaseTestCase):
     def setUp(self):
-        super(TestOVSFirewallDriver, self).setUp()
+        super().setUp()
         self._mock_ovs_br = mock.patch.object(
             ovs_lib, 'OVSBridge', autospec=True)
         mock_bridge = self._mock_ovs_br.start()
@@ -319,8 +319,8 @@ class TestOVSFirewallDriver(base.BaseTestCase):
     def test__add_flow_registers_are_replaced(self):
         self.firewall._add_flow(in_port=1, reg_port=1, reg_net=2)
         expected_calls = {'in_port': 1,
-                          'reg{:d}'.format(fwaas_ovs_consts.REG_PORT): 1,
-                          'reg{:d}'.format(fwaas_ovs_consts.REG_NET): 2}
+                          f'reg{fwaas_ovs_consts.REG_PORT:d}': 1,
+                          f'reg{fwaas_ovs_consts.REG_NET:d}': 2}
         self.mock_bridge.br.add_flow.assert_called_once_with(
             **expected_calls)
 
@@ -444,7 +444,7 @@ class TestOVSFirewallDriver(base.BaseTestCase):
             'output:{:d},resubmit(,{:d})'.format(
                 self.port_ofport,
                 ovs_consts.ACCEPTED_INGRESS_TRAFFIC_TABLE),
-            dl_type="0x{:04x}".format(constants.ETHERTYPE_IP),
+            dl_type=f"0x{constants.ETHERTYPE_IP:04x}",
             nw_proto=constants.PROTO_NUM_TCP,
             priority=70,
             reg5=self.port_ofport,
@@ -482,8 +482,8 @@ class TestOVSFirewallDriver(base.BaseTestCase):
             priority=95,
             table=ovs_consts.TRANSIENT_TABLE)
         filter_rule = mock.call(
-            actions='resubmit(,{:d})'.format(ovs_consts.RULES_INGRESS_TABLE),
-            dl_type="0x{:04x}".format(constants.ETHERTYPE_IP),
+            actions=f'resubmit(,{ovs_consts.RULES_INGRESS_TABLE:d})',
+            dl_type=f"0x{constants.ETHERTYPE_IP:04x}",
             nw_proto=constants.PROTO_NUM_TCP,
             priority=70,
             reg5=self.port_ofport,
@@ -529,7 +529,7 @@ class TestOVSFirewallDriver(base.BaseTestCase):
             mock.call(
                 actions='resubmit(,{:d})'.format(
                     fwaas_ovs_consts.FW_ACCEPT_OR_INGRESS_TABLE),
-                dl_type="0x{:04x}".format(constants.ETHERTYPE_IP),
+                dl_type=f"0x{constants.ETHERTYPE_IP:04x}",
                 nw_proto=constants.PROTO_NUM_UDP,
                 priority=71,
                 ct_state=fwaas_ovs_consts.OF_STATE_NEW_NOT_ESTABLISHED,
@@ -567,7 +567,7 @@ class TestOVSFirewallDriver(base.BaseTestCase):
             mock.call(
                 actions='resubmit(,{:d})'.format(
                     ovs_consts.RULES_EGRESS_TABLE),
-                dl_type="0x{:04x}".format(constants.ETHERTYPE_IP),
+                dl_type=f"0x{constants.ETHERTYPE_IP:04x}",
                 nw_proto=constants.PROTO_NUM_UDP,
                 priority=71,
                 ct_state=fwaas_ovs_consts.OF_STATE_NEW_NOT_ESTABLISHED,
@@ -638,7 +638,7 @@ class TestOVSFirewallDriver(base.BaseTestCase):
         self._prepare_firewall_group()
         self.firewall.fwg_to_delete = {1}
         with mock.patch.object(self.firewall.fwg_port_map,
-                              'delete_fwg') as delete_fwg_mock:
+                               'delete_fwg') as delete_fwg_mock:
             self.firewall._cleanup_stale_fwg()
             delete_fwg_mock.assert_called_once_with(1)
 

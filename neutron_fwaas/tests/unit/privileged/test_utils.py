@@ -27,7 +27,7 @@ class InNamespaceTest(base.BaseTestCase):
     NEW_NETNS = 'newns'
 
     def setUp(self):
-        super(InNamespaceTest, self).setUp()
+        super().setUp()
 
         # NOTE(cby): we should unmock os.open/close as early as possible
         # because there are used in cleanups

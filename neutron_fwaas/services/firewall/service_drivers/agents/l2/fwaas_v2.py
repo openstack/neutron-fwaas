@@ -409,7 +409,7 @@ class FWaaSV2AgentExtension(l2_extension.L2AgentExtension):
         self._send_fwg_status(context, fwg['id'], status, self.conf.host)
 
 
-class PortFirewallGroupMap(object):
+class PortFirewallGroupMap:
     """Store relations between Port and Firewall Group and trusted port
 
     This map is used in deleting firewall_group because the firewall_group has

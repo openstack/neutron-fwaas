@@ -32,14 +32,16 @@ down_revision = '540142f314f4'
 def upgrade(active_plugins=None, options=None):
 
     op.create_table('cisco_firewall_associations',
-        sa.Column('fw_id', sa.String(length=36), nullable=False),
-        sa.Column('port_id', sa.String(length=36), nullable=True),
-        sa.Column('direction', sa.String(length=16), nullable=True),
-        sa.Column('acl_id', sa.String(length=36), nullable=True),
-        sa.Column('router_id', sa.String(length=36), nullable=True),
-        sa.ForeignKeyConstraint(['fw_id'], ['firewalls.id'],
-            ondelete='CASCADE'),
-        sa.ForeignKeyConstraint(['port_id'], ['ports.id'],
-            ondelete='CASCADE'),
-        sa.PrimaryKeyConstraint('fw_id')
-    )
+                    sa.Column('fw_id', sa.String(length=36), nullable=False),
+                    sa.Column('port_id', sa.String(length=36), nullable=True),
+                    sa.Column('direction', sa.String(
+                        length=16), nullable=True),
+                    sa.Column('acl_id', sa.String(length=36), nullable=True),
+                    sa.Column('router_id', sa.String(
+                        length=36), nullable=True),
+                    sa.ForeignKeyConstraint(['fw_id'], ['firewalls.id'],
+                                            ondelete='CASCADE'),
+                    sa.ForeignKeyConstraint(['port_id'], ['ports.id'],
+                                            ondelete='CASCADE'),
+                    sa.PrimaryKeyConstraint('fw_id')
+                    )

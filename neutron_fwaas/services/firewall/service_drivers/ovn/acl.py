@@ -27,7 +27,7 @@ def acl_direction(direction, port_group=None):
         portdir = 'inport'
     else:
         portdir = 'outport'
-    return '%s == @%s' % (portdir, port_group)
+    return '{} == @{}'.format(portdir, port_group)
 
 
 def acl_ethertype(rule):
@@ -48,8 +48,8 @@ def acl_ethertype(rule):
 def acl_ip(rule, ip_version):
     src_ip = rule.get('source_ip_address')
     dst_ip = rule.get('destination_ip_address')
-    src = ' && %s.src == %s' % (ip_version, src_ip) if src_ip else ''
-    dst = ' && %s.dst == %s' % (ip_version, dst_ip) if dst_ip else ''
+    src = ' && {}.src == {}'.format(ip_version, src_ip) if src_ip else ''
+    dst = ' && {}.dst == {}'.format(ip_version, dst_ip) if dst_ip else ''
     return src + dst
 
 

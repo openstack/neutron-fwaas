@@ -63,7 +63,7 @@ AGENT_MODE_OPTS = [
 class FWLoggingTestBase(framework.L3AgentTestFramework):
 
     def setUp(self):
-        super(FWLoggingTestBase, self).setUp()
+        super().setUp()
         self.conf.register_opts(FWAAS_V2_LOG_OPTS, 'fwaas')
         self.conf.register_opts(AGENT_MODE_OPTS, group='DEFAULT')
         self._set_agent_mode(self.conf)
@@ -123,7 +123,8 @@ class FWLoggingTestBase(framework.L3AgentTestFramework):
             if not v4rules_in_chain:
                 ipt_mgr.ipv4['filter'].add_chain(chain)
                 if action == 'REJECT':
-                    ipt_mgr.ipv4['filter'].add_rule(chain,
+                    ipt_mgr.ipv4['filter'].add_rule(
+                        chain,
                         '-j REJECT --reject-with icmp-port-unreachable')
                 else:
                     ipt_mgr.ipv4['filter'].add_rule(chain, '-j %s' % action)
@@ -133,7 +134,8 @@ class FWLoggingTestBase(framework.L3AgentTestFramework):
             if not v6rules_in_chain:
                 ipt_mgr.ipv6['filter'].add_chain(chain)
                 if action == 'REJECT':
-                    ipt_mgr.ipv6['filter'].add_rule(chain,
+                    ipt_mgr.ipv6['filter'].add_rule(
+                        chain,
                         '-j REJECT --reject-with icmp6-port-unreachable')
                 else:
                     ipt_mgr.ipv6['filter'].add_rule(chain, '-j %s' % action)

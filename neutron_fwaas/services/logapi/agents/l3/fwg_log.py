@@ -23,7 +23,7 @@ FIREWALL_LOG_DRIVER_NAME = 'fwaas_v2_log'
 
 
 class FWaaSL3LoggingExtension(base.L3LoggingExtensionBase,
-                          l3_extension.L3AgentExtension):
+                              l3_extension.L3AgentExtension):
 
     def initialize(self, connection, driver_type):
         """Initialize L3 logging agent extension"""

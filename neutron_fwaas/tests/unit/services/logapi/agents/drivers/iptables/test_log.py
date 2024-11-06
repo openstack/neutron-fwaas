@@ -37,15 +37,15 @@ FAKE_BURST = 25
 class TestLogPrefix(base.BaseTestCase):
 
     def setUp(self):
-        super(TestLogPrefix, self).setUp()
+        super().setUp()
         self.log_prefix = log.LogPrefix(FAKE_PORT_ID,
                                         'fake_event',
                                         FAKE_PROJECT_ID)
-        self.log_prefix.log_object_refs = set([FAKE_LOG_ID])
+        self.log_prefix.log_object_refs = {FAKE_LOG_ID}
 
     def test_add_log_obj_ref(self):
         added_log_id = test_base._uuid
-        expected_log_obj_ref = set([FAKE_LOG_ID, added_log_id])
+        expected_log_obj_ref = {FAKE_LOG_ID, added_log_id}
         self.log_prefix.add_log_obj_ref(added_log_id)
         self.assertEqual(expected_log_obj_ref, self.log_prefix.log_object_refs)
 
@@ -63,7 +63,7 @@ class TestLogPrefix(base.BaseTestCase):
 class BaseIptablesLogTestCase(base.BaseTestCase):
 
     def setUp(self):
-        super(BaseIptablesLogTestCase, self).setUp()
+        super().setUp()
         self.iptables_manager_patch = mock.patch(
             'neutron.agent.linux.iptables_manager.IptablesManager')
         self.iptables_manager_mock = self.iptables_manager_patch.start()
@@ -135,13 +135,13 @@ class BaseIptablesLogTestCase(base.BaseTestCase):
         self.log_driver.ipt_mgr_list = self._fake_ipt_mgr_list(f_router_ids)
 
         # Test with a port is delete from router
-        self.log_driver.unused_port_ids = set(['r1_port1'])
+        self.log_driver.unused_port_ids = {'r1_port1'}
         self.log_driver._cleanup_unused_ipt_mgrs()
         self.assertEqual(set(), self.log_driver.unused_port_ids)
         self.assertIsNone(self.log_driver.ipt_mgr_list['r1'].get('r1_port1'))
 
         # Test with all ports are deleted from router
-        self.log_driver.unused_port_ids = set(['r2_port1', 'r2_port2'])
+        self.log_driver.unused_port_ids = {'r2_port1', 'r2_port2'}
         self.log_driver._cleanup_unused_ipt_mgrs()
         self.assertEqual(set(), self.log_driver.unused_port_ids)
         self.assertIsNone(self.log_driver.ipt_mgr_list.get('r2'))
@@ -245,7 +245,7 @@ class BaseIptablesLogTestCase(base.BaseTestCase):
             # Test with prefix already added into prefixes_table
             self.log_driver._add_nflog_rules_accepted(ipt_mgr, f_port_log)
             self.log_driver._add_rules_to_chain_v4v6.assert_not_called()
-            self.assertEqual(set(['fake_log_id']),
+            self.assertEqual({'fake_log_id'},
                              f_accept_prefix.log_object_refs)
 
             # Test with prefixes_tables does not include the prefix
@@ -260,7 +260,7 @@ class BaseIptablesLogTestCase(base.BaseTestCase):
                     assert_called_once_with(ipt_mgr, 'accepted',
                                             v4_rules, v6_rules,
                                             wrap=True, top=True, tag=prefix.id)
-                self.assertEqual(set(['fake_log_id']),
+                self.assertEqual({'fake_log_id'},
                                  prefix.log_object_refs)
 
     def test_add_nflog_rules_dropped(self):
@@ -283,7 +283,7 @@ class BaseIptablesLogTestCase(base.BaseTestCase):
             # Test with prefix already added into prefixes_table
             self.log_driver._add_log_rules_dropped(ipt_mgr, f_port_log)
             self.log_driver._add_rules_to_chain_v4v6.assert_not_called()
-            self.assertEqual(set(['fake_log_id']),
+            self.assertEqual({'fake_log_id'},
                              f_drop_prefix.log_object_refs)
 
             # Test with prefixes_tables does not include the prefix
@@ -302,7 +302,7 @@ class BaseIptablesLogTestCase(base.BaseTestCase):
                 ]
                 self.log_driver._add_rules_to_chain_v4v6.\
                     assert_has_calls(calls)
-                self.assertEqual(set(['fake_log_id']),
+                self.assertEqual({'fake_log_id'},
                                  prefix.log_object_refs)
 
     def _fake_port_log(self, log_id, event, port_id):
@@ -318,8 +318,8 @@ class BaseIptablesLogTestCase(base.BaseTestCase):
                          '-j NFLOG --nflog-prefix  %s'
                          % (device, FAKE_RATE, FAKE_BURST, tag)]
         v4_nflog_rule += ['-o %s -m limit --limit %s/sec --limit-burst %s '
-                         '-j NFLOG --nflog-prefix  %s'
-                         % (device, FAKE_RATE, FAKE_BURST, tag)]
+                          '-j NFLOG --nflog-prefix  %s'
+                          % (device, FAKE_RATE, FAKE_BURST, tag)]
         v6_nflog_rule = ['-i %s -m limit --limit %s/sec --limit-burst %s '
                          '-j NFLOG --nflog-prefix  %s'
                          % (device, FAKE_RATE, FAKE_BURST, tag)]

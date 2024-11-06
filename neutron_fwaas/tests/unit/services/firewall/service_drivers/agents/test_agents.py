@@ -60,7 +60,7 @@ class FakeAgentApi(agents.FirewallAgentCallbacks):
 
 class TestFirewallAgentApi(base.BaseTestCase):
     def setUp(self):
-        super(TestFirewallAgentApi, self).setUp()
+        super().setUp()
 
         self.api = agents.FirewallAgentApi('topic', 'host')
 
@@ -109,7 +109,7 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
                          'TestL3NatServicePlugin')
         l3_plugin = {'l3_plugin_name': l3_plugin_str}
         common_conf.register_core_common_config_opts(cfg=cfg.CONF)
-        super(TestAgentDriver, self).setUp(
+        super().setUp(
             service_provider=FIREWALL_AGENT_PLUGIN_KLASS,
             extra_service_plugins=l3_plugin,
             extra_extension_paths=neutron_extensions.__path__)
@@ -132,7 +132,7 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
 
     def _get_test_firewall_group_attrs(self, name,
                                        status=nl_constants.INACTIVE):
-        return super(TestAgentDriver, self)._get_test_firewall_group_attrs(
+        return super()._get_test_firewall_group_attrs(
             name, status=status)
 
     def test_set_firewall_group_status(self):
@@ -144,13 +144,13 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
                 admin_state_up=self.ADMIN_STATE_UP
             ) as fwg:
                 fwg_id = fwg['firewall_group']['id']
-                res = self.callbacks.set_firewall_group_status(ctx, fwg_id,
-                                                         nl_constants.ACTIVE)
+                res = self.callbacks.set_firewall_group_status(
+                    ctx, fwg_id, nl_constants.ACTIVE)
                 fwg_db = self.plugin.get_firewall_group(ctx, fwg_id)
                 self.assertEqual(nl_constants.ACTIVE, fwg_db['status'])
                 self.assertTrue(res)
-                res = self.callbacks.set_firewall_group_status(ctx, fwg_id,
-                                                         nl_constants.ERROR)
+                res = self.callbacks.set_firewall_group_status(
+                    ctx, fwg_id, nl_constants.ERROR)
                 fwg_db = self.plugin.get_firewall_group(ctx, fwg_id)
                 self.assertEqual(nl_constants.ERROR, fwg_db['status'])
                 self.assertFalse(res)
@@ -247,12 +247,12 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
                     egress_firewall_policy_id=fwp_id,
                     admin_state_up=True) as fwg1:
                 self.assertEqual(nl_constants.INACTIVE,
-                    fwg1['firewall_group']['status'])
+                                 fwg1['firewall_group']['status'])
 
     def test_create_firewall_group_with_ports(self):
         """neutron firewall_group create test-policy """
         with self.router(name='router1', admin_state_up=True,
-            tenant_id=self._tenant_id) as r, \
+                         tenant_id=self._tenant_id) as r, \
                 self.subnet() as s1, \
                 self.subnet(cidr='20.0.0.0/24') as s2:
 
@@ -278,12 +278,12 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
                         egress_firewall_policy_id=fwp_id, ports=fwg_ports,
                         admin_state_up=True) as fwg1:
                     self.assertEqual(nl_constants.PENDING_CREATE,
-                         fwg1['firewall_group']['status'])
+                                     fwg1['firewall_group']['status'])
 
     def test_create_firewall_group_with_ports_on_diff_routers(self):
         """neutron firewall_group create test-policy """
         with self.router(name='router1', admin_state_up=True,
-            tenant_id=self._tenant_id) as r, \
+                         tenant_id=self._tenant_id) as r, \
                 self.subnet() as s1, \
                 self.subnet(cidr='20.0.0.0/24') as s2:
             body = self._router_interface_action(
@@ -300,7 +300,7 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
             port_id2 = body['port_id']
 
             with self.router(name='router1', admin_state_up=True,
-                tenant_id=self._tenant_id) as r2, \
+                             tenant_id=self._tenant_id) as r2, \
                     self.subnet() as s3:
 
                 body = self._router_interface_action(
@@ -320,12 +320,12 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
                             ports=fwg_ports,
                             admin_state_up=True) as fwg1:
                         self.assertEqual(nl_constants.PENDING_CREATE,
-                            fwg1['firewall_group']['status'])
+                                         fwg1['firewall_group']['status'])
 
     def test_create_firewall_group_with_ports_no_policy(self):
         """neutron firewall_group create test-policy """
         with self.router(name='router1', admin_state_up=True,
-            tenant_id=self._tenant_id) as r, \
+                         tenant_id=self._tenant_id) as r, \
                 self.subnet() as s1, \
                 self.subnet(cidr='20.0.0.0/24') as s2:
 
@@ -349,12 +349,12 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
                     ports=fwg_ports,
                     admin_state_up=True) as fwg1:
                 self.assertEqual(nl_constants.INACTIVE,
-                     fwg1['firewall_group']['status'])
+                                 fwg1['firewall_group']['status'])
 
     def test_update_firewall_group_with_new_ports_no_policy(self):
         """neutron firewall_group create test-policy """
         with self.router(name='router1', admin_state_up=True,
-            tenant_id=self._tenant_id) as r, \
+                         tenant_id=self._tenant_id) as r, \
                 self.subnet() as s1, \
                 self.subnet(cidr='20.0.0.0/24') as s2, \
                 self.subnet(cidr='30.0.0.0/24') as s3:
@@ -387,7 +387,7 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
                     ports=fwg_ports,
                     admin_state_up=True) as fwg1:
                 self.assertEqual(nl_constants.INACTIVE,
-                     fwg1['firewall_group']['status'])
+                                 fwg1['firewall_group']['status'])
                 data = {'firewall_group': {'ports': [port_id2, port_id3]}}
                 req = self.new_update_request('firewall_groups', data,
                                               fwg1['firewall_group']['id'],
@@ -404,7 +404,7 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
     def test_update_firewall_group_with_new_ports_status_pending(self):
         """neutron firewall_group create test-policy """
         with self.router(name='router1', admin_state_up=True,
-            tenant_id=self._tenant_id) as r, \
+                         tenant_id=self._tenant_id) as r, \
                 self.subnet() as s1, \
                 self.subnet(cidr='20.0.0.0/24') as s2, \
                 self.subnet(cidr='30.0.0.0/24') as s3:
@@ -439,7 +439,7 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
                         egress_firewall_policy_id=fwp_id, ports=fwg_ports,
                         admin_state_up=True) as fwg1:
                     self.assertEqual(nl_constants.PENDING_CREATE,
-                         fwg1['firewall_group']['status'])
+                                     fwg1['firewall_group']['status'])
                     data = {'firewall_group': {'ports': [port_id2, port_id3]}}
                     req = self.new_update_request('firewall_groups', data,
                                                   fwg1['firewall_group']['id'])
@@ -449,7 +449,7 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
     def test_update_firewall_group_with_new_ports_status_active(self):
         """neutron firewall_group create test-policy """
         with self.router(name='router1', admin_state_up=True,
-            tenant_id=self._tenant_id) as r, \
+                         tenant_id=self._tenant_id) as r, \
                 self.subnet() as s1, \
                 self.subnet(cidr='20.0.0.0/24') as s2, \
                 self.subnet(cidr='30.0.0.0/24') as s3:
@@ -484,10 +484,11 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
                         egress_firewall_policy_id=fwp_id, ports=fwg_ports,
                         admin_state_up=True) as fwg1:
                     self.assertEqual(nl_constants.PENDING_CREATE,
-                         fwg1['firewall_group']['status'])
+                                     fwg1['firewall_group']['status'])
 
                     ctx = context.get_admin_context()
-                    self.callbacks.set_firewall_group_status(ctx,
+                    self.callbacks.set_firewall_group_status(
+                        ctx,
                         fwg1['firewall_group']['id'], nl_constants.ACTIVE)
                     data = {'firewall_group': {'ports': [port_id2, port_id3]}}
                     req = self.new_update_request('firewall_groups', data,
@@ -502,7 +503,7 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
         name = "new_firewall_rule1"
         attrs = self._get_test_firewall_rule_attrs(name)
         with self.router(name='router1', admin_state_up=True,
-            tenant_id=self._tenant_id) as r, \
+                         tenant_id=self._tenant_id) as r, \
                 self.subnet() as s1:
 
             body = self._router_interface_action(
@@ -522,14 +523,16 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
                             egress_firewall_policy_id=fwp_id, ports=[port_id1],
                             admin_state_up=True) as fwg1:
                         self.assertEqual(nl_constants.PENDING_CREATE,
-                             fwg1['firewall_group']['status'])
+                                         fwg1['firewall_group']['status'])
 
                         ctx = context.get_admin_context()
-                        self.callbacks.set_firewall_group_status(ctx,
+                        self.callbacks.set_firewall_group_status(
+                            ctx,
                             fwg1['firewall_group']['id'], nl_constants.ACTIVE)
                         data = {'firewall_rule': {'name': name}}
-                        req = self.new_update_request('firewall_rules', data,
-                            fwr['firewall_rule']['id'])
+                        req = self.new_update_request(
+                            'firewall_rules',
+                            data, fwr['firewall_rule']['id'])
                         res = self.deserialize(self.fmt,
                                                req.get_response(self.ext_api))
                         for k, v in attrs.items():
@@ -539,7 +542,7 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
         """update should fail"""
         name = "new_firewall_rule1"
         with self.router(name='router1', admin_state_up=True,
-            tenant_id=self._tenant_id) as r, \
+                         tenant_id=self._tenant_id) as r, \
                 self.subnet() as s1:
 
             body = self._router_interface_action(
@@ -559,11 +562,12 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
                             egress_firewall_policy_id=fwp_id, ports=[port_id1],
                             admin_state_up=True) as fwg1:
                         self.assertEqual(nl_constants.PENDING_CREATE,
-                             fwg1['firewall_group']['status'])
+                                         fwg1['firewall_group']['status'])
 
                         data = {'firewall_rule': {'name': name}}
-                        req = self.new_update_request('firewall_rules', data,
-                            fwr['firewall_rule']['id'])
+                        req = self.new_update_request(
+                            'firewall_rules',
+                            data, fwr['firewall_rule']['id'])
                         res = req.get_response(self.ext_api)
                         self.assertEqual(409, res.status_int)
 
@@ -627,7 +631,7 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
                             ports=fwg_ports,
                             admin_state_up=True) as fwg1:
                         self.assertEqual(nl_constants.INACTIVE,
-                             fwg1['firewall_group']['status'])
+                                         fwg1['firewall_group']['status'])
                         fwp_id = fwp["firewall_policy"]["id"]
 
                         data = {'firewall_group': {'ports': fwg_ports}}

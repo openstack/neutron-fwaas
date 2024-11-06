@@ -44,7 +44,7 @@ class FakeFullstackMachine(machine_fixtures.FakeMachineBase):
 
     def __init__(self, host, network_id, tenant_id, safe_client,
                  neutron_port=None, bridge_name=None):
-        super(FakeFullstackMachine, self).__init__()
+        super().__init__()
         self.host = host
         self.tenant_id = tenant_id
         self.network_id = network_id
@@ -53,7 +53,7 @@ class FakeFullstackMachine(machine_fixtures.FakeMachineBase):
         self.bridge_name = bridge_name
 
     def _setUp(self):
-        super(FakeFullstackMachine, self)._setUp()
+        super()._setUp()
 
         self.bridge = self._get_bridge()
 
@@ -81,8 +81,8 @@ class FakeFullstackMachine(machine_fixtures.FakeMachineBase):
                 self.neutron_port['id'],
                 {'port': {pbs.HOST_ID: self.host.hostname}})
             self.addCleanup(self.safe_client.client.update_port,
-                self.neutron_port['id'],
-                {'port': {pbs.HOST_ID: ''}})
+                            self.neutron_port['id'],
+                            {'port': {pbs.HOST_ID: ''}})
 
     def _get_bridge(self):
         if self.bridge_name is None:
@@ -107,7 +107,7 @@ class FakeFullstackMachine(machine_fixtures.FakeMachineBase):
             subnet_id = fixed_ip['subnet_id']
             subnet = self.safe_client.client.show_subnet(subnet_id)
             prefixlen = netaddr.IPNetwork(subnet['subnet']['cidr']).prefixlen
-            self._ip_cidr = '%s/%s' % (self._ip, prefixlen)
+            self._ip_cidr = '{}/{}'.format(self._ip, prefixlen)
 
             # TODO(amuller): Support DHCP
             self.port.addr.add(self.ip_cidr)
@@ -152,7 +152,7 @@ class FakeFullstackMachine(machine_fixtures.FakeMachineBase):
 
 class FakeFullstackTrunkMachine(FakeFullstackMachine):
     def __init__(self, trunk, *args, **kwargs):
-        super(FakeFullstackTrunkMachine, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.trunk = trunk
 
     def add_vlan_interface(self, mac_address, ip_address, segmentation_id):

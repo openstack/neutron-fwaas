@@ -50,12 +50,12 @@ FWaaSOpts = [
 cfg.CONF.register_opts(FWaaSOpts, 'fwaas')
 
 
-class FWaaSPluginApiMixin(object):
+class FWaaSPluginApiMixin:
     """Agent side of the FWaaS agent to FWaaS Plugin RPC API."""
 
     def __init__(self, topic, host):
         # NOTE(annp): Mixin class should call super
-        super(FWaaSPluginApiMixin, self).__init__()
+        super().__init__()
 
         self.host = host
         target = oslo_messaging.Target(topic=topic, version='1.0')
@@ -74,12 +74,12 @@ class FWaaSPluginApiMixin(object):
                           firewall_id=firewall_id)
 
 
-class FWaaSAgentRpcCallbackMixin(object):
+class FWaaSAgentRpcCallbackMixin:
     """Mixin for FWaaS agent Implementations."""
 
     def __init__(self, host):
 
-        super(FWaaSAgentRpcCallbackMixin, self).__init__(host)
+        super().__init__(host)
 
     def create_firewall(self, context, firewall, host):
         """Handle RPC cast from plugin to create a firewall."""

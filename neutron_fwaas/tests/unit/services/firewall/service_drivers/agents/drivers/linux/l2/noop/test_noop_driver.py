@@ -23,7 +23,7 @@ from neutron_fwaas.tests import base
 
 class TestNoopDriver(base.BaseTestCase):
     def setUp(self):
-        super(TestNoopDriver, self).setUp()
+        super().setUp()
         mock_br = mock.Mock()
         self.firewall = noop_driver.NoopFirewallL2Driver(mock_br)
 

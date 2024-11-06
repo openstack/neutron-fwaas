@@ -35,7 +35,7 @@ class NFLogAppTestCase(base.BaseTestCase):
 
         self.nflog_app = lib_log.NFLogApp()
         self.spawn = mock.patch('eventlet.spawn').start()
-        super(NFLogAppTestCase, self).setUp()
+        super().setUp()
 
     def test_register_packet_handler(self):
         def fake_method():
@@ -55,7 +55,7 @@ class NFLogAppTestCase(base.BaseTestCase):
 class NFLogWrapper(base.BaseTestCase):
 
     def setUp(self):
-        super(NFLogWrapper, self).setUp()
+        super().setUp()
         lib_log.libnflog = mock.Mock()
         lib_log.ffi = mock.Mock()
 

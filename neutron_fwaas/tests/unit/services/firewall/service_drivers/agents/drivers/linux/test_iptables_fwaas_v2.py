@@ -38,7 +38,7 @@ MAX_INTF_NAME_LEN = 14
 
 class IptablesFwaasTestCase(base.BaseTestCase):
     def setUp(self):
-        super(IptablesFwaasTestCase, self).setUp()
+        super().setUp()
         self.iptables_cls_p = mock.patch(
             'neutron.agent.linux.iptables_manager.IptablesManager')
         self.iptables_cls_p.start()
@@ -124,7 +124,7 @@ class IptablesFwaasTestCase(base.BaseTestCase):
         return fw_inst
 
     def _fake_apply_list(self, router_count=1, distributed=False,
-            distributed_mode=None):
+                         distributed_mode=None):
         apply_list = []
         while router_count > 0:
             iptables_inst = mock.Mock()
@@ -149,12 +149,13 @@ class IptablesFwaasTestCase(base.BaseTestCase):
         return apply_list
 
     def _get_intf_name(self, if_prefix, port_id):
-        _name = "%s%s" % (if_prefix, port_id)
+        _name = "{}{}".format(if_prefix, port_id)
         return _name[:MAX_INTF_NAME_LEN]
 
     def _setup_firewall_with_rules(self, func, router_count=1,
-            distributed=False, distributed_mode=None):
-        apply_list = self._fake_apply_list(router_count=router_count,
+                                   distributed=False, distributed_mode=None):
+        apply_list = self._fake_apply_list(
+            router_count=router_count,
             distributed=distributed, distributed_mode=distributed_mode)
         rule_list = self._fake_rules_v4(FAKE_FW_ID, apply_list)
         firewall = self._fake_firewall(rule_list)
@@ -178,8 +179,8 @@ class IptablesFwaasTestCase(base.BaseTestCase):
         rule3 = '-p tcp -m tcp --dport 23 -j %s' % rejected
         ingress_chain = 'iv4%s' % firewall['id']
         egress_chain = 'ov4%s' % firewall['id']
-        ipt_mgr_ichain = '%s-%s' % (binary_name, ingress_chain[:11])
-        ipt_mgr_echain = '%s-%s' % (binary_name, egress_chain[:11])
+        ipt_mgr_ichain = '{}-{}'.format(binary_name, ingress_chain[:11])
+        ipt_mgr_echain = '{}-{}'.format(binary_name, egress_chain[:11])
         for router_info_inst, port_ids in apply_list:
             v4filter_inst = router_info_inst.iptables_manager.ipv4['filter']
             calls = [mock.call.remove_chain('iv4fake-fw-uuid'),
@@ -204,24 +205,29 @@ class IptablesFwaasTestCase(base.BaseTestCase):
 
             for port in FAKE_PORT_IDS:
                 intf_name = self._get_intf_name(if_prefix, port)
-                calls.append(mock.call.add_rule('FORWARD',
-                        '-o %s -j %s' % (intf_name, ipt_mgr_ichain)))
+                calls.append(mock.call.add_rule(
+                    'FORWARD',
+                    '-o {} -j {}'.format(intf_name, ipt_mgr_ichain)))
             for port in FAKE_PORT_IDS:
                 intf_name = self._get_intf_name(if_prefix, port)
-                calls.append(mock.call.add_rule('FORWARD',
-                        '-i %s -j %s' % (intf_name, ipt_mgr_echain)))
+                calls.append(mock.call.add_rule(
+                    'FORWARD',
+                    '-i {} -j {}'.format(intf_name, ipt_mgr_echain)))
 
             for direction in ['o', 'i']:
                 for port_id in FAKE_PORT_IDS:
                     intf_name = self._get_intf_name(if_prefix, port_id)
-                    calls.append(mock.call.add_rule('FORWARD',
-                            '-%s %s -j %s-fwaas-defau' % (direction,
-                                    intf_name, binary_name)))
+                    calls.append(mock.call.add_rule(
+                        'FORWARD',
+                        '-{} {} -j {}-fwaas-defau'.format(
+                            direction, intf_name, binary_name)))
             v4filter_inst.assert_has_calls(calls)
 
-    def _setup_firewall_with_rules_v6(self, func, router_count=1,
+    def _setup_firewall_with_rules_v6(
+            self, func, router_count=1,
             distributed=False, distributed_mode=None):
-        apply_list = self._fake_apply_list(router_count=router_count,
+        apply_list = self._fake_apply_list(
+            router_count=router_count,
             distributed=distributed, distributed_mode=distributed_mode)
         rule_list = self._fake_rules_v6(FAKE_FW_ID, apply_list)
         firewall = self._fake_firewall(rule_list)
@@ -242,8 +248,8 @@ class IptablesFwaasTestCase(base.BaseTestCase):
         rule1 = '-p ipv6-icmp -d 2001:db8::2/128 -j %s' % accepted
         ingress_chain = 'iv6%s' % firewall['id']
         egress_chain = 'ov6%s' % firewall['id']
-        ipt_mgr_ichain = '%s-%s' % (binary_name, ingress_chain[:11])
-        ipt_mgr_echain = '%s-%s' % (binary_name, egress_chain[:11])
+        ipt_mgr_ichain = '{}-{}'.format(binary_name, ingress_chain[:11])
+        ipt_mgr_echain = '{}-{}'.format(binary_name, egress_chain[:11])
         for router_info_inst, port_ids in apply_list:
             v6filter_inst = router_info_inst.iptables_manager.ipv6['filter']
             calls = [mock.call.remove_chain('iv6fake-fw-uuid'),
@@ -263,19 +269,23 @@ class IptablesFwaasTestCase(base.BaseTestCase):
                      ]
             for port in FAKE_PORT_IDS:
                 intf_name = self._get_intf_name(if_prefix, port)
-                calls.append(mock.call.add_rule('FORWARD',
-                        '-o %s -j %s' % (intf_name, ipt_mgr_ichain)))
+                calls.append(mock.call.add_rule(
+                    'FORWARD',
+                    '-o {} -j {}'.format(intf_name, ipt_mgr_ichain)))
             for port in FAKE_PORT_IDS:
                 intf_name = self._get_intf_name(if_prefix, port)
-                calls.append(mock.call.add_rule('FORWARD',
-                        '-i %s -j %s' % (intf_name, ipt_mgr_echain)))
+                calls.append(mock.call.add_rule(
+                    'FORWARD',
+                    '-i {} -j {}'.format(intf_name, ipt_mgr_echain)))
 
             for direction in ['o', 'i']:
                 for port_id in FAKE_PORT_IDS:
                     intf_name = self._get_intf_name(if_prefix, port_id)
-                    calls.append(mock.call.add_rule('FORWARD',
-                            '-%s %s -j %s-fwaas-defau' % (direction,
-                                    intf_name, binary_name)))
+                    calls.append(mock.call.add_rule(
+                        'FORWARD',
+                        '-{} {} -j {}-fwaas-defau'.format(direction,
+                                                          intf_name,
+                                                          binary_name)))
 
             v6filter_inst.assert_has_calls(calls)
 
@@ -289,8 +299,8 @@ class IptablesFwaasTestCase(base.BaseTestCase):
         invalid_rule = '-m state --state INVALID -j %s' % dropped
         est_rule = '-m state --state RELATED,ESTABLISHED -j ACCEPT'
         for ip_version in (4, 6):
-            ingress_chain = ('iv%s%s' % (ip_version, firewall['id']))
-            egress_chain = ('ov%s%s' % (ip_version, firewall['id']))
+            ingress_chain = ('iv{}{}'.format(ip_version, firewall['id']))
+            egress_chain = ('ov{}{}'.format(ip_version, firewall['id']))
             calls = [mock.call.remove_chain(
                      'iv%sfake-fw-uuid' % ip_version),
                      mock.call.remove_chain(
@@ -308,10 +318,11 @@ class IptablesFwaasTestCase(base.BaseTestCase):
 
             for port_id in FAKE_PORT_IDS:
                 for direction in ['o', 'i']:
-                    mock.call.add_rule('FORWARD',
-                           '-%s qr-%s -j %s-fwaas-defau' % (port_id,
-                                                            direction,
-                                                            binary_name))
+                    mock.call.add_rule(
+                        'FORWARD',
+                        '-{} qr-{} -j {}-fwaas-defau'.format(port_id,
+                                                             direction,
+                                                             binary_name))
             if ip_version == 4:
                 v4filter_inst = first_ri.iptables_manager.ipv4['filter']
                 v4filter_inst.assert_has_calls(calls)
@@ -377,19 +388,23 @@ class IptablesFwaasTestCase(base.BaseTestCase):
         first_ri.iptables_manager.ipv4['filter'].assert_has_calls(calls)
 
     def test_create_firewall_group_with_rules_dvr_snat(self):
-        self._setup_firewall_with_rules(self.firewall.create_firewall_group,
+        self._setup_firewall_with_rules(
+            self.firewall.create_firewall_group,
             distributed=True, distributed_mode='dvr_snat')
 
     def test_update_firewall_group_with_rules_dvr_snat(self):
-        self._setup_firewall_with_rules(self.firewall.update_firewall_group,
+        self._setup_firewall_with_rules(
+            self.firewall.update_firewall_group,
             distributed=True, distributed_mode='dvr_snat')
 
     def test_create_firewall_group_with_rules_dvr(self):
-        self._setup_firewall_with_rules(self.firewall.create_firewall_group,
+        self._setup_firewall_with_rules(
+            self.firewall.create_firewall_group,
             distributed=True, distributed_mode='dvr')
 
     def test_update_firewall_group_with_rules_dvr(self):
-        self._setup_firewall_with_rules(self.firewall.update_firewall_group,
+        self._setup_firewall_with_rules(
+            self.firewall.update_firewall_group,
             distributed=True, distributed_mode='dvr')
 
     def test_remove_conntrack_new_firewall(self):
@@ -408,10 +423,10 @@ class IptablesFwaasTestCase(base.BaseTestCase):
         self.firewall.create_firewall_group(FW_LEGACY, apply_list, firewall)
         self.firewall.pre_firewall = dict(firewall)
         insert_rule = {'enabled': True,
-                 'action': 'deny',
-                 'ip_version': 4,
-                 'protocol': 'icmp',
-                 'id': 'fake-fw-rule'}
+                       'action': 'deny',
+                       'ip_version': 4,
+                       'protocol': 'icmp',
+                       'id': 'fake-fw-rule'}
         rule_list.insert(2, insert_rule)
         firewall = self._fake_firewall(rule_list)
         self.firewall.update_firewall_group(FW_LEGACY, apply_list, firewall)
@@ -492,10 +507,10 @@ class IptablesFwaasTestCase(base.BaseTestCase):
         firewall = self._fake_firewall(rule_list)
         self.firewall.create_firewall_group(FW_LEGACY, apply_list, firewall)
         income_rule = {'enabled': True,
-                 'action': 'deny',
-                 'ip_version': 4,
-                 'protocol': 'tcp',
-                 'id': 'fake-fw-rule3'}
+                       'action': 'deny',
+                       'ip_version': 4,
+                       'protocol': 'tcp',
+                       'id': 'fake-fw-rule3'}
         rule_list[2] = income_rule
         firewall = self._fake_firewall(rule_list)
         self.firewall.update_firewall_group(FW_LEGACY, apply_list, firewall)

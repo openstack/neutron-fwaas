@@ -41,14 +41,15 @@ SQL_STATEMENT = (
 
 def upgrade():
     op.create_table('firewall_router_associations',
-        sa.Column('fw_id', sa.String(length=36), nullable=False),
-        sa.Column('router_id', sa.String(length=36), nullable=False),
-        sa.ForeignKeyConstraint(['fw_id'], ['firewalls.id'],
-            ondelete='CASCADE'),
-        sa.ForeignKeyConstraint(['router_id'], ['routers.id'],
-            ondelete='CASCADE'),
-        sa.PrimaryKeyConstraint('fw_id', 'router_id'),
-    )
+                    sa.Column('fw_id', sa.String(length=36), nullable=False),
+                    sa.Column('router_id', sa.String(
+                        length=36), nullable=False),
+                    sa.ForeignKeyConstraint(['fw_id'], ['firewalls.id'],
+                                            ondelete='CASCADE'),
+                    sa.ForeignKeyConstraint(['router_id'], ['routers.id'],
+                                            ondelete='CASCADE'),
+                    sa.PrimaryKeyConstraint('fw_id', 'router_id'),
+                    )
 
     # Depending on when neutron-fwaas is installed with neutron, this script
     # may be run before or after the neutron core tables have had their

@@ -61,7 +61,7 @@ class TestSanityCheck(testlib_api.SqlTestCaseLight):
     BUILD_SCHEMA = False
 
     def setUp(self):
-        super(TestSanityCheck, self).setUp()
+        super().setUp()
 
         for conf in migration.get_alembic_configs():
             self.alembic_config = conf

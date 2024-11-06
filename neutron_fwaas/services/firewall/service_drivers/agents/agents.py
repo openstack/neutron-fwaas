@@ -31,7 +31,7 @@ from neutron_fwaas.services.firewall.service_drivers import driver_api
 LOG = logging.getLogger(__name__)
 
 
-class FirewallAgentCallbacks(object):
+class FirewallAgentCallbacks:
     target = oslo_messaging.Target(version='1.0')
 
     def __init__(self, firewall_db):
@@ -106,7 +106,7 @@ class FirewallAgentCallbacks(object):
         """Get all projects that have firewall_groups."""
         ctx = neutron_context.get_admin_context()
         fwg_list = self.firewall_db.get_firewall_groups(ctx)
-        fwg_project_list = list(set(fwg['tenant_id'] for fwg in fwg_list))
+        fwg_project_list = list({fwg['tenant_id'] for fwg in fwg_list})
         return fwg_project_list
 
     @log_helpers.log_method_call
@@ -136,7 +136,7 @@ class FirewallAgentCallbacks(object):
         return fwg
 
 
-class FirewallAgentApi(object):
+class FirewallAgentApi:
     """Plugin side of plugin to agent RPC API"""
 
     def __init__(self, topic, host):
@@ -169,7 +169,7 @@ class FirewallAgentDriver(driver_api.FirewallDriverDB,
     """
 
     def __init__(self, service_plugin):
-        super(FirewallAgentDriver, self).__init__(service_plugin)
+        super().__init__(service_plugin)
         self.agent_rpc = FirewallAgentApi(constants.FW_AGENT, cfg.CONF.host)
 
     def is_supported_l2_port(self, port):
@@ -250,7 +250,7 @@ class FirewallAgentDriver(driver_api.FirewallDriverDB,
         ports = firewall_group['ports']
 
         if (not ports or (not firewall_group['ingress_firewall_policy_id'] and
-                not firewall_group['egress_firewall_policy_id'])):
+                          not firewall_group['egress_firewall_policy_id'])):
             # no messaging to agent needed and fw needs to go to INACTIVE state
             # as no associated ports and/or no policy configured.
             status = nl_constants.INACTIVE
@@ -317,9 +317,9 @@ class FirewallAgentDriver(driver_api.FirewallDriverDB,
                                        not new_firewall_group['ports'])
 
         LOG.debug("update_firewall_group %s: Add Ports: %s, Del Ports: %s",
-            new_firewall_group['id'],
-            fwg_with_rules['add-port-ids'],
-            fwg_with_rules['del-port-ids'])
+                  new_firewall_group['id'],
+                  fwg_with_rules['add-port-ids'],
+                  fwg_with_rules['del-port-ids'])
 
         fwg_with_rules['port_details'] = self._get_fwg_port_details(
             context, fwg_with_rules['del-port-ids'])

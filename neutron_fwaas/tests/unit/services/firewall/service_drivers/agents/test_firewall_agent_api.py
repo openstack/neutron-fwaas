@@ -66,7 +66,7 @@ class NoopFwaasDriverV2(fwaas_base_v2.FwaasDriverBase):
 
 class TestFWaaSAgentApi(base.BaseTestCase):
     def setUp(self):
-        super(TestFWaaSAgentApi, self).setUp()
+        super().setUp()
 
         self.api = api.FWaaSPluginApiMixin(
             'topic',

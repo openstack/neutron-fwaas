@@ -69,7 +69,7 @@ ROUTER_NAMESPACE = 'qrouter-fake-namespace'
 
 class ConntrackNetlinkTestCase(base.BaseTestCase):
     def setUp(self):
-        super(ConntrackNetlinkTestCase, self).setUp()
+        super().setUp()
         self.conntrack_driver = netlink_conntrack.ConntrackNetlink()
         self.conntrack_driver.initialize()
         nl_flush_entries = mock.patch('neutron_fwaas.privileged.'
@@ -79,7 +79,7 @@ class ConntrackNetlinkTestCase(base.BaseTestCase):
                                      'netlink_lib.list_entries')
         self.list_entries = nl_list_entries.start()
         nl_delete_entries = mock.patch('neutron_fwaas.privileged.'
-                                     'netlink_lib.delete_entries')
+                                       'netlink_lib.delete_entries')
         self.delete_entries = nl_delete_entries.start()
 
     def test_flush_entries(self):

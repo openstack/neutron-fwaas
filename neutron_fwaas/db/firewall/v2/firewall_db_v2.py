@@ -59,11 +59,11 @@ class FirewallDefaultObjectUpdateRestricted(FirewallDefaultParameterExists):
                "'%(resource_id)s' of type %(resource_type)s.")
 
 
-class HasName(object):
+class HasName:
     name = sa.Column(sa.String(db_constants.NAME_FIELD_SIZE))
 
 
-class HasDescription(object):
+class HasDescription:
     description = sa.Column(
         sa.String(db_constants.LONG_DESCRIPTION_FIELD_SIZE))
 
@@ -188,7 +188,7 @@ def _list_firewall_policies_result_filter_hook(query, filters):
     return query
 
 
-class FirewallPluginDb(object):
+class FirewallPluginDb:
 
     def __new__(cls, *args, **kwargs):
         model_query.register_hook(
@@ -204,7 +204,7 @@ class FirewallPluginDb(object):
             query_hook=None,
             filter_hook=None,
             result_filters=_list_firewall_policies_result_filter_hook)
-        return super(FirewallPluginDb, cls).__new__(cls, *args, **kwargs)
+        return super().__new__(cls, *args, **kwargs)
 
     def _get_firewall_group(self, context, id):
         try:
@@ -254,7 +254,7 @@ class FirewallPluginDb(object):
 
     def _validate_fwr_port_range(self, min_port, max_port):
         if int(min_port) > int(max_port):
-            port_range = '%s:%s' % (min_port, max_port)
+            port_range = '{}:{}'.format(min_port, max_port)
             raise f_exc.FirewallRuleInvalidPortValue(port=port_range)
 
     def _get_min_max_ports_from_range(self, port_range):
@@ -272,7 +272,7 @@ class FirewallPluginDb(object):
         if min_port == max_port:
             return str(min_port)
         self._validate_fwr_port_range(min_port, max_port)
-        return '%s:%s' % (min_port, max_port)
+        return '{}:{}'.format(min_port, max_port)
 
     def _make_firewall_rule_dict(self, firewall_rule, fields=None,
                                  policies=None):
@@ -656,7 +656,7 @@ class FirewallPluginDb(object):
                                          rule_id_list, filters):
         rules_in_fwr_db = model_query.get_collection_query(
             context, FirewallRuleV2, filters=filters)
-        rules_dict = dict((fwr_db['id'], fwr_db) for fwr_db in rules_in_fwr_db)
+        rules_dict = {fwr_db['id']: fwr_db for fwr_db in rules_in_fwr_db}
         for fwrule_id in rule_id_list:
             if fwrule_id not in rules_dict:
                 # Bail as soon as we find an invalid rule.
@@ -710,7 +710,7 @@ class FirewallPluginDb(object):
         with db_api.CONTEXT_READER.using(context):
             fwg_with_fwp_id_db = context.session.query(FirewallGroup).filter(
                 or_(FirewallGroup.ingress_firewall_policy_id == fwp_id,
-                FirewallGroup.egress_firewall_policy_id == fwp_id))
+                    FirewallGroup.egress_firewall_policy_id == fwp_id))
         for entry in fwg_with_fwp_id_db:
             if entry.tenant_id != fwp_tenant_id:
                 raise f_exc.FirewallPolicyInUse(
@@ -742,7 +742,7 @@ class FirewallPluginDb(object):
             filters = {'firewall_rule_id': [r_id for r_id in rule_id_list]}
             # Run a validation on the Firewall Rules table
             self._check_rules_for_policy_is_valid(context, fwp, fwp_db,
-                rule_id_list, filters)
+                                                  rule_id_list, filters)
             # new rules are valid, lets delete the old association
             self._delete_all_rules_from_policy(context, fwp_db)
             # and add in the new association
@@ -754,8 +754,8 @@ class FirewallPluginDb(object):
                 context,
                 FirewallPolicyRuleAssociation,
                 filters=filters)
-            rules_dict = dict((fpol_rul_db['firewall_rule_id'], fpol_rul_db)
-                             for fpol_rul_db in rules_in_fpol_rul_db)
+            rules_dict = {fpol_rul_db['firewall_rule_id']: fpol_rul_db
+                          for fpol_rul_db in rules_in_fpol_rul_db}
             fwp_db.rule_associations = []
             for fwrule_id in rule_id_list:
                 fwp_db.rule_associations.append(rules_dict[fwrule_id])
@@ -800,7 +800,7 @@ class FirewallPluginDb(object):
         with db_api.CONTEXT_WRITER.using(context):
             fwp_db = self._get_firewall_policy(context, id)
             self._ensure_not_default_resource(fwp_db, 'firewall_policy',
-                                         action="update")
+                                              action="update")
             if not fwp.get('shared', True):
                 # an update is setting shared to False, make sure associated
                 # firewall groups are in the same project.

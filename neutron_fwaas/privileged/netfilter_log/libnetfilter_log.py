@@ -171,7 +171,7 @@ def decode(nfa):
             'msg': encodeutils.safe_decode(msg)}
 
 
-class NFLogWrapper(object):
+class NFLogWrapper:
     """A wrapper for libnetfilter_log api"""
 
     _instance = None
@@ -304,7 +304,7 @@ def run_nflog(namespace=None, group=0):
     return pid
 
 
-class NFLogApp(object):
+class NFLogApp:
     """Log application for handling nflog packets"""
 
     callback = None

@@ -96,7 +96,7 @@ ROUTER_NAMESPACE = 'qrouter-fake-namespace'
 
 class ConntrackLegacyTestCase(base.BaseTestCase):
     def setUp(self):
-        super(ConntrackLegacyTestCase, self).setUp()
+        super().setUp()
         self.utils_exec = mock.Mock()
         self.conntrack_driver = legacy_conntrack.ConntrackLegacy()
         self.conntrack_driver.initialize(execute=self.utils_exec)
@@ -135,7 +135,7 @@ class ConntrackLegacyTestCase(base.BaseTestCase):
         self.conntrack_driver._execute_command = mock.Mock(
             side_effect=get_contrack_entries)
         entries = self.conntrack_driver.list_entries(ROUTER_NAMESPACE)
-        protocols = set([entry[1] for entry in entries])
+        protocols = {entry[1] for entry in entries}
         supported_protocols = set(legacy_conntrack.ATTR_POSITIONS.keys())
         self.assertTrue(protocols.issubset(supported_protocols))
 

@@ -25,7 +25,7 @@ LOG = logging.getLogger(__name__)
 FIREWALL_DRIVERS = 'firewall_drivers'
 
 
-class FirewallService(object):
+class FirewallService:
     """Firewall Service observer."""
 
     def load_device_drivers(self):

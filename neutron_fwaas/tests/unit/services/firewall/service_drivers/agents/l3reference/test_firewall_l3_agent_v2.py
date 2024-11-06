@@ -35,7 +35,7 @@ from neutron_fwaas.tests.unit.services.firewall.service_drivers.agents \
     import test_firewall_agent_api
 
 
-class FWaasHelper(object):
+class FWaasHelper:
     def __init__(self):
         pass
 
@@ -62,7 +62,7 @@ def _setup_test_agent_class(service_plugins):
             self.event_observers = mock.Mock()
             self.conf = conf
             firewall_agent_api._check_required_agent_extension = mock.Mock()
-            super(FWaasTestAgent, self).__init__(conf)
+            super().__init__(conf)
 
         def delete_router(self, context, data):
             pass
@@ -72,7 +72,7 @@ def _setup_test_agent_class(service_plugins):
 
 class TestFWaaSL3AgentExtension(base.BaseTestCase):
     def setUp(self):
-        super(TestFWaaSL3AgentExtension, self).setUp()
+        super().setUp()
 
         self.conf = cfg.ConfigOpts()
         self.conf.register_opts(l3_config.OPTS)
@@ -129,10 +129,10 @@ class TestFWaaSL3AgentExtension(base.BaseTestCase):
             mock_driver_create_firewall_group.return_value = True
 
             self.api.create_firewall_group(self.context, firewall_group,
-                    host='host')
+                                           host='host')
 
-            mock_get_firewall_group_ports.assert_called_once_with(self.context,
-                    firewall_group)
+            mock_get_firewall_group_ports.assert_called_once_with(
+                self.context, firewall_group)
             mock_get_in_ns_ports.assert_called
             assert mock_get_in_ns_ports
             mock_set_firewall_group_status.assert_called_once_with(
@@ -145,7 +145,7 @@ class TestFWaaSL3AgentExtension(base.BaseTestCase):
                           'add-port-ids': [1, 2],
                           'del-port-ids': [3, 4],
                           'router_ids': [],
-                    'last-port': False}
+                          'last-port': False}
 
         self.api.plugin_rpc = mock.Mock()
         with mock.patch.object(self.api, '_get_firewall_group_ports'
@@ -170,10 +170,10 @@ class TestFWaaSL3AgentExtension(base.BaseTestCase):
                      mock.call(self.context, firewall_group)]
 
             self.api.update_firewall_group(self.context, firewall_group,
-                    host='host')
+                                           host='host')
 
             self.assertEqual(mock_get_firewall_group_ports.call_args_list,
-                    calls)
+                             calls)
             mock_get_in_ns_ports.assert_called
             mock_set_firewall_group_status.assert_called_once_with(
                     self.context, firewall_group['id'], 'ACTIVE')
@@ -202,7 +202,7 @@ class TestFWaaSL3AgentExtension(base.BaseTestCase):
             mock_driver_update_firewall_group.return_value = True
 
             self.api.update_firewall_group(self.context, firewall_group,
-                    host='host')
+                                           host='host')
 
             mock_get_firewall_group_ports.assert_called
             mock_get_in_ns_ports.assert_called
@@ -232,7 +232,7 @@ class TestFWaaSL3AgentExtension(base.BaseTestCase):
             mock_driver_delete_firewall_group.return_value = True
 
             self.api.update_firewall_group(self.context, firewall_group,
-                    host='host')
+                                           host='host')
             calls = [
                 mock.call._get_firewall_group_ports(
                     self.context, firewall_group, require_new_plugin=True,
@@ -268,7 +268,7 @@ class TestFWaaSL3AgentExtension(base.BaseTestCase):
             mock_driver_update_firewall_group.return_value = True
 
             self.api.update_firewall_group(self.context, firewall_group,
-                    host='host')
+                                           host='host')
             calls = [
                 mock.call._get_firewall_group_ports(
                     self.context, firewall_group, require_new_plugin=True,
@@ -304,7 +304,7 @@ class TestFWaaSL3AgentExtension(base.BaseTestCase):
             mock_driver_update_firewall_group.return_value = True
 
             self.api.update_firewall_group(self.context, firewall_group,
-                    host='host')
+                                           host='host')
             calls = [
                 mock.call._get_firewall_group_ports(
                     self.context, firewall_group, require_new_plugin=True,
@@ -413,13 +413,13 @@ class TestFWaaSL3AgentExtension(base.BaseTestCase):
             mock_driver_delete_firewall_group.return_value = True
 
             self.api.delete_firewall_group(self.context, firewall_group,
-                    host='host')
+                                           host='host')
 
             mock_get_firewall_group_ports.assert_called_once_with(
                     self.context, firewall_group, to_delete=True)
             mock_get_in_ns_ports.assert_called
-            mock_firewall_group_deleted.assert_called_once_with(self.context,
-                    firewall_group['id'])
+            mock_firewall_group_deleted.assert_called_once_with(
+                self.context, firewall_group['id'])
 
     def _prepare_router_data(self):
         return router_info.RouterInfo(self.api,

@@ -30,7 +30,7 @@ from neutron_fwaas.tests.unit.services.firewall import test_fwaas_plugin_v2
 class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
 
     def setUp(self):
-        super(TestFirewallDBPluginV2, self).setUp()
+        super().setUp()
         self.db = self.plugin.driver.firewall_db
 
     def test_get_policy_ordered_rules(self):
@@ -877,8 +877,8 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
         # make sure that admin can see default groups for admin and non-admin
         res = self._list_req('firewall_groups', ctx=ctx_admin, as_admin=True)
         self.assertEqual(2, len(res))
-        self.assertEqual(set([ctx_admin.tenant_id, ctx.tenant_id]),
-                         set([r['tenant_id'] for r in res]))
+        self.assertEqual({ctx_admin.tenant_id, ctx.tenant_id},
+                         {r['tenant_id'] for r in res})
 
     def test_create_default_firewall_group_from_config(self):
         group = 'default_fwg_rules'
@@ -1026,10 +1026,10 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
         description = "my_firewall1"
         not_found_fwp_id = uuidutils.generate_uuid()
         self._create_firewall_group(fmt, fwg_name,
-                              description, not_found_fwp_id,
-                              not_found_fwp_id, ports=None,
-                              admin_state_up=self.ADMIN_STATE_UP,
-                              expected_res_status=404)
+                                    description, not_found_fwp_id,
+                                    not_found_fwp_id, ports=None,
+                                    admin_state_up=self.ADMIN_STATE_UP,
+                                    expected_res_status=404)
 
     def test_create_firewall_group_with_fwp_on_different_tenant(self):
         fmt = self.fmt
@@ -1041,9 +1041,9 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
             ctx = self._get_nonadmin_context()
             self._create_firewall_group(fmt, fwg_name,
                                         description,
-                    ingress_firewall_policy_id=fwp_id,
+                                        ingress_firewall_policy_id=fwp_id,
                                         egress_firewall_policy_id=fwp_id,
-                    context=ctx,
+                                        context=ctx,
                                         expected_res_status=404)
 
     def test_create_firewall_group_with_admin_and_fwp_different_tenant(self):
@@ -1685,8 +1685,8 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
                                       as_admin=True) as fwp:
                 fwp_id = fwp['firewall_policy']['id']
                 fwr_id = fwr['firewall_rule']['id']
-                msg = "Firewall rule {0} is not associated with " \
-                      "firewall policy {1}.".format(fwr_id, fwp_id)
+                msg = "Firewall rule {} is not associated with " \
+                      "firewall policy {}.".format(fwr_id, fwp_id)
                 result = self._rule_action(
                     'remove', fwp_id, fwr_id,
                     insert_before=None,

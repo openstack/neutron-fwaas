@@ -70,7 +70,7 @@ def _fake_port_object(port_id, device_owner, status,
 class LoggingRpcCallbackTestCase(base.BaseTestCase):
 
     def setUp(self):
-        super(LoggingRpcCallbackTestCase, self).setUp()
+        super().setUp()
         self.context = mock.Mock()
         self.rpc_callback = server_rpc.LoggingApiSkeleton()
 
@@ -282,7 +282,7 @@ class LoggingRpcCallbackTestCase(base.BaseTestCase):
             unbound_resource = uuidutils.generate_uuid()
             resource_log = _create_log_object(tenant_id, unbound_resource)
             target_log = _create_log_object(tenant_id, unbound_resource,
-                                           target_id)
+                                            target_id)
             log_objs = [log, target_log, resource_log]
 
             with mock.patch.object(log_object.Log, 'get_objects',

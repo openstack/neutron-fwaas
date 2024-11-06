@@ -31,7 +31,7 @@ from neutron_fwaas.db.firewall.v2 import firewall_db_v2
 LOG = logging.getLogger(__name__)
 
 
-class FirewallDriver(object, metaclass=abc.ABCMeta):
+class FirewallDriver(metaclass=abc.ABCMeta):
     """Firewall v2 interface for driver
 
     That driver interface does not persist Firewall v2 data in any database.
@@ -131,7 +131,7 @@ class FirewallDriverDBMixin(FirewallDriver, metaclass=abc.ABCMeta):
     """
 
     def __init__(self, *args, **kwargs):
-        super(FirewallDriverDBMixin, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.firewall_db = firewall_db_v2.FirewallPluginDb()
 
     @staticmethod
@@ -517,7 +517,7 @@ class FirewallDriverDB(FirewallDriverDBMixin):
         pass
 
 
-class FirewallDriverRPCMixin(object, metaclass=abc.ABCMeta):
+class FirewallDriverRPCMixin(metaclass=abc.ABCMeta):
     """FirewallAgent interface for driver with rpc callback listener.
 
     Each firewall backend driver that needs a rpc callback listener should

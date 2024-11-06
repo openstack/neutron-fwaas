@@ -52,7 +52,7 @@ class TestIsValidPrefix(base.BaseTestCase):
 
 class TestCreateFlowsFromRuleAndPort(base.BaseTestCase):
     def setUp(self):
-        super(TestCreateFlowsFromRuleAndPort, self).setUp()
+        super().setUp()
         ovs_port = mock.Mock(vif_mac='00:00:00:00:00:00')
         ovs_port.ofport = 1
         port_dict = {'device': 'port_id'}
@@ -169,7 +169,7 @@ class TestCreateFlowsFromRuleAndPort(base.BaseTestCase):
 
 class TestCreateProtocolFlows(base.BaseTestCase):
     def setUp(self):
-        super(TestCreateProtocolFlows, self).setUp()
+        super().setUp()
         ovs_port = mock.Mock(vif_mac='00:00:00:00:00:00')
         ovs_port.ofport = 1
         port_dict = {'device': 'port_id'}

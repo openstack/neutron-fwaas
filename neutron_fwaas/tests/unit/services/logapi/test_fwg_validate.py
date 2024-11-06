@@ -30,7 +30,7 @@ class TestFWGLogRequestValidations(base.BaseTestCase):
     """Test validator for a log creation request"""
 
     def setUp(self):
-        super(TestFWGLogRequestValidations, self).setUp()
+        super().setUp()
         fwg_validate.fwg_plugin = mock.Mock()
         fwg_validate.fwg_plugin.driver = mock.Mock()
         fwg_validate.fwg_plugin.driver.firewall_db = mock.Mock()

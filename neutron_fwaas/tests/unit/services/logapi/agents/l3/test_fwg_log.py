@@ -27,7 +27,7 @@ from neutron_fwaas.services.logapi.agents.l3 import fwg_log
 class FWaaSL3LoggingExtensionInitializeTestCase(base.L3LoggingExtBaseTestCase):
 
     def setUp(self):
-        super(FWaaSL3LoggingExtensionInitializeTestCase, self).setUp()
+        super().setUp()
         self.fw_l3_log_ext = fwg_log.FWaaSL3LoggingExtension()
         self.fw_l3_log_ext.consume_api(self.agent_api)
 

@@ -69,7 +69,7 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
         self.conntrack = conntrack_base.load_and_init_conntrack_driver()
 
     def _get_intf_name(self, if_prefix, port_id):
-        _name = "%s%s" % (if_prefix, port_id)
+        _name = "{}{}".format(if_prefix, port_id)
         return _name[:MAX_INTF_NAME_LEN]
 
     def create_firewall_group(self, agent_mode, apply_list, firewall):
@@ -140,11 +140,12 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
             if firewall['admin_state_up']:
                 self._setup_firewall(agent_mode, apply_list, firewall)
                 if self.pre_firewall:
-                    self._remove_conntrack_updated_firewall(agent_mode,
-                                    apply_list, self.pre_firewall, firewall)
+                    self._remove_conntrack_updated_firewall(
+                        agent_mode,
+                        apply_list, self.pre_firewall, firewall)
                 else:
                     self._remove_conntrack_new_firewall(agent_mode,
-                                                    apply_list, firewall)
+                                                        apply_list, firewall)
             else:
                 self.apply_default_policy(agent_mode, apply_list, firewall)
             self.pre_firewall = dict(firewall)
@@ -210,9 +211,9 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
                 ipt_mgr.defer_apply_off()
 
     def _get_chain_name(self, fwid, ver, direction):
-        return '%s%s%s' % (CHAIN_NAME_PREFIX[direction],
-                           IP_VER_TAG[ver],
-                           fwid)
+        return '{}{}{}'.format(CHAIN_NAME_PREFIX[direction],
+                               IP_VER_TAG[ver],
+                               fwid)
 
     def _setup_chains(self, firewall, ipt_if_prefix, router_fw_ports):
         """Create Fwaas chain using the rules in the policy
@@ -293,7 +294,7 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
             fw_rules = firewall[fw_rule_list]
             fw_rule_ids = [fw_rule['id'] for fw_rule in fw_rules]
             removed_rules.extend([pre_fw_rule for pre_fw_rule in pre_fw_rules
-                    if pre_fw_rule['id'] not in fw_rule_ids])
+                                  if pre_fw_rule['id'] not in fw_rule_ids])
         return removed_rules
 
     def _find_new_rules(self, pre_firewall, firewall):
@@ -301,7 +302,7 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
 
     def _remove_conntrack_new_firewall(self, agent_mode, apply_list, firewall):
         """Remove conntrack when create new firewall"""
-        routers_list = list(set([apply_info[0] for apply_info in apply_list]))
+        routers_list = list({apply_info[0] for apply_info in apply_list})
         for ri in routers_list:
             ipt_if_prefix_list = self._get_ipt_mgrs_with_if_prefix(
                 agent_mode, ri)
@@ -312,7 +313,7 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
     def _remove_conntrack_updated_firewall(self, agent_mode,
                                            apply_list, pre_firewall, firewall):
         """Remove conntrack when updated firewall"""
-        routers_list = list(set([apply_info[0] for apply_info in apply_list]))
+        routers_list = list({apply_info[0] for apply_info in apply_list})
         for ri in routers_list:
             ipt_if_prefix_list = self._get_ipt_mgrs_with_if_prefix(
                 agent_mode, ri)
@@ -418,7 +419,7 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
     def _get_action_chain(self, name):
         binary_name = iptables_manager.binary_name
         chain_name = iptables_manager.get_chain_name(name)
-        return '%s-%s' % (binary_name, chain_name)
+        return '{}-{}'.format(binary_name, chain_name)
 
     def _enable_policy_chain(self, fwid, ipt_if_prefix, router_fw_ports):
         bname = iptables_manager.binary_name
@@ -435,18 +436,18 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
                     for router_fw_port in router_fw_ports:
                         intf_name = self._get_intf_name(if_prefix,
                                                         router_fw_port)
-                        jump_rule = ['%s %s -j %s-%s' % (
+                        jump_rule = ['{} {} -j {}-{}'.format(
                             IPTABLES_DIR[direction], intf_name,
                             bname, chain_name)]
                         self._add_rules_to_chain(ipt_mgr, ver,
-                                             'FORWARD', jump_rule)
+                                                 'FORWARD', jump_rule)
 
         # jump to DROP_ALL policy
         chain_name = iptables_manager.get_chain_name(FWAAS_DEFAULT_CHAIN)
         for router_fw_port in router_fw_ports:
             intf_name = self._get_intf_name(if_prefix,
                                             router_fw_port)
-            jump_rule = ['-o %s -j %s-%s' % (intf_name, bname, chain_name)]
+            jump_rule = ['-o {} -j {}-{}'.format(intf_name, bname, chain_name)]
             self._add_rules_to_chain(ipt_mgr, IPV4, 'FORWARD', jump_rule)
             self._add_rules_to_chain(ipt_mgr, IPV6, 'FORWARD', jump_rule)
 
@@ -455,7 +456,7 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
         for router_fw_port in router_fw_ports:
             intf_name = self._get_intf_name(if_prefix,
                                             router_fw_port)
-            jump_rule = ['-i %s -j %s-%s' % (intf_name, bname, chain_name)]
+            jump_rule = ['-i {} -j {}-{}'.format(intf_name, bname, chain_name)]
             self._add_rules_to_chain(ipt_mgr, IPV4, 'FORWARD', jump_rule)
             self._add_rules_to_chain(ipt_mgr, IPV6, 'FORWARD', jump_rule)
 

@@ -40,7 +40,7 @@ FAKE_ICMPV6_ENTRY = {'ipversion': 6, 'protocol': 'ipv6-icmp',
 
 class NetlinkLibTestCase(base.BaseTestCase):
     def setUp(self):
-        super(NetlinkLibTestCase, self).setUp()
+        super().setUp()
         nl_lib.nfct = mock.Mock()
         nl_lib.libc = mock.Mock()
 
@@ -250,8 +250,8 @@ class NetlinkLibTestCase(base.BaseTestCase):
         with nl_lib.ConntrackManager() as conntrack:
             nl_lib.nfct.nfct_open.assert_called_once()
             conntrack.delete_entries([FAKE_ENTRY,
-                                    FAKE_TCP_ENTRY,
-                                    FAKE_UDP_ENTRY])
+                                      FAKE_TCP_ENTRY,
+                                      FAKE_UDP_ENTRY])
             calls = [
                 mock.call(conntrack_filter,
                           nl_constants.ATTR_L3PROTO,

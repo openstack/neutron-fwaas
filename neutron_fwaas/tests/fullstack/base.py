@@ -34,7 +34,7 @@ class BaseFullStackTestCase(testlib_api.MySQLTestCaseMixin,
     BUILD_WITH_MIGRATIONS = True
 
     def setUp(self, environment):
-        super(BaseFullStackTestCase, self).setUp()
+        super().setUp()
 
         tests_base.setup_test_logging(
             cfg.CONF, DEFAULT_LOG_DIR, '%s.txt' % self.get_name())
@@ -66,4 +66,4 @@ class BaseFullStackTestCase(testlib_api.MySQLTestCaseMixin,
 
     def get_name(self):
         class_name, test_name = self.id().split(".")[-2:]
-        return "%s.%s" % (class_name, test_name)
+        return "{}.{}".format(class_name, test_name)

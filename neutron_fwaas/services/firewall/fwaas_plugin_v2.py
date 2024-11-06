@@ -48,7 +48,7 @@ class FirewallPluginV2(Firewallv2PluginBase):
     path_prefix = firewall_v2.API_PREFIX
 
     def __init__(self):
-        super(FirewallPluginV2, self).__init__()
+        super().__init__()
         """Do the initialization for the firewall service plugin here."""
         # Initialize the Firewall v2 service plugin
         service_type_manager = st_db.ServiceTypeManager.get_instance()

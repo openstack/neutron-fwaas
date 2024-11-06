@@ -123,7 +123,7 @@ class ConntrackOpenFailedExit(SystemExit):
     """Raised if we fail to open a new conntrack or conntrack handler"""
 
 
-class ConntrackManager(object):
+class ConntrackManager:
     def __init__(self, family_socket=None):
         self.family_socket = family_socket
         self.set_functions = {
@@ -147,14 +147,14 @@ class ConntrackManager(object):
                       6: nfct.nfct_set_attr_u16}, }
 
         self.converters = {'src': bytes,
-                      'dst': bytes,
-                      'ipversion': nl_constants.IPVERSION_SOCKET.get,
-                      'protocol': constants.IP_PROTOCOL_MAP.get,
-                      'code': int,
-                      'type': int,
-                      'id': libc.htons,
-                      'sport': libc.htons,
-                      'dport': libc.htons, }
+                           'dst': bytes,
+                           'ipversion': nl_constants.IPVERSION_SOCKET.get,
+                           'protocol': constants.IP_PROTOCOL_MAP.get,
+                           'code': int,
+                           'type': int,
+                           'id': libc.htons,
+                           'sport': libc.htons,
+                           'dport': libc.htons, }
 
     def list_entries(self):
         entries = []

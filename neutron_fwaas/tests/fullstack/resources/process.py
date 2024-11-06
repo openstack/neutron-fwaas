@@ -32,7 +32,7 @@ from neutron.tests.fullstack import base as fullstack_base
 class ProcessFixture(fixtures.Fixture):
     def __init__(self, test_name, process_name, exec_name, config_filenames,
                  namespace=None, kill_signal=signal.SIGKILL):
-        super(ProcessFixture, self).__init__()
+        super().__init__()
         self.test_name = test_name
         self.process_name = process_name
         self.exec_name = exec_name
@@ -52,7 +52,7 @@ class ProcessFixture(fixtures.Fixture):
         common_utils.ensure_dir(log_dir)
 
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d--%H-%M-%S-%f")
-        log_file = "%s--%s.log" % (self.process_name, timestamp)
+        log_file = "{}--{}.log".format(self.process_name, timestamp)
         cmd = [shutil.which(self.exec_name),
                '--log-dir', log_dir,
                '--log-file', log_file]
@@ -71,7 +71,7 @@ class ProcessFixture(fixtures.Fixture):
 class RabbitmqEnvironmentFixture(fixtures.Fixture):
 
     def __init__(self, host="127.0.0.1"):
-        super(RabbitmqEnvironmentFixture, self).__init__()
+        super().__init__()
         self.host = host
 
     def _setUp(self):
@@ -100,7 +100,7 @@ class NeutronServerFixture(fixtures.Fixture):
 
     def __init__(self, env_desc, host_desc,
                  test_name, neutron_cfg_fixture, plugin_cfg_fixture):
-        super(NeutronServerFixture, self).__init__()
+        super().__init__()
         self.env_desc = env_desc
         self.host_desc = host_desc
         self.test_name = test_name
@@ -140,7 +140,7 @@ class OVSAgentFixture(fixtures.Fixture):
 
     def __init__(self, env_desc, host_desc,
                  test_name, neutron_cfg_fixture, agent_cfg_fixture):
-        super(OVSAgentFixture, self).__init__()
+        super().__init__()
         self.env_desc = env_desc
         self.host_desc = host_desc
         self.test_name = test_name
@@ -174,7 +174,7 @@ class LinuxBridgeAgentFixture(fixtures.Fixture):
     def __init__(self, env_desc, host_desc, test_name,
                  neutron_cfg_fixture, agent_cfg_fixture,
                  namespace=None):
-        super(LinuxBridgeAgentFixture, self).__init__()
+        super().__init__()
         self.env_desc = env_desc
         self.host_desc = host_desc
         self.test_name = test_name
@@ -206,7 +206,7 @@ class L3AgentFixture(fixtures.Fixture):
     def __init__(self, env_desc, host_desc, test_name,
                  neutron_cfg_fixture, l3_agent_cfg_fixture,
                  namespace=None):
-        super(L3AgentFixture, self).__init__()
+        super().__init__()
         self.env_desc = env_desc
         self.host_desc = host_desc
         self.test_name = test_name

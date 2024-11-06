@@ -37,7 +37,7 @@ def load_and_init_conntrack_driver(*args, **kwargs):
     return conntrack_driver
 
 
-class ConntrackDriverBase(object, metaclass=abc.ABCMeta):
+class ConntrackDriverBase(metaclass=abc.ABCMeta):
     """Base Driver for Conntrack"""
 
     @abc.abstractmethod

@@ -24,7 +24,7 @@ from neutron_fwaas.tests import base
 class TestChecks(base.BaseTestCase):
 
     def setUp(self):
-        super(TestChecks, self).setUp()
+        super().setUp()
         self.checks = checks.Checks()
 
     def test_get_checks_list(self):

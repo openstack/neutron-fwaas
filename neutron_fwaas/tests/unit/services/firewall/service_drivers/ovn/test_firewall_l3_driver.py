@@ -38,7 +38,7 @@ class TestOVNFwaasDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
         l3_plugin_str = ('neutron.tests.unit.extensions.test_l3.'
                          'TestL3NatServicePlugin')
         l3_plugin = {'l3_plugin_name': l3_plugin_str}
-        super(TestOVNFwaasDriver, self).setUp(
+        super().setUp(
             service_provider=OVN_FWAAS_DRIVER,
             extra_service_plugins=l3_plugin,
             extra_extension_paths=neutron_extensions.__path__)
@@ -68,11 +68,11 @@ class TestOVNFwaasDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
                     admin_state_up=True,
                     as_admin=True) as fwg1:
                 self.assertEqual(nl_constants.INACTIVE,
-                    fwg1['firewall_group']['status'])
+                                 fwg1['firewall_group']['status'])
 
     def test_create_firewall_group_with_ports(self):
         with self.router(name='router1', admin_state_up=True,
-            tenant_id=self._tenant_id, as_admin=True) as r, \
+                         tenant_id=self._tenant_id, as_admin=True) as r, \
                 self.subnet(as_admin=True) as s1, \
                 self.subnet(cidr='20.0.0.0/24', as_admin=True) as s2:
             body = self._router_interface_action(
@@ -108,7 +108,7 @@ class TestOVNFwaasDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
 
     def test_update_firewall_group_with_new_ports(self):
         with self.router(name='router1', admin_state_up=True,
-            tenant_id=self._tenant_id, as_admin=True) as r, \
+                         tenant_id=self._tenant_id, as_admin=True) as r, \
                 self.subnet(as_admin=True) as s1, \
                 self.subnet(cidr='20.0.0.0/24', as_admin=True) as s2, \
                 self.subnet(cidr='30.0.0.0/24', as_admin=True) as s3:
@@ -149,7 +149,7 @@ class TestOVNFwaasDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
                         ports=fwg_ports, admin_state_up=True,
                         do_delete=False, as_admin=True) as fwg1:
                     self.assertEqual(nl_constants.ACTIVE,
-                         fwg1['firewall_group']['status'])
+                                     fwg1['firewall_group']['status'])
                     data = {'firewall_group': {'ports': [port_id2, port_id3]}}
                     req = self.new_update_request('firewall_groups', data,
                                                   fwg1['firewall_group']['id'],
@@ -202,7 +202,7 @@ class TestOVNFwaasDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
                             do_delete=False,
                             as_admin=True) as fwg1:
                         self.assertEqual(nl_constants.ACTIVE,
-                             fwg1['firewall_group']['status'])
+                                         fwg1['firewall_group']['status'])
 
                         fwp_id = fwp["firewall_policy"]["id"]
                         data = {'firewall_group': {'ports': fwg_ports}}
@@ -254,7 +254,7 @@ class TestOVNFwaasDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
                         do_delete=False,
                         as_admin=True) as fwg1:
                     self.assertEqual(nl_constants.INACTIVE,
-                         fwg1['firewall_group']['status'])
+                                     fwg1['firewall_group']['status'])
 
                     new_rules = [fwr_id, fwr2_id, fwr3_id]
                     data = {'firewall_policy': {'firewall_rules':
@@ -290,7 +290,7 @@ class TestOVNFwaasDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
                         do_delete=False,
                         as_admin=True) as fwg1:
                     self.assertEqual(nl_constants.INACTIVE,
-                         fwg1['firewall_group']['status'])
+                                     fwg1['firewall_group']['status'])
 
                     data = {'firewall_rule': {'enabled': False}}
                     req = (self.
@@ -325,7 +325,7 @@ class TestOVNFwaasDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
                         do_delete=False,
                         as_admin=True) as fwg1:
                     self.assertEqual(nl_constants.INACTIVE,
-                         fwg1['firewall_group']['status'])
+                                     fwg1['firewall_group']['status'])
 
                     data = {'firewall_rule': {'enabled': True}}
                     req = (self.
@@ -361,7 +361,7 @@ class TestOVNFwaasDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
                         do_delete=False,
                         as_admin=True) as fwg1:
                     self.assertEqual(nl_constants.INACTIVE,
-                         fwg1['firewall_group']['status'])
+                                     fwg1['firewall_group']['status'])
 
                     data = {'firewall_rule': {'action': 'deny'}}
                     req = (self.
@@ -398,7 +398,7 @@ class TestOVNFwaasDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
                         do_delete=False,
                         as_admin=True) as fwg1:
                     self.assertEqual(nl_constants.INACTIVE,
-                         fwg1['firewall_group']['status'])
+                                     fwg1['firewall_group']['status'])
 
                     data = {'firewall_rule_id': fwr2_id,
                             'insert_after': fwr_id}
@@ -436,7 +436,7 @@ class TestOVNFwaasDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
                         do_delete=False,
                         as_admin=True) as fwg1:
                     self.assertEqual(nl_constants.INACTIVE,
-                         fwg1['firewall_group']['status'])
+                                     fwg1['firewall_group']['status'])
 
                     data = {'firewall_rule_id': fwr2_id}
                     req = (self.

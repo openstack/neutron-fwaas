@@ -64,7 +64,7 @@ def setup_logging():
         LOG.logger.addHandler(syslog_handler)
 
 
-class LogPrefix(object):
+class LogPrefix:
     """LogPrefix could be used as prefix in NFLOG rules
     Each of a couple (port_id, event) has its own LogPrefix object
     """
@@ -99,7 +99,7 @@ class LogPrefix(object):
         return not self.log_object_refs
 
 
-class FWGPortLog(object):
+class FWGPortLog:
     """A firewall group port log per log_object"""
 
     def __init__(self, port_id, log_info):
@@ -234,7 +234,7 @@ class IptablesLoggingDriver(log_ext.LoggingDriver):
                 # Start libnetfilter_log after router starting up
                 pid = libnflog.run_nflog(router_info.ns_name)
                 LOG.debug("NFLOG process ID %s for router %s has started",
-                        pid, router_info.router_id)
+                          pid, router_info.router_id)
                 self.nflog_proc_map[router_id] = pid
             else:
                 # Handle the log request
@@ -502,7 +502,7 @@ class IptablesLoggingDriver(log_ext.LoggingDriver):
     def _generate_iptables_args(self, direction, device, prefix=None):
 
         direction_config = ['-%s %s' %
-                  (IPTABLES_DIRECTION_DEVICE[direction], device)]
+                            (IPTABLES_DIRECTION_DEVICE[direction], device)]
         match_rule = []
         if self.rate_limit:
             match_rule += [

@@ -33,7 +33,7 @@ class ConfigFixture(fixtures.Fixture):
     is initializing a new instance of the class.
     """
     def __init__(self, env_desc, host_desc, temp_dir, base_filename):
-        super(ConfigFixture, self).__init__()
+        super().__init__()
         self.config = config_fixtures.ConfigDict()
         self.env_desc = env_desc
         self.host_desc = host_desc
@@ -51,7 +51,7 @@ class NeutronConfigFixture(ConfigFixture):
 
     def __init__(self, env_desc, host_desc, temp_dir,
                  connection, rabbitmq_environment):
-        super(NeutronConfigFixture, self).__init__(
+        super().__init__(
             env_desc, host_desc, temp_dir, base_filename='neutron.conf')
 
         service_plugins = ['router', 'trunk']
@@ -90,7 +90,7 @@ class NeutronConfigFixture(ConfigFixture):
             'bind_port': self.useFixture(
                 port.ExclusivePort(constants.PROTO_NAME_TCP)).port
         })
-        super(NeutronConfigFixture, self)._setUp()
+        super()._setUp()
 
     def _generate_host(self):
         return utils.get_rand_name(prefix='host-')
@@ -110,7 +110,7 @@ class NeutronConfigFixture(ConfigFixture):
 class ML2ConfigFixture(ConfigFixture):
 
     def __init__(self, env_desc, host_desc, temp_dir, tenant_network_types):
-        super(ML2ConfigFixture, self).__init__(
+        super().__init__(
             env_desc, host_desc, temp_dir, base_filename='ml2_conf.ini')
 
         mechanism_drivers = self.env_desc.mech_drivers
@@ -141,7 +141,7 @@ class ML2ConfigFixture(ConfigFixture):
 class OVSConfigFixture(ConfigFixture):
 
     def __init__(self, env_desc, host_desc, temp_dir, local_ip):
-        super(OVSConfigFixture, self).__init__(
+        super().__init__(
             env_desc, host_desc, temp_dir,
             base_filename='openvswitch_agent.ini')
 
@@ -182,7 +182,7 @@ class OVSConfigFixture(ConfigFixture):
                 'of_listen_port': self.useFixture(
                     port.ExclusivePort(constants.PROTO_NAME_TCP)).port
             })
-        super(OVSConfigFixture, self)._setUp()
+        super()._setUp()
 
     def _generate_bridge_mappings(self):
         return 'physnet1:%s' % utils.get_rand_device_name(prefix='br-eth')
@@ -213,7 +213,7 @@ class LinuxBridgeConfigFixture(ConfigFixture):
 
     def __init__(self, env_desc, host_desc, temp_dir, local_ip,
                  physical_device_name):
-        super(LinuxBridgeConfigFixture, self).__init__(
+        super().__init__(
             env_desc, host_desc, temp_dir,
             base_filename="linuxbridge_agent.ini"
         )
@@ -255,7 +255,7 @@ class LinuxBridgeConfigFixture(ConfigFixture):
 class L3ConfigFixture(ConfigFixture):
 
     def __init__(self, env_desc, host_desc, temp_dir, integration_bridge=None):
-        super(L3ConfigFixture, self).__init__(
+        super().__init__(
             env_desc, host_desc, temp_dir, base_filename='l3_agent.ini')
         if host_desc.l2_agent_type == constants.AGENT_TYPE_OVS:
             self._prepare_config_with_ovs_agent(integration_bridge)

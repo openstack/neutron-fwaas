@@ -34,10 +34,10 @@ PORT4 = uuidutils.generate_uuid()
 HOST = 'fake_host'
 
 
-class FakeFWaaSL2Agent(object):
+class FakeFWaaSL2Agent:
 
     def __init__(self):
-        super(FakeFWaaSL2Agent, self).__init__()
+        super().__init__()
 
     def create(self, resource, attrs=None, minimal=False):
         """Create a fake fwaas v2 resources

@@ -36,7 +36,7 @@ class OVNFwaasDriver(driver_api.FirewallDriverDB):
     """
 
     def __init__(self, service_plugin):
-        super(OVNFwaasDriver, self).__init__(service_plugin)
+        super().__init__(service_plugin)
         self._mech = None
 
     def is_supported_l2_port(self, port):

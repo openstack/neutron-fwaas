@@ -54,7 +54,7 @@ def fake_register():
 class TestFirewallGroupRuleCallback(base.BaseTestCase):
 
     def setUp(self):
-        super(TestFirewallGroupRuleCallback, self).setUp()
+        super().setUp()
         self.driver_manager = driver_mgr.LoggingServiceDriverManager()
         self.fwg_callback = fwg_callback.FirewallGroupCallBack(mock.Mock(),
                                                                mock.Mock())

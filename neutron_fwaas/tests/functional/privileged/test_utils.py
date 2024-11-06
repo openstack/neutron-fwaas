@@ -24,7 +24,7 @@ from neutron_fwaas.privileged.tests.functional import utils
 class InNamespaceTest(base.BaseSudoTestCase):
 
     def setUp(self):
-        super(InNamespaceTest, self).setUp()
+        super().setUp()
         self.namespace = self.useFixture(net_helpers.NamespaceFixture()).name
 
         ip = ip_lib.IPWrapper()

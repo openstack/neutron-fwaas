@@ -82,8 +82,8 @@ class FirewallRouterAssociation(model_base.BASEV2):
     __tablename__ = 'firewall_router_associations'
 
     fw_id = sa.Column(sa.String(36),
-        sa.ForeignKey('firewalls.id', ondelete="CASCADE"),
-        primary_key=True)
+                      sa.ForeignKey('firewalls.id', ondelete="CASCADE"),
+                      primary_key=True)
     router_id = sa.Column(sa.String(36),
-        sa.ForeignKey('routers.id', ondelete="CASCADE"),
-        primary_key=True)
+                          sa.ForeignKey('routers.id', ondelete="CASCADE"),
+                          primary_key=True)

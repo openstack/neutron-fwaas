@@ -31,7 +31,7 @@ from neutron_fwaas.tests.unit.services.firewall.service_drivers.agents.l2\
 class TestFWaasV2AgentExtensionBase(base.BaseTestCase):
 
     def setUp(self):
-        super(TestFWaasV2AgentExtensionBase, self).setUp()
+        super().setUp()
 
         self.fake = fake_data.FakeFWaaSL2Agent()
         self.port = self.fake.create('port')
@@ -60,7 +60,7 @@ class TestFWaasV2AgentExtensionBase(base.BaseTestCase):
 class TestFWaasV2AgentExtension(TestFWaasV2AgentExtensionBase):
 
     def setUp(self):
-        super(TestFWaasV2AgentExtension, self).setUp()
+        super().setUp()
         cfg.CONF.set_override('firewall_l2_driver', 'ovs', group='fwaas')
 
     def test_initialize(self):
@@ -77,7 +77,7 @@ class TestFWaasV2AgentExtension(TestFWaasV2AgentExtensionBase):
 class TestHandlePort(TestFWaasV2AgentExtensionBase):
 
     def setUp(self):
-        super(TestHandlePort, self).setUp()
+        super().setUp()
         self.rpc.get_firewall_group_for_port = mock.Mock(
             return_value=self.fwg)
         self.l2._compute_status = mock.Mock(return_value=nl_consts.ACTIVE)
@@ -154,7 +154,7 @@ class TestHandlePort(TestFWaasV2AgentExtensionBase):
 class TestDeletePort(TestFWaasV2AgentExtensionBase):
 
     def setUp(self):
-        super(TestDeletePort, self).setUp()
+        super().setUp()
         self.l2._compute_status = mock.Mock(return_value=nl_consts.ACTIVE)
         self.l2._apply_fwg_rules = mock.Mock(return_value=True)
         self.l2._send_fwg_status = mock.Mock()
@@ -222,7 +222,7 @@ class TestDeletePort(TestFWaasV2AgentExtensionBase):
 class TestCreateFirewallGroup(TestFWaasV2AgentExtensionBase):
 
     def setUp(self):
-        super(TestCreateFirewallGroup, self).setUp()
+        super().setUp()
         self.l2._apply_fwg_rules = mock.Mock(return_value=True)
         self.l2._compute_status = mock.Mock(return_value='ACTIVE')
         self.l2._send_fwg_status = mock.Mock()
@@ -304,7 +304,7 @@ class TestCreateFirewallGroup(TestFWaasV2AgentExtensionBase):
 class TestDeleteFirewallGroup(TestFWaasV2AgentExtensionBase):
 
     def setUp(self):
-        super(TestDeleteFirewallGroup, self).setUp()
+        super().setUp()
         self.l2._apply_fwg_rules = mock.Mock(return_value=True)
         self.l2._compute_status = mock.Mock(return_value='ACTIVE')
         self.l2._send_fwg_status = mock.Mock()
@@ -360,7 +360,7 @@ class TestDeleteFirewallGroup(TestFWaasV2AgentExtensionBase):
 class TestUpdateFirewallGroup(TestFWaasV2AgentExtensionBase):
 
     def setUp(self):
-        super(TestUpdateFirewallGroup, self).setUp()
+        super().setUp()
         self.l2._delete_firewall_group = mock.Mock()
         self.l2._create_firewall_group = mock.Mock()
         self.l2._send_fwg_status = mock.Mock()
@@ -394,20 +394,20 @@ class TestUpdateFirewallGroup(TestFWaasV2AgentExtensionBase):
 class TestIsPortLayer2(TestFWaasV2AgentExtensionBase):
 
     def setUp(self):
-        super(TestIsPortLayer2, self).setUp()
+        super().setUp()
 
     def test_vm_port(self):
         self.assertTrue(self.l2._is_port_layer2(self.port))
 
     def test_not_vm_port(self):
         for device_owner in [nl_consts.DEVICE_OWNER_ROUTER_INTF,
-                nl_consts.DEVICE_OWNER_ROUTER_GW,
-                nl_consts.DEVICE_OWNER_DHCP,
-                nl_consts.DEVICE_OWNER_DVR_INTERFACE,
-                nl_consts.DEVICE_OWNER_AGENT_GW,
-                nl_consts.DEVICE_OWNER_ROUTER_SNAT,
-                'unknown device_owner',
-                '']:
+                             nl_consts.DEVICE_OWNER_ROUTER_GW,
+                             nl_consts.DEVICE_OWNER_DHCP,
+                             nl_consts.DEVICE_OWNER_DVR_INTERFACE,
+                             nl_consts.DEVICE_OWNER_AGENT_GW,
+                             nl_consts.DEVICE_OWNER_ROUTER_SNAT,
+                             'unknown device_owner',
+                             '']:
             self.port['device_owner'] = device_owner
             self.assertFalse(self.l2._is_port_layer2(self.port))
 
@@ -419,7 +419,7 @@ class TestIsPortLayer2(TestFWaasV2AgentExtensionBase):
 class TestComputeStatus(TestFWaasV2AgentExtensionBase):
 
     def setUp(self):
-        super(TestComputeStatus, self).setUp()
+        super().setUp()
         self.ports = list(self.fwg_with_rule['port_details'].values())
 
     def test_normal(self):
@@ -530,9 +530,9 @@ class TestComputeStatus(TestFWaasV2AgentExtensionBase):
 class TestApplyFwgRules(TestFWaasV2AgentExtensionBase):
 
     def setUp(self):
-        super(TestApplyFwgRules, self).setUp()
+        super().setUp()
 
-        class DummyVlan(object):
+        class DummyVlan:
 
             def __init__(self, vlan=None):
                 self.vlan = vlan
@@ -591,7 +591,7 @@ class TestApplyFwgRules(TestFWaasV2AgentExtensionBase):
 class TestSendFwgStatus(TestFWaasV2AgentExtensionBase):
 
     def setUp(self):
-        super(TestSendFwgStatus, self).setUp()
+        super().setUp()
         self.rpc.set_firewall_group_status = mock.Mock()
 
     def test_success(self):
@@ -607,9 +607,9 @@ class TestSendFwgStatus(TestFWaasV2AgentExtensionBase):
 class TestAddLocalVlanToPorts(TestFWaasV2AgentExtensionBase):
 
     def setUp(self):
-        super(TestAddLocalVlanToPorts, self).setUp()
+        super().setUp()
 
-        class DummyVlan(object):
+        class DummyVlan:
 
             def __init__(self, vlan=None):
                 self.vlan = vlan
@@ -671,7 +671,7 @@ class TestAddLocalVlanToPorts(TestFWaasV2AgentExtensionBase):
 class TestFWaaSL2PluginApi(TestFWaasV2AgentExtensionBase):
 
     def setUp(self):
-        super(TestFWaaSL2PluginApi, self).setUp()
+        super().setUp()
 
         self.plugin = fwaas_v2.FWaaSL2PluginApi(
             consts.FIREWALL_PLUGIN, self.host)
@@ -710,7 +710,7 @@ class TestFWaaSL2PluginApi(TestFWaasV2AgentExtensionBase):
 class TestPortFirewallGroupMap(base.BaseTestCase):
 
     def setUp(self):
-        super(TestPortFirewallGroupMap, self).setUp()
+        super().setUp()
         self.fake = fake_data.FakeFWaaSL2Agent()
         self.map = fwaas_v2.PortFirewallGroupMap()
         self.fwg = self.fake.create('fwg')

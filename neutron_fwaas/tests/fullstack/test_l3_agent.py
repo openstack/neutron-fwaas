@@ -57,7 +57,7 @@ class TestL3Agent(base.BaseFullStackTestCase):
         for cidr in subnet_cidrs:
             # For IPv6 subnets, enable_dhcp should be set to true.
             enable_dhcp = (netaddr.IPNetwork(cidr).version ==
-                constants.IP_VERSION_6)
+                           constants.IP_VERSION_6)
             subnet = self.safe_client.create_subnet(
                 tenant_id, network['id'], cidr, enable_dhcp=enable_dhcp)
 
@@ -83,7 +83,7 @@ class TestLegacyL3Agent(TestL3Agent):
             environment.EnvironmentDescription(
                 network_type='vlan', l2_pop=False),
             host_descriptions)
-        super(TestLegacyL3Agent, self).setUp(env)
+        super().setUp(env)
 
     def _get_namespace(self, router_id):
         return namespaces.build_ns_name(l3_agent.NS_PREFIX, router_id)
@@ -101,9 +101,9 @@ class TestLegacyL3Agent(TestL3Agent):
             tenant_id, network['id'], '20.0.0.0/24', gateway_ip='20.0.0.1')
         self.safe_client.add_router_interface(router['id'], subnet['id'])
 
-        namespace = "%s@%s" % (
+        namespace = "{}@{}".format(
             self._get_namespace(router['id']),
-            self.environment.hosts[0].l3_agent.get_namespace_suffix(), )
+            self.environment.hosts[0].l3_agent.get_namespace_suffix())
         self._assert_namespace_exists(namespace)
 
     def test_east_west_traffic(self):
@@ -159,7 +159,7 @@ class TestHAL3Agent(base.BaseFullStackTestCase):
             environment.EnvironmentDescription(
                 network_type='vxlan', l2_pop=True),
             host_descriptions)
-        super(TestHAL3Agent, self).setUp(env)
+        super().setUp(env)
 
     def _is_ha_router_active_on_one_agent(self, router_id):
         agents = self.client.list_l3_agent_hosting_routers(router_id)

@@ -37,8 +37,8 @@ from neutron_fwaas.services.firewall.service_drivers.driver_api import \
 
 
 def http_client_error(req, res):
-    explanation = "Request '%s %s %s' failed: %s" % (req.method, req.url,
-                                                     req.body, res.body)
+    explanation = "Request '{} {} {}' failed: {}".format(req.method, req.url,
+                                                         req.body, res.body)
     return webob.exc.HTTPClientError(code=res.status_int,
                                      explanation=explanation)
 
@@ -65,10 +65,10 @@ class FirewallPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
     ADMIN_STATE_UP = True
     SHARED = True
 
-    resource_prefix_map = dict(
-        (k, firewall_v2.API_PREFIX)
+    resource_prefix_map = {
+        k: firewall_v2.API_PREFIX
         for k in firewall_v2.RESOURCE_ATTRIBUTE_MAP.keys()
-    )
+    }
 
     def setUp(self, service_provider=None, core_plugin=None,
               extra_service_plugins=None, extra_extension_paths=None):
@@ -109,7 +109,7 @@ class FirewallPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
             plugins,
         )
 
-        super(FirewallPluginV2TestCase, self).setUp(
+        super().setUp(
             plugin=core_plugin,
             service_plugins=service_plugins,
             ext_mgr=ext_mgr,
@@ -339,11 +339,12 @@ class FirewallPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
                 firewall_policy = self.deserialize(fmt or self.fmt, res)
                 fwp_id = firewall_policy["firewall_policy"]["id"]
                 ingress_firewall_policy_id = fwp_id
-        data = {'firewall_group': {'name': name,
-                     'description': description,
-                     'ingress_firewall_policy_id': ingress_firewall_policy_id,
-                     'egress_firewall_policy_id': egress_firewall_policy_id,
-                     'admin_state_up': admin_state_up}}
+        data = {'firewall_group': {
+            'name': name,
+            'description': description,
+            'ingress_firewall_policy_id': ingress_firewall_policy_id,
+            'egress_firewall_policy_id': egress_firewall_policy_id,
+            'admin_state_up': admin_state_up}}
         ctx = kwargs.get('context', None)
         if ctx is None or ctx.is_admin:
             tenant_id = kwargs.get('tenant_id', self._tenant_id)
@@ -663,7 +664,7 @@ class TestAutomaticAssociation(TestFirewallPluginBasev2):
     def setUp(self):
         # TODO(yushiro): Replace constant value for this test class
         # Set auto association fwg
-        super(TestAutomaticAssociation, self).setUp()
+        super().setUp()
 
     def test_vm_port(self):
         port = {

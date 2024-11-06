@@ -37,14 +37,14 @@ LOG = logging.getLogger(__name__)
 class FWaaSL3PluginApi(api.FWaaSPluginApiMixin):
     """Agent side of the FWaaS agent-to-plugin RPC API."""
     def __init__(self, topic, host):
-        super(FWaaSL3PluginApi, self).__init__(topic, host)
+        super().__init__(topic, host)
 
     def get_firewall_groups_for_project(self, context, **kwargs):
         """Fetches a project's firewall groups from the plugin."""
         LOG.debug("Fetch firewall groups from plugin")
         cctxt = self.client.prepare()
         return cctxt.call(context, 'get_firewall_groups_for_project',
-                host=self.host)
+                          host=self.host)
 
     def get_projects_with_firewall_groups(self, context, **kwargs):
         """Fetches from the plugin all projects that have firewall groups
@@ -61,14 +61,14 @@ class FWaaSL3PluginApi(api.FWaaSPluginApiMixin):
         LOG.debug("Notify plugin that firewall group has been deleted")
         cctxt = self.client.prepare()
         return cctxt.call(context, 'firewall_group_deleted', fwg_id=fwg_id,
-                host=self.host)
+                          host=self.host)
 
     def set_firewall_group_status(self, context, fwg_id, status, **kwargs):
         """Sets firewall group's status on the plugin."""
         LOG.debug("Set firewall groups from plugin")
         cctxt = self.client.prepare()
         return cctxt.call(context, 'set_firewall_group_status',
-                fwg_id=fwg_id, status=status, host=self.host)
+                          fwg_id=fwg_id, status=status, host=self.host)
 
 
 class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
@@ -125,7 +125,7 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
         self.services_sync_needed = False
         self.fwplugin_rpc = FWaaSL3PluginApi(fwaas_constants.FIREWALL_PLUGIN,
                                              host)
-        super(FWaaSL3AgentExtension, self).__init__()
+        super().__init__()
 
     @property
     def _local_namespaces(self):
@@ -141,7 +141,7 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
         return 'add-port-ids' in firewall_group
 
     def _get_firewall_group_ports(self, context, firewall_group,
-            to_delete=False, require_new_plugin=False):
+                                  to_delete=False, require_new_plugin=False):
         """Returns in-namespace ports, either from firewall group dict if ports
            update or from project routers otherwise if only policies update.
 
@@ -160,7 +160,7 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
             for router in routers:
                 if router.router['tenant_id'] == firewall_group['tenant_id']:
                     fwg_port_ids.extend([p['id'] for p in
-                            router.internal_ports])
+                                         router.internal_ports])
 
         # Return in-namespace port objects.
         return self._get_in_ns_ports(fwg_port_ids)
@@ -260,9 +260,9 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
             return
 
         # Apply a firewall group, as requested, to ports on the new router.
-        all_router_ports = set(
+        all_router_ports = {
             p['id'] for p in updated_router[nl_constants.INTERFACE_KEY]
-        )
+        }
         processed_ports = set()
         for firewall_group in fwg_list:
             if not self._has_port_insertion_fields(firewall_group):
@@ -368,8 +368,8 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
             return
 
         LOG.debug("Create firewall group %(fwg_id)s on ports: %(ports)s",
-                 {'fwg_id': firewall_group['id'],
-                  'ports': ', '.join([p for ri_ports in ports_for_fwg
+                  {'fwg_id': firewall_group['id'],
+                   'ports': ', '.join([p for ri_ports in ports_for_fwg
                                       for p in ri_ports[1]])})
 
         # Set firewall group status; will be overwritten if call to driver
@@ -392,8 +392,8 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
 
         # Send firewall group's status to plugin.
         try:
-            self.fwplugin_rpc.set_firewall_group_status(context,
-                    firewall_group['id'], status)
+            self.fwplugin_rpc.set_firewall_group_status(
+                context, firewall_group['id'], status)
         except Exception:
             msg = ("FWaaS RPC failure in create_firewall_group "
                    "for firewall group: %(fwg_id)s")
@@ -485,8 +485,8 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
 
         # Return status to plugin.
         try:
-            self.fwplugin_rpc.set_firewall_group_status(context,
-                    firewall_group['id'], status)
+            self.fwplugin_rpc.set_firewall_group_status(
+                context, firewall_group['id'], status)
         except Exception:
             LOG.exception("FWaaS RPC failure in update_firewall_group "
                           "for firewall group: %s", firewall_group['id'])
@@ -528,11 +528,11 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
         # plugin, as appropriate.
         try:
             if status in [nl_constants.ACTIVE, nl_constants.DOWN]:
-                self.fwplugin_rpc.firewall_group_deleted(context,
-                                                         firewall_group['id'])
+                self.fwplugin_rpc.firewall_group_deleted(
+                    context, firewall_group['id'])
             else:
-                self.fwplugin_rpc.set_firewall_group_status(context,
-                        firewall_group['id'], status)
+                self.fwplugin_rpc.set_firewall_group_status(
+                    context, firewall_group['id'], status)
         except Exception:
             LOG.exception("FWaaS RPC failure in delete_firewall_group "
                           "for firewall group: %s", firewall_group['id'])
@@ -549,4 +549,4 @@ class L3WithFWaaS(FWaaSL3AgentExtension):
             self.conf = conf
         else:
             self.conf = cfg.CONF
-        super(L3WithFWaaS, self).__init__(host=self.conf.host, conf=self.conf)
+        super().__init__(host=self.conf.host, conf=self.conf)

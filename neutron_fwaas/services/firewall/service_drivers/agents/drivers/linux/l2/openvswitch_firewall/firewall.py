@@ -51,7 +51,7 @@ def _replace_register(flow_params, register_number, register_value):
     try:
         reg_port = flow_params[register_value]
         del flow_params[register_value]
-        flow_params['reg{:d}'.format(register_number)] = reg_port
+        flow_params[f'reg{register_number:d}'] = reg_port
     except KeyError:
         pass
 
@@ -64,7 +64,7 @@ def create_reg_numbers(flow_params):
     _replace_register(flow_params, fwaas_ovs_consts.REG_NET, 'reg_net')
 
 
-class FirewallGroup(object):
+class FirewallGroup:
     def __init__(self, id_):
         self.id = id_
         self.ingress_rules = []
@@ -105,7 +105,7 @@ class FirewallGroup(object):
 
 # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver that
 # differs only in firewall groups list field name
-class OFPort(object):
+class OFPort:
     def __init__(self, port_dict, ovs_port, vlan_tag):
         self.id = port_dict['device']
         self.vlan_tag = vlan_tag
@@ -157,7 +157,7 @@ class OFPort(object):
 
 # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver that
 # differs in methods name [s/sg/fwg] and update_rules method.
-class FWGPortMap(object):
+class FWGPortMap:
     def __init__(self):
         self.ports = {}
         self.fw_groups = {}
@@ -253,7 +253,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
         dl_type = kwargs.get('dl_type')
         create_reg_numbers(kwargs)
         if isinstance(dl_type, int):
-            kwargs['dl_type'] = "0x{:04x}".format(dl_type)
+            kwargs['dl_type'] = f"0x{dl_type:04x}"
         if self._deferred:
             self.int_br.add_flow(**kwargs)
         else:
@@ -667,7 +667,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
                 nw_proto=lib_const.PROTO_NUM_UDP,
                 tp_src=src_port,
                 tp_dst=dst_port,
-                actions='resubmit(,{:d})'.format(accept_or_ingress)
+                actions=f'resubmit(,{accept_or_ingress:d})'
             )
         # Ban dhcp service running on an instance
         for dl_type, src_port, dst_port in (
@@ -724,7 +724,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
                         fwaas_ovs_consts.FW_BASE_INGRESS_TABLE),
                 )
             for ethertype in [lib_const.ETHERTYPE_IP,
-                    lib_const.ETHERTYPE_IPV6]:
+                              lib_const.ETHERTYPE_IPV6]:
                 self._add_flow(
                     table=fwaas_ovs_consts.FW_ACCEPT_OR_INGRESS_TABLE,
                     priority=90,
@@ -807,7 +807,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
                 dl_type=lib_const.ETHERTYPE_IPV6,
                 nw_proto=lib_const.PROTO_NUM_IPV6_ICMP,
                 icmp_type=icmp_type,
-                actions='output:{:d}'.format(port.ofport)
+                actions=f'output:{port.ofport:d}'
             )
 
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver
@@ -819,7 +819,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
             priority=100,
             dl_type=lib_const.ETHERTYPE_ARP,
             reg_port=port.ofport,
-            actions='output:{:d}'.format(port.ofport)
+            actions=f'output:{port.ofport:d}'
         )
         self._initialize_ingress_ipv6_icmp(port)
 
@@ -835,7 +835,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
                 nw_proto=lib_const.PROTO_NUM_UDP,
                 tp_src=src_port,
                 tp_dst=dst_port,
-                actions='output:{:d}'.format(port.ofport)
+                actions=f'output:{port.ofport:d}'
             )
 
         # Track untracked
@@ -888,7 +888,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
                 ct_state=state,
                 ct_mark=fwaas_ovs_consts.CT_MARK_NORMAL,
                 ct_zone=port.vlan_tag,
-                actions='output:{:d}'.format(port.ofport)
+                actions=f'output:{port.ofport:d}'
             )
         self._add_flow(
             table=fwaas_ovs_consts.FW_RULES_INGRESS_TABLE,

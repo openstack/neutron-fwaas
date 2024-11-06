@@ -16,7 +16,7 @@
 import abc
 
 
-class FwaasDriverBase(object, metaclass=abc.ABCMeta):
+class FwaasDriverBase(metaclass=abc.ABCMeta):
     """Firewall as a Service Driver base class.
 
     Using FwaasDriver Class, an instance of L3 perimeter Firewall

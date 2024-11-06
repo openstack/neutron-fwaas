@@ -38,7 +38,7 @@ class ClientFixture(fixtures.Fixture):
     """Manage and cleanup neutron resources."""
 
     def __init__(self, client):
-        super(ClientFixture, self).__init__()
+        super().__init__()
         self.client = client
 
     def _create_resource(self, resource_type, spec):

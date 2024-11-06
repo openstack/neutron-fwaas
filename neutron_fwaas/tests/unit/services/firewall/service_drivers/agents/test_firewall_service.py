@@ -27,7 +27,7 @@ FWAAS_NOP_DEVICE = ('neutron_fwaas.tests.unit.services.firewall.'
 class TestFirewallDeviceDriverLoading(base.BaseTestCase):
 
     def setUp(self):
-        super(TestFirewallDeviceDriverLoading, self).setUp()
+        super().setUp()
         self.service = firewall_service.FirewallService()
 
     def test_loading_firewall_device_driver(self):

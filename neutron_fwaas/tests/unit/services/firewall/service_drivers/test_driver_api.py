@@ -30,7 +30,7 @@ class FireWallDriverDBMixinTestCase(test_fwaas_plugin_v2.
     def setUp(self):
         provider = ('neutron_fwaas.services.firewall.service_drivers.'
                     'driver_api.FirewallDriverDB')
-        super(FireWallDriverDBMixinTestCase, self).setUp(
+        super().setUp(
             service_provider=provider)
         self._mp_registry_publish = mock.patch(
             'neutron_lib.callbacks.registry.publish')

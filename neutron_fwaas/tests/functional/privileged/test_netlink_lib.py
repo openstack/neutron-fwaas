@@ -148,7 +148,7 @@ class NetlinkLibTestCaseIPv6(functional_base.BaseSudoTestCase):
     )
 
     def setUp(self):
-        super(NetlinkLibTestCaseIPv6, self).setUp()
+        super().setUp()
         if not check_nf_conntrack_ipv6_is_loaded():
             self.skipTest(
                 "nf_conntrack_ipv6 module wasn't loaded. Please load"
