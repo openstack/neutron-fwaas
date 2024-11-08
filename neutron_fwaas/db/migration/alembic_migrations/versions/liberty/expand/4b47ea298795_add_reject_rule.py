@@ -20,9 +20,9 @@ Create Date: 2015-04-15 04:19:57.324584
 
 """
 
-import sqlalchemy as sa
-
+from alembic import op
 from neutron.db import migration
+import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
@@ -37,11 +37,5 @@ new_action = sa.Enum('allow', 'deny', 'reject', name='firewallrules_action')
 
 
 def upgrade():
-    # NOTE: postgresql have a builtin ENUM type, so just altering the
-    # column won't works
-    # https://bitbucket.org/zzzeek/alembic/issues/270/altering-enum-type
-    # alter_enum that was already invented for such case in neutron
-    # https://github.com/openstack/neutron/blob/master/neutron/db/migration/__init__.py
-
-    migration.alter_enum(
-        'firewall_rules', 'action', enum_type=new_action, nullable=True)
+    op.alter_column('firewall_rules', 'action', type_=new_action,
+                    nullable=True)
