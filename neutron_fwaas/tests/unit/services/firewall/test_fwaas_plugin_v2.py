@@ -20,7 +20,7 @@ import webob.exc
 
 from neutron.api import extensions as api_ext
 from neutron.db import servicetype_db as sdb
-from neutron.tests.unit.db import test_db_base_plugin_v2 as test_db_plugin
+from neutron.tests.common import test_db_base_plugin_v2 as test_db_plugin
 from neutron_lib.api.definitions import firewall_v2
 from neutron_lib.callbacks import events
 from neutron_lib import constants as nl_constants
