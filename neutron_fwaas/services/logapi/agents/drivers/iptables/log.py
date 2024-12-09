@@ -511,9 +511,7 @@ class IptablesLoggingDriver(log_ext.LoggingDriver):
                 match_rule += ['--limit-burst %s' % self.burst_limit]
         target = ['-j', 'NFLOG']
         if prefix:
-            # NOTE: There is an extra space after 'nflog-prefix' in
-            # iptables-save output, account for it here.
-            target += ['--nflog-prefix ', '%s' % prefix]
+            target += ['--nflog-prefix', '%s' % prefix]
 
         args = direction_config + match_rule + target
         return args

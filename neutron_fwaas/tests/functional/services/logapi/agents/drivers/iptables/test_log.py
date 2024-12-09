@@ -189,23 +189,23 @@ class FWLoggingTestBase(framework.L3AgentTestFramework):
                 if event in [ACCEPT, ALL]:
                     # Generate iptables rules for ACCEPT action
                     prefix = self._get_log_prefix(port_id, ACCEPT)
-                    rules.add('-A %s -i %s -m %s -j NFLOG --nflog-prefix  %s'
+                    rules.add('-A %s -i %s -m %s -j NFLOG --nflog-prefix %s'
                               % (accept_chain, device, limit, prefix.id))
-                    rules.add('-A %s -o %s -m %s -j NFLOG --nflog-prefix  %s'
+                    rules.add('-A %s -o %s -m %s -j NFLOG --nflog-prefix %s'
                               % (accept_chain, device, limit, prefix.id))
 
                 if event in [DROP, ALL]:
                     # Generate iptables rules for DROP action
                     prefix = self._get_log_prefix(port_id, DROP)
-                    rules.add('-A %s -i %s -m %s -j NFLOG --nflog-prefix  %s'
+                    rules.add('-A %s -i %s -m %s -j NFLOG --nflog-prefix %s'
                               % (drop_chain, device, limit, prefix.id))
-                    rules.add('-A %s -o %s -m %s -j NFLOG --nflog-prefix  %s'
+                    rules.add('-A %s -o %s -m %s -j NFLOG --nflog-prefix %s'
                               % (drop_chain, device, limit, prefix.id))
 
                     # Generate iptables rules for REJECT action
-                    rules.add('-A %s -i %s -m %s -j NFLOG --nflog-prefix  %s'
+                    rules.add('-A %s -i %s -m %s -j NFLOG --nflog-prefix %s'
                               % (reject_chain, device, limit, prefix.id))
-                    rules.add('-A %s -o %s -m %s -j NFLOG --nflog-prefix  %s'
+                    rules.add('-A %s -o %s -m %s -j NFLOG --nflog-prefix %s'
                               % (reject_chain, device, limit, prefix.id))
         return rules
 

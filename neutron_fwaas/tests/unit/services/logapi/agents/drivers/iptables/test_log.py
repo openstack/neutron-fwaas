@@ -315,16 +315,16 @@ class BaseIptablesLogTestCase(base.BaseTestCase):
 
     def _fake_nflog_rule_v4v6(self, device, tag):
         v4_nflog_rule = ['-i %s -m limit --limit %s/sec --limit-burst %s '
-                         '-j NFLOG --nflog-prefix  %s'
+                         '-j NFLOG --nflog-prefix %s'
                          % (device, FAKE_RATE, FAKE_BURST, tag)]
         v4_nflog_rule += ['-o %s -m limit --limit %s/sec --limit-burst %s '
-                          '-j NFLOG --nflog-prefix  %s'
+                          '-j NFLOG --nflog-prefix %s'
                           % (device, FAKE_RATE, FAKE_BURST, tag)]
         v6_nflog_rule = ['-i %s -m limit --limit %s/sec --limit-burst %s '
-                         '-j NFLOG --nflog-prefix  %s'
+                         '-j NFLOG --nflog-prefix %s'
                          % (device, FAKE_RATE, FAKE_BURST, tag)]
         v6_nflog_rule += ['-o %s -m limit --limit %s/sec --limit-burst %s '
-                          '-j NFLOG --nflog-prefix  %s'
+                          '-j NFLOG --nflog-prefix %s'
                           % (device, FAKE_RATE, FAKE_BURST, tag)]
         return v4_nflog_rule, v6_nflog_rule
 
