@@ -55,8 +55,12 @@ FWAAS_V2_LOG_OPTS = [
 ]
 
 AGENT_MODE_OPTS = [
-    cfg.StrOpt('agent_mode', default='legacy',
-               choices=['legacy', 'dvr', 'dvr_snat', 'dvr_no_external']),
+    cfg.StrOpt('agent_mode',
+               default=constants.L3_AGENT_MODE_LEGACY,
+               choices=(constants.L3_AGENT_MODE_DVR,
+                        constants.L3_AGENT_MODE_DVR_SNAT,
+                        constants.L3_AGENT_MODE_LEGACY,
+                        constants.L3_AGENT_MODE_DVR_NO_EXTERNAL))
 ]
 
 
