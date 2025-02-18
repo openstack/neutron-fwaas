@@ -241,15 +241,6 @@ function _install_post_devstack {
 }
 
 
-function _configure_iptables_rules {
-    # For linuxbridge agent fullstack tests we need to add special rules to
-    # iptables for connection of agents to rabbitmq:
-    CHAIN_NAME="openstack-INPUT"
-    sudo iptables -n --list $CHAIN_NAME 1> /dev/null 2>&1 || CHAIN_NAME="INPUT"
-    sudo iptables -I $CHAIN_NAME -s 240.0.0.0/8 -p tcp -m tcp -d 240.0.0.0/8 --dport 5672 -j ACCEPT
-}
-
-
 function configure_host_for_func_testing {
     echo_summary "Configuring host for functional testing"
 
@@ -274,8 +265,4 @@ if [[ "$IS_GATE" != "True" ]]; then
     else
         configure_host_for_func_testing
     fi
-fi
-
-if [[ "$VENV" =~ "dsvm-fullstack" ]]; then
-    _configure_iptables_rules
 fi
