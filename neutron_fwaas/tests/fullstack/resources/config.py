@@ -150,8 +150,6 @@ class OVSConfigFixture(ConfigFixture):
             'ovs': {
                 'local_ip': local_ip,
                 'integration_bridge': self._generate_integration_bridge(),
-                'of_interface': host_desc.of_interface,
-                'ovsdb_interface': host_desc.ovsdb_interface,
             },
             'securitygroup': {
                 'firewall_driver': 'noop',
@@ -177,11 +175,10 @@ class OVSConfigFixture(ConfigFixture):
             self.config['agent']['extensions'] = 'qos'
 
     def _setUp(self):
-        if self.config['ovs']['of_interface'] == 'native':
-            self.config['ovs'].update({
-                'of_listen_port': self.useFixture(
-                    port.ExclusivePort(constants.PROTO_NAME_TCP)).port
-            })
+        self.config['ovs'].update({
+            'of_listen_port': self.useFixture(
+                port.ExclusivePort(constants.PROTO_NAME_TCP)).port
+        })
         super()._setUp()
 
     def _generate_bridge_mappings(self):
