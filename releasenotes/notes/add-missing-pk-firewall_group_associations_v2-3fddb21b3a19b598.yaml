@@ -1,0 +1,7 @@
+---
+fixes:
+  - |
+    A change has been made in the database structures to add missing
+    primary key for the table 'firewall_group_associations_v2'. This
+    would have the benefit effect to fix an issue with Percona when
+    running in ENFORCING mode.
