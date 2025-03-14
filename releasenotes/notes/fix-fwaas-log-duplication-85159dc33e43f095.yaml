@@ -1,0 +1,11 @@
+---
+fixes:
+  - |
+    The logging configuration for Neutron
+    Firewall as a Service (FWaaS) has been
+    enhanced to allow better control over
+    log output destinations. Specifically,
+    when a custom log file is specified using
+    the network_log.local_output_log_base option,
+    logs will no longer be duplicated in the
+    default neutron-l3-agent.log file.
