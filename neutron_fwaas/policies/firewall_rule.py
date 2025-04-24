@@ -10,91 +10,135 @@
 #  License for the specific language governing permissions and limitations
 #  under the License.
 
+from neutron.conf.policies import base as neutron_base
 from neutron_lib import policy as base
 from oslo_policy import policy
+
+DEPRECATED_REASON = """
+The FWaaS API now supports Secure RBAC default roles.
+"""
 
 
 rules = [
     policy.RuleDefault(
-        'shared_firewall_rules',
-        'field:firewall_rules:shared=True',
-        'Definition of shared firewall rules'
+        name='shared_firewall_rules',
+        check_str='field:firewall_rules:shared=True',
+        description='Definition of shared firewall rules'
     ),
 
     policy.DocumentedRuleDefault(
-        'create_firewall_rule',
-        base.RULE_ANY,
-        'Create a firewall rule',
-        [
+        name='create_firewall_rule',
+        check_str=neutron_base.ADMIN_OR_PROJECT_MEMBER,
+        scope_types=['project'],
+        description='Create a firewall rule',
+        operations=[
             {
                 'method': 'POST',
                 'path': '/fwaas/firewall_rules',
             },
-        ]
+        ],
+        deprecated_rule=policy.DeprecatedRule(
+            name='create_firewall_rule',
+            check_str=base.RULE_ANY,
+            deprecated_reason=DEPRECATED_REASON,
+            deprecated_since='2025.2')
     ),
     policy.DocumentedRuleDefault(
-        'update_firewall_rule',
-        base.RULE_ADMIN_OR_OWNER,
-        'Update a firewall rule',
-        [
+        name='update_firewall_rule',
+        check_str=neutron_base.ADMIN_OR_PROJECT_MEMBER,
+        scope_types=['project'],
+        description='Update a firewall rule',
+        operations=[
             {
                 'method': 'PUT',
                 'path': '/fwaas/firewall_rules/{id}',
             },
-        ]
+        ],
+        deprecated_rule=policy.DeprecatedRule(
+            name='update_firewall_rule',
+            check_str=base.RULE_ADMIN_OR_OWNER,
+            deprecated_reason=DEPRECATED_REASON,
+            deprecated_since='2025.2')
     ),
     policy.DocumentedRuleDefault(
-        'delete_firewall_rule',
-        base.RULE_ADMIN_OR_OWNER,
-        'Delete a firewall rule',
-        [
+        name='delete_firewall_rule',
+        check_str=neutron_base.ADMIN_OR_PROJECT_MEMBER,
+        scope_types=['project'],
+        description='Delete a firewall rule',
+        operations=[
             {
                 'method': 'DELETE',
                 'path': '/fwaas/firewall_rules/{id}',
             },
-        ]
+        ],
+        deprecated_rule=policy.DeprecatedRule(
+            name='delete_firewall_rule',
+            check_str=base.RULE_ADMIN_OR_OWNER,
+            deprecated_reason=DEPRECATED_REASON,
+            deprecated_since='2025.2')
     ),
 
     policy.DocumentedRuleDefault(
-        'create_firewall_rule:shared',
-        base.RULE_ADMIN_ONLY,
-        'Create a shared firewall rule',
-        [
+        name='create_firewall_rule:shared',
+        check_str=neutron_base.ADMIN,
+        scope_types=['project'],
+        description='Create a shared firewall rule',
+        operations=[
             {
                 'method': 'POST',
                 'path': '/fwaas/firewall_rules',
             },
-        ]
+        ],
+        deprecated_rule=policy.DeprecatedRule(
+            name='create_firewall_rule:shared',
+            check_str=base.RULE_ADMIN_ONLY,
+            deprecated_reason=DEPRECATED_REASON,
+            deprecated_since='2025.2')
     ),
     policy.DocumentedRuleDefault(
-        'update_firewall_rule:shared',
-        base.RULE_ADMIN_ONLY,
-        'Update ``shared`` attribute of a firewall rule',
-        [
+        name='update_firewall_rule:shared',
+        check_str=neutron_base.ADMIN,
+        scope_types=['project'],
+        description='Update ``shared`` attribute of a firewall rule',
+        operations=[
             {
                 'method': 'PUT',
                 'path': '/fwaas/firewall_rules/{id}',
             },
-        ]
+        ],
+        deprecated_rule=policy.DeprecatedRule(
+            name='update_firewall_rule:shared',
+            check_str=base.RULE_ADMIN_ONLY,
+            deprecated_reason=DEPRECATED_REASON,
+            deprecated_since='2025.2')
     ),
     # TODO(amotoki): Drop this rule as it has no effect.
     policy.DocumentedRuleDefault(
-        'delete_firewall_rule:shared',
-        base.RULE_ADMIN_ONLY,
-        'Delete a shread firewall rule',
-        [
+        name='delete_firewall_rule:shared',
+        check_str=neutron_base.ADMIN,
+        scope_types=['project'],
+        description='Delete a shread firewall rule',
+        operations=[
             {
                 'method': 'DELETE',
                 'path': '/fwaas/firewall_rules/{id}',
             },
-        ]
+        ],
+        deprecated_rule=policy.DeprecatedRule(
+            name='delete_firewall_rule:shared',
+            check_str=base.RULE_ADMIN_ONLY,
+            deprecated_reason=DEPRECATED_REASON,
+            deprecated_since='2025.2')
     ),
 
     policy.DocumentedRuleDefault(
-        'get_firewall_rule',
-        'rule:admin_or_owner or rule:shared_firewall_rules',
-        'Get firewall rules',
-        [
+        name='get_firewall_rule',
+        check_str=base.policy_or(
+            neutron_base.ADMIN_OR_PROJECT_READER,
+            'rule:shared_firewall_rules'),
+        scope_types=['project'],
+        description='Get firewall rules',
+        operations=[
             {
                 'method': 'GET',
                 'path': '/fwaas/firewall_rules',
@@ -103,30 +147,47 @@ rules = [
                 'method': 'GET',
                 'path': '/fwaas/firewall_rules/{id}',
             },
-        ]
+        ],
+        deprecated_rule=policy.DeprecatedRule(
+            name='get_firewall_rule',
+            check_str='rule:admin_or_owner or rule:shared_firewall_rules',
+            deprecated_reason=DEPRECATED_REASON,
+            deprecated_since='2025.2')
     ),
 
     policy.DocumentedRuleDefault(
-        'insert_rule',
-        base.RULE_ADMIN_OR_OWNER,
-        'Insert rule into a firewall policy',
-        [
+        name='insert_rule',
+        check_str=neutron_base.ADMIN_OR_PROJECT_MEMBER,
+        scope_types=['project'],
+        description='Insert rule into a firewall policy',
+        operations=[
             {
                 'method': 'PUT',
                 'path': '/fwaas/firewall_policies/{id}/insert_rule',
             },
-        ]
+        ],
+        deprecated_rule=policy.DeprecatedRule(
+            name='insert_rule',
+            check_str=base.RULE_ADMIN_OR_OWNER,
+            deprecated_reason=DEPRECATED_REASON,
+            deprecated_since='2025.2')
     ),
     policy.DocumentedRuleDefault(
-        'remove_rule',
-        base.RULE_ADMIN_OR_OWNER,
-        'Remove rule from a firewall policy',
-        [
+        name='remove_rule',
+        check_str=neutron_base.ADMIN_OR_PROJECT_MEMBER,
+        scope_types=['project'],
+        description='Remove rule from a firewall policy',
+        operations=[
             {
                 'method': 'PUT',
                 'path': '/fwaas/firewall_policies/{id}/remove_rule',
             },
-        ]
+        ],
+        deprecated_rule=policy.DeprecatedRule(
+            name='remove_rule',
+            check_str=base.RULE_ADMIN_OR_OWNER,
+            deprecated_reason=DEPRECATED_REASON,
+            deprecated_since='2025.2')
     ),
 ]
 

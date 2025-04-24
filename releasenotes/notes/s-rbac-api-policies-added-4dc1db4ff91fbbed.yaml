@@ -1,0 +1,8 @@
+---
+features:
+  - |
+    Neutron-fwaas API policies now supports S-RBAC roles.
+deprecations:
+  - |
+    Old API policies are now deprecated and new policies, aligned with S-RBAC
+    roles are used for the neutron-fwaas APIs by default now.
