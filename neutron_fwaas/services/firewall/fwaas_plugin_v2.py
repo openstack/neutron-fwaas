@@ -54,7 +54,8 @@ class FirewallPluginV2(Firewallv2PluginBase):
         service_type_manager = st_db.ServiceTypeManager.get_instance()
         service_type_manager.add_provider_configuration(
             fwaas_constants.FIREWALL_V2,
-            provider_conf.ProviderConfiguration('neutron_fwaas'))
+            provider_conf.ProviderConfiguration('neutron_fwaas',
+                                                fwaas_constants.FIREWALL_V2))
 
         # Load the default driver
         drivers, default_provider = service_base.load_drivers(
