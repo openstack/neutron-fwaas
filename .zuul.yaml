@@ -13,7 +13,7 @@
               - openstack/neutron-lib
               - openstack/neutron
         - neutron-fwaas-functional
-        - neutron-tempest-plugin-fwaas
+        - neutron-tempest-plugin-fwaas-2025-1
         - neutron-fwaas-v2-dsvm-tempest-multinode
     gate:
       jobs:
@@ -22,7 +22,7 @@
               - openstack/neutron-lib
               - openstack/neutron
         - neutron-fwaas-functional
-        - neutron-tempest-plugin-fwaas
+        - neutron-tempest-plugin-fwaas-2025-1
     experimental:
       jobs:
         - neutron-fwaas-fullstack
@@ -32,7 +32,7 @@
         - openstack-tox-py312
         - openstack-tox-py312-with-oslo-master
         - neutron-fwaas-functional
-        - neutron-tempest-plugin-fwaas
+        - neutron-tempest-plugin-fwaas-2025-1
 
 - job:
     name: neutron-fwaas-functional
