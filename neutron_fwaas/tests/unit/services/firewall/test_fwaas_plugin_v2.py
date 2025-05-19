@@ -131,7 +131,8 @@ class FirewallPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
                                is_admin=True).elevated()
 
     def _get_nonadmin_context(self, user_id='non-admin', tenant_id='tenant1'):
-        return context.Context(user_id=user_id, tenant_id=tenant_id)
+        return context.Context(user_id=user_id, tenant_id=tenant_id,
+                               roles=['member', 'reader'])
 
     def _test_list_resources(self, resource, items, neutron_context=None,
                              query_params=None, as_admin=False):
