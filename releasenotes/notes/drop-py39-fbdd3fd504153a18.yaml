@@ -1,0 +1,7 @@
+---
+upgrade:
+  - |
+    Python 3.9 support has been dropped. The last release of neutron-fwaas
+    to support py39 is Openstack 2025.1 (Epoxy).
+    For details about supported runtimes in Openstack 2025.2 please check:
+    https://governance.openstack.org/tc/reference/runtimes/2025.2.html
