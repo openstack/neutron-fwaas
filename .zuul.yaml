@@ -27,7 +27,6 @@
         - neutron-tempest-plugin-fwaas-openvswitch
     experimental:
       jobs:
-        - neutron-fwaas-fullstack
         - openstack-tox-py312-with-oslo-master
     periodic-weekly:
       jobs:
@@ -46,12 +45,6 @@
       project_name: neutron-fwaas
       devstack_services:
         INSTALL_OVN: false
-
-- job:
-    name: neutron-fwaas-fullstack
-    parent: neutron-fullstack
-    vars:
-      project_name: neutron-fwaas
 
 - job:
     name: neutron-fwaas-v2-dsvm-tempest-multinode
