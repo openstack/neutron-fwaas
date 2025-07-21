@@ -367,7 +367,7 @@ class IptablesLoggingDriver(log_ext.LoggingDriver):
         if not router.router.get('distributed'):
             return INTERNAL_DEV_PREFIX
 
-        if agent_mode == 'dvr_snat':
+        if agent_mode == constants.L3_AGENT_MODE_DVR_SNAT:
             return SNAT_INT_DEV_PREFIX
 
         if router.rtr_fip_connect:

@@ -18,6 +18,7 @@ from collections import defaultdict
 from unittest import mock
 
 from neutron.tests.unit.api.v2 import test_base
+from neutron_lib import constants
 from neutron_lib.services.logapi import constants as log_const
 
 from neutron_fwaas.privileged.netfilter_log import libnetfilter_log as libnflog
@@ -151,7 +152,7 @@ class BaseIptablesLogTestCase(base.BaseTestCase):
         fake_port_id = 'fake_router_port_id'
 
         # Test with legacy router
-        self.log_driver.conf.agent_mode = 'legacy'
+        self.log_driver.conf.agent_mode = constants.L3_AGENT_MODE_LEGACY
         fake_router.router = {
             'fake': 'fake_mode'
         }
@@ -163,7 +164,7 @@ class BaseIptablesLogTestCase(base.BaseTestCase):
             self.assertEqual(expected_name, intf_name)
 
         # Test with dvr router
-        self.log_driver.conf.agent_mode = 'dvr_snat'
+        self.log_driver.conf.agent_mode = constants.L3_AGENT_MODE_DVR_SNAT
         fake_router.router = {
             'distributed': 'fake_mode'
         }
@@ -175,7 +176,7 @@ class BaseIptablesLogTestCase(base.BaseTestCase):
             self.assertEqual(expected_name, intf_name)
 
         # Test with fip dev
-        self.log_driver.conf.agent_mode = 'dvr_snat'
+        self.log_driver.conf.agent_mode = constants.L3_AGENT_MODE_DVR_SNAT
         fake_router.router = {
             'distributed': 'fake_mode'
         }
