@@ -38,7 +38,7 @@ class InNamespaceTest(base.BaseSudoTestCase):
         before, observed, after = utils.get_in_namespace_interfaces(
             self.namespace)
         expected = ['lo', self.netns_dev.name]
-        self.assertItemsEqual(expected, observed)
+        self.assertCountEqual(expected, observed)
         # Other tests can create/delete devices, so we just checks
         # self.root_dev_name is included in the root namespace result.
         self.assertIn(self.root_dev.name, before)
