@@ -1,0 +1,5 @@
+---
+deprecations:
+  - |
+    The ``[fwaas] agent_version`` option has been deprecated, because it has
+    had no effect.

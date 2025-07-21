@@ -56,7 +56,6 @@ function configure_fwaas_v2() {
 
     neutron_fwaas_configure_driver fwaas_v2
     if is_service_enabled q-l3; then
-        iniset_multiline $Q_L3_CONF_FILE fwaas agent_version v2
         iniset_multiline $Q_L3_CONF_FILE fwaas driver $FWAAS_DRIVER_V2
     fi
     if is_service_enabled q-agt; then
