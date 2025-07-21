@@ -56,7 +56,7 @@ function configure_fwaas_v2() {
 
     neutron_fwaas_configure_driver fwaas_v2
     if is_service_enabled q-l3; then
-        iniset_multiline $Q_L3_CONF_FILE fwaas driver $FWAAS_DRIVER_V2
+        iniset $Q_L3_CONF_FILE fwaas driver $FWAAS_DRIVER_V2
     fi
     if is_service_enabled q-agt; then
         iniset /$NEUTRON_CORE_PLUGIN_CONF fwaas firewall_l2_driver $FW_L2_DRIVER
@@ -105,7 +105,7 @@ function neutron_fwaas_configure_driver {
     if is_service_enabled q-l3; then
         plugin_agent_add_l3_agent_extension $1
         configure_l3_agent
-        iniset_multiline $Q_L3_CONF_FILE fwaas enabled True
+        iniset $Q_L3_CONF_FILE fwaas enabled True
     fi
 }
 
