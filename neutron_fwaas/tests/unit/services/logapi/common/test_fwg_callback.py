@@ -105,6 +105,11 @@ class TestFirewallGroupRuleCallback(base.BaseTestCase):
         result = self.fwg_callback.need_to_notify(self.m_context, [])
         self.assertEqual(False, result)
 
+        # Test with non-existent / vanished port
+        result = self.fwg_callback.need_to_notify(self.m_context,
+                                                  ['non_existent_port'])
+        self.assertEqual(False, result)
+
     def test_trigger_logging(self):
         m_payload = mock.Mock()
         self.fwg_callback.resource_push_api = mock.Mock()

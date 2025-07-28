@@ -54,6 +54,8 @@ class FirewallGroupCallBack(manager.ResourceCallBackBase):
         notify = False
         for port_id in ports:
             port = port_objects.Port.get_object(context, id=port_id)
+            if not port:
+                continue
             device_owner = port.get('device_owner', '')
             if device_owner in nl_const.ROUTER_INTERFACE_OWNERS:
                 notify = True
