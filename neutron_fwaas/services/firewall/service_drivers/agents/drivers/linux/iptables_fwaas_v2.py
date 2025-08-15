@@ -103,7 +103,7 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
                      'if_prefix': INTERNAL_DEV_PREFIX}]
         ipt_mgrs = []
         # TODO(sridar): refactor to get strings to a common location.
-        if agent_mode == 'dvr_snat':
+        if agent_mode == constants.L3_AGENT_MODE_DVR_SNAT:
             if ri.snat_iptables_manager:
                 ipt_mgrs.append({'ipt': ri.snat_iptables_manager,
                                  'if_prefix': SNAT_INT_DEV_PREFIX})

@@ -19,6 +19,7 @@ from unittest import mock
 
 from neutron.tests import base
 from neutron.tests.unit.api.v2 import test_base as test_api_v2
+from neutron_lib import constants
 
 import neutron_fwaas.services.firewall.service_drivers.agents.drivers.linux.\
     iptables_fwaas_v2 as fwaas
@@ -32,7 +33,6 @@ FAKE_SRC_PORT = 5000
 FAKE_DST_PORT = 22
 FAKE_FW_ID = 'fake-fw-uuid'
 FAKE_PORT_IDS = ('1_fake-port-uuid', '2_fake-port-uuid')
-FW_LEGACY = 'legacy'
 MAX_INTF_NAME_LEN = 14
 
 
@@ -160,13 +160,13 @@ class IptablesFwaasTestCase(base.BaseTestCase):
         rule_list = self._fake_rules_v4(FAKE_FW_ID, apply_list)
         firewall = self._fake_firewall(rule_list)
         if distributed:
-            if distributed_mode == 'dvr_snat':
+            if distributed_mode == constants.L3_AGENT_MODE_DVR_SNAT:
                 if_prefix = 'sg-'
-            if distributed_mode == 'dvr':
+            if distributed_mode == constants.L3_AGENT_MODE_DVR:
                 if_prefix = 'rfp-'
         else:
             if_prefix = 'qr-'
-            distributed_mode = 'legacy'
+            distributed_mode = constants.L3_AGENT_MODE_LEGACY
         func(distributed_mode, apply_list, firewall)
         binary_name = fwaas.iptables_manager.binary_name
         dropped = '%s-dropped' % binary_name
@@ -232,13 +232,13 @@ class IptablesFwaasTestCase(base.BaseTestCase):
         rule_list = self._fake_rules_v6(FAKE_FW_ID, apply_list)
         firewall = self._fake_firewall(rule_list)
         if distributed:
-            if distributed_mode == 'dvr_snat':
+            if distributed_mode == constants.L3_AGENT_MODE_DVR_SNAT:
                 if_prefix = 'sg-'
-            if distributed_mode == 'dvr':
+            if distributed_mode == constants.L3_AGENT_MODE_DVR:
                 if_prefix = 'rfp-'
         else:
             if_prefix = 'qr-'
-            distributed_mode = 'legacy'
+            distributed_mode = constants.L3_AGENT_MODE_LEGACY
         func(distributed_mode, apply_list, firewall)
         binary_name = fwaas.iptables_manager.binary_name
         dropped = '%s-dropped' % binary_name
@@ -293,7 +293,8 @@ class IptablesFwaasTestCase(base.BaseTestCase):
         apply_list = self._fake_apply_list()
         first_ri = apply_list[0][0]
         firewall = self._fake_firewall_no_rule()
-        self.firewall.create_firewall_group('legacy', apply_list, firewall)
+        self.firewall.create_firewall_group(
+            constants.L3_AGENT_MODE_LEGACY, apply_list, firewall)
         binary_name = fwaas.iptables_manager.binary_name
         dropped = '%s-dropped' % binary_name
         invalid_rule = '-m state --state INVALID -j %s' % dropped
@@ -358,7 +359,8 @@ class IptablesFwaasTestCase(base.BaseTestCase):
         apply_list = self._fake_apply_list(distributed=distributed)
         first_ri = apply_list[0][0]
         firewall = self._fake_firewall_no_rule()
-        self.firewall.delete_firewall_group('legacy', apply_list, firewall)
+        self.firewall.delete_firewall_group(
+            constants.L3_AGENT_MODE_LEGACY, apply_list, firewall)
         ingress_chain = 'iv4%s' % firewall['id']
         egress_chain = 'ov4%s' % firewall['id']
         calls = [mock.call.remove_chain(ingress_chain),
@@ -379,7 +381,8 @@ class IptablesFwaasTestCase(base.BaseTestCase):
         firewall = self._fake_firewall_with_admin_down(rule_list)
         binary_name = fwaas.iptables_manager.binary_name
         dropped = '%s-dropped' % binary_name
-        self.firewall.create_firewall_group('legacy', apply_list, firewall)
+        self.firewall.create_firewall_group(
+            constants.L3_AGENT_MODE_LEGACY, apply_list, firewall)
         calls = [mock.call.remove_chain('iv4fake-fw-uuid'),
                  mock.call.remove_chain('ov4fake-fw-uuid'),
                  mock.call.remove_chain('fwaas-default-policy'),
@@ -390,27 +393,32 @@ class IptablesFwaasTestCase(base.BaseTestCase):
     def test_create_firewall_group_with_rules_dvr_snat(self):
         self._setup_firewall_with_rules(
             self.firewall.create_firewall_group,
-            distributed=True, distributed_mode='dvr_snat')
+            distributed=True,
+            distributed_mode=constants.L3_AGENT_MODE_DVR_SNAT)
 
     def test_update_firewall_group_with_rules_dvr_snat(self):
         self._setup_firewall_with_rules(
             self.firewall.update_firewall_group,
-            distributed=True, distributed_mode='dvr_snat')
+            distributed=True,
+            distributed_mode=constants.L3_AGENT_MODE_DVR_SNAT)
 
     def test_create_firewall_group_with_rules_dvr(self):
         self._setup_firewall_with_rules(
             self.firewall.create_firewall_group,
-            distributed=True, distributed_mode='dvr')
+            distributed=True,
+            distributed_mode=constants.L3_AGENT_MODE_DVR)
 
     def test_update_firewall_group_with_rules_dvr(self):
         self._setup_firewall_with_rules(
             self.firewall.update_firewall_group,
-            distributed=True, distributed_mode='dvr')
+            distributed=True,
+            distributed_mode=constants.L3_AGENT_MODE_DVR)
 
     def test_remove_conntrack_new_firewall(self):
         apply_list = self._fake_apply_list()
         firewall = self._fake_firewall_no_rule()
-        self.firewall.create_firewall_group(FW_LEGACY, apply_list, firewall)
+        self.firewall.create_firewall_group(
+            constants.L3_AGENT_MODE_LEGACY, apply_list, firewall)
         for router_info_inst, port_ids in apply_list:
             namespace = router_info_inst.iptables_manager.namespace
             calls = [mock.call(namespace)]
@@ -420,7 +428,8 @@ class IptablesFwaasTestCase(base.BaseTestCase):
         apply_list = self._fake_apply_list()
         rule_list = self._fake_rules_v4(FAKE_FW_ID, apply_list)
         firewall = self._fake_firewall(rule_list)
-        self.firewall.create_firewall_group(FW_LEGACY, apply_list, firewall)
+        self.firewall.create_firewall_group(
+            constants.L3_AGENT_MODE_LEGACY, apply_list, firewall)
         self.firewall.pre_firewall = dict(firewall)
         insert_rule = {'enabled': True,
                        'action': 'deny',
@@ -429,7 +438,8 @@ class IptablesFwaasTestCase(base.BaseTestCase):
                        'id': 'fake-fw-rule'}
         rule_list.insert(2, insert_rule)
         firewall = self._fake_firewall(rule_list)
-        self.firewall.update_firewall_group(FW_LEGACY, apply_list, firewall)
+        self.firewall.update_firewall_group(
+            constants.L3_AGENT_MODE_LEGACY, apply_list, firewall)
         rules_changed = [
             {'destination_port': '23',
              'position': '2',
@@ -464,12 +474,14 @@ class IptablesFwaasTestCase(base.BaseTestCase):
         apply_list = self._fake_apply_list()
         rule_list = self._fake_rules_v4(FAKE_FW_ID, apply_list)
         firewall = self._fake_firewall(rule_list)
-        self.firewall.create_firewall_group(FW_LEGACY, apply_list, firewall)
+        self.firewall.create_firewall_group(
+            constants.L3_AGENT_MODE_LEGACY, apply_list, firewall)
         self.firewall.pre_firewall = dict(firewall)
         remove_rule = rule_list[1]
         rule_list.remove(remove_rule)
         firewall = self._fake_firewall(rule_list)
-        self.firewall.update_firewall_group(FW_LEGACY, apply_list, firewall)
+        self.firewall.update_firewall_group(
+            constants.L3_AGENT_MODE_LEGACY, apply_list, firewall)
         rules_changed = [
             {'destination_port': '23',
              'position': '2',
@@ -505,7 +517,8 @@ class IptablesFwaasTestCase(base.BaseTestCase):
         apply_list = self._fake_apply_list()
         rule_list = self._fake_rules_v4(FAKE_FW_ID, apply_list)
         firewall = self._fake_firewall(rule_list)
-        self.firewall.create_firewall_group(FW_LEGACY, apply_list, firewall)
+        self.firewall.create_firewall_group(
+            constants.L3_AGENT_MODE_LEGACY, apply_list, firewall)
         income_rule = {'enabled': True,
                        'action': 'deny',
                        'ip_version': 4,
@@ -513,7 +526,8 @@ class IptablesFwaasTestCase(base.BaseTestCase):
                        'id': 'fake-fw-rule3'}
         rule_list[2] = income_rule
         firewall = self._fake_firewall(rule_list)
-        self.firewall.update_firewall_group(FW_LEGACY, apply_list, firewall)
+        self.firewall.update_firewall_group(
+            constants.L3_AGENT_MODE_LEGACY, apply_list, firewall)
         rules_changed = [
             {'id': 'fake-fw-rule3',
              'enabled': True,
