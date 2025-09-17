@@ -1,4 +1,83 @@
 [build-system]
-requires = ["pbr>=5.7.0", "setuptools>=64.0.0", "wheel"]
+requires = ["pbr>=6.1.1"]
 build-backend = "pbr.build"
 
+[project]
+name = "neutron-fwaas"
+description = "OpenStack Networking FWaaS"
+authors = [
+    {name = "OpenStack", email = "openstack-discuss@lists.openstack.org"},
+]
+readme = {file = "README.rst", content-type = "text/x-rst"}
+license = {text = "Apache-2.0"}
+dynamic = ["version", "dependencies"]
+requires-python = ">=3.10"
+classifiers = [
+  "Environment :: OpenStack",
+  "Intended Audience :: Information Technology",
+  "Intended Audience :: System Administrators",
+  "License :: OSI Approved :: Apache Software License",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: Implementation :: CPython",
+]
+
+[project.urls]
+Homepage = "https://docs.openstack.org/neutron-fwaas/latest/"
+Repository = "https://opendev.org/openstack/neutron-fwaas"
+
+[tool.setuptools]
+packages = [
+    "neutron_fwaas"
+]
+
+[tool.setuptools.data-files]
+"etc/neutron/rootwrap.d" = [
+    "etc/neutron/rootwrap.d/fwaas-privsep.filters",
+]
+
+[project.entry-points."oslo.config.opts"]
+"neutron.fwaas" = "neutron_fwaas.opts:list_opts"
+"firewall.agent" = "neutron_fwaas.opts:list_agent_opts"
+
+[project.entry-points."firewall_drivers"]
+iptables_v2 = "neutron_fwaas.services.firewall.service_drivers.agents.drivers.linux.iptables_fwaas_v2:IptablesFwaasDriver"
+
+[project.entry-points."neutron.service_plugins"]
+firewall_v2 = "neutron_fwaas.services.firewall.fwaas_plugin_v2:FirewallPluginV2"
+
+[project.entry-points."neutron.db.alembic_migrations"]
+neutron-fwaas = "neutron_fwaas.db.migration:alembic_migrations"
+
+[project.entry-points."oslo.policy.policies"]
+neutron-fwaas = "neutron_fwaas.policies:list_rules"
+
+[project.entry-points."neutron.policies"]
+neutron-fwaas = "neutron_fwaas.policies:list_rules"
+
+[project.entry-points."neutron.agent.l2.extensions"]
+fwaas_v2 = "neutron_fwaas.services.firewall.service_drivers.agents.l2.fwaas_v2:FWaaSV2AgentExtension"
+
+[project.entry-points."neutron.agent.l2.firewall_drivers"]
+noop = "neutron_fwaas.services.firewall.service_drivers.agents.drivers.linux.l2.noop.noop_driver:NoopFirewallL2Driver"
+ovs = "neutron_fwaas.services.firewall.service_drivers.agents.drivers.linux.l2.openvswitch_firewall.firewall:OVSFirewallDriver"
+
+[project.entry-points."neutron.agent.l3.extensions"]
+fwaas_v2 = "neutron_fwaas.services.firewall.service_drivers.agents.l3reference.firewall_l3_agent_v2:L3WithFWaaS"
+fwaas_v2_log = "neutron_fwaas.services.logapi.agents.l3.fwg_log:FWaaSL3LoggingExtension"
+
+[project.entry-points."neutron.agent.l3.firewall_drivers"]
+conntrack = "neutron_fwaas.services.firewall.service_drivers.agents.drivers.linux.legacy_conntrack:ConntrackLegacy"
+netlink_conntrack = "neutron_fwaas.services.firewall.service_drivers.agents.drivers.linux.netlink_conntrack:ConntrackNetlink"
+
+[project.entry-points."neutron.services.logapi.drivers"]
+fwaas_v2_log = "neutron_fwaas.services.logapi.agents.drivers.iptables.log:IptablesLoggingDriver"
+
+[project.entry-points."neutron.status.upgrade.checks"]
+neutron_fwaas = "neutron_fwaas.cmd.upgrade_checks.checks:Checks"
