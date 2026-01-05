@@ -121,17 +121,17 @@ class FirewallPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
 
     def _get_admin_context(self):
         # FIXME NOTE(ivasilevskaya) seems that test framework treats context
-        # with user_id=None/tenant_id=None (return value of
+        # with user_id=None/project_id=None (return value of
         # context._get_admin_context() method) in a somewhat special way.
         # So as a workaround to have the framework behave properly right now
         # let's implement our own _get_admin_context method and look into the
         # matter some other time.
         return context.Context(user_id='admin',
-                               tenant_id='admin-tenant',
+                               project_id='admin-tenant',
                                is_admin=True).elevated()
 
-    def _get_nonadmin_context(self, user_id='non-admin', tenant_id='tenant1'):
-        return context.Context(user_id=user_id, tenant_id=tenant_id,
+    def _get_nonadmin_context(self, user_id='non-admin', project_id='tenant1'):
+        return context.Context(user_id=user_id, project_id=project_id,
                                roles=['member', 'reader'])
 
     def _test_list_resources(self, resource, items, neutron_context=None,
@@ -174,8 +174,8 @@ class FirewallPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
 
     def _get_test_firewall_rule_attrs(self, name='firewall_rule1'):
         attrs = {'name': name,
-                 'tenant_id': self._tenant_id,
-                 'project_id': self._tenant_id,
+                 'tenant_id': self._project_id,
+                 'project_id': self._project_id,
                  'protocol': self.PROTOCOL,
                  'ip_version': self.IP_VERSION,
                  'source_ip_address': self.SOURCE_IP_ADDRESS_RAW,
@@ -191,8 +191,8 @@ class FirewallPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
                                         audited=AUDITED):
         attrs = {'name': name,
                  'description': self.DESCRIPTION,
-                 'tenant_id': self._tenant_id,
-                 'project_id': self._tenant_id,
+                 'tenant_id': self._project_id,
+                 'project_id': self._project_id,
                  'firewall_rules': [],
                  'audited': audited,
                  'shared': self.SHARED}
@@ -201,8 +201,8 @@ class FirewallPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
     def _get_test_firewall_group_attrs(self, name='firewall_1',
                                        status=nl_constants.CREATED):
         attrs = {'name': name,
-                 'tenant_id': self._tenant_id,
-                 'project_id': self._tenant_id,
+                 'tenant_id': self._project_id,
+                 'project_id': self._project_id,
                  'admin_state_up': self.ADMIN_STATE_UP,
                  'status': status}
 
@@ -219,9 +219,9 @@ class FirewallPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
                                     'shared': shared}}
         ctx = kwargs.get('context', None)
         if ctx is None or ctx.is_admin:
-            tenant_id = kwargs.get('tenant_id', self._tenant_id)
-            data['firewall_policy'].update({'tenant_id': tenant_id})
-            data['firewall_policy'].update({'project_id': tenant_id})
+            project_id = kwargs.get('project_id', self._project_id)
+            data['firewall_policy'].update({'tenant_id': project_id})
+            data['firewall_policy'].update({'project_id': project_id})
 
         req = self.new_create_request('firewall_policies', data, fmt,
                                       context=ctx, as_admin=as_admin)
@@ -265,7 +265,7 @@ class FirewallPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
                               destination_port, action, enabled,
                               expected_res_status=None, as_admin=False,
                               **kwargs):
-        tenant_id = kwargs.get('tenant_id', self._tenant_id)
+        project_id = kwargs.get('project_id', self._project_id)
         data = {'firewall_rule': {'name': name,
                                   'protocol': protocol,
                                   'ip_version': ip_version,
@@ -279,9 +279,9 @@ class FirewallPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
                                   'shared': shared}}
         ctx = kwargs.get('context', None)
         if ctx is None or ctx.is_admin:
-            tenant_id = kwargs.get('tenant_id', self._tenant_id)
-            data['firewall_rule'].update({'tenant_id': tenant_id})
-            data['firewall_rule'].update({'project_id': tenant_id})
+            project_id = kwargs.get('project_id', self._project_id)
+            data['firewall_rule'].update({'tenant_id': project_id})
+            data['firewall_rule'].update({'project_id': project_id})
 
         req = self.new_create_request('firewall_rules', data, fmt, context=ctx,
                                       as_admin=as_admin)
@@ -348,9 +348,9 @@ class FirewallPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
             'admin_state_up': admin_state_up}}
         ctx = kwargs.get('context', None)
         if ctx is None or ctx.is_admin:
-            tenant_id = kwargs.get('tenant_id', self._tenant_id)
-            data['firewall_group'].update({'tenant_id': tenant_id})
-            data['firewall_group'].update({'project_id': tenant_id})
+            project_id = kwargs.get('project_id', self._project_id)
+            data['firewall_group'].update({'tenant_id': project_id})
+            data['firewall_group'].update({'project_id': project_id})
         if ports is not None:
             data['firewall_group'].update({'ports': ports})
 
@@ -482,7 +482,7 @@ class TestFirewallPluginBasev2(FirewallPluginV2TestCase):
         self._test_fwg_with_port(device_owner_for_l2)
 
     def test_create_firewall_group_with_port_on_different_project(self):
-        with self.port(tenant_id='fake_project_id_1') as port:
+        with self.port(project_id='fake_project_id_1') as port:
             admin_ctx = context.get_admin_context()
             self._create_firewall_group(
                 self.fmt,
@@ -497,7 +497,7 @@ class TestFirewallPluginBasev2(FirewallPluginV2TestCase):
     def test_update_firewall_group_with_port_on_different_project(self):
         ctx = context.Context('not_admin', 'fake_project_id_1')
         with self.firewall_group(ctx=ctx, as_admin=True) as firewall_group:
-            with self.port(tenant_id='fake_project_id_2') as port:
+            with self.port(project_id='fake_project_id_2') as port:
                 data = {
                     'firewall_group': {
                         'ports': [port['port']['id']],
@@ -621,8 +621,8 @@ class TestFirewallPluginBasev2(FirewallPluginV2TestCase):
                                          res.status_int)
 
     def test_create_firewall_policy_with_other_project_not_shared_rule(self):
-        project1_context = self._get_nonadmin_context(tenant_id='project1')
-        project2_context = self._get_nonadmin_context(tenant_id='project2')
+        project1_context = self._get_nonadmin_context(project_id='project1')
+        project2_context = self._get_nonadmin_context(project_id='project2')
         with self.firewall_rule(context=project1_context, shared=False) as fwr:
             fwr_id = fwr['firewall_rule']['id']
             self.firewall_policy(
@@ -632,8 +632,8 @@ class TestFirewallPluginBasev2(FirewallPluginV2TestCase):
             )
 
     def test_update_firewall_policy_with_other_project_not_shared_rule(self):
-        project1_context = self._get_nonadmin_context(tenant_id='project1')
-        project2_context = self._get_nonadmin_context(tenant_id='project2')
+        project1_context = self._get_nonadmin_context(project_id='project1')
+        project2_context = self._get_nonadmin_context(project_id='project2')
         with self.firewall_rule(context=project1_context, shared=False) as fwr:
             with self.firewall_policy(context=project2_context,
                                       shared=False) as fwp:
@@ -650,7 +650,7 @@ class TestFirewallPluginBasev2(FirewallPluginV2TestCase):
 
     def test_create_firewall_policy_with_other_project_shared_rule(self):
         admin_context = self._get_admin_context()
-        project1_context = self._get_nonadmin_context(tenant_id='project1')
+        project1_context = self._get_nonadmin_context(project_id='project1')
         with self.firewall_rule(context=admin_context, shared=True,
                                 as_admin=True) as fwr:
             fwr_id = fwr['firewall_rule']['id']

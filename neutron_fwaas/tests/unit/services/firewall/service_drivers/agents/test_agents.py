@@ -128,7 +128,7 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
 
     @property
     def _self_context(self):
-        return context.Context('', self._tenant_id)
+        return context.Context('', self._project_id)
 
     def _get_test_firewall_group_attrs(self, name,
                                        status=nl_constants.INACTIVE):
@@ -252,7 +252,7 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
     def test_create_firewall_group_with_ports(self):
         """neutron firewall_group create test-policy """
         with self.router(name='router1', admin_state_up=True,
-                         tenant_id=self._tenant_id) as r, \
+                         project_id=self._project_id) as r, \
                 self.subnet() as s1, \
                 self.subnet(cidr='20.0.0.0/24') as s2:
 
@@ -283,7 +283,7 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
     def test_create_firewall_group_with_ports_on_diff_routers(self):
         """neutron firewall_group create test-policy """
         with self.router(name='router1', admin_state_up=True,
-                         tenant_id=self._tenant_id) as r, \
+                         project_id=self._project_id) as r, \
                 self.subnet() as s1, \
                 self.subnet(cidr='20.0.0.0/24') as s2:
             body = self._router_interface_action(
@@ -300,7 +300,7 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
             port_id2 = body['port_id']
 
             with self.router(name='router1', admin_state_up=True,
-                             tenant_id=self._tenant_id) as r2, \
+                             project_id=self._project_id) as r2, \
                     self.subnet() as s3:
 
                 body = self._router_interface_action(
@@ -325,7 +325,7 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
     def test_create_firewall_group_with_ports_no_policy(self):
         """neutron firewall_group create test-policy """
         with self.router(name='router1', admin_state_up=True,
-                         tenant_id=self._tenant_id) as r, \
+                         project_id=self._project_id) as r, \
                 self.subnet() as s1, \
                 self.subnet(cidr='20.0.0.0/24') as s2:
 
@@ -354,7 +354,7 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
     def test_update_firewall_group_with_new_ports_no_policy(self):
         """neutron firewall_group create test-policy """
         with self.router(name='router1', admin_state_up=True,
-                         tenant_id=self._tenant_id) as r, \
+                         project_id=self._project_id) as r, \
                 self.subnet() as s1, \
                 self.subnet(cidr='20.0.0.0/24') as s2, \
                 self.subnet(cidr='30.0.0.0/24') as s3:
@@ -404,7 +404,7 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
     def test_update_firewall_group_with_new_ports_status_pending(self):
         """neutron firewall_group create test-policy """
         with self.router(name='router1', admin_state_up=True,
-                         tenant_id=self._tenant_id) as r, \
+                         project_id=self._project_id) as r, \
                 self.subnet() as s1, \
                 self.subnet(cidr='20.0.0.0/24') as s2, \
                 self.subnet(cidr='30.0.0.0/24') as s3:
@@ -449,7 +449,7 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
     def test_update_firewall_group_with_new_ports_status_active(self):
         """neutron firewall_group create test-policy """
         with self.router(name='router1', admin_state_up=True,
-                         tenant_id=self._tenant_id) as r, \
+                         project_id=self._project_id) as r, \
                 self.subnet() as s1, \
                 self.subnet(cidr='20.0.0.0/24') as s2, \
                 self.subnet(cidr='30.0.0.0/24') as s3:
@@ -503,7 +503,7 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
         name = "new_firewall_rule1"
         attrs = self._get_test_firewall_rule_attrs(name)
         with self.router(name='router1', admin_state_up=True,
-                         tenant_id=self._tenant_id) as r, \
+                         project_id=self._project_id) as r, \
                 self.subnet() as s1:
 
             body = self._router_interface_action(
@@ -542,7 +542,7 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
         """update should fail"""
         name = "new_firewall_rule1"
         with self.router(name='router1', admin_state_up=True,
-                         tenant_id=self._tenant_id) as r, \
+                         project_id=self._project_id) as r, \
                 self.subnet() as s1:
 
             body = self._router_interface_action(
@@ -574,7 +574,7 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
     def test_update_firewall_group_with_non_exist_ports(self):
         """neutron firewall_group create test-policy """
         with self.router(name='router1', admin_state_up=True,
-                         tenant_id=self._tenant_id) as r, \
+                         project_id=self._project_id) as r, \
                 self.subnet(cidr='30.0.0.0/24') as s:
             body = self._router_interface_action(
                 'add',
@@ -602,7 +602,7 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
     def test_update_firewall_group_with_ports_and_policy(self):
         """neutron firewall_group create test-policy """
         with self.router(name='router1', admin_state_up=True,
-                         tenant_id=self._tenant_id) as r, \
+                         project_id=self._project_id) as r, \
                 self.subnet() as s1, \
                 self.subnet(cidr='20.0.0.0/24') as s2:
 

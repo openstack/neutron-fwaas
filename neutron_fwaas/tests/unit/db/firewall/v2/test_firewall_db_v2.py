@@ -327,7 +327,7 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
 
     def test_update_firewall_policy_assoc_with_other_tenant_firewall(self):
         with self.firewall_policy(shared=self.SHARED,
-                                  tenant_id='tenant1', as_admin=True) as fwp:
+                                  project_id='tenant1', as_admin=True) as fwp:
             fwp_id = fwp['firewall_policy']['id']
             with self.firewall_group(ingress_firewall_policy_id=fwp_id,
                                      egress_firewall_policy_id=fwp_id,
@@ -350,11 +350,11 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
             self.assertEqual(webob.exc.HTTPOk.code, res.status_int)
 
     def test_update_from_shared_to_unshared_associated_as_ingress_fwp(self):
-        with self.firewall_policy(shared=True, tenant_id='here',
+        with self.firewall_policy(shared=True, project_id='here',
                                   as_admin=True) as fwp:
             # update policy with public attr
             fwp_id = fwp['firewall_policy']['id']
-            with self.firewall_group(tenant_id='another',
+            with self.firewall_group(project_id='another',
                                      ingress_firewall_policy_id=fwp_id,
                                      as_admin=True):
                 data = {'firewall_policy': {'shared': False}}
@@ -364,11 +364,11 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
                 self.assertEqual(webob.exc.HTTPConflict.code, res.status_int)
 
     def test_update_from_shared_to_unshared_associated_as_egress_fwp(self):
-        with self.firewall_policy(shared=True, tenant_id='here',
+        with self.firewall_policy(shared=True, project_id='here',
                                   as_admin=True) as fwp:
             # update policy with public attr
             fwp_id = fwp['firewall_policy']['id']
-            with self.firewall_group(tenant_id='another',
+            with self.firewall_group(project_id='another',
                                      egress_firewall_policy_id=fwp_id,
                                      as_admin=True):
                 data = {'firewall_policy': {'shared': False}}
@@ -378,11 +378,11 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
                 self.assertEqual(webob.exc.HTTPConflict.code, res.status_int)
 
     def test_update_from_shared_to_unshared_associated_as_ingress_egress(self):
-        with self.firewall_policy(shared=True, tenant_id='here',
+        with self.firewall_policy(shared=True, project_id='here',
                                   as_admin=True) as fwp:
             # update policy with public attr
             fwp_id = fwp['firewall_policy']['id']
-            with self.firewall_group(tenant_id='another',
+            with self.firewall_group(project_id='another',
                                      egress_firewall_policy_id=fwp_id,
                                      ingress_firewall_policy_id=fwp_id,
                                      as_admin=True):
@@ -783,7 +783,7 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
 
     @testtools.skip('bug/1614680')
     def test_update_firewall_rule_associated_with_other_tenant_policy(self):
-        with self.firewall_rule(shared=self, tenant_id='tenant1') as fwr:
+        with self.firewall_rule(shared=self, project_id='tenant1') as fwr:
             fwr_id = [fwr['firewall_rule']['id']]
             with self.firewall_policy(shared=False, firewall_rules=fwr_id):
                 data = {'firewall_rule': {'shared': False}}
@@ -877,8 +877,8 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
         # make sure that admin can see default groups for admin and non-admin
         res = self._list_req('firewall_groups', ctx=ctx_admin, as_admin=True)
         self.assertEqual(2, len(res))
-        self.assertEqual({ctx_admin.tenant_id, ctx.tenant_id},
-                         {r['tenant_id'] for r in res})
+        self.assertEqual({ctx_admin.project_id, ctx.project_id},
+                         {r['project_id'] for r in res})
 
     def test_create_default_firewall_group_from_config(self):
         group = 'default_fwg_rules'
@@ -1035,7 +1035,7 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
         fmt = self.fmt
         fwg_name = "firewall1"
         description = "my_firewall1"
-        with self.firewall_policy(shared=False, tenant_id='tenant2',
+        with self.firewall_policy(shared=False, project_id='tenant2',
                                   as_admin=True) as fwp:
             fwp_id = fwp['firewall_policy']['id']
             ctx = self._get_nonadmin_context()
@@ -1050,32 +1050,32 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
         fmt = self.fmt
         fwg_name = "firewall1"
         description = "my_firewall1"
-        with self.firewall_policy(shared=False, tenant_id='tenant2',
+        with self.firewall_policy(shared=False, project_id='tenant2',
                                   as_admin=True) as fwp:
             fwp_id = fwp['firewall_policy']['id']
             ctx = self._get_admin_context()
             self._create_firewall_group(fmt, fwg_name,
                                         description, fwp_id, fwp_id,
-                                        tenant_id="admin-tenant",
+                                        project_id="admin-tenant",
                                         context=ctx,
                                         expected_res_status=404,
                                         as_admin=True)
 
     def test_create_firewall_group_with_admin_and_fwp_is_shared(self):
         fwg_name = "fw_with_shared_fwp"
-        with self.firewall_policy(tenant_id="tenantX", as_admin=True) as fwp:
+        with self.firewall_policy(project_id="tenantX", as_admin=True) as fwp:
             fwp_id = fwp['firewall_policy']['id']
             ctx = self._get_admin_context()
             target_tenant = 'tenant1'
             with self.firewall_group(
                     name=fwg_name,
                     ingress_firewall_policy_id=fwp_id,
-                    tenant_id=target_tenant,
+                    project_id=target_tenant,
                     context=ctx,
                     admin_state_up=self.ADMIN_STATE_UP,
                     as_admin=True) as fwg:
                 self.assertEqual(target_tenant,
-                                 fwg['firewall_group']['tenant_id'])
+                                 fwg['firewall_group']['project_id'])
 
     def _test_show_firewall_group(self, attrs):
         with self.firewall_policy(as_admin=True) as fwp:
@@ -1113,16 +1113,16 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
         with self.firewall_policy(as_admin=True) as fwp:
             fwp_id = fwp['firewall_policy']['id']
             with self.firewall_group(
-                    name='fwg1', tenant_id='tenant1',
+                    name='fwg1', project_id='tenant1',
                     ingress_firewall_policy_id=fwp_id,
                     description='fwg', as_admin=True) as fwg1, \
                     self.firewall_group(
-                        name='fwg2', tenant_id='tenant2',
+                        name='fwg2', project_id='tenant2',
                         ingress_firewall_policy_id=fwp_id,
                         egress_firewall_policy_id=fwp_id,
                         description='fwg', as_admin=True) as fwg2, \
                     self.firewall_group(
-                        name='fwg3', tenant_id='tenant3',
+                        name='fwg3', project_id='tenant3',
                         ingress_firewall_policy_id=fwp_id,
                         egress_firewall_policy_id=fwp_id,
                         description='fwg', as_admin=True) as fwg3:
@@ -1163,7 +1163,7 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
         def_fwg_id = self._build_default_fwg(ctx=ctx)['id']
         with self.port(
                 device_owner=nl_constants.DEVICE_OWNER_ROUTER_INTF,
-                tenant_id=ctx.project_id) as dummy_port:
+                project_id=ctx.project_id) as dummy_port:
             port_id = dummy_port['port']['id']
             success_cases = [
                     {'ports': [port_id]},
@@ -1184,7 +1184,7 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
         def_fwg_id = self._build_default_fwg(ctx=ctx)['id']
         with self.port(
                 device_owner=nl_constants.DEVICE_OWNER_ROUTER_INTF,
-                tenant_id=ctx.project_id) as dummy_port:
+                project_id=ctx.project_id) as dummy_port:
             port_id = dummy_port['port']['id']
             conflict_cases = [
                     {'name': ''},
@@ -1210,7 +1210,7 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
         ctx = self._get_admin_context()
         with self.port(
                 device_owner=nl_constants.DEVICE_OWNER_ROUTER_INTF,
-                tenant_id=ctx.project_id) as dummy_port:
+                project_id=ctx.project_id) as dummy_port:
             port_id = dummy_port['port']['id']
             def_fwg_id = self._build_default_fwg(ctx=ctx)['id']
             success_cases = [
@@ -1235,7 +1235,7 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
         ctx = self._get_admin_context()
         with self.port(
                 device_owner=nl_constants.DEVICE_OWNER_ROUTER_INTF,
-                tenant_id=ctx.project_id) as dummy_port:
+                project_id=ctx.project_id) as dummy_port:
             port_id = dummy_port['port']['id']
             def_fwg_id = self._build_default_fwg(ctx=ctx)['id']
             conflict_cases = [
@@ -1256,9 +1256,9 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
 
     def test_update_firewall_group_with_fwp(self):
         ctx = self._get_nonadmin_context()
-        with self.firewall_policy(name='p1', tenant_id=ctx.tenant_id,
+        with self.firewall_policy(name='p1', project_id=ctx.project_id,
                                   shared=True, as_admin=True) as fwp1, \
-                self.firewall_policy(name='p2', tenant_id=ctx.tenant_id,
+                self.firewall_policy(name='p2', project_id=ctx.project_id,
                                      shared=True, as_admin=True) as fwp2, \
                 self.firewall_group(
                     ingress_firewall_policy_id=fwp1['firewall_policy']['id'],
@@ -1292,9 +1292,9 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
     @testtools.skip('bug/1614680')
     def test_update_firewall_group_with_shared_fwp(self):
         ctx = self._get_nonadmin_context()
-        with self.firewall_policy(name='p1', tenant_id=ctx.tenant_id,
+        with self.firewall_policy(name='p1', project_id=ctx.project_id,
                                   shared=True) as fwp1, \
-                self.firewall_policy(name='p2', tenant_id='tenant2',
+                self.firewall_policy(name='p2', project_id='tenant2',
                                      shared=True) as fwp2, \
                 self.firewall_group(
                     ingress_firewall_policy_id=fwp1['firewall_policy']['id'],
@@ -1311,7 +1311,7 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
     def test_update_firewall_group_with_admin_and_fwp_different_tenant(self):
         ctx = self._get_admin_context()
         with self.firewall_policy(as_admin=True) as fwp1, \
-                self.firewall_policy(tenant_id='tenant2',
+                self.firewall_policy(project_id='tenant2',
                                      shared=False, as_admin=True) as fwp2, \
                 self.firewall_group(
                     ingress_firewall_policy_id=fwp1['firewall_policy']['id'],
@@ -1326,19 +1326,19 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
             self.assertEqual(404, res.status_int)
 
     def test_update_firewall_group_fwp_not_found_on_different_tenant(self):
-        with self.firewall_policy(name='fwp1', tenant_id='tenant1',
+        with self.firewall_policy(name='fwp1', project_id='tenant1',
                                   shared=False, do_delete=False,
                                   as_admin=True) as fwp1, \
                 self.firewall_group(
                     ingress_firewall_policy_id=fwp1['firewall_policy']['id'],
-                    tenant_id='tenant1', do_delete=False,
+                    project_id='tenant1', do_delete=False,
                     as_admin=True) as fwg:
             fwg_id = fwg['firewall_group']['id']
             # fw_db = self.db._get_firewall_group(ctx_tenant1, fwg_id)
             # fw_db['status'] = nl_constants.ACTIVE
 
             # update firewall from fwp1 to fwp2 (different tenant)
-            with self.firewall_policy(name='fwp2', tenant_id='tenant2',
+            with self.firewall_policy(name='fwp2', project_id='tenant2',
                                       shared=False, as_admin=True) as fwp2:
                 data = {
                     'firewall_group': {
@@ -1347,7 +1347,7 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
                     },
                 }
                 req = self.new_update_request('firewall_groups', data, fwg_id,
-                                              tenant_id='tenant1')
+                                              project_id='tenant1')
                 res = req.get_response(self.ext_api)
                 self.assertEqual(404, res.status_int)
 
@@ -1499,10 +1499,10 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
                         expected_body=None, body_data=insert_data)
 
     def test_insert_rule_for_previously_associated_rule_other_tenant(self):
-        with self.firewall_rule(tenant_id='tenant-2', as_admin=True) as fwr:
+        with self.firewall_rule(project_id='tenant-2', as_admin=True) as fwr:
             fwr_id = fwr['firewall_rule']['id']
             fw_rule_ids = [fwr_id]
-            with self.firewall_policy(tenant_id='tenant-2',
+            with self.firewall_policy(project_id='tenant-2',
                                       firewall_rules=fw_rule_ids,
                                       as_admin=True):
                 with self.firewall_policy(name='firewall_policy2',
@@ -1543,7 +1543,7 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
     def test_insert_rule_for_policy_of_other_tenant(self):
         with self.firewall_rule(shared=False) as fwr:
             fwr_id = fwr['firewall_rule']['id']
-            with self.firewall_policy(tenant_id='tenant-2',
+            with self.firewall_policy(project_id='tenant-2',
                                       name='firewall_policy',
                                       as_admin=True) as fwp:
                 fwp_id = fwp['firewall_policy']['id']
@@ -1794,7 +1794,7 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
         ctx = self._get_nonadmin_context()
         default_fwg = self._build_default_fwg(ctx=ctx)
         port_args = {
-            'tenant_id': ctx.tenant_id,
+            'project_id': ctx.project_id,
             'device_owner': 'compute:nova',
             'binding:vif_type': 'ovs',
         }

@@ -33,9 +33,9 @@ fwaas_path=$1
 target_etc_path=$2
 target_bin_path=$3
 
-src_conf_path=${neutron_path}/etc
+src_conf_path=${neutron_path}/etc/neutron
 src_conf=${src_conf_path}/rootwrap.conf
-src_rootwrap_path=${src_conf_path}/neutron/rootwrap.d
+src_rootwrap_path=${src_conf_path}/rootwrap.d
 
 fwaas_src_conf_path=${fwaas_path}/etc
 fwaas_src_rootwrap_path=${fwaas_src_conf_path}/neutron/rootwrap.d

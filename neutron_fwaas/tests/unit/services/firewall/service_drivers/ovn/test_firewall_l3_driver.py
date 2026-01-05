@@ -51,7 +51,7 @@ class TestOVNFwaasDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
 
     @property
     def _self_context(self):
-        return context.Context('', self._tenant_id)
+        return context.Context('', self._project_id)
 
     def test_create_firewall_group_ports_not_specified(self):
         with self.firewall_policy(as_admin=True) as fwp, \
@@ -72,7 +72,7 @@ class TestOVNFwaasDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
 
     def test_create_firewall_group_with_ports(self):
         with self.router(name='router1', admin_state_up=True,
-                         tenant_id=self._tenant_id, as_admin=True) as r, \
+                         project_id=self._project_id, as_admin=True) as r, \
                 self.subnet(as_admin=True) as s1, \
                 self.subnet(cidr='20.0.0.0/24', as_admin=True) as s2:
             body = self._router_interface_action(
@@ -108,7 +108,7 @@ class TestOVNFwaasDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
 
     def test_update_firewall_group_with_new_ports(self):
         with self.router(name='router1', admin_state_up=True,
-                         tenant_id=self._tenant_id, as_admin=True) as r, \
+                         project_id=self._project_id, as_admin=True) as r, \
                 self.subnet(as_admin=True) as s1, \
                 self.subnet(cidr='20.0.0.0/24', as_admin=True) as s2, \
                 self.subnet(cidr='30.0.0.0/24', as_admin=True) as s3:
@@ -166,7 +166,7 @@ class TestOVNFwaasDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
 
     def test_update_firewall_group_with_ports_and_policy(self):
         with self.router(name='router1', admin_state_up=True,
-                         tenant_id=self._tenant_id, as_admin=True) as r, \
+                         project_id=self._project_id, as_admin=True) as r, \
                 self.subnet(as_admin=True) as s1, \
                 self.subnet(cidr='20.0.0.0/24', as_admin=True) as s2:
             body = self._router_interface_action(
