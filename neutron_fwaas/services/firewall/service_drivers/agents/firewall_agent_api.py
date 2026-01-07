@@ -20,7 +20,6 @@ import oslo_messaging
 from neutron_fwaas._i18n import _
 
 
-FWAAS_V1 = "v1"
 FWAAS_V2 = "v2"
 FW_L2_NOOP_DRIVER = 'noop'
 
