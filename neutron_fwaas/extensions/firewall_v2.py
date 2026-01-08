@@ -28,6 +28,7 @@ from neutron_fwaas.common import fwaas_constants
 default_fwg_rules_opts = [
     cfg.StrOpt('ingress_action',
                default=api_const.FWAAS_DENY,
+               choices=api_const.FW_VALID_ACTION_VALUES,
                help=_('Firewall group rule action allow or '
                       'deny or reject for ingress.')),
     cfg.StrOpt('ingress_source_ipv4_address',
@@ -56,6 +57,7 @@ default_fwg_rules_opts = [
                       '(min:max) for ingress.')),
     cfg.StrOpt('egress_action',
                default=api_const.FWAAS_ALLOW,
+               choices=api_const.FW_VALID_ACTION_VALUES,
                help=_('Firewall group rule action allow or '
                       'deny or reject for egress.')),
     cfg.StrOpt('egress_source_ipv4_address',
