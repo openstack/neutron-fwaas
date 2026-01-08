@@ -14,8 +14,10 @@
 #    under the License.
 
 from neutron.common.ovn import utils as ovn_utils
+from neutron_lib.api.definitions import constants as api_const
 from neutron_lib import constants as const
 
+from neutron_fwaas._i18n import _
 from neutron_fwaas.services.firewall.service_drivers.ovn import \
     constants as ovn_const
 from neutron_fwaas.services.firewall.service_drivers.ovn import \
@@ -97,22 +99,28 @@ def acl_protocol_and_ports(rule, icmp):
 def acl_action_and_priority(rule, direction):
     action = rule['action']
     pos = rule.get('position', 0)
-    if action == 'deny' and rule.get(ovn_const.DEFAULT_RULE, False):
+    if (action == api_const.FWAAS_DENY and
+            rule.get(ovn_const.DEFAULT_RULE, False)):
         return (ovn_const.ACL_ACTION_DROP,
                 ovn_const.ACL_PRIORITY_DEFAULT)
+
     if direction == const.INGRESS_DIRECTION:
         priority = ovn_const.ACL_PRIORITY_INGRESS
     else:
         priority = ovn_const.ACL_PRIORITY_EGRESS
-    if action == 'allow':
+
+    if action == api_const.FWAAS_ALLOW:
         return (ovn_const.ACL_ACTION_ALLOW_STATELESS,
                 priority - pos)
-    elif action == 'deny':
+    elif action == api_const.FWAAS_DENY:
         return (ovn_const.ACL_ACTION_DROP,
                 priority - pos)
-    elif action == 'reject':
+    elif action == api_const.FWAAS_REJECT:
         return (ovn_const.ACL_ACTION_REJECT,
                 priority - pos)
+
+    # NOTE(tkajinam): This should not be reached, but is added for safe guard.
+    raise ValueError(_('Unkown action: %s' % action))
 
 
 def acl_entry_for_port_group(port_group, rule, direction, match):
@@ -220,10 +228,12 @@ def create_pg_for_fwg(nb_idl, fwg_id):
 def add_default_acls_for_pg(nb_idl, txn, pg_name):
     # Traffic is default denied, ipv4 or ipv6 with two directions,
     # so number of default acls is 4
-    default_rule_v4 = {'action': 'deny', 'ip_version': 4,
+    default_rule_v4 = {'action': api_const.FWAAS_DENY,
+                       'ip_version': const.IP_VERSION_4,
                        'id': ovn_const.DEFAULT_RULE_ID,
                        ovn_const.DEFAULT_RULE: True}
-    default_rule_v6 = {'action': 'deny', 'ip_version': 6,
+    default_rule_v6 = {'action': api_const.FWAAS_DENY,
+                       'ip_version': const.IP_VERSION_6,
                        'id': ovn_const.DEFAULT_RULE_ID,
                        ovn_const.DEFAULT_RULE: True}
     for dir in [const.EGRESS_DIRECTION, const.INGRESS_DIRECTION]:

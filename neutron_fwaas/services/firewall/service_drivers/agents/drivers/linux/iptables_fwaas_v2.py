@@ -15,6 +15,7 @@
 
 from neutron.agent.linux import iptables_manager
 from neutron.common import utils
+from neutron_lib.api.definitions import constants as api_const
 from neutron_lib import constants
 from neutron_lib.exceptions import firewall_v2 as fw_ext
 from oslo_log import log as logging
@@ -34,9 +35,9 @@ DROPPED_CHAIN = 'dropped'
 REJECTED_CHAIN = 'rejected'
 
 FWAAS_TO_IPTABLE_ACTION_MAP = {
-    'allow': ACCEPTED_CHAIN,
-    'deny': DROPPED_CHAIN,
-    'reject': REJECTED_CHAIN
+    api_const.FWAAS_ALLOW: ACCEPTED_CHAIN,
+    api_const.FWAAS_DENY: DROPPED_CHAIN,
+    api_const.FWAAS_REJECT: REJECTED_CHAIN
 }
 
 CHAIN_NAME_PREFIX = {constants.INGRESS_DIRECTION: 'i',
