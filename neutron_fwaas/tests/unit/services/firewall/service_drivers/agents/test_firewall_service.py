@@ -21,7 +21,7 @@ from neutron_fwaas.services.firewall.service_drivers.agents import\
 
 FWAAS_NOP_DEVICE = ('neutron_fwaas.tests.unit.services.firewall.'
                     'service_drivers.agents.test_firewall_agent_api.'
-                    'NoopFwaasDriver')
+                    'NoopFwaasDriverV2')
 
 
 class TestFirewallDeviceDriverLoading(base.BaseTestCase):
