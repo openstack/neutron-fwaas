@@ -17,6 +17,7 @@ import copy
 
 import netaddr
 
+from neutron_lib.api.definitions import constants as api_const
 from neutron_lib import constants as nl_constants
 from neutron_lib import context as lib_context
 from neutron_lib.db import api as db_api
@@ -80,7 +81,7 @@ class FirewallRuleV2(standard_attr.HasStandardAttributes, model_base.BASEV2,
     source_port_range_max = sa.Column(sa.Integer)
     destination_port_range_min = sa.Column(sa.Integer)
     destination_port_range_max = sa.Column(sa.Integer)
-    action = sa.Column(sa.Enum('allow', 'deny', 'reject',
+    action = sa.Column(sa.Enum(*api_const.FW_VALID_ACTION_VALUES,
                                name='firewallrules_action'))
     enabled = sa.Column(sa.Boolean)
     api_collections = ['firewall_rules']
