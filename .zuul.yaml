@@ -9,7 +9,7 @@
     check:
       jobs:
         - openstack-tox-docs:
-            required-projects:
+            required-projects: &fwaas_required_projects
               - openstack/neutron-lib
               - openstack/neutron
         - neutron-fwaas-functional
@@ -19,19 +19,20 @@
     gate:
       jobs:
         - openstack-tox-docs:
-            required-projects:
-              - openstack/neutron-lib
-              - openstack/neutron
+            required-projects: *fwaas_required_projects
         - neutron-fwaas-functional
         - neutron-tempest-plugin-fwaas-ovn
         - neutron-tempest-plugin-fwaas-openvswitch
     experimental:
       jobs:
-        - openstack-tox-py312-with-oslo-master
+        - openstack-tox-py313-with-oslo-master:
+            required-projects: *fwaas_required_projects
     periodic-weekly:
       jobs:
-        - openstack-tox-py312
-        - openstack-tox-py312-with-oslo-master
+        - openstack-tox-py313:
+            required-projects: *fwaas_required_projects
+        - openstack-tox-py313-with-oslo-master:
+            required-projects: *fwaas_required_projects
         - neutron-fwaas-functional
         - neutron-tempest-plugin-fwaas-ovn
         - neutron-tempest-plugin-fwaas-openvswitch
