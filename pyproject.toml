@@ -81,3 +81,6 @@ fwaas_v2_log = "neutron_fwaas.services.logapi.agents.drivers.iptables.log:Iptabl
 
 [project.entry-points."neutron.status.upgrade.checks"]
 neutron_fwaas = "neutron_fwaas.cmd.upgrade_checks.checks:Checks"
+
+[project.entry-points."neutron.ovn.db_sync"]
+neutron_fwaas_nb_sync = "neutron_fwaas.services.firewall.service_drivers.ovn.ovn_db_sync:OvnNbDbSync"

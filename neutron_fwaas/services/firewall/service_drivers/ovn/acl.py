@@ -222,7 +222,7 @@ def create_pg_for_fwg(nb_idl, fwg_id):
     with nb_idl.transaction(check_error=True) as txn:
         ext_ids = {ovn_const.OVN_FWG_EXT_ID_KEY: fwg_id}
         txn.add(nb_idl.pg_add(name=pg_name, acls=[],
-                              external_ids=ext_ids))
+                              external_ids=ext_ids, may_exist=True))
 
 
 def add_default_acls_for_pg(nb_idl, txn, pg_name):

@@ -351,7 +351,7 @@ class FirewallPluginV2(Firewallv2PluginBase):
         return self.driver.get_firewall_group(context, id, fields=fields)
 
     @log_helpers.log_method_call
-    @db_api.CONTEXT_WRITER
+    @db_api.CONTEXT_READER
     def get_firewall_groups(self, context, filters=None, fields=None):
         return self.driver.get_firewall_groups(context, filters, fields)
 
