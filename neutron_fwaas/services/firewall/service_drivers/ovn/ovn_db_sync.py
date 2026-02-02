@@ -14,10 +14,9 @@ from datetime import datetime
 
 from neutron.common.ovn import constants as ovn_const
 from neutron.common.ovn import utils as ovn_utils
-from neutron.plugins.ml2.drivers.ovn.mech_driver.ovsdb import ovn_db_sync \
-    as base_ovn_db_sync
 from neutron_lib import context
 from neutron_lib.db import api as db_api
+from neutron_lib.ovn import db_sync as db_sync_base
 from neutron_lib.plugins import directory
 from oslo_log import log
 
@@ -33,10 +32,7 @@ from neutron_fwaas.services.firewall.service_drivers.ovn import \
 LOG = log.getLogger(__name__)
 
 
-# TODO(slaweq): use base class from neutron-lib once
-# https://review.opendev.org/c/openstack/neutron-lib/+/970267 will be merged
-# and released
-class OvnNbDbSync(base_ovn_db_sync.BaseOvnDbSynchronizer):
+class OvnNbDbSync(db_sync_base.BaseOvnDbSynchronizer):
 
     _required_service_plugins = [
         "neutron_fwaas.services.firewall.fwaas_plugin_v2.FirewallPluginV2"
