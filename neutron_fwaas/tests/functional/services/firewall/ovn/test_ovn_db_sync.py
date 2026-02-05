@@ -67,7 +67,7 @@ class BaseTestOvnNbSync(base.TestOVNFunctionalBase):
             self.context,
             {'router': {
                 'name': f'{name_prefix}-router', 'admin_state_up': True,
-                'tenant_id': self._project_id}})
+                'project_id': self._project_id}})
 
         for i in range(number_of_networks):
             res = self._create_network(

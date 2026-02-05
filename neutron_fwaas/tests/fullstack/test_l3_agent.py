@@ -93,12 +93,12 @@ class TestLegacyL3Agent(TestL3Agent):
         common_utils.wait_until_true(lambda: ip.netns.exists(ns_name))
 
     def test_namespace_exists(self):
-        tenant_id = uuidutils.generate_uuid()
+        project_id = uuidutils.generate_uuid()
 
-        router = self.safe_client.create_router(tenant_id)
-        network = self.safe_client.create_network(tenant_id)
+        router = self.safe_client.create_router(project_id)
+        network = self.safe_client.create_network(project_id)
         subnet = self.safe_client.create_subnet(
-            tenant_id, network['id'], '20.0.0.0/24', gateway_ip='20.0.0.1')
+            project_id, network['id'], '20.0.0.0/24', gateway_ip='20.0.0.1')
         self.safe_client.add_router_interface(router['id'], subnet['id'])
 
         namespace = "{}@{}".format(
@@ -107,14 +107,14 @@ class TestLegacyL3Agent(TestL3Agent):
         self._assert_namespace_exists(namespace)
 
     def test_east_west_traffic(self):
-        tenant_id = uuidutils.generate_uuid()
-        router = self.safe_client.create_router(tenant_id)
+        project_id = uuidutils.generate_uuid()
+        router = self.safe_client.create_router(project_id)
 
         vm1 = self._create_net_subnet_and_vm(
-            tenant_id, ['20.0.0.0/24', '2001:db8:aaaa::/64'],
+            project_id, ['20.0.0.0/24', '2001:db8:aaaa::/64'],
             self.environment.hosts[0], router)
         vm2 = self._create_net_subnet_and_vm(
-            tenant_id, ['21.0.0.0/24', '2001:db8:bbbb::/64'],
+            project_id, ['21.0.0.0/24', '2001:db8:bbbb::/64'],
             self.environment.hosts[1], router)
 
         vm1.block_until_ping(vm2.ip)
@@ -124,27 +124,27 @@ class TestLegacyL3Agent(TestL3Agent):
     def test_snat_and_floatingip(self):
         # This function creates external network and boots an extrenal vm
         # on it with gateway ip and connected to central_external_bridge.
-        # Later it creates a tenant vm on tenant network, with tenant router
-        # connected to tenant network and external network.
-        # To test snat and floatingip, try ping between tenant and external vms
-        tenant_id = uuidutils.generate_uuid()
-        ext_net, ext_sub = self._create_external_network_and_subnet(tenant_id)
+        # Later it creates a project vm on project network, with project router
+        # connected to project network and external network.
+        # To test snat and floatingip, ping between project and external vms
+        project_id = uuidutils.generate_uuid()
+        ext_net, ext_sub = self._create_external_network_and_subnet(project_id)
         external_vm = self.useFixture(
             machine_fixtures.FakeMachine(
                 self.environment.central_external_bridge,
                 common_utils.ip_to_cidr(ext_sub['gateway_ip'], 24)))
 
-        router = self.safe_client.create_router(tenant_id,
+        router = self.safe_client.create_router(project_id,
                                                 external_network=ext_net['id'])
         vm = self._create_net_subnet_and_vm(
-            tenant_id, ['20.0.0.0/24'],
+            project_id, ['20.0.0.0/24'],
             self.environment.hosts[1], router)
 
         # ping external vm to test snat
         vm.block_until_ping(external_vm.ip)
 
         fip = self.safe_client.create_floatingip(
-            tenant_id, ext_net['id'], vm.ip, vm.neutron_port['id'])
+            project_id, ext_net['id'], vm.ip, vm.neutron_port['id'])
 
         # ping floating ip from external vm
         external_vm.block_until_ping(fip['floating_ip_address'])
@@ -170,8 +170,8 @@ class TestHAL3Agent(base.BaseFullStackTestCase):
         # TODO(amuller): Test external connectivity before and after a
         # failover, see: https://review.openstack.org/#/c/196393/
 
-        tenant_id = uuidutils.generate_uuid()
-        router = self.safe_client.create_router(tenant_id, ha=True)
+        project_id = uuidutils.generate_uuid()
+        router = self.safe_client.create_router(project_id, ha=True)
         agents = self.client.list_l3_agent_hosting_routers(router['id'])
         self.assertEqual(2, len(agents['agents']),
                          'HA router must be scheduled to both nodes')

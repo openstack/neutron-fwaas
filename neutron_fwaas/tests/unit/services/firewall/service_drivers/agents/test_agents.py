@@ -25,7 +25,6 @@ from neutron_lib.exceptions import firewall_v2 as f_exc
 from neutron_lib.plugins import directory
 from oslo_config import cfg
 
-from neutron_fwaas._i18n import _
 from neutron_fwaas.db.firewall.v2.firewall_db_v2 import FirewallGroup
 from neutron_fwaas.services.firewall.service_drivers.agents import agents
 from neutron_fwaas.tests import base
@@ -116,15 +115,6 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
 
         self.db = self.plugin.driver.firewall_db
         self.callbacks = agents.FirewallAgentCallbacks(self.db)
-
-        router_distributed_opts = [
-            cfg.BoolOpt(
-                'router_distributed',
-                default=False,
-                help=_("System-wide flag to determine the type of router "
-                       "that tenants can create. Only admin can override.")),
-        ]
-        cfg.CONF.register_opts(router_distributed_opts)
 
     @property
     def _self_context(self):

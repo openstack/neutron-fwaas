@@ -51,12 +51,12 @@ class ClientFixture(fixtures.Fixture):
         self.addCleanup(_safe_method(delete), data['id'])
         return data
 
-    def create_router(self, tenant_id, name=None, ha=False,
+    def create_router(self, project_id, name=None, ha=False,
                       external_network=None):
         resource_type = 'router'
 
         name = name or utils.get_rand_name(prefix=resource_type)
-        spec = {'tenant_id': tenant_id, 'name': name, 'ha': ha}
+        spec = {'project_id': project_id, 'name': name, 'ha': ha}
         if external_network:
             spec['external_gateway_info'] = {"network_id": external_network}
 
