@@ -163,10 +163,6 @@ class FirewallPluginV2(Firewallv2PluginBase):
         # TODO(sridar): elevated context and do we want to use public ?
         for port_id in fwg_ports:
             port = self._core_plugin.get_port(context, port_id)
-
-            if port['tenant_id'] != tenant_id:
-                raise f_exc.FirewallGroupPortInvalidProject(
-                    port_id=port_id, project_id=port['tenant_id'])
             device_owner = port.get('device_owner', '')
             if device_owner in nl_constants.ROUTER_INTERFACE_OWNERS:
                 if not self.driver.is_supported_l3_port(port):

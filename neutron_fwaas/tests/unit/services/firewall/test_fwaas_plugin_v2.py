@@ -481,37 +481,6 @@ class TestFirewallPluginBasev2(FirewallPluginV2TestCase):
         device_owner_for_l2 = nl_constants.DEVICE_OWNER_COMPUTE_PREFIX + 'nova'
         self._test_fwg_with_port(device_owner_for_l2)
 
-    def test_create_firewall_group_with_port_on_different_project(self):
-        with self.port(project_id='fake_project_id_1') as port:
-            admin_ctx = context.get_admin_context()
-            self._create_firewall_group(
-                self.fmt,
-                "firewall_group1",
-                self.DESCRIPTION,
-                context=admin_ctx,
-                ports=[port['port']['id']],
-                expected_res_status=webob.exc.HTTPConflict.code,
-                as_admin=True,
-            )
-
-    def test_update_firewall_group_with_port_on_different_project(self):
-        ctx = context.Context('not_admin', 'fake_project_id_1')
-        with self.firewall_group(ctx=ctx, as_admin=True) as firewall_group:
-            with self.port(project_id='fake_project_id_2') as port:
-                data = {
-                    'firewall_group': {
-                        'ports': [port['port']['id']],
-                    },
-                }
-                req = self.new_update_request(
-                    'firewall_groups',
-                    data,
-                    firewall_group['firewall_group']['id'],
-                    as_admin=True,
-                )
-                res = req.get_response(self.ext_api)
-                self.assertEqual(webob.exc.HTTPConflict.code, res.status_int)
-
     def test_create_firewall_group_with_with_wrong_type_port(self):
         with self.port(device_owner="wrong port type") as port:
             self._create_firewall_group(
