@@ -40,6 +40,7 @@ class FirewallDriver(metaclass=abc.ABCMeta):
 
     def __init__(self, service_plugin):
         self.service_plugin = service_plugin
+        self.register_logging_driver()
 
     @property
     def _core_plugin(self):
@@ -50,6 +51,10 @@ class FirewallDriver(metaclass=abc.ABCMeta):
 
     def is_supported_l3_port(self, port):
         return False
+
+    def register_logging_driver(self):
+        LOG.debug("No logging driver supported by %s firewall driver",
+                  self.__class__.__name__)
 
     # Firewall Group
     @abc.abstractmethod

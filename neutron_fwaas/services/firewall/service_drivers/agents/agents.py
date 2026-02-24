@@ -18,6 +18,8 @@ from neutron_lib import constants as nl_constants
 from neutron_lib import context as neutron_context
 from neutron_lib.db import api as db_api
 from neutron_lib.exceptions import firewall_v2 as f_exc
+from neutron_lib.plugins import constants as plugin_const
+from neutron_lib.plugins import directory
 from neutron_lib import rpc as n_rpc
 from oslo_config import cfg
 from oslo_log import helpers as log_helpers
@@ -26,6 +28,8 @@ import oslo_messaging
 
 from neutron_fwaas.common import fwaas_constants as constants
 from neutron_fwaas.services.firewall.service_drivers import driver_api
+from neutron_fwaas.services.logapi.agents.drivers.iptables \
+    import driver as logging_driver
 
 
 LOG = logging.getLogger(__name__)
@@ -171,6 +175,14 @@ class FirewallAgentDriver(driver_api.FirewallDriverDB,
     def __init__(self, service_plugin):
         super().__init__(service_plugin)
         self.agent_rpc = FirewallAgentApi(constants.FW_AGENT, cfg.CONF.host)
+
+    def register_logging_driver(self):
+        log_plugin = directory.get_plugin(plugin_const.LOG_API)
+        # If log_plugin was loaded before firewall plugin
+        if log_plugin:
+            logging_driver.register()
+            # Register logging driver with LoggingServiceDriverManager again
+            log_plugin.driver_manager.register_driver(logging_driver.DRIVER)
 
     def is_supported_l2_port(self, port):
         if port[pb_def.VIF_TYPE] == pb_def.VIF_TYPE_OVS:
