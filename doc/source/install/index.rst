@@ -21,6 +21,8 @@
       (Avoid deeper levels because they do not render well.)
 
 
+.. _installation:
+
 ============
 Installation
 ============
@@ -34,6 +36,5 @@ Or, if you have virtualenvwrapper installed::
     $ mkvirtualenv neutron-fwaas
     $ pip install neutron-fwaas
 
-For information on what to do with FWaaS once it is installed, please check the
-Networking Guide `Firewall-as-a-Service (FWaaS) v2 scenario <https://docs.openstack.org/neutron/latest/admin/fwaas-v2-scenario.html>`_ or
-the `Firewall-as-a-Service (FWaaS) v1 scenario <https://docs.openstack.org/neutron/latest/admin/fwaas-v1-scenario.html>`_.
+For information on how to use FWaaS once it is installed, see the
+:ref:`User Guide <user_guide>`.
