@@ -9,6 +9,7 @@ neutron-fwaas documentation
    install/index
    configuration/index
    contributor/index
+   user/index
 
 .. only:: html
 
