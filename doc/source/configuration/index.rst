@@ -10,11 +10,20 @@ configuration file.
 Configuration
 -------------
 
+Neutron FWaaS supports various Neutron backend drivers, such as:
+
+* ML2/OVN.
+* ML2/OVS and L3 agent.
+
+Differences between drivers are described in the
+:ref:`drivers_comparison` document.
+
 Neutron FWaaS uses the following configuration files for its various services.
 
 .. toctree::
    :maxdepth: 1
 
+   drivers_comparison
    neutron_fwaas
    fwaas_driver
 
