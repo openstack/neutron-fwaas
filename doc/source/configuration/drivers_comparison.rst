@@ -62,3 +62,6 @@ Supported Actions
      - Yes
      - Yes
      - No
+
+For more details about the internals of each driver, see the
+:ref:`driver_internals` section in the Contributor Guide.
