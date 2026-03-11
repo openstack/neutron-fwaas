@@ -178,9 +178,9 @@ class FirewallAgentDriver(driver_api.FirewallDriverDB,
 
     def register_logging_driver(self):
         log_plugin = directory.get_plugin(plugin_const.LOG_API)
+        logging_driver.register()
         # If log_plugin was loaded before firewall plugin
         if log_plugin:
-            logging_driver.register()
             # Register logging driver with LoggingServiceDriverManager again
             log_plugin.driver_manager.register_driver(logging_driver.DRIVER)
 
