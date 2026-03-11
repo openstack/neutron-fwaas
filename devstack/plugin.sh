@@ -66,7 +66,7 @@ function configure_fwaas_v2() {
 
 function configure_l3_log_fwaas_v2(){
     if is_service_enabled q-l3; then
-        iniadd $Q_L3_CONF_FILE agent extensions fwaas_v2_log
+        plugin_agent_add_l3_agent_extension fwaas_v2_log
     fi
 }
 
