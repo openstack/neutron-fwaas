@@ -179,16 +179,16 @@ class IptablesLoggingDriver(log_ext.LoggingDriver):
             self.prefixes_table[port_id] = []
         self.prefixes_table[port_id].append(prefix)
 
-    def _cleanup_nflog_process(self, router_info):
-        LOG.debug("Delete router_info %s", router_info)
-        if router_info in self.nflog_proc_map:
-            pid = self.nflog_proc_map[router_info]
+    def _cleanup_nflog_process(self, router_id):
+        LOG.debug("Delete NFLOG for router %s", router_id)
+        if router_id in self.nflog_proc_map:
+            pid = self.nflog_proc_map[router_id]
             try:
                 # A process started by a root helper will be running as
                 # root and need to be killed via the same helper.
                 LOG.debug('Trying to kill NFLOG process %d', pid)
                 utils.kill_process(pid, signal.SIGKILL, run_as_root=True)
-                del self.nflog_proc_map[router_info]
+                del self.nflog_proc_map[router_id]
             except Exception:
                 LOG.exception(
                     'An error occurred while killing process %d', pid)
@@ -249,9 +249,9 @@ class IptablesLoggingDriver(log_ext.LoggingDriver):
         LOG.debug("Stop logging: %s", str(kwargs))
 
         # Delete router
-        router_info = kwargs.get('router_info')
-        if router_info:
-            self._cleanup_nflog_process(router_info)
+        router_id = kwargs.get('router_info', {}).get('router_id')
+        if router_id:
+            self._cleanup_nflog_process(router_id)
 
         if kwargs.get('log_resources'):
             # Handle incoming log request
