@@ -252,6 +252,18 @@ while blocking everything else (via the implicit deny-all rule).
    For stateful drivers (L3 agent, L2 agent), this step is not needed as
    return traffic for established connections is automatically allowed.
 
+.. warning::
+
+   When using the OVN driver with FWaaS, it is not recommended to combine it
+   with ``stateful`` security groups on VM ports. Mixing ``stateful`` security
+   group rules with ``stateless`` firewall rules may lead to undefined
+   behaviour, such as conntrack entries from VM port traffic leaking into the
+   firewall rules applied to the router port.
+   In this case, it is recommended to either use ``stateless`` security groups
+   or disable ``port_security`` on the ports of VMs that are behind the
+   firewall.
+
+
 4. Create a firewall group and associate it with a router port:
 
    .. code-block:: console
