@@ -30,6 +30,12 @@ from neutron_fwaas.services.firewall.service_drivers.ovn import \
 
 
 LOG = log.getLogger(__name__)
+OVN_SERVICE_PROVIDER = (
+    "FIREWALL_V2:"
+    "fwaas_db:neutron_fwaas.services.firewall."
+    "service_drivers.ovn.firewall_l3_driver.OVNFwaasDriver:"
+    "default"
+)
 
 
 class OvnNbDbSync(db_sync_base.BaseOvnDbSynchronizer):
@@ -42,6 +48,12 @@ class OvnNbDbSync(db_sync_base.BaseOvnDbSynchronizer):
         super().__init__(core_plugin, ovn_driver, mode, is_maintenance)
         self.fwaas_plugin = directory.get_plugin(fwaas_constants.FIREWALL_V2)
         self.fwaas_ovn_driver = self.fwaas_plugin.driver
+
+    @classmethod
+    def prepare_additional_configuration(cls, conf):
+        # FWaaS service plugin requires service provider to be configured
+        conf.set_override(
+            'service_provider', [OVN_SERVICE_PROVIDER], 'service_providers')
 
     def do_sync(self):
         if not isinstance(self.fwaas_ovn_driver,
