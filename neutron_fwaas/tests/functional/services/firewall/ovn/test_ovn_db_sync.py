@@ -21,6 +21,7 @@ from neutron.plugins.ml2.drivers.ovn.mech_driver.ovsdb import \
     ovn_db_sync as neutron_ovn_db_sync
 from neutron.plugins.ml2.drivers.ovn.mech_driver.ovsdb import ovsdb_monitor
 from neutron.tests.functional import base
+from neutron_lib.ovn import constants as nlib_ovn_const
 from neutron_lib.plugins import directory
 from oslo_config import cfg
 
@@ -235,7 +236,8 @@ class BaseTestOvnNbSync(base.TestOVNFunctionalBase):
             self.restart()
             # After deleting the OVS DB sync of the neutron resources, such as
             # networks, ports and routers is also needed
-            self._sync_neutron_resources(ovn_const.OVN_DB_SYNC_MODE_REPAIR)
+            self._sync_neutron_resources(
+                nlib_ovn_const.OVN_DB_SYNC_MODE_REPAIR)
         if resources_modifier or restart_ovsdb_processes:
             self._validate_resources(should_match=False)
         self._sync_resources()
@@ -290,7 +292,7 @@ class BaseTestOvnNbSync(base.TestOVNFunctionalBase):
 
 class TestOvnNbSyncRepair(BaseTestOvnNbSync):
 
-    mode = ovn_const.OVN_DB_SYNC_MODE_REPAIR
+    mode = nlib_ovn_const.OVN_DB_SYNC_MODE_REPAIR
     should_match_after_sync = True
 
     def get_ovsdb_server_protocol(self):
@@ -314,7 +316,7 @@ class TestOvnNbSyncRepair(BaseTestOvnNbSync):
 
 class TestOvnNbSyncLog(BaseTestOvnNbSync):
 
-    mode = ovn_const.OVN_DB_SYNC_MODE_LOG
+    mode = nlib_ovn_const.OVN_DB_SYNC_MODE_LOG
     should_match_after_sync = False
 
     def get_ovsdb_server_protocol(self):

@@ -15,8 +15,8 @@
 
 from unittest import mock
 
-from neutron.common.ovn import constants as ovn_const
 from neutron.common.ovn import utils as ovn_utils
+from neutron_lib.ovn import constants as ovn_const
 
 from neutron_fwaas.common import fwaas_constants
 from neutron_fwaas.services.firewall.service_drivers.ovn import \

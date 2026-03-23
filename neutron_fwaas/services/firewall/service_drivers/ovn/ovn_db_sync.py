@@ -12,10 +12,10 @@
 
 from datetime import datetime
 
-from neutron.common.ovn import constants as ovn_const
 from neutron.common.ovn import utils as ovn_utils
 from neutron_lib import context
 from neutron_lib.db import api as db_api
+from neutron_lib.ovn import constants as ovn_const
 from neutron_lib.ovn import db_sync as db_sync_base
 from neutron_lib.plugins import directory
 from oslo_log import log
