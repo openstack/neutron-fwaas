@@ -504,7 +504,8 @@ class FWLoggingTestCase(FWLoggingTestBase):
                                    router_info=self.router_info)
             # Fake disable router by running stop_logging with router_info
             self.log_driver.stop_logging(
-                self.context, router_info=self.router_info.router_id)
+                self.context,
+                router_info={'router_id': self.router_info.router_id})
             # Fake enable router by running start_logging with router_info
             self.log_driver.start_logging(self.context,
                                           router_info=self.router_info)
