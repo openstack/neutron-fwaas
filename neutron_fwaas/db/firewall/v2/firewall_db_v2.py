@@ -961,6 +961,14 @@ class FirewallPluginDb:
                 ctx.session.add(DefaultFirewallGroup(
                     firewall_group_id=fwg_db['id'],
                     project_id=tenant_id))
+                # NOTE(slaweq): this commit is here so that when e.g.
+                # get_firewall_groups method is called it can return list of
+                # the FW Groups including this newly created default group.
+                # This should be handled by the OVO objects, like it is e.g.
+                # for the Security Groups in Neutron but we first need to
+                # migrate FWaaS to OVO objects
+                context.session.commit()
+
                 return fwg_db['id']
 
         except db_exc.DBDuplicateEntry:
