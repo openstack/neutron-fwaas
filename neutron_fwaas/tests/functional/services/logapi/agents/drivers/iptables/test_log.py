@@ -74,7 +74,7 @@ class FWLoggingTestBase(framework.L3AgentTestFramework):
         self.if_prefix = 'qr-'
 
         self.context = neutron_context.get_admin_context()
-        self.context.tenant_id = FAKE_PROJECT_ID
+        self.context.project_id = FAKE_PROJECT_ID
         self.resource_rpc = mock.patch(
             'neutron.services.logapi.rpc.agent.LoggingApiStub').start()
         # Initialize logging driver
