@@ -33,12 +33,6 @@ FWaaSOpts = [
         default=False,
         help=_("Enable FWaaS")),
     cfg.StrOpt(
-        'agent_version',
-        default=FWAAS_V2,
-        deprecated_for_removal=True,
-        deprecated_reason='This option has no effect',
-        help=_("Firewall agent class")),
-    cfg.StrOpt(
         'conntrack_driver',
         default='conntrack',
         help=_("Name of the FWaaS Conntrack Driver")),

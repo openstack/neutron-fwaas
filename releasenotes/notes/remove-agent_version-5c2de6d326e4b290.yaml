@@ -1,0 +1,4 @@
+---
+upgrade:
+  - |
+    The deprecated ``[fwaas] agent_version`` option has been removed.
