@@ -1123,10 +1123,10 @@ class FirewallPluginDb:
         return self._make_firewall_group_dict(fw, fields)
 
     def get_firewall_groups(self, context, filters=None, fields=None):
-        if context.tenant_id:
-            tenant_id = filters.get('tenant_id') if filters else None
-            tenant_id = tenant_id[0] if tenant_id else context.tenant_id
-            self._ensure_default_firewall_group(context, tenant_id)
+        if context.project_id:
+            project_id = filters.get('project_id') if filters else None
+            project_id = project_id[0] if project_id else context.project_id
+            self._ensure_default_firewall_group(context, project_id)
         with db_api.CONTEXT_READER.using(context):
             return model_query.get_collection(
                 context, FirewallGroup, self._make_firewall_group_dict,

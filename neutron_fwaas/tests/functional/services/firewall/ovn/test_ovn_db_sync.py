@@ -55,7 +55,6 @@ class BaseTestOvnNbSync(base.TestOVNFunctionalBase):
                     'neutron_fwaas.services.firewall.'
                     'fwaas_plugin_v2.FirewallPluginV2')})
         self.context.project_id = self._project_id
-        self.context.tenant_id = self._project_id
         self.fwaas_plugin = directory.get_plugin(fwaas_constants.FIREWALL_V2)
 
     def _create_basic_resources(self, number_of_networks):

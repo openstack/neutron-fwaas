@@ -128,7 +128,7 @@ def get_logs_for_fwg(context, fwg_id, ports_delta):
             return []
         fw_plugin_db = fw_plugin.driver.firewall_db
 
-    project_id = context.tenant_id
+    project_id = context.project_id
     log_objs = log_object.Log.get_objects(
         context, project_id=project_id,
         resource_type=constants.FIREWALL_GROUP, enabled=True)
