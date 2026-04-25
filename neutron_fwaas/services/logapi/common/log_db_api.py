@@ -45,8 +45,8 @@ def _get_ports_being_logged(context, log_obj):
             fw_plugin_db.get_ports_in_firewall_group(context, resource_id)
     # Both 'resource_id' and 'target_id' aren't specified in a log_resource
     else:
-        tenant_id = log_obj['project_id']
-        port_ids = fw_plugin_db.get_fwg_ports_in_tenant(context, tenant_id)
+        project_id = log_obj['project_id']
+        port_ids = fw_plugin_db.get_fwg_ports_in_project(context, project_id)
 
     filtered_port_ids = []
     for port_id in port_ids:

@@ -145,8 +145,8 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
         """Returns in-namespace ports, either from firewall group dict if ports
            update or from project routers otherwise if only policies update.
 
-           NOTE: Vernacular move from "tenant" to "project" doesn't yet appear
-           as a key in router or firewall group objects.
+           NOTE: The 'project_id' key is now consistently used in router
+           and firewall group objects.
         """
         fwg_port_ids = []
         if self._has_port_insertion_fields(firewall_group):
@@ -156,9 +156,9 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
                 fwg_port_ids = firewall_group['add-port-ids']
         if not require_new_plugin and not fwg_port_ids:
             routers = self.agent_api.get_routers_in_project(
-                    firewall_group['tenant_id'])
+                    firewall_group['project_id'])
             for router in routers:
-                if router.router['tenant_id'] == firewall_group['tenant_id']:
+                if router.router['project_id'] == firewall_group['project_id']:
                     fwg_port_ids.extend([p['id'] for p in
                                          router.internal_ports])
 
@@ -244,16 +244,16 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
         group that is configured for that project. If so, installs firewall
         group rules on the requested ports on this router.
         """
-        LOG.debug("Process router update, router_id: %s  tenant: %s.",
-                  updated_router['id'], updated_router['tenant_id'])
+        LOG.debug("Process router update, router_id: %s  project: %s.",
+                  updated_router['id'], updated_router['project_id'])
         router_id = updated_router['id']
         if not self.agent_api.is_router_in_namespace(router_id):
             return
 
         # Get the firewall groups for the new router's project.
-        # NOTE: Vernacular move from "tenant" to "project" doesn't yet appear
-        # as a key in router or firewall group objects.
-        ctx = context.Context('', updated_router['tenant_id'])
+        # NOTE: The 'project_id' key is now consistently used in router
+        # and firewall group objects.
+        ctx = context.Context('', updated_router['project_id'])
         fwg_list = self.fwplugin_rpc.get_firewall_groups_for_project(ctx)
 
         if nl_constants.INTERFACE_KEY not in updated_router:

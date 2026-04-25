@@ -50,7 +50,7 @@ class FireWallDriverDBMixinTestCase(test_fwaas_plugin_v2.
             'ingress_firewall_policy_id': 'fake_ifwp_id',
             'egress_firewall_policy_id': 'fake_efwp_id',
             'ports': [],
-            'tenant_id': 'fake_tenant_id',
+            'project_id': 'fake_project_id',
             'status': 'CREATED'
         }
 
@@ -108,7 +108,7 @@ class FireWallDriverDBMixinTestCase(test_fwaas_plugin_v2.
             'ingress_firewall_policy_id': 'old_fake_ifwp_id',
             'egress_firewall_policy_id': 'old_fake_efwp_id',
             'ports': [],
-            'tenant_id': 'fake_tenant_id',
+            'project_id': 'fake_project_id',
             'status': 'CREATED'
         }
 

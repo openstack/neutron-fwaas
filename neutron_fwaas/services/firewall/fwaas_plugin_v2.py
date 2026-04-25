@@ -135,11 +135,12 @@ class FirewallPluginV2(Firewallv2PluginBase):
                             'egress_firewall_policy_id']:
             if fwg.get(policy_type):
                 fwp = self.get_firewall_policy(context, fwg[policy_type])
-                if fwg['tenant_id'] != fwp['tenant_id'] and not fwp['shared']:
+                if (fwg['project_id'] != fwp['project_id'] and
+                        not fwp['shared']):
                     raise f_exc.FirewallPolicyConflict(
                         firewall_policy_id=fwg[policy_type])
 
-    def _validate_ports_for_firewall_group(self, context, tenant_id,
+    def _validate_ports_for_firewall_group(self, context, project_id,
                                            fwg_ports):
         """Validate firewall group associated ports
 
@@ -147,7 +148,7 @@ class FirewallPluginV2(Firewallv2PluginBase):
         owner and is router interface type or a compute layer 2 and supported
         by the firewall driver
         :param context: neutron context
-        :param tenant_id: firewall group project ID
+        :param project_id: firewall group project ID
         :param fwg_ports: firewall group associated ports
         """
         # TODO(sridar): elevated context and do we want to use public ?
@@ -192,7 +193,7 @@ class FirewallPluginV2(Firewallv2PluginBase):
             return
 
         filters = {
-            'tenant_id': [firewall_group['tenant_id']],
+            'project_id': [firewall_group['project_id']],
             'ports': firewall_group['ports'],
         }
         ports_in_use = set()
@@ -213,7 +214,7 @@ class FirewallPluginV2(Firewallv2PluginBase):
         :param firewall_policy: firewall policy to filter
         """
         filters = {
-            'tenant_id': [firewall_policy['tenant_id']],
+            'project_id': [firewall_policy['project_id']],
             'ingress_firewall_policy_id': [firewall_policy['id']],
         }
         ingress_fwp_ids = [fwg['id']
@@ -221,7 +222,7 @@ class FirewallPluginV2(Firewallv2PluginBase):
                                context, filters=filters)]
 
         filters = {
-            'tenant_id': [firewall_policy['tenant_id']],
+            'project_id': [firewall_policy['project_id']],
             'egress_firewall_policy_id': [firewall_policy['id']],
         }
         egress_fwp_ids = [fwg['id']
@@ -232,7 +233,7 @@ class FirewallPluginV2(Firewallv2PluginBase):
 
     def _get_policies_with_rule(self, context, firewall_rule):
         filters = {
-            'tenant_id': [firewall_rule['tenant_id']],
+            'project_id': [firewall_rule['project_id']],
             'firewall_rules': [firewall_rule['id']],
         }
         return [fwp['id'] for fwp in self.get_firewall_policies(
@@ -263,7 +264,7 @@ class FirewallPluginV2(Firewallv2PluginBase):
         if (original_port[pb_def.VIF_TYPE] != pb_def.VIF_TYPE_UNBOUND):
             # Checking newly vm port binding allows us to avoid call to DB
             # when a port update_event like restart, setting name, etc...
-            # Moreover, that will help us in case of tenant admin wants to
+            # Moreover, that will help us in case of project admin wants to
             # only attach security group to vm port.
             return
 
@@ -276,7 +277,7 @@ class FirewallPluginV2(Firewallv2PluginBase):
         fwgs = self.get_firewall_groups(
             context,
             filters={
-                'tenant_id': [project_id],
+                'project_id': [project_id],
                 'name': [fwaas_constants.DEFAULT_FWG],
             },
             fields=['id', 'ports'],
@@ -309,7 +310,7 @@ class FirewallPluginV2(Firewallv2PluginBase):
                                                             firewall_group)
         # Validate ports owner type and project
         self._validate_ports_for_firewall_group(context,
-                                                firewall_group['tenant_id'],
+                                                firewall_group['project_id'],
                                                 ports)
 
         self._validate_if_firewall_group_on_ports(context, firewall_group)
@@ -353,13 +354,13 @@ class FirewallPluginV2(Firewallv2PluginBase):
         ports = firewall_group.get('ports', [])
 
         old_firewall_group = self._ensure_update_firewall_group(context, id)
-        firewall_group['tenant_id'] = old_firewall_group['tenant_id']
+        firewall_group['project_id'] = old_firewall_group['project_id']
 
         self._validate_firewall_policies_for_firewall_group(context,
                                                             firewall_group)
         # Validate ports owner type and project
         self._validate_ports_for_firewall_group(context,
-                                                firewall_group['tenant_id'],
+                                                firewall_group['project_id'],
                                                 ports)
         self._validate_if_firewall_group_on_ports(context, firewall_group,
                                                   id=id)

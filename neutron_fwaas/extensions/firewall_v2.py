@@ -97,15 +97,15 @@ default_fwg_rules_opts = [
 firewall_quota_opts = [
     cfg.IntOpt('quota_firewall_group',
                default=10,
-               help=_('Number of firewall groups allowed per tenant. '
+               help=_('Number of firewall groups allowed per project. '
                       'A negative value means unlimited.')),
     cfg.IntOpt('quota_firewall_policy',
                default=10,
-               help=_('Number of firewall policies allowed per tenant. '
+               help=_('Number of firewall policies allowed per project. '
                       'A negative value means unlimited.')),
     cfg.IntOpt('quota_firewall_rule',
                default=100,
-               help=_('Number of firewall rules allowed per tenant. '
+               help=_('Number of firewall rules allowed per project. '
                       'A negative value means unlimited.')),
 ]
 cfg.CONF.register_opts(default_fwg_rules_opts, 'default_fwg_rules')

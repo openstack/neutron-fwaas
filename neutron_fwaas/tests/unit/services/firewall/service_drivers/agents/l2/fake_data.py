@@ -21,9 +21,8 @@ from unittest import mock
 from neutron_lib import constants as nl_consts
 from oslo_utils import uuidutils
 
-TENANT_UUID = uuidutils.generate_uuid()
-TENANT_ID = TENANT_UUID
-PROJECT_ID = TENANT_UUID
+PROJECT_UUID = uuidutils.generate_uuid()
+PROJECT_ID = PROJECT_UUID
 NETWORK_ID = uuidutils.generate_uuid()
 SUBNET_ID = uuidutils.generate_uuid()
 DEVICE_ID = uuidutils.generate_uuid()
@@ -67,7 +66,6 @@ class FakeFWaaSL2Agent:
             'ports': [PORT3, PORT4],
             'admin_state_up': True,
             'shared': False,
-            'tenant_id': TENANT_ID,
             'project_id': PROJECT_ID
         }
         attrs = kwargs.get('attrs', None)

@@ -64,7 +64,7 @@ class TestFirewallGroupRuleCallback(base.BaseTestCase):
                             status=nl_const.PORT_STATUS_ACTIVE):
         port_data = {
             'id': uuidutils.generate_uuid(),
-            'project_id': 'fake_tenant_id',
+            'project_id': 'fake_project_id',
             'status': status
         }
         if name:

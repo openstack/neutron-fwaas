@@ -110,7 +110,7 @@ class FirewallAgentCallbacks:
         """Get all projects that have firewall_groups."""
         ctx = neutron_context.get_admin_context()
         fwg_list = self.firewall_db.get_firewall_groups(ctx)
-        fwg_project_list = list({fwg['tenant_id'] for fwg in fwg_list})
+        fwg_project_list = list({fwg['project_id'] for fwg in fwg_list})
         return fwg_project_list
 
     @log_helpers.log_method_call

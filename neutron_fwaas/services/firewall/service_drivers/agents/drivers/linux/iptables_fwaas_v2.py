@@ -44,7 +44,7 @@ CHAIN_NAME_PREFIX = {constants.INGRESS_DIRECTION: 'i',
                      constants.EGRESS_DIRECTION: 'o'}
 
 """ Firewall rules are applied on internal-interfaces of Neutron router.
-    The packets ingressing tenant's network will be on the output
+    The packets ingressing project's network will be on the output
     direction on internal-interfaces.
 """
 IPTABLES_DIR = {constants.INGRESS_DIRECTION: '-o',
@@ -74,8 +74,8 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
         return _name[:MAX_INTF_NAME_LEN]
 
     def create_firewall_group(self, agent_mode, apply_list, firewall):
-        LOG.debug('Creating firewall %(fw_id)s for tenant %(tid)s',
-                  {'fw_id': firewall['id'], 'tid': firewall['tenant_id']})
+        LOG.debug('Creating firewall %(fw_id)s for project %(tid)s',
+                  {'fw_id': firewall['id'], 'tid': firewall['project_id']})
         try:
             if firewall['admin_state_up']:
                 self._setup_firewall(agent_mode, apply_list, firewall)
@@ -115,8 +115,8 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
         return ipt_mgrs
 
     def delete_firewall_group(self, agent_mode, apply_list, firewall):
-        LOG.debug('Deleting firewall %(fw_id)s for tenant %(tid)s',
-                  {'fw_id': firewall['id'], 'tid': firewall['tenant_id']})
+        LOG.debug('Deleting firewall %(fw_id)s for project %(tid)s',
+                  {'fw_id': firewall['id'], 'tid': firewall['project_id']})
         fwid = firewall['id']
         try:
             for ri, router_fw_ports in apply_list:
@@ -135,8 +135,8 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
             raise fw_ext.FirewallInternalDriverError(driver=FWAAS_DRIVER_NAME)
 
     def update_firewall_group(self, agent_mode, apply_list, firewall):
-        LOG.debug('Updating firewall %(fw_id)s for tenant %(tid)s',
-                  {'fw_id': firewall['id'], 'tid': firewall['tenant_id']})
+        LOG.debug('Updating firewall %(fw_id)s for project %(tid)s',
+                  {'fw_id': firewall['id'], 'tid': firewall['project_id']})
         try:
             if firewall['admin_state_up']:
                 self._setup_firewall(agent_mode, apply_list, firewall)
@@ -156,8 +156,8 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
             raise fw_ext.FirewallInternalDriverError(driver=FWAAS_DRIVER_NAME)
 
     def apply_default_policy(self, agent_mode, apply_list, firewall):
-        LOG.debug('Applying firewall %(fw_id)s for tenant %(tid)s',
-                  {'fw_id': firewall['id'], 'tid': firewall['tenant_id']})
+        LOG.debug('Applying firewall %(fw_id)s for project %(tid)s',
+                  {'fw_id': firewall['id'], 'tid': firewall['project_id']})
         fwid = firewall['id']
         try:
             for ri, router_fw_ports in apply_list:

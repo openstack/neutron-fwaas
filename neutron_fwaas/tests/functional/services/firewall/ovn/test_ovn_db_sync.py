@@ -126,7 +126,6 @@ class BaseTestOvnNbSync(base.TestOVNFunctionalBase):
                 'action': 'allow',
                 'enabled': True,
                 'project_id': self._project_id,
-                'tenant_id': self._project_id,
                 'description': 'test firewall SSH ingress rule',
                 'shared': False,
             }})
@@ -143,7 +142,6 @@ class BaseTestOvnNbSync(base.TestOVNFunctionalBase):
                 'action': 'deny',
                 'enabled': True,
                 'project_id': self._project_id,
-                'tenant_id': self._project_id,
                 'description': 'test firewall ICMP egress rule',
                 'shared': False,
             }})
@@ -151,7 +149,6 @@ class BaseTestOvnNbSync(base.TestOVNFunctionalBase):
         firewall_ingress_policy = self.fwaas_plugin.create_firewall_policy(
             self.context,
             {'firewall_policy': {
-                'tenant_id': self._project_id,
                 'project_id': self._project_id,
                 'name': 'ingress-test-policy',
                 'description': 'test firewall ingresspolicy',
@@ -162,7 +159,6 @@ class BaseTestOvnNbSync(base.TestOVNFunctionalBase):
         firewall_egress_policy = self.fwaas_plugin.create_firewall_policy(
             self.context,
             {'firewall_policy': {
-                'tenant_id': self._project_id,
                 'project_id': self._project_id,
                 'name': 'ingress-test-policy',
                 'description': 'test firewall egresspolicy',
@@ -174,7 +170,6 @@ class BaseTestOvnNbSync(base.TestOVNFunctionalBase):
         self.fwaas_plugin.create_firewall_group(
             self.context,
             {'firewall_group': {
-                'tenant_id': self._project_id,
                 'project_id': self._project_id,
                 'name': 'test-group',
                 'description': 'test firewall group',
