@@ -434,8 +434,8 @@ class FirewallPluginDb:
 
         # 1. Firewall rule for ingress IPv4 packets (DROP by default)
         in_fwr_v4 = {
-            'description': 'default ingress rule for IPv4',
-            'name': 'default ingress ipv4',
+            'description': const.DEFAULT_FWR_INGRESS_IPV4_DESC,
+            'name': const.DEFAULT_FWR_INGRESS_IPV4,
             'shared': cfg.CONF.default_fwg_rules.shared,
             'protocol': cfg.CONF.default_fwg_rules.protocol,
             'tenant_id': tenant_id,
@@ -448,14 +448,13 @@ class FirewallPluginDb:
             'destination_port':
                 cfg.CONF.default_fwg_rules.ingress_destination_port,
             'destination_ip_address':
-                cfg.CONF.default_fwg_rules.
-                    ingress_destination_ipv4_address,
+                cfg.CONF.default_fwg_rules.ingress_destination_ipv4_address,
         }
 
         # 2. Firewall rule for ingress IPv6 packets (DROP by default)
         in_fwr_v6 = copy.deepcopy(in_fwr_v4)
-        in_fwr_v6['description'] = 'default ingress rule for IPv6'
-        in_fwr_v6['name'] = 'default ingress ipv6'
+        in_fwr_v6['description'] = const.DEFAULT_FWR_INGRESS_IPV6_DESC
+        in_fwr_v6['name'] = const.DEFAULT_FWR_INGRESS_IPV6
         in_fwr_v6['ip_version'] = nl_constants.IP_VERSION_6
         in_fwr_v6['source_ip_address'] = \
             cfg.CONF.default_fwg_rules.ingress_source_ipv6_address
@@ -464,8 +463,8 @@ class FirewallPluginDb:
 
         # 3. Firewall rule for egress IPv4 packets (ALLOW by default)
         eg_fwr_v4 = copy.deepcopy(in_fwr_v4)
-        eg_fwr_v4['description'] = 'default egress rule for IPv4'
-        eg_fwr_v4['name'] = 'default egress ipv4'
+        eg_fwr_v4['description'] = const.DEFAULT_FWR_EGRESS_IPV4_DESC
+        eg_fwr_v4['name'] = const.DEFAULT_FWR_EGRESS_IPV4
         eg_fwr_v4['action'] = cfg.CONF.default_fwg_rules.egress_action
         eg_fwr_v4['source_port'] = \
             cfg.CONF.default_fwg_rules.egress_source_port
@@ -478,8 +477,8 @@ class FirewallPluginDb:
 
         # 4. Firewall rule for egress IPv6 packets (ALLOW by default)
         eg_fwr_v6 = copy.deepcopy(in_fwr_v6)
-        eg_fwr_v6['description'] = 'default egress rule for IPv6'
-        eg_fwr_v6['name'] = 'default egress ipv6'
+        eg_fwr_v6['description'] = const.DEFAULT_FWR_EGRESS_IPV6_DESC
+        eg_fwr_v6['name'] = const.DEFAULT_FWR_EGRESS_IPV6
         eg_fwr_v6['action'] = cfg.CONF.default_fwg_rules.egress_action
         eg_fwr_v6['source_port'] = \
             cfg.CONF.default_fwg_rules.egress_source_port
@@ -615,11 +614,13 @@ class FirewallPluginDb:
         policies = self.get_policies_with_rule(context, id) or None
         return self._make_firewall_rule_dict(fwr, fields, policies=policies)
 
-    @db_api.CONTEXT_READER
     def get_firewall_rules(self, context, filters=None, fields=None):
-        return model_query.get_collection(
-            context, FirewallRuleV2, self._make_firewall_rule_dict,
-            filters=filters, fields=fields)
+        project_id = filters.get('project_id', [None])[0] if filters else None
+        self._ensure_default_firewall_group(context, project_id)
+        with db_api.CONTEXT_READER.using(context):
+            return model_query.get_collection(
+                context, FirewallRuleV2, self._make_firewall_rule_dict,
+                filters=filters, fields=fields)
 
     def _get_rules_in_policy(self, context, fwpid):
         """Gets rules in a firewall policy"""
@@ -839,11 +840,13 @@ class FirewallPluginDb:
         fwp = self._get_firewall_policy(context, id)
         return self._make_firewall_policy_dict(fwp, fields)
 
-    @db_api.CONTEXT_READER
     def get_firewall_policies(self, context, filters=None, fields=None):
-        return model_query.get_collection(
-            context, FirewallPolicy, self._make_firewall_policy_dict,
-            filters=filters, fields=fields)
+        project_id = filters.get('project_id', [None])[0] if filters else None
+        self._ensure_default_firewall_group(context, project_id)
+        with db_api.CONTEXT_READER.using(context):
+            return model_query.get_collection(
+                context, FirewallPolicy, self._make_firewall_policy_dict,
+                filters=filters, fields=fields)
 
     def _set_ports_for_firewall_group(self, context, fwg_db, fwg):
         port_id_list = fwg['ports']
@@ -919,6 +922,9 @@ class FirewallPluginDb:
 
         Returns the default firewall group id for a given tenant.
         """
+        tenant_id = tenant_id or context.project_id
+        if not tenant_id:
+            return
         exists = self._get_default_fwg_id(context, tenant_id)
         if exists:
             return exists
@@ -1122,10 +1128,8 @@ class FirewallPluginDb:
         return self._make_firewall_group_dict(fw, fields)
 
     def get_firewall_groups(self, context, filters=None, fields=None):
-        if context.tenant_id:
-            tenant_id = filters.get('tenant_id') if filters else None
-            tenant_id = tenant_id[0] if tenant_id else context.tenant_id
-            self._ensure_default_firewall_group(context, tenant_id)
+        tenant_id = filters.get('tenant_id', [None])[0] if filters else None
+        self._ensure_default_firewall_group(context, tenant_id)
         with db_api.CONTEXT_READER.using(context):
             return model_query.get_collection(
                 context, FirewallGroup, self._make_firewall_group_dict,
