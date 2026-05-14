@@ -19,6 +19,7 @@ import testtools
 import webob.exc
 
 from neutron_lib import constants as nl_constants
+from neutron_lib import context
 from neutron_lib.exceptions import firewall_v2 as f_exc
 from oslo_config import cfg
 from oslo_utils import uuidutils
@@ -934,26 +935,26 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
         })
 
         expected = [dict(ingress_base, **{
-            'name': 'default ingress ipv4',
-            'description': 'default ingress rule for IPv4',
+            'name': constants.DEFAULT_FWR_INGRESS_IPV4,
+            'description': constants.DEFAULT_FWR_INGRESS_IPV4_DESC,
             'ip_version': 4,
             'source_ip_address': '1.2.3.4',
             'destination_ip_address': '251.252.253.254',
         }), dict(ingress_base, **{
-            'name': 'default ingress ipv6',
-            'description': 'default ingress rule for IPv6',
+            'name': constants.DEFAULT_FWR_INGRESS_IPV6,
+            'description': constants.DEFAULT_FWR_INGRESS_IPV6_DESC,
             'ip_version': 6,
             'source_ip_address': '1:2:3:4:5:6:7:8',
             'destination_ip_address': '88:99:aa:bb:cc:dd:ee:ff',
         }), dict(egress_base, **{
-            'name': 'default egress ipv4',
-            'description': 'default egress rule for IPv4',
+            'name': constants.DEFAULT_FWR_EGRESS_IPV4,
+            'description': constants.DEFAULT_FWR_EGRESS_IPV4_DESC,
             'ip_version': 4,
             'source_ip_address': '4.3.2.1',
             'destination_ip_address': '255.254.253.252',
         }), dict(egress_base, **{
-            'name': 'default egress ipv6',
-            'description': 'default egress rule for IPv6',
+            'name': constants.DEFAULT_FWR_EGRESS_IPV6,
+            'description': constants.DEFAULT_FWR_EGRESS_IPV6_DESC,
             'ip_version': 6,
             'source_ip_address': '8:7:6:5:4:3:2:1',
             'destination_ip_address': 'ff:ee:dd:cc:bb:aa:99:88',
@@ -978,14 +979,18 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
                 "keys": ["description", "action", "protocol", "enabled",
                          "ip_version", "name"],
                 "data": [
-                    ("default ingress rule for IPv4", "deny", None, True, 4,
-                     "default ingress ipv4"),
-                    ("default egress rule for IPv4", "allow", None, True, 4,
-                     "default egress ipv4"),
-                    ("default ingress rule for IPv6", "deny", None, True, 6,
-                     "default ingress ipv6"),
-                    ("default egress rule for IPv6", "allow", None, True, 6,
-                     "default egress ipv6")]
+                    (constants.DEFAULT_FWR_INGRESS_IPV4_DESC,
+                     "deny", None, True, 4,
+                     constants.DEFAULT_FWR_INGRESS_IPV4),
+                    (constants.DEFAULT_FWR_EGRESS_IPV4_DESC,
+                     "allow", None, True, 4,
+                     constants.DEFAULT_FWR_EGRESS_IPV4),
+                    (constants.DEFAULT_FWR_INGRESS_IPV6_DESC,
+                     "deny", None, True, 6,
+                     constants.DEFAULT_FWR_INGRESS_IPV6),
+                    (constants.DEFAULT_FWR_EGRESS_IPV6_DESC,
+                     "allow", None, True, 6,
+                     constants.DEFAULT_FWR_EGRESS_IPV6)]
             }
         }
 
@@ -1813,3 +1818,75 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
             default_fwg = self.plugin.get_firewall_group(ctx,
                                                          default_fwg['id'])
             self.assertEqual(sorted(port_ids), sorted(default_fwg['ports']))
+
+    def test_list_firewall_rules_creates_default_fwg(self):
+        """Listing rules before groups triggers default rule creation.
+
+        Regression test for bug/2146805: GET /v2.0/rules must call
+        _ensure_default_firewall_group so the default rules exist even
+        if GET /v2.0/groups was never called.
+        Repeated calls must not create duplicates (idempotency).
+        """
+        ctx = self._get_nonadmin_context()
+        rules = self._list_req('firewall_rules', ctx=ctx)
+        rule_names = {r['name'] for r in rules}
+        self.assertIn(constants.DEFAULT_FWR_INGRESS_IPV4, rule_names)
+        self.assertIn(constants.DEFAULT_FWR_INGRESS_IPV6, rule_names)
+        self.assertIn(constants.DEFAULT_FWR_EGRESS_IPV4, rule_names)
+        self.assertIn(constants.DEFAULT_FWR_EGRESS_IPV6, rule_names)
+        # Second call must return the same set – no duplicates created
+        rules_again = self._list_req('firewall_rules', ctx=ctx)
+        self.assertEqual(rule_names, {r['name'] for r in rules_again})
+        self.assertEqual(len(rules), len(rules_again))
+
+    def test_list_firewall_policies_creates_default_fwg(self):
+        """Listing policies before groups triggers default policy creation.
+
+        Regression test for bug/2146805: GET /v2.0/policies must call
+        _ensure_default_firewall_group so the default ingress and egress
+        policies exist even if GET /v2.0/groups was never called.
+        Repeated calls must not create duplicates (idempotency).
+        """
+        ctx = self._get_nonadmin_context()
+        policies = self._list_req('firewall_policies', ctx=ctx)
+        policy_names = {p['name'] for p in policies}
+        self.assertIn(constants.DEFAULT_FWP_INGRESS, policy_names)
+        self.assertIn(constants.DEFAULT_FWP_EGRESS, policy_names)
+        # Second call must return the same set – no duplicates created
+        policies_again = self._list_req('firewall_policies', ctx=ctx)
+        self.assertEqual(
+            policy_names, {p['name'] for p in policies_again})
+        self.assertEqual(len(policies), len(policies_again))
+
+    def test_list_rules_without_filters_uses_context_project_id(self):
+        """No project_id filter falls back to context.project_id.
+
+        When get_firewall_rules is called with filters=None the extracted
+        project_id is None, so _ensure_default_firewall_group must fall
+        back to context.project_id to create the default rules.
+        Repeated calls must remain idempotent.
+        """
+        ctx = self._get_nonadmin_context()
+        rules = self.db.get_firewall_rules(ctx, filters=None)
+        rule_names = {r['name'] for r in rules}
+        self.assertIn(constants.DEFAULT_FWR_INGRESS_IPV4, rule_names)
+        self.assertIn(constants.DEFAULT_FWR_EGRESS_IPV4, rule_names)
+        # Call again – must return the same rules, not grow
+        rules_again = self.db.get_firewall_rules(ctx, filters=None)
+        self.assertEqual(rule_names, {r['name'] for r in rules_again})
+        self.assertEqual(len(rules), len(rules_again))
+
+    def test_ensure_default_fwg_no_project_id(self):
+        """Early return when tenant_id and context.project_id are both empty.
+
+        The guard added in _ensure_default_firewall_group must prevent any
+        DB access when neither argument nor context carries a project id.
+        """
+        ctx = context.Context(
+            user_id='test', project_id=None, is_admin=True)
+        with mock.patch.object(
+                self.db, '_get_default_fwg_id') as mock_get:
+            result = self.db._ensure_default_firewall_group(ctx, None)
+        self.assertIsNone(result)
+        # The early-return guard must have fired before any DB lookup
+        mock_get.assert_not_called()

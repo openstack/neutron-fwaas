@@ -26,6 +26,16 @@ DEFAULT_FWG = 'default'
 DEFAULT_FWP_INGRESS = 'default ingress'
 DEFAULT_FWP_EGRESS = 'default egress'
 
+DEFAULT_FWR_INGRESS_IPV4 = 'default ingress ipv4'
+DEFAULT_FWR_INGRESS_IPV6 = 'default ingress ipv6'
+DEFAULT_FWR_EGRESS_IPV4 = 'default egress ipv4'
+DEFAULT_FWR_EGRESS_IPV6 = 'default egress ipv6'
+
+DEFAULT_FWR_INGRESS_IPV4_DESC = 'default ingress rule for IPv4'
+DEFAULT_FWR_INGRESS_IPV6_DESC = 'default ingress rule for IPv6'
+DEFAULT_FWR_EGRESS_IPV4_DESC = 'default egress rule for IPv4'
+DEFAULT_FWR_EGRESS_IPV6_DESC = 'default egress rule for IPv6'
+
 # Firewall group events for agent-side
 DELETE_FWG = 'delete_firewall_group'
 UPDATE_FWG = 'update_firewall_group'
