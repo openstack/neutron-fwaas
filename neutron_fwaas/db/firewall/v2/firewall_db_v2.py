@@ -17,15 +17,11 @@ import copy
 
 import netaddr
 
-from neutron_lib.api.definitions import constants as api_const
 from neutron_lib import constants as nl_constants
 from neutron_lib import context as lib_context
 from neutron_lib.db import api as db_api
-from neutron_lib.db import constants as db_constants
-from neutron_lib.db import model_base
 from neutron_lib.db import model_query
 from neutron_lib.db import resource_extend
-from neutron_lib.db import standard_attr
 from neutron_lib.db import utils as db_utils
 from neutron_lib import exceptions
 from neutron_lib.exceptions import firewall_v2 as f_exc
@@ -33,13 +29,11 @@ from oslo_config import cfg
 from oslo_db import exception as db_exc
 from oslo_log import log as logging
 from oslo_utils import uuidutils
-import sqlalchemy as sa
-from sqlalchemy.ext.orderinglist import ordering_list
 from sqlalchemy import or_
-from sqlalchemy import orm
 from sqlalchemy.orm import exc
 
 from neutron_fwaas.common import fwaas_constants as const
+from neutron_fwaas.db.firewall.v2 import models
 
 
 LOG = logging.getLogger(__name__)
@@ -60,121 +54,12 @@ class FirewallDefaultObjectUpdateRestricted(FirewallDefaultParameterExists):
                "'%(resource_id)s' of type %(resource_type)s.")
 
 
-class HasName:
-    name = sa.Column(sa.String(db_constants.NAME_FIELD_SIZE))
-
-
-class HasDescription:
-    description = sa.Column(
-        sa.String(db_constants.LONG_DESCRIPTION_FIELD_SIZE))
-
-
-class FirewallRuleV2(standard_attr.HasStandardAttributes, model_base.BASEV2,
-                     model_base.HasId, HasName, model_base.HasProject):
-    __tablename__ = "firewall_rules_v2"
-    shared = sa.Column(sa.Boolean)
-    protocol = sa.Column(sa.String(40))
-    ip_version = sa.Column(sa.Integer)
-    source_ip_address = sa.Column(sa.String(46))
-    destination_ip_address = sa.Column(sa.String(46))
-    source_port_range_min = sa.Column(sa.Integer)
-    source_port_range_max = sa.Column(sa.Integer)
-    destination_port_range_min = sa.Column(sa.Integer)
-    destination_port_range_max = sa.Column(sa.Integer)
-    action = sa.Column(sa.Enum(*api_const.FW_VALID_ACTION_VALUES,
-                               name='firewallrules_action'))
-    enabled = sa.Column(sa.Boolean)
-    api_collections = ['firewall_rules']
-    collection_resource_map = {"firewall_rules": "firewall_rule"}
-    tag_support = True
-
-
-class FirewallGroup(standard_attr.HasStandardAttributes, model_base.BASEV2,
-                    model_base.HasId, HasName, model_base.HasProject):
-    __tablename__ = 'firewall_groups_v2'
-    port_associations = orm.relationship(
-        'FirewallGroupPortAssociation',
-        backref=orm.backref('firewall_group_port_associations_v2',
-                            cascade='all, delete'))
-    name = sa.Column(sa.String(db_constants.NAME_FIELD_SIZE))
-    ingress_firewall_policy_id = sa.Column(
-        sa.String(db_constants.UUID_FIELD_SIZE),
-        sa.ForeignKey('firewall_policies_v2.id'))
-    egress_firewall_policy_id = sa.Column(
-        sa.String(db_constants.UUID_FIELD_SIZE),
-        sa.ForeignKey('firewall_policies_v2.id'))
-    admin_state_up = sa.Column(sa.Boolean)
-    status = sa.Column(sa.String(db_constants.STATUS_FIELD_SIZE))
-    shared = sa.Column(sa.Boolean)
-    api_collections = ['firewall_groups']
-    collection_resource_map = {"firewall_groups": "firewall_group"}
-    tag_support = True
-
-
-class DefaultFirewallGroup(model_base.BASEV2, model_base.HasProjectPrimaryKey):
-    __tablename__ = "default_firewall_groups"
-    firewall_group_id = sa.Column(sa.String(db_constants.UUID_FIELD_SIZE),
-                                  sa.ForeignKey('firewall_groups_v2.id',
-                                                ondelete="CASCADE"),
-                                  nullable=False)
-    firewall_group = orm.relationship(
-        FirewallGroup, lazy='joined',
-        backref=orm.backref('default_firewall_group', cascade='all,delete'),
-        primaryjoin="FirewallGroup.id==DefaultFirewallGroup.firewall_group_id",
-    )
-
-
-class FirewallGroupPortAssociation(model_base.BASEV2):
-    __tablename__ = 'firewall_group_port_associations_v2'
-    firewall_group_id = sa.Column(sa.String(db_constants.UUID_FIELD_SIZE),
-                                  sa.ForeignKey('firewall_groups_v2.id',
-                                                ondelete="CASCADE"),
-                                  primary_key=True)
-    port_id = sa.Column(sa.String(db_constants.UUID_FIELD_SIZE),
-                        sa.ForeignKey('ports.id', ondelete="CASCADE"),
-                        unique=True,
-                        primary_key=True)
-
-
-class FirewallPolicyRuleAssociation(model_base.BASEV2):
-
-    """Tracks FW Policy and Rule(s) Association"""
-
-    __tablename__ = 'firewall_policy_rule_associations_v2'
-
-    firewall_policy_id = sa.Column(sa.String(db_constants.UUID_FIELD_SIZE),
-                                   sa.ForeignKey('firewall_policies_v2.id',
-                                                 ondelete="CASCADE"),
-                                   primary_key=True)
-    firewall_rule_id = sa.Column(sa.String(db_constants.UUID_FIELD_SIZE),
-                                 sa.ForeignKey('firewall_rules_v2.id',
-                                               ondelete="CASCADE"),
-                                 primary_key=True)
-    position = sa.Column(sa.Integer)
-
-
-class FirewallPolicy(standard_attr.HasStandardAttributes, model_base.BASEV2,
-                     model_base.HasId, HasName, model_base.HasProject):
-    __tablename__ = 'firewall_policies_v2'
-    name = sa.Column(sa.String(db_constants.NAME_FIELD_SIZE))
-    rule_count = sa.Column(sa.Integer)
-    audited = sa.Column(sa.Boolean)
-    rule_associations = orm.relationship(
-        FirewallPolicyRuleAssociation,
-        backref=orm.backref('firewall_policies_v2', cascade='all, delete'),
-        order_by='FirewallPolicyRuleAssociation.position',
-        collection_class=ordering_list('position', count_from=1))
-    shared = sa.Column(sa.Boolean)
-    api_collections = ['firewall_policies']
-    collection_resource_map = {"firewall_policies": "firewall_policy"}
-    tag_support = True
-
-
 def _list_firewall_groups_result_filter_hook(query, filters):
     values = filters and filters.get('ports', [])
     if values:
-        query = query.join(FirewallGroupPortAssociation)
-        query = query.filter(FirewallGroupPortAssociation.port_id.in_(values))
+        query = query.join(models.FirewallGroupPortAssociation)
+        query = query.filter(
+            models.FirewallGroupPortAssociation.port_id.in_(values))
 
     return query
 
@@ -182,9 +67,9 @@ def _list_firewall_groups_result_filter_hook(query, filters):
 def _list_firewall_policies_result_filter_hook(query, filters):
     values = filters and filters.get('firewall_rules', [])
     if values:
-        query = query.join(FirewallPolicyRuleAssociation)
+        query = query.join(models.FirewallPolicyRuleAssociation)
         query = query.filter(
-            FirewallPolicyRuleAssociation.firewall_rule_id.in_(values))
+            models.FirewallPolicyRuleAssociation.firewall_rule_id.in_(values))
 
     return query
 
@@ -193,14 +78,14 @@ class FirewallPluginDb:
 
     def __new__(cls, *args, **kwargs):
         model_query.register_hook(
-            FirewallGroup,
+            models.FirewallGroup,
             "firewall_group_v2_filter_by_port_association",
             query_hook=None,
             filter_hook=None,
             result_filters=_list_firewall_groups_result_filter_hook)
 
         model_query.register_hook(
-            FirewallPolicy,
+            models.FirewallPolicy,
             "firewall_policy_v2_filter_by_firewall_rule_association",
             query_hook=None,
             filter_hook=None,
@@ -210,21 +95,21 @@ class FirewallPluginDb:
     @db_api.CONTEXT_READER
     def _get_firewall_group(self, context, id):
         try:
-            return model_query.get_by_id(context, FirewallGroup, id)
+            return model_query.get_by_id(context, models.FirewallGroup, id)
         except exc.NoResultFound:
             raise f_exc.FirewallGroupNotFound(firewall_id=id)
 
     @db_api.CONTEXT_READER
     def _get_firewall_policy(self, context, id):
         try:
-            return model_query.get_by_id(context, FirewallPolicy, id)
+            return model_query.get_by_id(context, models.FirewallPolicy, id)
         except exc.NoResultFound:
             raise f_exc.FirewallPolicyNotFound(firewall_policy_id=id)
 
     @db_api.CONTEXT_READER
     def _get_firewall_rule(self, context, id):
         try:
-            return model_query.get_by_id(context, FirewallRuleV2, id)
+            return model_query.get_by_id(context, models.FirewallRuleV2, id)
         except exc.NoResultFound:
             raise f_exc.FirewallRuleNotFound(firewall_rule_id=id)
 
@@ -346,10 +231,10 @@ class FirewallPluginDb:
         return db_utils.resource_fields(res, fields)
 
     def _get_policy_ordered_rules(self, context, policy_id):
-        query = (context.session.query(FirewallRuleV2)
-                 .join(FirewallPolicyRuleAssociation)
+        query = (context.session.query(models.FirewallRuleV2)
+                 .join(models.FirewallPolicyRuleAssociation)
                  .filter_by(firewall_policy_id=policy_id)
-                 .order_by(FirewallPolicyRuleAssociation.position))
+                 .order_by(models.FirewallPolicyRuleAssociation.position))
         return [self._make_firewall_rule_dict(rule) for rule in query]
 
     def make_firewall_group_dict_with_rules(self, context, firewall_group_id):
@@ -380,14 +265,14 @@ class FirewallPluginDb:
                                  firewall_rule_id, position, association_db):
         with db_api.CONTEXT_READER.using(context):
             fwp_query = context.session.query(
-                FirewallPolicy).with_for_update()
+                models.FirewallPolicy).with_for_update()
             fwp_db = fwp_query.filter_by(id=firewall_policy_id).one()
             if position:
                 # Note that although position numbering starts at 1,
                 # internal ordering of the list starts at 0, so we compensate.
                 fwp_db.rule_associations.insert(
                     position - 1,
-                    FirewallPolicyRuleAssociation(
+                    models.FirewallPolicyRuleAssociation(
                         firewall_rule_id=firewall_rule_id))
             else:
                 fwp_db.rule_associations.remove(association_db)
@@ -398,7 +283,8 @@ class FirewallPluginDb:
 
     def _get_policy_rule_association_query(self, context, firewall_policy_id,
                                            firewall_rule_id):
-        fwpra_query = context.session.query(FirewallPolicyRuleAssociation)
+        fwpra_query = context.session.query(
+            models.FirewallPolicyRuleAssociation)
         return fwpra_query.filter_by(firewall_policy_id=firewall_policy_id,
                                      firewall_rule_id=firewall_rule_id)
 
@@ -507,7 +393,7 @@ class FirewallPluginDb:
         dst_port_min, dst_port_max = self._get_min_max_ports_from_range(
             fwr['destination_port'])
         with db_api.CONTEXT_WRITER.using(context):
-            fwr_db = FirewallRuleV2(
+            fwr_db = models.FirewallRuleV2(
                 id=uuidutils.generate_uuid(),
                 project_id=fwr['project_id'],
                 name=fwr['name'],
@@ -620,14 +506,14 @@ class FirewallPluginDb:
         self._ensure_default_firewall_group(context, project_id)
         with db_api.CONTEXT_READER.using(context):
             return model_query.get_collection(
-                context, FirewallRuleV2, self._make_firewall_rule_dict,
+                context, models.FirewallRuleV2, self._make_firewall_rule_dict,
                 filters=filters, fields=fields)
 
     def _get_rules_in_policy(self, context, fwpid):
         """Gets rules in a firewall policy"""
         with db_api.CONTEXT_READER.using(context):
             fw_pol_rule_qry = context.session.query(
-                FirewallPolicyRuleAssociation).filter_by(
+                models.FirewallPolicyRuleAssociation).filter_by(
                 firewall_policy_id=fwpid)
             fwp_rules = [entry.firewall_rule_id for entry in fw_pol_rule_qry]
         return fwp_rules
@@ -636,7 +522,7 @@ class FirewallPluginDb:
         """Gets rules in a firewall policy"""
         with db_api.CONTEXT_READER.using(context):
             fw_pol_rule_qry = context.session.query(
-                FirewallPolicyRuleAssociation).filter_by(
+                models.FirewallPolicyRuleAssociation).filter_by(
                 firewall_rule_id=fwrid)
             fwps = [entry.firewall_policy_id for entry in fw_pol_rule_qry]
         return fwps
@@ -651,7 +537,7 @@ class FirewallPluginDb:
         position = 0
         with db_api.CONTEXT_WRITER.using(context):
             for rule_id in rule_id_list:
-                fw_pol_rul_db = FirewallPolicyRuleAssociation(
+                fw_pol_rul_db = models.FirewallPolicyRuleAssociation(
                     firewall_policy_id=fwp_db['id'],
                     firewall_rule_id=rule_id,
                     position=position)
@@ -662,7 +548,7 @@ class FirewallPluginDb:
                                          rule_id_list, filters):
         with db_api.CONTEXT_READER.using(context):
             rules_in_fwr_db = model_query.get_collection_query(
-                context, FirewallRuleV2, filters=filters)
+                context, models.FirewallRuleV2, filters=filters)
         rules_dict = {fwr_db['id']: fwr_db for fwr_db in rules_in_fwr_db}
         for fwrule_id in rule_id_list:
             if fwrule_id not in rules_dict:
@@ -702,11 +588,11 @@ class FirewallPluginDb:
     def get_fwgs_with_policy(self, context, fwp_id):
         with db_api.CONTEXT_READER.using(context):
             fwg_ing_pol_qry = context.session.query(
-                FirewallGroup).filter_by(
+                models.FirewallGroup).filter_by(
                 ingress_firewall_policy_id=fwp_id)
             ing_fwg_ids = [entry.id for entry in fwg_ing_pol_qry]
             fwg_eg_pol_qry = context.session.query(
-                FirewallGroup).filter_by(
+                models.FirewallGroup).filter_by(
                 egress_firewall_policy_id=fwp_id)
             eg_fwg_ids = [entry.id for entry in fwg_eg_pol_qry]
         return ing_fwg_ids, eg_fwg_ids
@@ -715,16 +601,17 @@ class FirewallPluginDb:
                                                            fwp_id,
                                                            fwp_project_id):
         with db_api.CONTEXT_READER.using(context):
-            fwg_with_fwp_id_db = context.session.query(FirewallGroup).filter(
-                or_(FirewallGroup.ingress_firewall_policy_id == fwp_id,
-                    FirewallGroup.egress_firewall_policy_id == fwp_id))
+            fwg_with_fwp_id_db = context.session.query(
+                models.FirewallGroup).filter(or_(
+                    models.FirewallGroup.ingress_firewall_policy_id == fwp_id,
+                    models.FirewallGroup.egress_firewall_policy_id == fwp_id))
         for entry in fwg_with_fwp_id_db:
             if entry.project_id != fwp_project_id:
                 raise f_exc.FirewallPolicyInUse(
                             firewall_policy_id=fwp_id)
 
     def _delete_all_rules_from_policy(self, context, fwp_db):
-        """Deletes all FirewallPolicyRuleAssociation objects
+        """Deletes all models.FirewallPolicyRuleAssociation objects
 
         fwp_db is an DB dict representing firewall policy.
         Returns a dictionary with updated rule_associations.
@@ -759,7 +646,7 @@ class FirewallPluginDb:
             filters['firewall_policy_id'] = [fwp_db['id']]
             rules_in_fpol_rul_db = model_query.get_collection_query(
                 context,
-                FirewallPolicyRuleAssociation,
+                models.FirewallPolicyRuleAssociation,
                 filters=filters)
             rules_dict = {fpol_rul_db['firewall_rule_id']: fpol_rul_db
                           for fpol_rul_db in rules_in_fpol_rul_db}
@@ -787,7 +674,7 @@ class FirewallPluginDb:
     def _do_create_firewall_policy(self, context, firewall_policy):
         fwp = firewall_policy
         with db_api.CONTEXT_WRITER.using(context):
-            fwp_db = FirewallPolicy(
+            fwp_db = models.FirewallPolicy(
                 id=uuidutils.generate_uuid(),
                 project_id=fwp['project_id'],
                 name=fwp['name'],
@@ -828,7 +715,7 @@ class FirewallPluginDb:
         with db_api.CONTEXT_WRITER.using(context):
             fwp_db = self._get_firewall_policy(context, id)
             # check if policy in use
-            qry = context.session.query(FirewallGroup)
+            qry = context.session.query(models.FirewallGroup)
             if qry.filter_by(ingress_firewall_policy_id=id).first():
                 raise f_exc.FirewallPolicyInUse(firewall_policy_id=id)
             elif qry.filter_by(egress_firewall_policy_id=id).first():
@@ -846,7 +733,8 @@ class FirewallPluginDb:
         self._ensure_default_firewall_group(context, project_id)
         with db_api.CONTEXT_READER.using(context):
             return model_query.get_collection(
-                context, FirewallPolicy, self._make_firewall_policy_dict,
+                context, models.FirewallPolicy,
+                self._make_firewall_policy_dict,
                 filters=filters, fields=fields)
 
     def _set_ports_for_firewall_group(self, context, fwg_db, fwg):
@@ -857,7 +745,7 @@ class FirewallPluginDb:
         exc_ports = []
         for port_id in port_id_list:
             try:
-                fwg_port_db = FirewallGroupPortAssociation(
+                fwg_port_db = models.FirewallGroupPortAssociation(
                     firewall_group_id=fwg_db['id'],
                     port_id=port_id)
                 context.session.add(fwg_port_db)
@@ -870,7 +758,7 @@ class FirewallPluginDb:
         """Get the Ports associated with the  firewall group."""
         with db_api.CONTEXT_READER.using(context):
             fw_group_port_qry = context.session.query(
-                FirewallGroupPortAssociation)
+                models.FirewallGroupPortAssociation)
             fw_group_port_rows = fw_group_port_qry.filter_by(
                 firewall_group_id=firewall_group_id)
             fw_ports = [entry.port_id for entry in fw_group_port_rows]
@@ -880,7 +768,7 @@ class FirewallPluginDb:
         """Delete the Ports associated with the  firewall group."""
         with db_api.CONTEXT_WRITER.using(context):
             fw_group_port_qry = context.session.query(
-                FirewallGroupPortAssociation)
+                models.FirewallGroupPortAssociation)
             fw_group_port_qry.filter_by(
                 firewall_group_id=firewall_group_id).delete()
         return
@@ -889,7 +777,7 @@ class FirewallPluginDb:
     def _get_default_fwg_id(self, context, project_id):
         """Returns an id of default firewall group for given project or None"""
         default_fwg = model_query.query_with_hooks(
-            context.elevated(), FirewallGroup).filter_by(
+            context.elevated(), models.FirewallGroup).filter_by(
             project_id=project_id, name=const.DEFAULT_FWG).first()
         if default_fwg:
             return default_fwg.id
@@ -899,7 +787,7 @@ class FirewallPluginDb:
         """Return a firewall group ID that is attached to a given port"""
         with db_api.CONTEXT_READER.using(context):
             fwg_port = model_query.query_with_hooks(
-                context, FirewallGroupPortAssociation).\
+                context, models.FirewallGroupPortAssociation).\
                 filter_by(port_id=port_id).first()
         if fwg_port:
             return fwg_port.firewall_group_id
@@ -908,12 +796,13 @@ class FirewallPluginDb:
     def get_fwg_ports_in_project(self, context, project_id):
         """Return a list of ports under a given project"""
         try:
-            fwg_id = FirewallGroupPortAssociation.firewall_group_id
+            fwg_id = models.FirewallGroupPortAssociation.firewall_group_id
             with db_api.CONTEXT_READER.using(context):
                 port_qry = context.session.query(
-                    FirewallGroupPortAssociation.port_id).join(
-                    FirewallGroup, FirewallGroup.id == fwg_id).filter(
-                    FirewallGroup.project_id == project_id).all()
+                    models.FirewallGroupPortAssociation.port_id
+                ).join(
+                    models.FirewallGroup, models.FirewallGroup.id == fwg_id
+                ).filter(models.FirewallGroup.project_id == project_id).all()
                 return list({port for (port,) in port_qry})
         except exc.NoResultFound:
             return []
@@ -965,7 +854,7 @@ class FirewallPluginDb:
                 }
                 fwg_db = self._create_firewall_group(
                     ctx, fwg, default_fwg=True)
-                ctx.session.add(DefaultFirewallGroup(
+                ctx.session.add(models.DefaultFirewallGroup(
                     firewall_group_id=fwg_db['id'],
                     project_id=project_id))
                 # NOTE(slaweq): this commit is here so that when e.g.
@@ -1007,7 +896,7 @@ class FirewallPluginDb:
             self._ensure_default_firewall_group(context, project_id)
 
         with db_api.CONTEXT_WRITER.using(context):
-            fwg_db = FirewallGroup(
+            fwg_db = models.FirewallGroup(
                 id=uuidutils.generate_uuid(),
                 project_id=project_id,
                 name=fwg['name'],
@@ -1051,7 +940,8 @@ class FirewallPluginDb:
             # If fwg is empty, skip updating
             if fwg:
                 fwg_db.update(
-                    db_utils.filter_non_model_columns(fwg, FirewallGroup))
+                    db_utils.filter_non_model_columns(
+                        fwg, models.FirewallGroup))
         return self.get_firewall_group(context, id)
 
     def update_firewall_group_status(self, context, id, status, not_in=None):
@@ -1062,9 +952,9 @@ class FirewallPluginDb:
         # filter in_ wants iterable objects, None isn't.
         not_in = not_in or []
         with db_api.CONTEXT_WRITER.using(context):
-            return (context.session.query(FirewallGroup).
-                    filter(FirewallGroup.id == id).
-                    filter(~FirewallGroup.status.in_(not_in)).
+            return (context.session.query(models.FirewallGroup).
+                    filter(models.FirewallGroup.id == id).
+                    filter(~models.FirewallGroup.status.in_(not_in)).
                     update({'status': status}, synchronize_session=False))
 
     def delete_firewall_group(self, context, id):
@@ -1085,7 +975,7 @@ class FirewallPluginDb:
                     # its associated Rules and policies would also be deleted.
                     # Delete fwg first and then associated policies
                     context.session.query(
-                        FirewallGroup).filter_by(id=id).delete()
+                        models.FirewallGroup).filter_by(id=id).delete()
                     fwp = [fwg_db['ingress_firewall_policy_id'],
                            fwg_db['egress_firewall_policy_id']]
                     for fwp_id in fwp:
@@ -1095,7 +985,7 @@ class FirewallPluginDb:
                     raise f_exc.FirewallGroupCannotRemoveDefault()
             else:
                 context.session.query(
-                    FirewallGroup).filter_by(id=id).delete()
+                    models.FirewallGroup).filter_by(id=id).delete()
 
     def _ensure_not_default_resource(self, resource_dict, r_type, action=None):
         """Checks that a resource is not default by checking its name
@@ -1133,7 +1023,7 @@ class FirewallPluginDb:
         self._ensure_default_firewall_group(context, project_id)
         with db_api.CONTEXT_READER.using(context):
             return model_query.get_collection(
-                context, FirewallGroup, self._make_firewall_group_dict,
+                context, models.FirewallGroup, self._make_firewall_group_dict,
                 filters=filters, fields=fields)
 
 

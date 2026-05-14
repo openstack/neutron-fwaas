@@ -26,6 +26,7 @@ from oslo_log import log as logging
 
 from neutron_fwaas.common import fwaas_constants as const
 from neutron_fwaas.db.firewall.v2 import firewall_db_v2
+from neutron_fwaas.db.firewall.v2 import models
 
 
 LOG = logging.getLogger(__name__)
@@ -153,7 +154,7 @@ class FirewallDriverDBMixin(FirewallDriver, metaclass=abc.ABCMeta):
             firewall_group = self.firewall_db.create_firewall_group(
                 context, firewall_group)
             self.create_firewall_group_precommit(context, firewall_group)
-            self._update_resource_status(context, firewall_db_v2.FirewallGroup,
+            self._update_resource_status(context, models.FirewallGroup,
                                          firewall_group)
         self.create_firewall_group_postcommit(context, firewall_group)
 

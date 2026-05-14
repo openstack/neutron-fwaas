@@ -10,8 +10,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from neutron_fwaas.db.firewall.v2 import firewall_db_v2
+from neutron_fwaas.db.firewall.v2 import models
 
-FIREWALL_GROUP = firewall_db_v2.FirewallGroup
-FIREWALL_POLICY = firewall_db_v2.FirewallPolicy
-FIREWALL_RULE = firewall_db_v2.FirewallRuleV2
+FIREWALL_GROUP = models.FirewallGroup
+FIREWALL_POLICY = models.FirewallPolicy
+FIREWALL_RULE = models.FirewallRuleV2

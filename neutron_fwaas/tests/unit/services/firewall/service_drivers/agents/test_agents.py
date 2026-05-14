@@ -25,7 +25,7 @@ from neutron_lib.exceptions import firewall_v2 as f_exc
 from neutron_lib.plugins import directory
 from oslo_config import cfg
 
-from neutron_fwaas.db.firewall.v2.firewall_db_v2 import FirewallGroup
+from neutron_fwaas.db.firewall.v2.models import FirewallGroup
 from neutron_fwaas.services.firewall.service_drivers.agents import agents
 from neutron_fwaas.tests import base
 from neutron_fwaas.tests.unit.services.firewall import test_fwaas_plugin_v2
