@@ -9,14 +9,13 @@ authors = [
     {name = "OpenStack", email = "openstack-discuss@lists.openstack.org"},
 ]
 readme = {file = "README.rst", content-type = "text/x-rst"}
-license = {text = "Apache-2.0"}
+license = "Apache-2.0"
 dynamic = ["version", "dependencies", "optional-dependencies"]
 requires-python = ">=3.10"
 classifiers = [
   "Environment :: OpenStack",
   "Intended Audience :: Information Technology",
   "Intended Audience :: System Administrators",
-  "License :: OSI Approved :: Apache Software License",
   "Operating System :: POSIX :: Linux",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3",
@@ -32,10 +31,8 @@ classifiers = [
 Homepage = "https://docs.openstack.org/neutron-fwaas/latest/"
 Repository = "https://opendev.org/openstack/neutron-fwaas"
 
-[tool.setuptools]
-packages = [
-    "neutron_fwaas"
-]
+[tool.setuptools.packages.find]
+include = ["neutron_fwaas*"]
 
 [tool.setuptools.data-files]
 "etc/neutron/rootwrap.d" = [
