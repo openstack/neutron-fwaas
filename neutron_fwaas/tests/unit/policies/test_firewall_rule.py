@@ -24,11 +24,9 @@ class FirewallRuleAPITestCase(base.PolicyBaseTestCase):
     def setUp(self):
         super().setUp()
         self.target = {
-            'project_id': self.project_id,
-            'tenant_id': self.project_id}
+            'project_id': self.project_id}
         self.alt_target = {
-            'project_id': self.alt_project_id,
-            'tenant_id': self.alt_project_id}
+            'project_id': self.alt_project_id}
 
 
 class SystemAdminTests(FirewallRuleAPITestCase):

@@ -287,7 +287,7 @@ class FirewallPluginDb:
             firewall_rule['destination_port_range_min'],
             firewall_rule['destination_port_range_max'])
         res = {'id': firewall_rule['id'],
-               'tenant_id': firewall_rule['tenant_id'],
+               'project_id': firewall_rule['project_id'],
                'name': firewall_rule['name'],
                'description': firewall_rule['description'],
                'protocol': firewall_rule['protocol'],
@@ -312,7 +312,7 @@ class FirewallPluginDb:
             rule_association.firewall_rule_id
             for rule_association in firewall_policy['rule_associations']]
         res = {'id': firewall_policy['id'],
-               'tenant_id': firewall_policy['tenant_id'],
+               'project_id': firewall_policy['project_id'],
                'name': firewall_policy['name'],
                'description': firewall_policy['description'],
                'audited': firewall_policy['audited'],
@@ -328,7 +328,7 @@ class FirewallPluginDb:
         fwg_ports = [port_assoc.port_id for port_assoc in
                      firewall_group_db.port_associations]
         res = {'id': firewall_group_db['id'],
-               'tenant_id': firewall_group_db['tenant_id'],
+               'project_id': firewall_group_db['project_id'],
                'name': firewall_group_db['name'],
                'description': firewall_group_db['description'],
                'ingress_firewall_policy_id':
@@ -371,10 +371,10 @@ class FirewallPluginDb:
 
     def _check_firewall_rule_conflict(self, fwr_db, fwp_db):
         if not fwr_db['shared']:
-            if fwr_db['tenant_id'] != fwp_db['tenant_id']:
+            if fwr_db['project_id'] != fwp_db['project_id']:
                 raise f_exc.FirewallRuleConflict(
                     firewall_rule_id=fwr_db['id'],
-                    project_id=fwr_db['tenant_id'])
+                    project_id=fwr_db['project_id'])
 
     def _process_rule_for_policy(self, context, firewall_policy_id,
                                  firewall_rule_id, position, association_db):
@@ -429,7 +429,7 @@ class FirewallPluginDb:
                 firewall_rule_id=firewall_rule_id,
                 firewall_policy_id=firewall_policy_id)
 
-    def _create_default_firewall_rules(self, context, tenant_id):
+    def _create_default_firewall_rules(self, context, project_id):
         # NOTE(xgerman) Maybe generating the final set of rules from a
         # configuration file makes sense. Can be done some time later
 
@@ -439,7 +439,7 @@ class FirewallPluginDb:
             'name': 'default ingress ipv4',
             'shared': cfg.CONF.default_fwg_rules.shared,
             'protocol': cfg.CONF.default_fwg_rules.protocol,
-            'tenant_id': tenant_id,
+            'project_id': project_id,
             'ip_version': nl_constants.IP_VERSION_4,
             'action': cfg.CONF.default_fwg_rules.ingress_action,
             'enabled': cfg.CONF.default_fwg_rules.enabled,
@@ -510,7 +510,7 @@ class FirewallPluginDb:
         with db_api.CONTEXT_WRITER.using(context):
             fwr_db = FirewallRuleV2(
                 id=uuidutils.generate_uuid(),
-                tenant_id=fwr['tenant_id'],
+                project_id=fwr['project_id'],
                 name=fwr['name'],
                 description=fwr['description'],
                 protocol=fwr['protocol'],
@@ -681,11 +681,11 @@ class FirewallPluginDb:
                 # the policy is not shared, the rule and policy should be in
                 # the same project if the rule is not shared.
                 if not rules_dict[fwrule_id]['shared']:
-                    if (rules_dict[fwrule_id]['tenant_id'] != fwp_db[
-                            'tenant_id']):
+                    if (rules_dict[fwrule_id]['project_id'] != fwp_db[
+                            'project_id']):
                         raise f_exc.FirewallRuleConflict(
                             firewall_rule_id=fwrule_id,
-                            project_id=rules_dict[fwrule_id]['tenant_id'])
+                            project_id=rules_dict[fwrule_id]['project_id'])
 
     def _check_if_rules_shared_for_policy_shared(self, context, fwp_db, fwp):
         if fwp['shared']:
@@ -712,13 +712,13 @@ class FirewallPluginDb:
 
     def _check_fwgs_associated_with_policy_in_same_project(self, context,
                                                            fwp_id,
-                                                           fwp_tenant_id):
+                                                           fwp_project_id):
         with db_api.CONTEXT_READER.using(context):
             fwg_with_fwp_id_db = context.session.query(FirewallGroup).filter(
                 or_(FirewallGroup.ingress_firewall_policy_id == fwp_id,
                     FirewallGroup.egress_firewall_policy_id == fwp_id))
         for entry in fwg_with_fwp_id_db:
-            if entry.tenant_id != fwp_tenant_id:
+            if entry.project_id != fwp_project_id:
                 raise f_exc.FirewallPolicyInUse(
                             firewall_policy_id=fwp_id)
 
@@ -767,7 +767,7 @@ class FirewallPluginDb:
                 fwp_db.rule_associations.append(rules_dict[fwrule_id])
             fwp_db.rule_associations.reorder()
 
-    def _create_default_firewall_policy(self, context, tenant_id, policy_type,
+    def _create_default_firewall_policy(self, context, project_id, policy_type,
                                         **kwargs):
         fwrs = kwargs.get('firewall_rules', [])
         description = kwargs.get('description', '')
@@ -779,7 +779,7 @@ class FirewallPluginDb:
             'audited': False,
             'shared': False,
             'firewall_rules': fwrs,
-            'tenant_id': tenant_id,
+            'project_id': project_id,
         }
         return self._do_create_firewall_policy(context, firewall_policy)
 
@@ -788,7 +788,7 @@ class FirewallPluginDb:
         with db_api.CONTEXT_WRITER.using(context):
             fwp_db = FirewallPolicy(
                 id=uuidutils.generate_uuid(),
-                tenant_id=fwp['tenant_id'],
+                project_id=fwp['project_id'],
                 name=fwp['name'],
                 description=fwp['description'],
                 audited=fwp['audited'],
@@ -811,7 +811,7 @@ class FirewallPluginDb:
                 # an update is setting shared to False, make sure associated
                 # firewall groups are in the same project.
                 self._check_fwgs_associated_with_policy_in_same_project(
-                    context, id, fwp_db['tenant_id'])
+                    context, id, fwp_db['project_id'])
             if 'shared' in fwp and 'firewall_rules' not in fwp:
                 self._check_if_rules_shared_for_policy_shared(
                     context, fwp_db, fwp)
@@ -883,11 +883,11 @@ class FirewallPluginDb:
         return
 
     @db_api.CONTEXT_READER
-    def _get_default_fwg_id(self, context, tenant_id):
-        """Returns an id of default firewall group for given tenant or None"""
+    def _get_default_fwg_id(self, context, project_id):
+        """Returns an id of default firewall group for given project or None"""
         default_fwg = model_query.query_with_hooks(
             context.elevated(), FirewallGroup).filter_by(
-            project_id=tenant_id, name=const.DEFAULT_FWG).first()
+            project_id=project_id, name=const.DEFAULT_FWG).first()
         if default_fwg:
             return default_fwg.id
         return None
@@ -902,25 +902,25 @@ class FirewallPluginDb:
             return fwg_port.firewall_group_id
         return None
 
-    def get_fwg_ports_in_tenant(self, context, tenant_id):
-        """Return a list of ports under a given tenant"""
+    def get_fwg_ports_in_project(self, context, project_id):
+        """Return a list of ports under a given project"""
         try:
             fwg_id = FirewallGroupPortAssociation.firewall_group_id
             with db_api.CONTEXT_READER.using(context):
                 port_qry = context.session.query(
                     FirewallGroupPortAssociation.port_id).join(
                     FirewallGroup, FirewallGroup.id == fwg_id).filter(
-                    FirewallGroup.tenant_id == tenant_id).all()
+                    FirewallGroup.project_id == project_id).all()
                 return list({port for (port,) in port_qry})
         except exc.NoResultFound:
             return []
 
-    def _ensure_default_firewall_group(self, context, tenant_id):
-        """Create a default firewall group if one doesn't exist for a tenant
+    def _ensure_default_firewall_group(self, context, project_id):
+        """Create a default firewall group if one doesn't exist for a project
 
-        Returns the default firewall group id for a given tenant.
+        Returns the default firewall group id for a given project.
         """
-        exists = self._get_default_fwg_id(context, tenant_id)
+        exists = self._get_default_fwg_id(context, project_id)
         if exists:
             return exists
 
@@ -930,7 +930,7 @@ class FirewallPluginDb:
             with db_api.CONTEXT_WRITER.using(ctx):
 
                 fwr_ids = self._create_default_firewall_rules(
-                    ctx, tenant_id)
+                    ctx, project_id)
                 ingress_fwp = {
                     'description': 'Ingress firewall policy',
                     'firewall_rules': [fwr_ids['in_ipv4'],
@@ -942,13 +942,13 @@ class FirewallPluginDb:
                                        fwr_ids['eg_ipv6']],
                 }
                 ingress_fwp_db = self._create_default_firewall_policy(
-                    ctx, tenant_id, 'ingress', **ingress_fwp)
+                    ctx, project_id, 'ingress', **ingress_fwp)
                 egress_fwp_db = self._create_default_firewall_policy(
-                    ctx, tenant_id, 'egress', **egress_fwp)
+                    ctx, project_id, 'egress', **egress_fwp)
 
                 fwg = {
                     'name': const.DEFAULT_FWG,
-                    'tenant_id': tenant_id,
+                    'project_id': project_id,
                     'ingress_firewall_policy_id': ingress_fwp_db['id'],
                     'egress_firewall_policy_id': egress_fwp_db['id'],
                     'ports': [],
@@ -961,7 +961,7 @@ class FirewallPluginDb:
                     ctx, fwg, default_fwg=True)
                 ctx.session.add(DefaultFirewallGroup(
                     firewall_group_id=fwg_db['id'],
-                    project_id=tenant_id))
+                    project_id=project_id))
                 # NOTE(slaweq): this commit is here so that when e.g.
                 # get_firewall_groups method is called it can return list of
                 # the FW Groups including this newly created default group.
@@ -975,35 +975,35 @@ class FirewallPluginDb:
         except db_exc.DBDuplicateEntry:
             # NOTE(cby): default fwg created concurrently
             LOG.debug("Default FWG was concurrently created")
-            return self._get_default_fwg_id(context, tenant_id)
+            return self._get_default_fwg_id(context, project_id)
 
     def _create_firewall_group(self, context, firewall_group,
                                default_fwg=False):
         """Create a firewall group
 
         If default_fwg is True then a default firewall group is being created
-        for a given tenant.
+        for a given project.
         """
         fwg = firewall_group
-        tenant_id = fwg['tenant_id']
+        project_id = fwg['project_id']
         if firewall_group.get('status') is None:
             fwg['status'] = nl_constants.CREATED
 
         if default_fwg:
             # A default firewall group is being created.
-            default_fwg_id = self._get_default_fwg_id(context, tenant_id)
+            default_fwg_id = self._get_default_fwg_id(context, project_id)
             if default_fwg_id is not None:
-                # Default fwg for a given tenant exists, fetch it and return
+                # Default fwg for a given project exists, fetch it and return
                 return self.get_firewall_group(context, default_fwg_id)
         else:
             # An ordinary firewall group is being created BUT let's make sure
-            # that a default firewall group for given tenant exists
-            self._ensure_default_firewall_group(context, tenant_id)
+            # that a default firewall group for given project exists
+            self._ensure_default_firewall_group(context, project_id)
 
         with db_api.CONTEXT_WRITER.using(context):
             fwg_db = FirewallGroup(
                 id=uuidutils.generate_uuid(),
-                tenant_id=tenant_id,
+                project_id=project_id,
                 name=fwg['name'],
                 description=fwg['description'],
                 status=fwg['status'],

@@ -150,13 +150,13 @@ class FWLoggingTestBase(framework.L3AgentTestFramework):
             ipt_mgr.ipv4['filter'].empty_chain(chain=chain)
             ipt_mgr.ipv6['filter'].empty_chain(chain=chain)
 
-    def _fake_log_resource(self, tenant_id, resource_id=None,
+    def _fake_log_resource(self, project_id, resource_id=None,
                            target_id=None, event='ALL', enabled=True):
         log_resource = {
             'id': FAKE_LOG_ID,
             'name': 'fake_log_name',
             'resource_type': FAKE_RESOURCE_TYPE,
-            'project_id': tenant_id,
+            'project_id': project_id,
             'event': event,
             'enabled': True}
         if resource_id:

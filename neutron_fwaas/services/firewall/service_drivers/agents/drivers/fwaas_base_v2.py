@@ -22,11 +22,10 @@ class FwaasDriverBase(metaclass=abc.ABCMeta):
     Using FwaasDriver Class, an instance of L3 perimeter Firewall
     can be created. The firewall co-exists with the L3 agent.
 
-    One instance is created for each tenant. One firewall policy
-    is associated with each tenant (in the Havana release).
+    One instance is created for each project. One firewall policy
+    is associated with each project.
 
-    The Firewall can be visualized as having two zones (in Havana
-    release), trusted and untrusted.
+    The Firewall can be visualized as having two zones, trusted and untrusted.
 
     All the 'internal' interfaces of Neutron Router is treated as trusted. The
     interface connected to 'external network' is treated as untrusted.
@@ -40,8 +39,6 @@ class FwaasDriverBase(metaclass=abc.ABCMeta):
     - trusted to trusted zones
 
     Policy WILL NOT be applied for traffic from untrusted to untrusted zones.
-    This is not a problem in Havana release as there is only one interface
-    connected to external network.
 
     Since the policy is applied on the internal interfaces, the traffic
     will be not be NATed to floating IP. For incoming traffic, the

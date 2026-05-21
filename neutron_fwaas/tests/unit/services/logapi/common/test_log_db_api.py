@@ -28,14 +28,14 @@ from neutron_fwaas.services.logapi.rpc import log_server as fwg_rpc
 FWG = 'firewall_group'
 
 
-def _create_log_object(tenant_id, resource_id=None,
+def _create_log_object(project_id, resource_id=None,
                        target_id=None, event='ALL'):
 
     log_data = {
         'id': uuidutils.generate_uuid(),
         'name': 'fake_log_name',
         'resource_type': FWG,
-        'project_id': tenant_id,
+        'project_id': project_id,
         'event': event,
         'enabled': True}
     if resource_id:
@@ -94,8 +94,8 @@ class LoggingRpcCallbackTestCase(base.BaseTestCase):
 
     def test_get_fwg_log_info_for_log_resources(self):
         fwg_id = uuidutils.generate_uuid()
-        tenant_id = uuidutils.generate_uuid()
-        log_obj = _create_log_object(tenant_id, resource_id=fwg_id)
+        project_id = uuidutils.generate_uuid()
+        log_obj = _create_log_object(project_id, resource_id=fwg_id)
 
         rpc_call = fwg_rpc.get_fwg_log_info_for_log_resources
         with mock.patch.object(server_rpc, 'get_rpc_method',
@@ -104,7 +104,7 @@ class LoggingRpcCallbackTestCase(base.BaseTestCase):
             with mock.patch.object(log_db_api, '_get_ports_being_logged',
                                    return_value=fake_ports):
                 expected_log_info = [
-                    _fake_log_info(log_obj['id'], tenant_id, fake_ports)
+                    _fake_log_info(log_obj['id'], project_id, fake_ports)
                 ]
 
                 logs_info = self.rpc_callback.\
@@ -116,9 +116,9 @@ class LoggingRpcCallbackTestCase(base.BaseTestCase):
     def test_get_fwg_log_info_for_port(self):
         fwg_id = uuidutils.generate_uuid()
         port_id = uuidutils.generate_uuid()
-        tenant_id = uuidutils.generate_uuid()
+        project_id = uuidutils.generate_uuid()
 
-        log_obj = _create_log_object(tenant_id, resource_id=fwg_id,
+        log_obj = _create_log_object(project_id, resource_id=fwg_id,
                                      target_id=port_id)
 
         rpc_call = fwg_rpc.get_fwg_log_info_for_port
@@ -130,7 +130,7 @@ class LoggingRpcCallbackTestCase(base.BaseTestCase):
                 with mock.patch.object(log_db_api, '_get_ports_being_logged',
                                        return_value=fake_ports):
                     expected_log_info = [_fake_log_info(log_obj['id'],
-                                                        tenant_id,
+                                                        project_id,
                                                         fake_ports)]
                     logs_info = self.rpc_callback.\
                         get_sg_log_info_for_port(self.context,
@@ -139,11 +139,11 @@ class LoggingRpcCallbackTestCase(base.BaseTestCase):
                     self.assertEqual(expected_log_info, logs_info)
 
     def test_get_ports_being_logged_with_target_id(self):
-        tenant_id = uuidutils.generate_uuid()
+        project_id = uuidutils.generate_uuid()
         fwg_id = uuidutils.generate_uuid()
 
         # Test with VM port
-        log_obj = _create_log_object(tenant_id, resource_id=fwg_id,
+        log_obj = _create_log_object(project_id, resource_id=fwg_id,
                                      target_id=self.vm_port)
         with mock.patch.object(port_objects.Port, 'get_object',
                                return_value=self.fake_vm_port):
@@ -152,7 +152,7 @@ class LoggingRpcCallbackTestCase(base.BaseTestCase):
             self.assertEqual([], logged_port_ids)
 
         # Test with router ports
-        log_obj = _create_log_object(tenant_id, resource_id=fwg_id,
+        log_obj = _create_log_object(project_id, resource_id=fwg_id,
                                      target_id=self.router_port)
 
         log_db_api.fw_plugin_db. \
@@ -167,7 +167,7 @@ class LoggingRpcCallbackTestCase(base.BaseTestCase):
 
         # Test with inactive router port
         self.fake_router_port['status'] = nl_const.PORT_STATUS_DOWN
-        log_obj = _create_log_object(tenant_id, resource_id=fwg_id,
+        log_obj = _create_log_object(project_id, resource_id=fwg_id,
                                      target_id=self.router_port)
 
         log_db_api.fw_plugin_db. \
@@ -179,9 +179,9 @@ class LoggingRpcCallbackTestCase(base.BaseTestCase):
             self.assertEqual([], logged_port_ids)
 
     def test_get_ports_being_logged_with_resource_id(self):
-        tenant_id = uuidutils.generate_uuid()
+        project_id = uuidutils.generate_uuid()
         fwg_id = uuidutils.generate_uuid()
-        log_obj = _create_log_object(tenant_id, resource_id=fwg_id)
+        log_obj = _create_log_object(project_id, resource_id=fwg_id)
 
         log_db_api.fw_plugin_db.get_ports_in_firewall_group = \
             mock.Mock(return_value=[self.vm_port])
@@ -230,11 +230,11 @@ class LoggingRpcCallbackTestCase(base.BaseTestCase):
                 log_db_api._get_ports_being_logged(self.context, log_obj)
             self.assertEqual([self.router_port], logged_port_ids)
 
-    def test_get_ports_being_logged_with_ports_in_tenant(self):
-        tenant_id = uuidutils.generate_uuid()
-        log_obj = _create_log_object(tenant_id)
+    def test_get_ports_being_logged_with_ports_in_project(self):
+        project_id = uuidutils.generate_uuid()
+        log_obj = _create_log_object(project_id)
 
-        log_db_api.fw_plugin_db.get_fwg_ports_in_tenant = \
+        log_db_api.fw_plugin_db.get_fwg_ports_in_project = \
             mock.Mock(return_value=[self.router_port])
         log_db_api.fw_plugin_db. \
             get_fwg_attached_to_port = mock.Mock(return_value='fwg_id')
@@ -242,8 +242,8 @@ class LoggingRpcCallbackTestCase(base.BaseTestCase):
         with mock.patch.object(port_objects.Port, 'get_object',
                                return_value=self.fake_router_port):
             log_db_api._get_ports_being_logged(self.context, log_obj)
-            log_db_api.fw_plugin_db.get_fwg_ports_in_tenant.\
-                assert_called_with(self.context, tenant_id)
+            log_db_api.fw_plugin_db.get_fwg_ports_in_project.\
+                assert_called_with(self.context, project_id)
 
     def test_logs_for_port_with_vm_port(self):
         with mock.patch.object(port_objects.Port, 'get_object',
@@ -252,7 +252,7 @@ class LoggingRpcCallbackTestCase(base.BaseTestCase):
             self.assertEqual([], logs)
 
     def test_logs_for_port_with_router_port(self):
-        tenant_id = uuidutils.generate_uuid()
+        project_id = uuidutils.generate_uuid()
         resource_id = uuidutils.generate_uuid()
         target_id = uuidutils.generate_uuid()
         log_db_api.fw_plugin_db.get_fwg_attached_to_port = \
@@ -266,9 +266,9 @@ class LoggingRpcCallbackTestCase(base.BaseTestCase):
 
             # Test with router port that attached to fwg
             # Fake log objects that bounds a given port
-            log = _create_log_object(tenant_id)
-            resource_log = _create_log_object(tenant_id, resource_id)
-            target_log = _create_log_object(tenant_id, resource_id, target_id)
+            log = _create_log_object(project_id)
+            resource_log = _create_log_object(project_id, resource_id)
+            target_log = _create_log_object(project_id, resource_id, target_id)
             log_objs = [log, target_log, resource_log]
 
             with mock.patch.object(log_object.Log, 'get_objects',
@@ -280,8 +280,8 @@ class LoggingRpcCallbackTestCase(base.BaseTestCase):
 
             # Fake log objects that does not bound a given port
             unbound_resource = uuidutils.generate_uuid()
-            resource_log = _create_log_object(tenant_id, unbound_resource)
-            target_log = _create_log_object(tenant_id, unbound_resource,
+            resource_log = _create_log_object(project_id, unbound_resource)
+            target_log = _create_log_object(project_id, unbound_resource,
                                             target_id)
             log_objs = [log, target_log, resource_log]
 
@@ -293,14 +293,14 @@ class LoggingRpcCallbackTestCase(base.BaseTestCase):
                 self.assertEqual([log], logs)
 
     def test_logs_for_fwg(self):
-        tenant_id = uuidutils.generate_uuid()
+        project_id = uuidutils.generate_uuid()
         resource_id = uuidutils.generate_uuid()
         target_id = uuidutils.generate_uuid()
 
         # Fake log objects that bounds a given fwg
-        log = _create_log_object(tenant_id)
-        resource_log = _create_log_object(tenant_id, resource_id)
-        target_log = _create_log_object(tenant_id, target_id=target_id)
+        log = _create_log_object(project_id)
+        resource_log = _create_log_object(project_id, resource_id)
+        target_log = _create_log_object(project_id, target_id=target_id)
         ports_delta = [target_id]
 
         # Test with port that in ports_delta

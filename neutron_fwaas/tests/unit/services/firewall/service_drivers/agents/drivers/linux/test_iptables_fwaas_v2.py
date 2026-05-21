@@ -99,7 +99,7 @@ class IptablesFwaasTestCase(base.BaseTestCase):
         rule_list = []
         fw_inst = {'id': FAKE_FW_ID,
                    'admin_state_up': True,
-                   'tenant_id': 'tenant-uuid',
+                   'project_id': 'project-uuid',
                    'egress_rule_list': rule_list,
                    'ingress_rule_list': rule_list}
         return fw_inst
@@ -110,7 +110,7 @@ class IptablesFwaasTestCase(base.BaseTestCase):
             rule['position'] = str(_rule_list.index(rule))
         fw_inst = {'id': FAKE_FW_ID,
                    'admin_state_up': True,
-                   'tenant_id': 'tenant-uuid',
+                   'project_id': 'project-uuid',
                    'egress_rule_list': _rule_list,
                    'ingress_rule_list': _rule_list}
         return fw_inst
@@ -118,7 +118,7 @@ class IptablesFwaasTestCase(base.BaseTestCase):
     def _fake_firewall_with_admin_down(self, rule_list):
         fw_inst = {'id': FAKE_FW_ID,
                    'admin_state_up': False,
-                   'tenant_id': 'tenant-uuid',
+                   'project_id': 'project-uuid',
                    'egress_rule_list': rule_list,
                    'ingress_rule_list': rule_list}
         return fw_inst

@@ -355,7 +355,6 @@ class TestFWaaSL3AgentExtension(base.BaseTestCase):
 
     def test_update_firewall_group_with_only_policies_added_or_deleted(self):
         firewall_group = {'id': 0, 'project_id': 1,
-                          'tenant_id': 1,
                           'admin_state_up': True,
                           'ports': [1, 2],
                           'add-port-ids': [],
@@ -469,16 +468,16 @@ class TestFWaaSL3AgentExtension(base.BaseTestCase):
             '_interfaces': [{
                 'device_owner': 'network: router_interface',
                 'id': '1',
-                'tenant_id': 'demo_tenant_id',
+                'project_id': 'demo_project_id',
             }],
-            'tenant_id': 'demo_tenant_id',
+            'project_id': 'demo_project_id',
             'id': '0b109a4e-d228-479d-ad43-08bf3245adbb',
             'name': 'demo_router'
         }
         fwg = {
             'status': 'ACTIVE',
             'admin_state_up': True,
-            'tenant_id': 'demo_tenant_id',
+            'project_id': 'demo_project_id',
             'ports': [1],
             'del-port-ids': [],
             'add-port-ids': ['1'],
@@ -513,21 +512,21 @@ class TestFWaaSL3AgentExtension(base.BaseTestCase):
             '_interfaces': [
                 {'device_owner': 'network: router_interface',
                  'id': '1',
-                 'tenant_id': 'demo_tenant_id'},
+                 'project_id': 'demo_project_id'},
                 {'device_owner': 'network: router_interface',
                  'id': '2',
-                 'tenant_id': 'demo_tenant_id'},
+                 'project_id': 'demo_project_id'},
                 {'device_owner': 'network: router_interface',
                  'id': '3',
-                 'tenant_id': 'demo_tenant_id'}],
-            'tenant_id': 'demo_tenant_id',
+                 'project_id': 'demo_project_id'}],
+            'project_id': 'demo_project_id',
             'id': '0b109a4e-d228-479d-ad43-08bf3245adbb',
             'name': 'demo_router'
         }
         fwg1 = {
             'status': 'ACTIVE',
             'admin_state_up': True,
-            'tenant_id': 'demo_tenant_id',
+            'project_id': 'demo_project_id',
             'del-port-ids': [],
             'add-port-ids': ['1', '3'],
             'id': '2932b3d9-3a7b-48a1-a16c-bf9f7b2751a5'
@@ -535,7 +534,7 @@ class TestFWaaSL3AgentExtension(base.BaseTestCase):
         fwg2 = {
             'status': 'ACTIVE',
             'admin_state_up': True,
-            'tenant_id': 'demo_tenant_id',
+            'project_id': 'demo_project_id',
             'del-port-ids': [],
             'add-port-ids': ['2', '3'],
             'id': '2932b3d9-3a7b-48a1-a16c-bf9f7b2751a5'
@@ -570,9 +569,9 @@ class TestFWaaSL3AgentExtension(base.BaseTestCase):
             '_interfaces': [{
                 'device_owner': 'network: router_interface',
                 'id': '1',
-                'tenant_id': 'demo_tenant_id',
+                'project_id': 'demo_project_id',
             }],
-            'tenant_id': 'demo_tenant_id',
+            'project_id': 'demo_project_id',
             'id': '0b109a4e-d228-479d-ad43-08bf3245adbb',
             'name': 'demo_router'
         }
@@ -595,9 +594,9 @@ class TestFWaaSL3AgentExtension(base.BaseTestCase):
             '_interfaces': [{
                 'device_owner': 'network: router_interface',
                 'id': '1',
-                'tenant_id': 'demo_tenant_id',
+                'project_id': 'demo_project_id',
             }],
-            'tenant_id': 'demo_tenant_id',
+            'project_id': 'demo_project_id',
             'id': '0b109a4e-d228-479d-ad43-08bf3245adbb',
             'name': 'demo_router'
         }

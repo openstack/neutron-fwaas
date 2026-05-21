@@ -127,10 +127,11 @@ class FirewallPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
         # let's implement our own _get_admin_context method and look into the
         # matter some other time.
         return context.Context(user_id='admin',
-                               project_id='admin-tenant',
+                               project_id='admin-project',
                                is_admin=True).elevated()
 
-    def _get_nonadmin_context(self, user_id='non-admin', project_id='tenant1'):
+    def _get_nonadmin_context(self, user_id='non-admin',
+                              project_id='project1'):
         return context.Context(user_id=user_id, project_id=project_id,
                                roles=['member', 'reader'])
 
@@ -174,7 +175,6 @@ class FirewallPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
 
     def _get_test_firewall_rule_attrs(self, name='firewall_rule1'):
         attrs = {'name': name,
-                 'tenant_id': self._project_id,
                  'project_id': self._project_id,
                  'protocol': self.PROTOCOL,
                  'ip_version': self.IP_VERSION,
@@ -191,7 +191,6 @@ class FirewallPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
                                         audited=AUDITED):
         attrs = {'name': name,
                  'description': self.DESCRIPTION,
-                 'tenant_id': self._project_id,
                  'project_id': self._project_id,
                  'firewall_rules': [],
                  'audited': audited,
@@ -201,7 +200,6 @@ class FirewallPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
     def _get_test_firewall_group_attrs(self, name='firewall_1',
                                        status=nl_constants.CREATED):
         attrs = {'name': name,
-                 'tenant_id': self._project_id,
                  'project_id': self._project_id,
                  'admin_state_up': self.ADMIN_STATE_UP,
                  'status': status}
@@ -220,7 +218,6 @@ class FirewallPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
         ctx = kwargs.get('context', None)
         if ctx is None or ctx.is_admin:
             project_id = kwargs.get('project_id', self._project_id)
-            data['firewall_policy'].update({'tenant_id': project_id})
             data['firewall_policy'].update({'project_id': project_id})
 
         req = self.new_create_request('firewall_policies', data, fmt,
@@ -280,7 +277,6 @@ class FirewallPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
         ctx = kwargs.get('context', None)
         if ctx is None or ctx.is_admin:
             project_id = kwargs.get('project_id', self._project_id)
-            data['firewall_rule'].update({'tenant_id': project_id})
             data['firewall_rule'].update({'project_id': project_id})
 
         req = self.new_create_request('firewall_rules', data, fmt, context=ctx,
@@ -349,7 +345,6 @@ class FirewallPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
         ctx = kwargs.get('context', None)
         if ctx is None or ctx.is_admin:
             project_id = kwargs.get('project_id', self._project_id)
-            data['firewall_group'].update({'tenant_id': project_id})
             data['firewall_group'].update({'project_id': project_id})
         if ports is not None:
             data['firewall_group'].update({'ports': ports})
@@ -425,6 +420,7 @@ class FirewallPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
         response = self.deserialize(self.fmt, res)
         if 'standard_attr_id' in response:
             del response['standard_attr_id']
+        response.pop('tenant_id', None)
         if expected_body:
             self.assertEqual(expected_body, response)
         return response
@@ -666,7 +662,7 @@ class TestAutomaticAssociation(TestFirewallPluginBasev2):
         self.plugin.get_firewall_groups.assert_called_once_with(
             mock.ANY,
             filters={
-                'tenant_id': [kwargs['port']['project_id']],
+                'project_id': [kwargs['port']['project_id']],
                 'name': [fake_default_fwg['name']],
             },
             fields=['id', 'ports'],
