@@ -92,21 +92,18 @@ class FirewallPluginDb:
             result_filters=_list_firewall_policies_result_filter_hook)
         return super().__new__(cls, *args, **kwargs)
 
-    @db_api.CONTEXT_READER
     def _get_firewall_group(self, context, id):
         try:
             return model_query.get_by_id(context, models.FirewallGroup, id)
         except exc.NoResultFound:
             raise f_exc.FirewallGroupNotFound(firewall_id=id)
 
-    @db_api.CONTEXT_READER
     def _get_firewall_policy(self, context, id):
         try:
             return model_query.get_by_id(context, models.FirewallPolicy, id)
         except exc.NoResultFound:
             raise f_exc.FirewallPolicyNotFound(firewall_policy_id=id)
 
-    @db_api.CONTEXT_READER
     def _get_firewall_rule(self, context, id):
         try:
             return model_query.get_by_id(context, models.FirewallRuleV2, id)
@@ -263,7 +260,7 @@ class FirewallPluginDb:
 
     def _process_rule_for_policy(self, context, firewall_policy_id,
                                  firewall_rule_id, position, association_db):
-        with db_api.CONTEXT_READER.using(context):
+        with db_api.CONTEXT_WRITER.using(context):
             fwp_query = context.session.query(
                 models.FirewallPolicy).with_for_update()
             fwp_db = fwp_query.filter_by(id=firewall_policy_id).one()
@@ -414,7 +411,8 @@ class FirewallPluginDb:
 
     def update_firewall_rule(self, context, id, firewall_rule):
         fwr = firewall_rule
-        fwr_db = self._get_firewall_rule(context, id)
+        with db_api.CONTEXT_READER.using(context):
+            fwr_db = self._get_firewall_rule(context, id)
         fwr_db_updated = self._make_firewall_rule_dict(fwr_db)
         fwr_db_updated.update(fwr)
 
@@ -496,6 +494,7 @@ class FirewallPluginDb:
             return self._process_rule_for_policy(context, id, firewall_rule_id,
                                                  None, fwpra_db)
 
+    @db_api.CONTEXT_READER
     def get_firewall_rule(self, context, id, fields=None):
         fwr = self._get_firewall_rule(context, id)
         policies = self.get_policies_with_rule(context, id) or None
@@ -546,9 +545,8 @@ class FirewallPluginDb:
 
     def _check_rules_for_policy_is_valid(self, context, fwp, fwp_db,
                                          rule_id_list, filters):
-        with db_api.CONTEXT_READER.using(context):
-            rules_in_fwr_db = model_query.get_collection_query(
-                context, models.FirewallRuleV2, filters=filters)
+        rules_in_fwr_db = model_query.get_collection_query(
+            context, models.FirewallRuleV2, filters=filters)
         rules_dict = {fwr_db['id']: fwr_db for fwr_db in rules_in_fwr_db}
         for fwrule_id in rule_id_list:
             if fwrule_id not in rules_dict:
@@ -637,6 +635,7 @@ class FirewallPluginDb:
             # Run a validation on the Firewall Rules table
             self._check_rules_for_policy_is_valid(context, fwp, fwp_db,
                                                   rule_id_list, filters)
+
             # new rules are valid, lets delete the old association
             self._delete_all_rules_from_policy(context, fwp_db)
             # and add in the new association
@@ -714,6 +713,7 @@ class FirewallPluginDb:
     def delete_firewall_policy(self, context, id):
         with db_api.CONTEXT_WRITER.using(context):
             fwp_db = self._get_firewall_policy(context, id)
+            # TODO(slaweq): OVO object should provide method to check that
             # check if policy in use
             qry = context.session.query(models.FirewallGroup)
             if qry.filter_by(ingress_firewall_policy_id=id).first():
@@ -724,6 +724,7 @@ class FirewallPluginDb:
                 fwp_db = self._delete_all_rules_from_policy(context, fwp_db)
                 context.session.delete(fwp_db)
 
+    @db_api.CONTEXT_READER
     def get_firewall_policy(self, context, id, fields=None):
         fwp = self._get_firewall_policy(context, id)
         return self._make_firewall_policy_dict(fwp, fields)
@@ -857,15 +858,8 @@ class FirewallPluginDb:
                 ctx.session.add(models.DefaultFirewallGroup(
                     firewall_group_id=fwg_db['id'],
                     project_id=project_id))
-                # NOTE(slaweq): this commit is here so that when e.g.
-                # get_firewall_groups method is called it can return list of
-                # the FW Groups including this newly created default group.
-                # This should be handled by the OVO objects, like it is e.g.
-                # for the Security Groups in Neutron but we first need to
-                # migrate FWaaS to OVO objects
-                context.session.commit()
 
-                return fwg_db['id']
+            return fwg_db['id']
 
         except db_exc.DBDuplicateEntry:
             # NOTE(cby): default fwg created concurrently
@@ -1014,6 +1008,7 @@ class FirewallPluginDb:
                 raise FirewallDefaultParameterExists(
                     resource_type='Firewall Policy', name=resource['name'])
 
+    @db_api.CONTEXT_READER
     def get_firewall_group(self, context, id, fields=None):
         fw = self._get_firewall_group(context, id)
         return self._make_firewall_group_dict(fw, fields)
