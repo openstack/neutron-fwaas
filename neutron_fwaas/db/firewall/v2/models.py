@@ -57,6 +57,14 @@ class FirewallGroup(standard_attr.HasStandardAttributes, model_base.BASEV2,
     egress_firewall_policy_id = sa.Column(
         sa.String(db_constants.UUID_FIELD_SIZE),
         sa.ForeignKey('firewall_policies_v2.id'))
+    ingress_firewall_policy = orm.relationship(
+        'FirewallPolicy',
+        foreign_keys=[ingress_firewall_policy_id],
+        lazy='joined')
+    egress_firewall_policy = orm.relationship(
+        'FirewallPolicy',
+        foreign_keys=[egress_firewall_policy_id],
+        lazy='joined')
     admin_state_up = sa.Column(sa.Boolean)
     status = sa.Column(sa.String(db_constants.STATUS_FIELD_SIZE))
     shared = sa.Column(sa.Boolean)
