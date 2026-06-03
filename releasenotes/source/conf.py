@@ -273,6 +273,6 @@ texinfo_documents = [
 locale_dirs = ['locale/']
 
 # -- Options for openstackdocstheme -------------------------------------------
-repository_name = 'openstack/neutron-fwaas'
-bug_project = 'neutron'
-bug_tag = 'doc'
+openstackdocs_repo_name = 'openstack/neutron-fwaas'
+openstackdocs_bug_project = 'neutron'
+openstackdocs_bug_tag = 'doc'
