@@ -10,8 +10,8 @@
 #  License for the specific language governing permissions and limitations
 #  under the License.
 
-from neutron.conf.policies import base as neutron_base
 from neutron_lib import policy as base
+from neutron_lib.policy import rules as neutron_base
 from oslo_policy import policy
 
 DEPRECATED_REASON = """

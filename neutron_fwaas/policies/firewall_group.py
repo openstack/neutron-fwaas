@@ -10,8 +10,8 @@
 #  License for the specific language governing permissions and limitations
 #  under the License.
 
-from neutron.conf.policies import base as neutron_base
 from neutron_lib import policy as base
+from neutron_lib.policy import rules as base_rules
 from oslo_policy import policy
 
 DEPRECATED_REASON = """
@@ -27,7 +27,7 @@ rules = [
 
     policy.DocumentedRuleDefault(
         name='create_firewall_group',
-        check_str=neutron_base.ADMIN_OR_PROJECT_MEMBER,
+        check_str=base_rules.ADMIN_OR_PROJECT_MEMBER,
         scope_types=['project'],
         description='Create a firewall group',
         operations=[
@@ -44,7 +44,7 @@ rules = [
     ),
     policy.DocumentedRuleDefault(
         name='update_firewall_group',
-        check_str=neutron_base.ADMIN_OR_PROJECT_MEMBER,
+        check_str=base_rules.ADMIN_OR_PROJECT_MEMBER,
         scope_types=['project'],
         description='Update a firewall group',
         operations=[
@@ -61,7 +61,7 @@ rules = [
     ),
     policy.DocumentedRuleDefault(
         name='delete_firewall_group',
-        check_str=neutron_base.ADMIN_OR_PROJECT_MEMBER,
+        check_str=base_rules.ADMIN_OR_PROJECT_MEMBER,
         scope_types=['project'],
         description='Delete a firewall group',
         operations=[
@@ -79,7 +79,7 @@ rules = [
 
     policy.DocumentedRuleDefault(
         name='create_firewall_group:shared',
-        check_str=neutron_base.ADMIN,
+        check_str=base_rules.ADMIN,
         scope_types=['project'],
         description='Create a shared firewall group',
         operations=[
@@ -96,7 +96,7 @@ rules = [
     ),
     policy.DocumentedRuleDefault(
         name='update_firewall_group:shared',
-        check_str=neutron_base.ADMIN,
+        check_str=base_rules.ADMIN,
         scope_types=['project'],
         description='Update ``shared`` attribute of a firewall group',
         operations=[
@@ -114,7 +114,7 @@ rules = [
     # TODO(amotoki): Drop this rule as it has no effect.
     policy.DocumentedRuleDefault(
         name='delete_firewall_group:shared',
-        check_str=neutron_base.ADMIN,
+        check_str=base_rules.ADMIN,
         scope_types=['project'],
         description='Delete a shared firewall group',
         operations=[
@@ -133,7 +133,7 @@ rules = [
     policy.DocumentedRuleDefault(
         name='get_firewall_group',
         check_str=base.policy_or(
-            neutron_base.ADMIN_OR_PROJECT_READER,
+            base_rules.ADMIN_OR_PROJECT_READER,
             'rule:shared_firewall_groups'),
         scope_types=['project'],
         description='Get firewall groups',

@@ -10,8 +10,8 @@
 #  License for the specific language governing permissions and limitations
 #  under the License.
 
-from neutron.conf.policies import base as neutron_base
 from neutron_lib import policy as base
+from neutron_lib.policy import rules as base_rules
 from oslo_policy import policy
 
 DEPRECATED_REASON = """
@@ -28,7 +28,7 @@ rules = [
 
     policy.DocumentedRuleDefault(
         name='create_firewall_rule',
-        check_str=neutron_base.ADMIN_OR_PROJECT_MEMBER,
+        check_str=base_rules.ADMIN_OR_PROJECT_MEMBER,
         scope_types=['project'],
         description='Create a firewall rule',
         operations=[
@@ -45,7 +45,7 @@ rules = [
     ),
     policy.DocumentedRuleDefault(
         name='update_firewall_rule',
-        check_str=neutron_base.ADMIN_OR_PROJECT_MEMBER,
+        check_str=base_rules.ADMIN_OR_PROJECT_MEMBER,
         scope_types=['project'],
         description='Update a firewall rule',
         operations=[
@@ -62,7 +62,7 @@ rules = [
     ),
     policy.DocumentedRuleDefault(
         name='delete_firewall_rule',
-        check_str=neutron_base.ADMIN_OR_PROJECT_MEMBER,
+        check_str=base_rules.ADMIN_OR_PROJECT_MEMBER,
         scope_types=['project'],
         description='Delete a firewall rule',
         operations=[
@@ -80,7 +80,7 @@ rules = [
 
     policy.DocumentedRuleDefault(
         name='create_firewall_rule:shared',
-        check_str=neutron_base.ADMIN,
+        check_str=base_rules.ADMIN,
         scope_types=['project'],
         description='Create a shared firewall rule',
         operations=[
@@ -97,7 +97,7 @@ rules = [
     ),
     policy.DocumentedRuleDefault(
         name='update_firewall_rule:shared',
-        check_str=neutron_base.ADMIN,
+        check_str=base_rules.ADMIN,
         scope_types=['project'],
         description='Update ``shared`` attribute of a firewall rule',
         operations=[
@@ -115,7 +115,7 @@ rules = [
     # TODO(amotoki): Drop this rule as it has no effect.
     policy.DocumentedRuleDefault(
         name='delete_firewall_rule:shared',
-        check_str=neutron_base.ADMIN,
+        check_str=base_rules.ADMIN,
         scope_types=['project'],
         description='Delete a shread firewall rule',
         operations=[
@@ -134,7 +134,7 @@ rules = [
     policy.DocumentedRuleDefault(
         name='get_firewall_rule',
         check_str=base.policy_or(
-            neutron_base.ADMIN_OR_PROJECT_READER,
+            base_rules.ADMIN_OR_PROJECT_READER,
             'rule:shared_firewall_rules'),
         scope_types=['project'],
         description='Get firewall rules',
@@ -157,7 +157,7 @@ rules = [
 
     policy.DocumentedRuleDefault(
         name='insert_rule',
-        check_str=neutron_base.ADMIN_OR_PROJECT_MEMBER,
+        check_str=base_rules.ADMIN_OR_PROJECT_MEMBER,
         scope_types=['project'],
         description='Insert rule into a firewall policy',
         operations=[
@@ -174,7 +174,7 @@ rules = [
     ),
     policy.DocumentedRuleDefault(
         name='remove_rule',
-        check_str=neutron_base.ADMIN_OR_PROJECT_MEMBER,
+        check_str=base_rules.ADMIN_OR_PROJECT_MEMBER,
         scope_types=['project'],
         description='Remove rule from a firewall policy',
         operations=[
