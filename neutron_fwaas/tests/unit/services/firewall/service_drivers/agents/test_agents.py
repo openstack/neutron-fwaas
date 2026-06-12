@@ -155,9 +155,8 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
                 do_delete=False
             ) as fwg:
                 fwg_id = fwg['firewall_group']['id']
-                with db_api.CONTEXT_WRITER.using(ctx):
-                    fwg_db = self.db._get_firewall_group(ctx, fwg_id)
-                    fwg_db['status'] = nl_constants.PENDING_DELETE
+                self.db.update_firewall_group_status(
+                    ctx, fwg_id, nl_constants.PENDING_DELETE)
 
                 observed = self.callbacks.firewall_group_deleted(ctx, fwg_id)
                 self.assertTrue(observed)
@@ -189,10 +188,8 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
                 as_admin=True,
             ) as fwg:
                 fwg_id = fwg['firewall_group']['id']
-                with db_api.CONTEXT_WRITER.using(ctx):
-                    fwg_db = self.db._get_firewall_group(ctx, fwg_id)
-                    fwg_db['status'] = nl_constants.PENDING_DELETE
-                    ctx.session.flush()
+                self.db.update_firewall_group_status(
+                    ctx, fwg_id, nl_constants.PENDING_DELETE)
 
                 with mock.patch.object(
                     self.db, '_get_firewall_group', side_effect=getdelete

@@ -21,10 +21,12 @@ import webob.exc
 from neutron_lib import constants as nl_constants
 from neutron_lib import context
 from neutron_lib.exceptions import firewall_v2 as f_exc
+from neutron_lib.objects import exceptions as o_exc
 from oslo_config import cfg
 from oslo_utils import uuidutils
 
 from neutron_fwaas.common import fwaas_constants as constants
+from neutron_fwaas.objects import firewall_v2 as fw_obj
 from neutron_fwaas.tests.unit.services.firewall import test_fwaas_plugin_v2
 
 
@@ -1783,16 +1785,22 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
             self.assertEqual('fireWall1', res['firewall_group']['name'])
 
     def test_set_port_in_use_for_firewall_group(self):
-        fwg_db = {'id': 'fake_id'}
-        new_ports = {'ports': ['fake_port1', 'fake_port2']}
+        fake_fwg_id = uuidutils.generate_uuid()
+        fake_port1 = uuidutils.generate_uuid()
+        fake_port2 = uuidutils.generate_uuid()
+        fwg_ovo = mock.Mock(id=fake_fwg_id)
+        new_ports = {'ports': [fake_port1, fake_port2]}
         m_context = self._get_admin_context()
-        with mock.patch.object(m_context.session, 'add',
-                               side_effect=[None, f_exc.FirewallGroupPortInUse(
-                                    port_ids=['fake_port2'])]):
+        db_exc = mock.Mock(columns=['port_id'], value=[fake_port2])
+        duplicate_exc = o_exc.NeutronDbObjectDuplicateEntry(
+            fw_obj.FirewallGroupPortAssociation, db_exc)
+        with mock.patch.object(
+                fw_obj.FirewallGroupPortAssociation, 'create',
+                side_effect=[None, duplicate_exc]):
             self.assertRaises(f_exc.FirewallGroupPortInUse,
                               self.db._set_ports_for_firewall_group,
                               m_context,
-                              fwg_db,
+                              fwg_ovo,
                               new_ports)
 
     def test_set_port_for_default_firewall_group(self):
