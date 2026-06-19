@@ -418,9 +418,9 @@ class FirewallPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
         res = req.get_response(self.ext_api)
         self.assertEqual(expected_code, res.status_int)
         response = self.deserialize(self.fmt, res)
-        if 'standard_attr_id' in response:
-            del response['standard_attr_id']
-        response.pop('tenant_id', None)
+        for key in ('standard_attr_id', 'tenant_id',
+                    'created_at', 'updated_at', 'revision_number'):
+            response.pop(key, None)
         if expected_body:
             self.assertEqual(expected_body, response)
         return response

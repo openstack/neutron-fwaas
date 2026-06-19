@@ -11,6 +11,7 @@
 #    under the License.
 
 import random
+from unittest import mock
 
 from neutron_lib.api.definitions import constants as api_const
 
@@ -73,6 +74,13 @@ class _FirewallGroupRelatedObjectsMixin:
 class FirewallRuleV2IfaceTestCase(test_base.BaseObjectIfaceTestCase):
     _test_class = firewall_v2.FirewallRuleV2
 
+    def setUp(self):
+        super().setUp()
+        patcher = mock.patch(
+            'neutron_fwaas.common.utils.validate_fwr_port_range')
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
 
 class FirewallRuleV2DbTestCase(test_base.BaseDbObjectTestCase,
                                testlib_api.SqlTestCase):
@@ -104,6 +112,13 @@ class FirewallPolicyRuleAssociationDbTestCase(
 class FirewallPolicyIfaceTestCase(test_base.BaseObjectIfaceTestCase):
     _test_class = firewall_v2.FirewallPolicy
 
+    def test_to_dict_synthetic_fields(self):
+        obj = self._test_class(self.context, **self.obj_fields[0])
+        obj.rule_associations = []
+        _dict = obj.to_dict()
+        self.assertIn('firewall_rules', _dict)
+        self.assertNotIn('rule_associations', _dict)
+
 
 class FirewallPolicyDbTestCase(test_base.BaseDbObjectTestCase,
                                testlib_api.SqlTestCase):
@@ -134,6 +149,15 @@ class FirewallGroupPortAssociationDbTestCase(
 
 class FirewallGroupIfaceTestCase(test_base.BaseObjectIfaceTestCase):
     _test_class = firewall_v2.FirewallGroup
+
+    def test_to_dict_synthetic_fields(self):
+        obj = self._test_class(self.context, **self.obj_fields[0])
+        obj.port_associations = []
+        _dict = obj.to_dict()
+        self.assertIn('ports', _dict)
+        self.assertNotIn('port_associations', _dict)
+        self.assertNotIn('ingress_firewall_policy', _dict)
+        self.assertNotIn('egress_firewall_policy', _dict)
 
 
 class FirewallGroupDbTestCase(

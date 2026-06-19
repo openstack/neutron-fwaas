@@ -75,8 +75,8 @@ class FirewallAgentCallbacks:
             LOG.warning('Firewall %(fwg)s unexpectedly deleted by agent, '
                         'status was %(status)s',
                         {'fwg': fwg_id, 'status': fwg['status']})
-            fwg['status'] = nl_constants.ERROR
-            self.firewall_db.update_firewall_group(context, fwg_id, fwg)
+            self.firewall_db.update_firewall_group(
+                context, fwg_id, {'status': nl_constants.ERROR})
             return False
         except f_exc.FirewallGroupNotFound:
             LOG.info('Firewall group %s already deleted', fwg_id)
@@ -90,16 +90,16 @@ class FirewallAgentCallbacks:
         for fwg in self.firewall_db.get_firewall_groups(context):
             fwg_with_rules =\
                 self.firewall_db.make_firewall_group_dict_with_rules(
-                    context, fwg['id'])
-            if fwg['status'] == nl_constants.PENDING_DELETE:
+                    context, fwg.id)
+            if fwg.status == nl_constants.PENDING_DELETE:
                 fwg_with_rules['add-port-ids'] = []
                 fwg_with_rules['del-port-ids'] = (
                     self.firewall_db.get_ports_in_firewall_group(
-                        context, fwg['id']))
+                        context, fwg.id))
             else:
                 fwg_with_rules['add-port-ids'] = (
                     self.firewall_db.get_ports_in_firewall_group(
-                        context, fwg['id']))
+                        context, fwg.id))
                 fwg_with_rules['del-port-ids'] = []
             fwg_list.append(fwg_with_rules)
         return fwg_list
@@ -123,20 +123,26 @@ class FirewallAgentCallbacks:
             ctx, filters={'ports': [kwargs.get('port_id')]})
         if len(fwg_port_binding) != 1:
             return
-        fwg = fwg_port_binding[0]
+        fwg = fwg_port_binding[0].to_dict()
 
         fwg['ingress_rule_list'] = []
-        for rule_id in self.firewall_db.get_firewall_policy(
-                context, fwg['ingress_firewall_policy_id'],
-                fields=['firewall_rules'])['firewall_rules']:
-            fwg['ingress_rule_list'].append(
-                self.firewall_db.get_firewall_rule(context, rule_id))
+        if fwg.get('ingress_firewall_policy_id'):
+            fwp = self.firewall_db.get_firewall_policy(
+                context, fwg.get('ingress_firewall_policy_id'))
+            for assoc in (fwp.rule_associations or []):
+                fwr = self.firewall_db.get_firewall_rule(
+                    context, assoc.firewall_rule_id)
+                fwg['ingress_rule_list'].append(fwr.to_dict())
+
         fwg['egress_rule_list'] = []
-        for rule_id in self.firewall_db.get_firewall_policy(
-                context, fwg['egress_firewall_policy_id'],
-                fields=['firewall_rules'])['firewall_rules']:
-            fwg['egress_rule_list'].append(
-                self.firewall_db.get_firewall_rule(context, rule_id))
+        if fwg.get('egress_firewall_policy_id'):
+            fwp = self.firewall_db.get_firewall_policy(
+                context, fwg['egress_firewall_policy_id'])
+            for assoc in (fwp.rule_associations or []):
+                fwr = self.firewall_db.get_firewall_rule(
+                    context, assoc.firewall_rule_id)
+                fwg['egress_rule_list'].append(fwr.to_dict())
+
         return fwg
 
 
@@ -261,8 +267,9 @@ class FirewallAgentDriver(driver_api.FirewallDriverDB,
     def create_firewall_group_precommit(self, context, firewall_group):
         ports = firewall_group['ports']
 
-        if (not ports or (not firewall_group['ingress_firewall_policy_id'] and
-                          not firewall_group['egress_firewall_policy_id'])):
+        if (not ports or (
+                not firewall_group.get('ingress_firewall_policy_id') and
+                not firewall_group.get('egress_firewall_policy_id'))):
             # no messaging to agent needed and fw needs to go to INACTIVE state
             # as no associated ports and/or no policy configured.
             status = nl_constants.INACTIVE
@@ -286,14 +293,14 @@ class FirewallAgentDriver(driver_api.FirewallDriverDB,
         port_updated = (set(new_firewall_group['ports']) !=
                         set(old_firewall_group['ports']))
         policies_updated = (
-            new_firewall_group['ingress_firewall_policy_id'] !=
-            old_firewall_group['ingress_firewall_policy_id'] or
-            new_firewall_group['egress_firewall_policy_id'] !=
-            old_firewall_group['egress_firewall_policy_id']
+            new_firewall_group.get('ingress_firewall_policy_id') !=
+            old_firewall_group.get('ingress_firewall_policy_id') or
+            new_firewall_group.get('egress_firewall_policy_id') !=
+            old_firewall_group.get('egress_firewall_policy_id')
         )
         if (port_updated and
-                (new_firewall_group['ingress_firewall_policy_id'] or
-                 new_firewall_group['egress_firewall_policy_id'])):
+                (new_firewall_group.get('ingress_firewall_policy_id') or
+                 new_firewall_group.get('egress_firewall_policy_id'))):
             return True
         if policies_updated and new_firewall_group['ports']:
             return True

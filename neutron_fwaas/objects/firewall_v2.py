@@ -12,12 +12,14 @@
 
 from neutron_lib.api.definitions import constants as api_const
 from neutron_lib import constants as lib_constants
+from neutron_lib.db import resource_extend
 from neutron_lib.objects import common_types
 from neutron_lib.utils import net as net_utils
 from oslo_versionedobjects import fields as obj_fields
 
 from neutron.objects import base
 
+from neutron_fwaas.common import utils as fwaas_utils
 from neutron_fwaas.db.firewall.v2 import models
 
 
@@ -90,6 +92,30 @@ class FirewallRuleV2(base.NeutronDbObject):
                 fields[field] = net_utils.AuthenticIPNetwork(fields[field])
         return fields
 
+    def to_dict(self):
+        _dict = super().to_dict()
+        # NeutronDbObject.modify_fields_from_db skips NULL columns, so
+        # nullable fields may be absent after loading from the DB.
+        for field in ('name', 'protocol', 'ip_version',
+                      'source_ip_address', 'destination_ip_address',
+                      'source_port_range_min', 'source_port_range_max',
+                      'destination_port_range_min',
+                      'destination_port_range_max', 'action'):
+            _dict.setdefault(field, None)
+        _dict['source_port'] = fwaas_utils.get_port_range_from_min_max_ports(
+            _dict.pop('source_port_range_min', None),
+            _dict.pop('source_port_range_max', None))
+        _dict['destination_port'] = (
+            fwaas_utils.get_port_range_from_min_max_ports(
+                _dict.pop('destination_port_range_min', None),
+                _dict.pop('destination_port_range_max', None)))
+        for field in ('source_ip_address', 'destination_ip_address'):
+            if _dict.get(field) is not None:
+                _dict[field] = str(_dict[field])
+        _dict['firewall_policy_id'] = getattr(self, '_policies', None)
+        resource_extend.apply_funcs('firewall_rules', _dict, self.db_obj)
+        return _dict
+
 
 @base.NeutronObjectRegistry.register
 class FirewallPolicyRuleAssociation(base.NeutronDbObject):
@@ -140,6 +166,20 @@ class FirewallPolicy(base.NeutronDbObject):
     synthetic_fields = ['rule_associations']
 
     fields_no_update = ['project_id']
+
+    def to_dict(self):
+        _dict = super().to_dict()
+        # NeutronDbObject.modify_fields_from_db skips NULL columns, so
+        # nullable fields may be absent after loading from the DB.
+        for field in ('name',):
+            _dict.setdefault(field, None)
+        rule_assocs = _dict.pop('rule_associations', None) or []
+        _dict['firewall_rules'] = [
+            a['firewall_rule_id'] if isinstance(a, dict) else a
+            for a in rule_assocs
+        ]
+        resource_extend.apply_funcs('firewall_policies', _dict, self.db_obj)
+        return _dict
 
 
 @base.NeutronObjectRegistry.register
@@ -206,6 +246,29 @@ class FirewallGroup(base.NeutronDbObject):
     ]
 
     fields_no_update = ['project_id']
+
+    obj_extra_fields = ['ports']
+
+    @property
+    def ports(self):
+        return [assoc.port_id for assoc in (self.port_associations or [])]
+
+    def to_dict(self):
+        _dict = super().to_dict()
+        # NeutronDbObject.modify_fields_from_db skips NULL columns, so
+        # nullable fields may be absent after loading from the DB.
+        for field in ('name', 'ingress_firewall_policy_id',
+                      'egress_firewall_policy_id', 'status'):
+            _dict.setdefault(field, None)
+        port_assocs = _dict.pop('port_associations', None) or []
+        _dict['ports'] = [
+            a['port_id'] if isinstance(a, dict) else a
+            for a in port_assocs
+        ]
+        _dict.pop('ingress_firewall_policy', None)
+        _dict.pop('egress_firewall_policy', None)
+        resource_extend.apply_funcs('firewall_groups', _dict, self.db_obj)
+        return _dict
 
     @classmethod
     def update_status(cls, context, id, status, not_in=None):

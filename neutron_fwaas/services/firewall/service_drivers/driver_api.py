@@ -14,8 +14,6 @@
 #    under the License.
 
 import abc
-import copy
-
 
 from neutron_lib.callbacks import events
 from neutron_lib.callbacks import registry
@@ -139,28 +137,24 @@ class FirewallDriverDBMixin(FirewallDriver, metaclass=abc.ABCMeta):
         super().__init__(*args, **kwargs)
         self.firewall_db = firewall_db_v2.FirewallPluginDb()
 
-    @staticmethod
-    @db_api.CONTEXT_READER
-    def _update_resource_status(context, resource_type, resource_dict):
-        context.session.query(resource_type).\
-                              filter_by(id=resource_dict['id']).\
-                              update({'status': resource_dict['status']})
-
     # Firewall Group
     def create_firewall_group(self, context, firewall_group):
         request_body = firewall_group
         with db_api.CONTEXT_WRITER.using(context):
             firewall_group = self.firewall_db.create_firewall_group(
                 context, firewall_group)
-            self.create_firewall_group_precommit(context, firewall_group)
+            firewall_group_dict = firewall_group.to_dict()
+            self.create_firewall_group_precommit(context, firewall_group_dict)
             self.firewall_db.update_firewall_group_status(
-                context, firewall_group['id'], firewall_group['status'])
-        self.create_firewall_group_postcommit(context, firewall_group)
+                context, firewall_group_dict['id'],
+                firewall_group_dict['status'])
+        self.create_firewall_group_postcommit(context, firewall_group_dict)
+        firewall_group.status = firewall_group_dict['status']
 
         payload = events.DBEventPayload(context=context,
-                                        resource_id=firewall_group['id'],
+                                        resource_id=firewall_group_dict['id'],
                                         request_body=request_body,
-                                        states=(firewall_group,))
+                                        states=(firewall_group_dict,))
         registry.publish(
             const.FIREWALL_GROUP, events.AFTER_CREATE, self, payload=payload)
         return firewall_group
@@ -175,17 +169,17 @@ class FirewallDriverDBMixin(FirewallDriver, metaclass=abc.ABCMeta):
 
     def delete_firewall_group(self, context, id):
         firewall_group = self.firewall_db.get_firewall_group(context, id)
-        if firewall_group['status'] == nl_constants.PENDING_DELETE:
-            firewall_group['status'] = nl_constants.ERROR
-        self.delete_firewall_group_precommit(context, firewall_group)
-        if firewall_group['status'] != nl_constants.PENDING_DELETE:
-            # lets driver deleting firewall group later
+        firewall_group_dict = firewall_group.to_dict()
+        if firewall_group_dict['status'] == nl_constants.PENDING_DELETE:
+            firewall_group_dict['status'] = nl_constants.ERROR
+        self.delete_firewall_group_precommit(context, firewall_group_dict)
+        if firewall_group_dict['status'] != nl_constants.PENDING_DELETE:
             self.firewall_db.delete_firewall_group(context, id)
-        self.delete_firewall_group_postcommit(context, firewall_group)
+        self.delete_firewall_group_postcommit(context, firewall_group_dict)
 
         payload = events.DBEventPayload(context=context,
                                         resource_id=id,
-                                        states=(firewall_group,))
+                                        states=(firewall_group_dict,))
         registry.publish(
             const.FIREWALL_GROUP, events.AFTER_DELETE, self, payload=payload)
 
@@ -205,20 +199,23 @@ class FirewallDriverDBMixin(FirewallDriver, metaclass=abc.ABCMeta):
 
     def update_firewall_group(self, context, id, firewall_group_delta):
         old_firewall_group = self.firewall_db.get_firewall_group(context, id)
-        new_firewall_group = copy.deepcopy(old_firewall_group)
+        old_firewall_group_dict = old_firewall_group.to_dict()
+        new_firewall_group = dict(old_firewall_group_dict)
         new_firewall_group.update(firewall_group_delta)
-        self.update_firewall_group_precommit(context, old_firewall_group,
+        self.update_firewall_group_precommit(context, old_firewall_group_dict,
                                              new_firewall_group)
         firewall_group_delta['status'] = new_firewall_group['status']
         firewall_group = self.firewall_db.update_firewall_group(
             context, id, firewall_group_delta)
-        self.update_firewall_group_postcommit(context, old_firewall_group,
-                                              firewall_group)
+        updated_firewall_group_dict = firewall_group.to_dict()
+        self.update_firewall_group_postcommit(context, old_firewall_group_dict,
+                                              updated_firewall_group_dict)
+        firewall_group.status = updated_firewall_group_dict['status']
 
         payload = events.DBEventPayload(context=context,
                                         resource_id=id,
-                                        states=(old_firewall_group,
-                                                new_firewall_group))
+                                        states=(old_firewall_group_dict,
+                                                updated_firewall_group_dict))
         registry.publish(
             const.FIREWALL_GROUP, events.AFTER_UPDATE, self, payload=payload)
 
@@ -240,13 +237,15 @@ class FirewallDriverDBMixin(FirewallDriver, metaclass=abc.ABCMeta):
         with db_api.CONTEXT_WRITER.using(context):
             firewall_policy = self.firewall_db.create_firewall_policy(
                 context, firewall_policy)
-            self.create_firewall_policy_precommit(context, firewall_policy)
-        self.create_firewall_policy_postcommit(context, firewall_policy)
+            firewall_policy_dict = firewall_policy.to_dict()
+            self.create_firewall_policy_precommit(context,
+                                                  firewall_policy_dict)
+        self.create_firewall_policy_postcommit(context, firewall_policy_dict)
 
         payload = events.DBEventPayload(context=context,
-                                        resource_id=firewall_policy['id'],
+                                        resource_id=firewall_policy_dict['id'],
                                         request_body=request_body,
-                                        states=(firewall_policy,))
+                                        states=(firewall_policy_dict,))
         registry.publish(
             const.FIREWALL_POLICY, events.AFTER_CREATE, self, payload=payload)
         return firewall_policy
@@ -261,13 +260,14 @@ class FirewallDriverDBMixin(FirewallDriver, metaclass=abc.ABCMeta):
 
     def delete_firewall_policy(self, context, id):
         firewall_policy = self.firewall_db.get_firewall_policy(context, id)
-        self.delete_firewall_policy_precommit(context, firewall_policy)
+        firewall_policy_dict = firewall_policy.to_dict()
+        self.delete_firewall_policy_precommit(context, firewall_policy_dict)
         self.firewall_db.delete_firewall_policy(context, id)
-        self.delete_firewall_policy_postcommit(context, firewall_policy)
+        self.delete_firewall_policy_postcommit(context, firewall_policy_dict)
 
         payload = events.DBEventPayload(context=context,
                                         resource_id=id,
-                                        states=(firewall_policy,))
+                                        states=(firewall_policy_dict,))
         registry.publish(
             const.FIREWALL_POLICY, events.AFTER_UPDATE, self, payload=payload)
 
@@ -287,14 +287,15 @@ class FirewallDriverDBMixin(FirewallDriver, metaclass=abc.ABCMeta):
 
     def update_firewall_policy(self, context, id, firewall_policy_delta):
         old_firewall_policy = self.firewall_db.get_firewall_policy(context, id)
-        new_firewall_policy = copy.deepcopy(old_firewall_policy)
+        old_firewall_policy_dict = old_firewall_policy.to_dict()
+        new_firewall_policy = dict(old_firewall_policy_dict)
         new_firewall_policy.update(firewall_policy_delta)
-        self.update_firewall_policy_precommit(context, old_firewall_policy,
-                                              new_firewall_policy)
+        self.update_firewall_policy_precommit(
+            context, old_firewall_policy_dict, new_firewall_policy)
         firewall_policy = self.firewall_db.update_firewall_policy(
             context, id, firewall_policy_delta)
-        self.update_firewall_policy_postcommit(context, old_firewall_policy,
-                                               firewall_policy)
+        self.update_firewall_policy_postcommit(
+            context, old_firewall_policy_dict, firewall_policy.to_dict())
 
         payload = events.DBEventPayload(context=context,
                                         resource_id=id,
@@ -319,13 +320,14 @@ class FirewallDriverDBMixin(FirewallDriver, metaclass=abc.ABCMeta):
         with db_api.CONTEXT_WRITER.using(context):
             firewall_rule = self.firewall_db.create_firewall_rule(
                 context, firewall_rule)
-            self.create_firewall_rule_precommit(context, firewall_rule)
-        self.create_firewall_rule_postcommit(context, firewall_rule)
+            firewall_rule_dict = firewall_rule.to_dict()
+            self.create_firewall_rule_precommit(context, firewall_rule_dict)
+        self.create_firewall_rule_postcommit(context, firewall_rule_dict)
 
         payload = events.DBEventPayload(context=context,
-                                        resource_id=firewall_rule['id'],
+                                        resource_id=firewall_rule_dict['id'],
                                         request_body=request_body,
-                                        states=(firewall_rule,))
+                                        states=(firewall_rule_dict,))
         registry.publish(
             const.FIREWALL_RULE, events.AFTER_CREATE, self, payload=payload)
         return firewall_rule
@@ -340,13 +342,14 @@ class FirewallDriverDBMixin(FirewallDriver, metaclass=abc.ABCMeta):
 
     def delete_firewall_rule(self, context, id):
         firewall_rule = self.firewall_db.get_firewall_rule(context, id)
-        self.delete_firewall_rule_precommit(context, firewall_rule)
+        firewall_rule_dict = firewall_rule.to_dict()
+        self.delete_firewall_rule_precommit(context, firewall_rule_dict)
         self.firewall_db.delete_firewall_rule(context, id)
-        self.delete_firewall_rule_postcommit(context, firewall_rule)
+        self.delete_firewall_rule_postcommit(context, firewall_rule_dict)
 
         payload = events.DBEventPayload(context=context,
                                         resource_id=id,
-                                        states=(firewall_rule,))
+                                        states=(firewall_rule_dict,))
         registry.publish(
             const.FIREWALL_RULE, events.AFTER_DELETE, self, payload=payload)
 
@@ -366,14 +369,15 @@ class FirewallDriverDBMixin(FirewallDriver, metaclass=abc.ABCMeta):
 
     def update_firewall_rule(self, context, id, firewall_rule_delta):
         old_firewall_rule = self.firewall_db.get_firewall_rule(context, id)
-        new_firewall_rule = copy.deepcopy(old_firewall_rule)
+        old_firewall_rule_dict = old_firewall_rule.to_dict()
+        new_firewall_rule = dict(old_firewall_rule_dict)
         new_firewall_rule.update(firewall_rule_delta)
-        self.update_firewall_rule_precommit(context, old_firewall_rule,
+        self.update_firewall_rule_precommit(context, old_firewall_rule_dict,
                                             new_firewall_rule)
         firewall_rule = self.firewall_db.update_firewall_rule(
             context, id, firewall_rule_delta)
-        self.update_firewall_rule_postcommit(context, old_firewall_rule,
-                                             firewall_rule)
+        self.update_firewall_rule_postcommit(context, old_firewall_rule_dict,
+                                             firewall_rule.to_dict())
 
         payload = events.DBEventPayload(context=context,
                                         resource_id=id,

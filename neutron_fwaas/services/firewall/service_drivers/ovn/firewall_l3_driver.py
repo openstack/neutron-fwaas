@@ -205,8 +205,8 @@ class OVNFwaasDriver(driver_api.FirewallDriverDB):
         pg_name = ovn_utils.ovn_port_group_name(firewall_group['id'])
         try:
             with self._nb_ovn.transaction(check_error=True) as txn:
-                if (firewall_group['ingress_firewall_policy_id'] or
-                        firewall_group['egress_firewall_policy_id']):
+                if (firewall_group.get('ingress_firewall_policy_id') or
+                        firewall_group.get('egress_firewall_policy_id')):
                     # Add rule acls to port_group
                     self._add_rules_for_firewall_group(context, txn,
                                                        firewall_group['id'])
@@ -234,10 +234,10 @@ class OVNFwaasDriver(driver_api.FirewallDriverDB):
         port_updated = (set(new_firewall_group['ports']) !=
                         set(old_firewall_group['ports']))
         policies_updated = (
-                new_firewall_group['ingress_firewall_policy_id'] !=
-                old_firewall_group['ingress_firewall_policy_id'] or
-                new_firewall_group['egress_firewall_policy_id'] !=
-                old_firewall_group['egress_firewall_policy_id']
+                new_firewall_group.get('ingress_firewall_policy_id') !=
+                old_firewall_group.get('ingress_firewall_policy_id') or
+                new_firewall_group.get('egress_firewall_policy_id') !=
+                old_firewall_group.get('egress_firewall_policy_id')
         )
         if port_updated or policies_updated:
             new_firewall_group['status'] = const.PENDING_UPDATE
@@ -248,10 +248,10 @@ class OVNFwaasDriver(driver_api.FirewallDriverDB):
             return
         old_ports = set(old_firewall_group['ports'])
         new_ports = set(new_firewall_group['ports'])
-        old_ing_policy = old_firewall_group['ingress_firewall_policy_id']
-        new_ing_policy = new_firewall_group['ingress_firewall_policy_id']
-        old_eg_policy = old_firewall_group['egress_firewall_policy_id']
-        new_eg_policy = new_firewall_group['egress_firewall_policy_id']
+        old_ing_policy = old_firewall_group.get('ingress_firewall_policy_id')
+        new_ing_policy = new_firewall_group.get('ingress_firewall_policy_id')
+        old_eg_policy = old_firewall_group.get('egress_firewall_policy_id')
+        new_eg_policy = new_firewall_group.get('egress_firewall_policy_id')
         pg_name = ovn_utils.ovn_port_group_name(new_firewall_group['id'])
 
         # We except it would be active
@@ -352,7 +352,8 @@ class OVNFwaasDriver(driver_api.FirewallDriverDB):
         self._process_acls_by_policies_or_rule(context, [policy_id])
 
     def remove_rule_postcommit(self, context, policy_id, rule_info):
-        rule_detail = self.firewall_db.get_firewall_rule(
+        rule_obj = self.firewall_db.get_firewall_rule(
             context, rule_info['firewall_rule_id'])
+        rule_detail = rule_obj.to_dict()
         self._process_acls_by_policies_or_rule(
             context, [policy_id], rule_detail, ovn_const.OP_DEL)

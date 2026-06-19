@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from neutron.db import db_base_plugin_common
 from neutron.db import servicetype_db as st_db
 from neutron import service
 from neutron.services import provider_configuration as provider_conf
@@ -301,6 +302,7 @@ class FirewallPluginV2(Firewallv2PluginBase):
 
     # Firewall Group
     @log_helpers.log_method_call
+    @db_base_plugin_common.convert_result_to_dict
     @db_api.CONTEXT_WRITER
     def create_firewall_group(self, context, firewall_group):
         firewall_group = firewall_group['firewall_group']
@@ -308,7 +310,6 @@ class FirewallPluginV2(Firewallv2PluginBase):
 
         self._validate_firewall_policies_for_firewall_group(context,
                                                             firewall_group)
-        # Validate ports owner type and project
         self._validate_ports_for_firewall_group(context,
                                                 firewall_group['project_id'],
                                                 ports)
@@ -333,14 +334,18 @@ class FirewallPluginV2(Firewallv2PluginBase):
         self.driver.delete_firewall_group(context, id)
 
     @log_helpers.log_method_call
+    @db_base_plugin_common.filter_fields
+    @db_base_plugin_common.convert_result_to_dict
     @db_api.CONTEXT_READER
     def get_firewall_group(self, context, id, fields=None):
-        return self.driver.get_firewall_group(context, id, fields=fields)
+        return self.driver.get_firewall_group(context, id)
 
     @log_helpers.log_method_call
+    @db_base_plugin_common.filter_fields
+    @db_base_plugin_common.convert_result_to_dict
     @db_api.CONTEXT_READER
     def get_firewall_groups(self, context, filters=None, fields=None):
-        return self.driver.get_firewall_groups(context, filters, fields)
+        return self.driver.get_firewall_groups(context, filters)
 
     @log_helpers.log_method_call
     def get_firewall_groups_count(self, context, filters=None):
@@ -348,6 +353,7 @@ class FirewallPluginV2(Firewallv2PluginBase):
         return len(self.get_firewall_groups(context=context, filters=filters))
 
     @log_helpers.log_method_call
+    @db_base_plugin_common.convert_result_to_dict
     @db_api.CONTEXT_WRITER
     def update_firewall_group(self, context, id, firewall_group):
         firewall_group = firewall_group['firewall_group']
@@ -358,7 +364,6 @@ class FirewallPluginV2(Firewallv2PluginBase):
 
         self._validate_firewall_policies_for_firewall_group(context,
                                                             firewall_group)
-        # Validate ports owner type and project
         self._validate_ports_for_firewall_group(context,
                                                 firewall_group['project_id'],
                                                 ports)
@@ -369,6 +374,7 @@ class FirewallPluginV2(Firewallv2PluginBase):
 
     # Firewall Policy
     @log_helpers.log_method_call
+    @db_base_plugin_common.convert_result_to_dict
     @db_api.CONTEXT_WRITER
     def create_firewall_policy(self, context, firewall_policy):
         firewall_policy = firewall_policy['firewall_policy']
@@ -380,16 +386,21 @@ class FirewallPluginV2(Firewallv2PluginBase):
         self.driver.delete_firewall_policy(context, id)
 
     @log_helpers.log_method_call
+    @db_base_plugin_common.filter_fields
+    @db_base_plugin_common.convert_result_to_dict
     @db_api.CONTEXT_READER
     def get_firewall_policy(self, context, id, fields=None):
-        return self.driver.get_firewall_policy(context, id, fields)
+        return self.driver.get_firewall_policy(context, id)
 
     @log_helpers.log_method_call
+    @db_base_plugin_common.filter_fields
+    @db_base_plugin_common.convert_result_to_dict
     @db_api.CONTEXT_READER
     def get_firewall_policies(self, context, filters=None, fields=None):
-        return self.driver.get_firewall_policies(context, filters, fields)
+        return self.driver.get_firewall_policies(context, filters)
 
     @log_helpers.log_method_call
+    @db_base_plugin_common.convert_result_to_dict
     @db_api.CONTEXT_WRITER
     def update_firewall_policy(self, context, id, firewall_policy):
         firewall_policy = firewall_policy['firewall_policy']
@@ -398,6 +409,7 @@ class FirewallPluginV2(Firewallv2PluginBase):
 
     # Firewall Rule
     @log_helpers.log_method_call
+    @db_base_plugin_common.convert_result_to_dict
     @db_api.CONTEXT_WRITER
     def create_firewall_rule(self, context, firewall_rule):
         firewall_rule = firewall_rule['firewall_rule']
@@ -409,16 +421,21 @@ class FirewallPluginV2(Firewallv2PluginBase):
         self.driver.delete_firewall_rule(context, id)
 
     @log_helpers.log_method_call
+    @db_base_plugin_common.filter_fields
+    @db_base_plugin_common.convert_result_to_dict
     @db_api.CONTEXT_READER
     def get_firewall_rule(self, context, id, fields=None):
-        return self.driver.get_firewall_rule(context, id, fields)
+        return self.driver.get_firewall_rule(context, id)
 
     @log_helpers.log_method_call
+    @db_base_plugin_common.filter_fields
+    @db_base_plugin_common.convert_result_to_dict
     @db_api.CONTEXT_READER
     def get_firewall_rules(self, context, filters=None, fields=None):
-        return self.driver.get_firewall_rules(context, filters, fields)
+        return self.driver.get_firewall_rules(context, filters)
 
     @log_helpers.log_method_call
+    @db_base_plugin_common.convert_result_to_dict
     @db_api.CONTEXT_WRITER
     def update_firewall_rule(self, context, id, firewall_rule):
         firewall_rule = firewall_rule['firewall_rule']
@@ -426,6 +443,7 @@ class FirewallPluginV2(Firewallv2PluginBase):
         return self.driver.update_firewall_rule(context, id, firewall_rule)
 
     @log_helpers.log_method_call
+    @db_base_plugin_common.convert_result_to_dict
     @db_api.CONTEXT_WRITER
     def insert_rule(self, context, policy_id, rule_info):
         self._ensure_update_firewall_policy(context, policy_id)
@@ -433,6 +451,7 @@ class FirewallPluginV2(Firewallv2PluginBase):
         return self.driver.insert_rule(context, policy_id, rule_info)
 
     @log_helpers.log_method_call
+    @db_base_plugin_common.convert_result_to_dict
     @db_api.CONTEXT_WRITER
     def remove_rule(self, context, policy_id, rule_info):
         self._ensure_update_firewall_policy(context, policy_id)

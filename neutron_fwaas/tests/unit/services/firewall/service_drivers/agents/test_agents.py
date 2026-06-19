@@ -169,10 +169,8 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
         ctx = context.get_admin_context()
         alt_ctx = context.get_admin_context()
 
-        _get_firewall_group = self.db._get_firewall_group
-
         def getdelete(context, fwg_id):
-            fwg_db = _get_firewall_group(context, fwg_id)
+            fwg_db = original_get_firewall_group(context, fwg_id)
             # NOTE(cby): Use a different session to simulate a concurrent del
             with db_api.CONTEXT_READER.using(alt_ctx):
                 alt_ctx.session.query(FirewallGroup).filter_by(
@@ -191,8 +189,9 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
                 self.db.update_firewall_group_status(
                     ctx, fwg_id, nl_constants.PENDING_DELETE)
 
+                original_get_firewall_group = self.db.get_firewall_group
                 with mock.patch.object(
-                    self.db, '_get_firewall_group', side_effect=getdelete
+                    self.db, 'get_firewall_group', side_effect=getdelete
                 ):
                     observed = self.callbacks.firewall_group_deleted(
                         ctx, fwg_id)
@@ -221,7 +220,7 @@ class TestAgentDriver(test_fwaas_plugin_v2.FirewallPluginV2TestCase,
                 observed = self.callbacks.firewall_group_deleted(
                     ctx, fwg_id)
                 self.assertFalse(observed)
-                fwg_db = self.db._get_firewall_group(ctx, fwg_id)
+                fwg_db = self.db.get_firewall_group(ctx, fwg_id)
                 self.assertEqual(nl_constants.ERROR, fwg_db['status'])
 
     def test_create_firewall_group_ports_not_specified(self):

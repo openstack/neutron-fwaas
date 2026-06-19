@@ -914,7 +914,9 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
         results = self._list_req('firewall_rules')
         for res in results:
             res.pop('id')
-            res.pop('tenant_id', None)
+            for key in ('tenant_id', 'created_at', 'updated_at',
+                        'revision_number'):
+                res.pop(key, None)
 
         base = {
             'shared': True,
@@ -1019,7 +1021,7 @@ class TestFirewallDBPluginV2(test_fwaas_plugin_v2.FirewallPluginV2TestCase):
             # data by comparing expected/actual tuples
             actual = []
             for r in res:
-                actual.append(tuple(r[key] for key in check_keys))
+                actual.append(tuple(r.get(key) for key in check_keys))
             self.assertEqual(set(expected), set(actual))
 
     def test_create_firewall_group_exists_default(self):
