@@ -30,6 +30,7 @@ from oslo_log import log as logging
 from oslo_utils import uuidutils
 
 from neutron_fwaas.common import fwaas_constants as const
+from neutron_fwaas.common import utils as fwaas_utils
 from neutron_fwaas.objects import firewall_v2 as fw_obj
 
 _IP_ADDR_FIELDS = ('source_ip_address', 'destination_ip_address')
@@ -87,62 +88,12 @@ class FirewallPluginDb:
             raise f_exc.FirewallRuleNotFound(firewall_rule_id=id)
         return fwr
 
-    def _validate_fwr_protocol_parameters(self, fwr):
-        protocol = fwr['protocol']
-        source_port = fwr['source_port']
-        dest_port = fwr['destination_port']
-
-        if protocol and protocol not in (nl_constants.PROTO_NAME_TCP,
-                                         nl_constants.PROTO_NAME_UDP):
-            if source_port or dest_port:
-                raise f_exc.FirewallRuleInvalidICMPParameter(
-                    param="Source, destination port")
-
-        if not protocol and (source_port or dest_port):
-            raise f_exc.FirewallRuleWithPortWithoutProtocolInvalid()
-
-    def _validate_fwr_src_dst_ip_version(self, fwr, fwr_db=None):
-        src_version = dst_version = None
-        if fwr.get('source_ip_address', None):
-            src_version = netaddr.IPNetwork(fwr['source_ip_address']).version
-        if fwr.get('destination_ip_address', None):
-            dst_version = netaddr.IPNetwork(
-                fwr['destination_ip_address']).version
-        rule_ip_version = fwr.get('ip_version', None)
-        if not rule_ip_version and fwr_db:
-            rule_ip_version = fwr_db.ip_version
-        if ((src_version and src_version != rule_ip_version) or
-                (dst_version and dst_version != rule_ip_version)):
-            raise f_exc.FirewallIpAddressConflict()
-
-    def _validate_fwr_port_range(self, min_port, max_port):
-        if int(min_port) > int(max_port):
-            port_range = '{}:{}'.format(min_port, max_port)
-            raise f_exc.FirewallRuleInvalidPortValue(port=port_range)
-
-    def _get_min_max_ports_from_range(self, port_range):
-        if not port_range:
-            return [None, None]
-        min_port, sep, max_port = port_range.partition(":")
-        if not max_port:
-            max_port = min_port
-        self._validate_fwr_port_range(min_port, max_port)
-        return [int(min_port), int(max_port)]
-
-    def _get_port_range_from_min_max_ports(self, min_port, max_port):
-        if not min_port:
-            return None
-        if min_port == max_port:
-            return str(min_port)
-        self._validate_fwr_port_range(min_port, max_port)
-        return '{}:{}'.format(min_port, max_port)
-
     def _make_firewall_rule_dict(self, firewall_rule, fields=None,
                                  policies=None):
-        src_port_range = self._get_port_range_from_min_max_ports(
+        src_port_range = fwaas_utils.get_port_range_from_min_max_ports(
             firewall_rule['source_port_range_min'],
             firewall_rule['source_port_range_max'])
-        dst_port_range = self._get_port_range_from_min_max_ports(
+        dst_port_range = fwaas_utils.get_port_range_from_min_max_ports(
             firewall_rule['destination_port_range_min'],
             firewall_rule['destination_port_range_max'])
         src_ip = firewall_rule['source_ip_address']
@@ -368,12 +319,12 @@ class FirewallPluginDb:
 
     def create_firewall_rule(self, context, firewall_rule):
         fwr = firewall_rule
-        self._validate_fwr_protocol_parameters(fwr)
-        self._validate_fwr_src_dst_ip_version(fwr)
+        fwaas_utils.validate_fwr_protocol_parameters(fwr)
+        fwaas_utils.validate_fwr_src_dst_ip_version(fwr)
 
-        src_port_min, src_port_max = self._get_min_max_ports_from_range(
+        src_port_min, src_port_max = fwaas_utils.get_min_max_ports_from_range(
             fwr['source_port'])
-        dst_port_min, dst_port_max = self._get_min_max_ports_from_range(
+        dst_port_min, dst_port_max = fwaas_utils.get_min_max_ports_from_range(
             fwr['destination_port'])
         with db_api.CONTEXT_WRITER.using(context):
             fwr_ovo = fw_obj.FirewallRuleV2(
@@ -404,17 +355,18 @@ class FirewallPluginDb:
         fwr_merged = self._make_firewall_rule_dict(fwr_ovo)
         fwr_merged.update(fwr)
 
-        self._validate_fwr_protocol_parameters(fwr_merged)
-        self._validate_fwr_src_dst_ip_version(fwr_merged)
+        fwaas_utils.validate_fwr_protocol_parameters(fwr_merged)
+        fwaas_utils.validate_fwr_src_dst_ip_version(fwr_merged)
         if 'source_port' in fwr:
-            src_port_min, src_port_max = self._get_min_max_ports_from_range(
-                fwr['source_port'])
+            src_port_min, src_port_max = (
+                fwaas_utils.get_min_max_ports_from_range(fwr['source_port']))
             fwr['source_port_range_min'] = src_port_min
             fwr['source_port_range_max'] = src_port_max
             del fwr['source_port']
         if 'destination_port' in fwr:
-            dst_port_min, dst_port_max = self._get_min_max_ports_from_range(
-                fwr['destination_port'])
+            dst_port_min, dst_port_max = (
+                fwaas_utils.get_min_max_ports_from_range(
+                    fwr['destination_port']))
             fwr['destination_port_range_min'] = dst_port_min
             fwr['destination_port_range_max'] = dst_port_max
             del fwr['destination_port']
