@@ -24,9 +24,11 @@ from neutron_lib import constants as nl_const
 from neutron_lib.exceptions import firewall_v2 as f_exc
 from neutron_lib import rpc as n_rpc
 from neutron_lib.utils import net as nl_net
+import oslo_messaging
 
 from neutron_fwaas._i18n import _
 from neutron_fwaas.common import fwaas_constants as consts
+from neutron_fwaas.services.firewall.rpc import serialization as rpc_serial
 from neutron_fwaas.services.firewall.service_drivers.agents import\
     firewall_agent_api as api
 
@@ -39,32 +41,40 @@ SG_OVS_DRIVER = 'openvswitch'
 class FWaaSL2PluginApi(api.FWaaSPluginApiMixin):
     """L2 agent side of FWaaS agent-to-plugin RPC API"""
 
-    def get_firewall_group_for_port(self, context, port_id):
+    def get_firewall_group_for_port(self, context, port_id, host):
         """Get firewall group is associated with a port"""
 
         LOG.debug("Get firewall group is associated with port %s", port_id)
-        cctxt = self.client.prepare()
-        return cctxt.call(context, 'get_firewall_group_for_port',
-                          port_id=port_id)
+        cctxt = self.client.prepare(version=self.rpc_version)
+        result = cctxt.call(context, 'get_firewall_group_for_port',
+                            port_id=port_id, host=host,
+                            rpc_version=self.rpc_version)
+        if result is None:
+            return result
+        return rpc_serial.deserialize_firewall_group_from_rpc(result)
 
     def set_firewall_group_status(self, context, fwg_id, status, host):
         """Set the status of a group operation."""
 
         LOG.debug("Fetch firewall group changing status")
-        cctxt = self.client.prepare()
+        cctxt = self.client.prepare(version=self.rpc_version)
         return cctxt.call(context, 'set_firewall_group_status',
-                          fwg_id=fwg_id, status=status, host=host)
+                          fwg_id=fwg_id, status=status, host=host,
+                          rpc_version=self.rpc_version)
 
     def firewall_group_deleted(self, context, fwg_id, host):
         """Notifies the plugin that a firewall group has been deleted."""
 
         LOG.debug("Notify to the plugin that firewall group has been deleted")
-        cctxt = self.client.prepare()
+        cctxt = self.client.prepare(version=self.rpc_version)
         return cctxt.call(context, 'firewall_group_deleted',
-                          fwg_id=fwg_id, host=host)
+                          fwg_id=fwg_id, host=host,
+                          rpc_version=self.rpc_version)
 
 
 class FWaaSV2AgentExtension(l2_extension.L2AgentExtension):
+
+    target = oslo_messaging.Target(version=rpc_serial.FWAAS_RPC_VERSION_OVO)
 
     def initialize(self, connection, driver_type):
         """Perform Agent Extension initialization"""
@@ -290,6 +300,8 @@ class FWaaSV2AgentExtension(l2_extension.L2AgentExtension):
     def create_firewall_group(self, context, firewall_group, host):
         """Handles create firewall group event"""
 
+        firewall_group = rpc_serial.deserialize_firewall_group_from_rpc(
+            firewall_group)
         # TODO(chandanc): Fix agent RPC endpoint to remove host arg
         host = cfg.CONF.host
         with self.driver.defer_apply():
@@ -305,6 +317,8 @@ class FWaaSV2AgentExtension(l2_extension.L2AgentExtension):
     def delete_firewall_group(self, context, firewall_group, host):
         """Handles delete firewall group event"""
 
+        firewall_group = rpc_serial.deserialize_firewall_group_from_rpc(
+            firewall_group)
         # TODO(chandanc): Fix agent RPC endpoint to remove host arg
         host = cfg.CONF.host
         with self.driver.defer_apply():
@@ -320,6 +334,8 @@ class FWaaSV2AgentExtension(l2_extension.L2AgentExtension):
     def update_firewall_group(self, context, firewall_group, host):
         """Handles update firewall group event"""
 
+        firewall_group = rpc_serial.deserialize_firewall_group_from_rpc(
+            firewall_group)
         # TODO(chandanc): Fix agent RPC endpoint to remove host arg
         host = cfg.CONF.host
         with self.driver.defer_apply():
@@ -352,7 +368,7 @@ class FWaaSV2AgentExtension(l2_extension.L2AgentExtension):
             return
 
         fwg = self.plugin_rpc.get_firewall_group_for_port(
-            context, port.get('port_id'))
+            context, port.get('port_id'), self.conf.host)
         if not fwg:
             LOG.info("Firewall group applied to port %s is "
                      "not available on server.", port['port_id'])

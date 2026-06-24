@@ -1,0 +1,5 @@
+---
+other:
+  - |
+    FWaaS has been migrated to Oslo Versioned Objects (OVO) for database
+    access and agent communication.

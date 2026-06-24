@@ -18,6 +18,7 @@ from oslo_config import cfg
 import oslo_messaging
 
 from neutron_fwaas._i18n import _
+from neutron_fwaas.services.firewall.rpc import serialization as rpc_serial
 
 
 FW_L2_NOOP_DRIVER = 'noop'
@@ -47,12 +48,14 @@ cfg.CONF.register_opts(FWaaSOpts, 'fwaas')
 class FWaaSPluginApiMixin:
     """Agent side of the FWaaS agent to FWaaS Plugin RPC API."""
 
-    def __init__(self, topic, host):
+    def __init__(self, topic, host,
+                 rpc_version=rpc_serial.FWAAS_RPC_VERSION_OVO):
         # NOTE(annp): Mixin class should call super
         super().__init__()
 
         self.host = host
-        target = oslo_messaging.Target(topic=topic, version='1.0')
+        self.rpc_version = rpc_version
+        target = oslo_messaging.Target(topic=topic, version=rpc_version)
         self.client = n_rpc.get_client(target)
 
     def set_firewall_status(self, context, firewall_id, status):

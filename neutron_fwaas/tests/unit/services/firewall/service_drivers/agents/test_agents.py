@@ -26,6 +26,7 @@ from neutron_lib.plugins import directory
 from oslo_config import cfg
 
 from neutron_fwaas.db.firewall.v2.models import FirewallGroup
+from neutron_fwaas.services.firewall.rpc import serialization as rpc_serial
 from neutron_fwaas.services.firewall.service_drivers.agents import agents
 from neutron_fwaas.tests import base
 from neutron_fwaas.tests.unit.services.firewall import test_fwaas_plugin_v2
@@ -66,18 +67,28 @@ class TestFirewallAgentApi(base.BaseTestCase):
     def test_init(self):
         self.assertEqual('topic', self.api.client.target.topic)
         self.assertEqual('host', self.api.host)
+        self.assertEqual('1.1', self.api.client.target.version)
 
     def _call_test_helper(self, method_name):
-        with mock.patch.object(self.api.client, 'cast') as rpc_mock, \
+        with mock.patch(
+                'neutron_fwaas.services.firewall.rpc.serialization.'
+                'serialize_firewall_group_for_rpc',
+                return_value='serialized') as ser_mock, \
+                mock.patch.object(self.api.client, 'cast') as rpc_mock, \
                 mock.patch.object(self.api.client, 'prepare') as prepare_mock:
             prepare_mock.return_value = self.api.client
-            getattr(self.api, method_name)(mock.sentinel.context, 'test')
+            getattr(self.api, method_name)(mock.sentinel.context,
+                                           mock.sentinel.rpc_payload)
 
-        prepare_args = {'fanout': True}
+        ser_mock.assert_called_once_with(
+            mock.sentinel.rpc_payload,
+            rpc_serial.FWAAS_RPC_VERSION_LEGACY)
+        prepare_args = {'fanout': True, 'version': '1.0'}
         prepare_mock.assert_called_once_with(**prepare_args)
 
         rpc_mock.assert_called_once_with(mock.sentinel.context, method_name,
-                                         firewall_group='test', host='host')
+                                         firewall_group='serialized',
+                                         host='host')
 
     def test_create_firewall_group(self):
         self._call_test_helper('create_firewall_group')

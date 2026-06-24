@@ -27,6 +27,8 @@ from oslo_log import log as logging
 import oslo_messaging
 
 from neutron_fwaas.common import fwaas_constants as constants
+from neutron_fwaas.objects import register_objects
+from neutron_fwaas.services.firewall.rpc import serialization as rpc_serial
 from neutron_fwaas.services.firewall.service_drivers import driver_api
 from neutron_fwaas.services.logapi.agents.drivers.iptables \
     import driver as logging_driver
@@ -36,7 +38,10 @@ LOG = logging.getLogger(__name__)
 
 
 class FirewallAgentCallbacks:
-    target = oslo_messaging.Target(version='1.0')
+    # API version history:
+    #   1.0 - dict-based firewall_group payloads
+    #   1.1 - OVO-based firewall_group payloads (FirewallGroup + rules)
+    target = oslo_messaging.Target(version='1.1')
 
     def __init__(self, firewall_db):
         self.firewall_db = firewall_db
@@ -68,13 +73,13 @@ class FirewallAgentCallbacks:
         try:
             fwg = self.firewall_db.get_firewall_group(context, fwg_id)
             # allow to delete firewalls in ERROR state
-            if fwg['status'] in (nl_constants.PENDING_DELETE,
-                                 nl_constants.ERROR):
+            if fwg.status in (nl_constants.PENDING_DELETE,
+                              nl_constants.ERROR):
                 self.firewall_db.delete_firewall_group(context, fwg_id)
                 return True
             LOG.warning('Firewall %(fwg)s unexpectedly deleted by agent, '
                         'status was %(status)s',
-                        {'fwg': fwg_id, 'status': fwg['status']})
+                        {'fwg': fwg_id, 'status': fwg.status})
             self.firewall_db.update_firewall_group(
                 context, fwg_id, {'status': nl_constants.ERROR})
             return False
@@ -86,23 +91,15 @@ class FirewallAgentCallbacks:
     @db_api.CONTEXT_WRITER
     def get_firewall_groups_for_project(self, context, **kwargs):
         """Gets all firewall_groups and rules on a project."""
-        fwg_list = []
+        rpc_version = kwargs.pop(
+            'rpc_version', rpc_serial.FWAAS_RPC_VERSION_LEGACY)
+        rpc_payload_list = []
         for fwg in self.firewall_db.get_firewall_groups(context):
-            fwg_with_rules =\
-                self.firewall_db.make_firewall_group_dict_with_rules(
-                    context, fwg.id)
-            if fwg.status == nl_constants.PENDING_DELETE:
-                fwg_with_rules['add-port-ids'] = []
-                fwg_with_rules['del-port-ids'] = (
-                    self.firewall_db.get_ports_in_firewall_group(
-                        context, fwg.id))
-            else:
-                fwg_with_rules['add-port-ids'] = (
-                    self.firewall_db.get_ports_in_firewall_group(
-                        context, fwg.id))
-                fwg_with_rules['del-port-ids'] = []
-            fwg_list.append(fwg_with_rules)
-        return fwg_list
+            rpc_payload_list.append(
+                rpc_serial.build_firewall_group_rpc_payload_for_sync(
+                    context, self.firewall_db, fwg))
+        return rpc_serial.serialize_firewall_group_list_for_rpc(
+            rpc_payload_list, rpc_version)
 
     @log_helpers.log_method_call
     @db_api.CONTEXT_WRITER
@@ -110,40 +107,25 @@ class FirewallAgentCallbacks:
         """Get all projects that have firewall_groups."""
         ctx = neutron_context.get_admin_context()
         fwg_list = self.firewall_db.get_firewall_groups(ctx)
-        fwg_project_list = list({fwg['project_id'] for fwg in fwg_list})
+        fwg_project_list = list({fwg.project_id for fwg in fwg_list})
         return fwg_project_list
 
     @log_helpers.log_method_call
     @db_api.CONTEXT_WRITER
     def get_firewall_group_for_port(self, context, **kwargs):
         """Get firewall_group is associated with a port."""
+        rpc_version = kwargs.pop(
+            'rpc_version', rpc_serial.FWAAS_RPC_VERSION_LEGACY)
         ctx = context.elevated()
         # Only one Firewall Group can be associated to a port at a time
         fwg_port_binding = self.firewall_db.get_firewall_groups(
             ctx, filters={'ports': [kwargs.get('port_id')]})
         if len(fwg_port_binding) != 1:
             return
-        fwg = fwg_port_binding[0].to_dict()
-
-        fwg['ingress_rule_list'] = []
-        if fwg.get('ingress_firewall_policy_id'):
-            fwp = self.firewall_db.get_firewall_policy(
-                context, fwg.get('ingress_firewall_policy_id'))
-            for assoc in (fwp.rule_associations or []):
-                fwr = self.firewall_db.get_firewall_rule(
-                    context, assoc.firewall_rule_id)
-                fwg['ingress_rule_list'].append(fwr.to_dict())
-
-        fwg['egress_rule_list'] = []
-        if fwg.get('egress_firewall_policy_id'):
-            fwp = self.firewall_db.get_firewall_policy(
-                context, fwg['egress_firewall_policy_id'])
-            for assoc in (fwp.rule_associations or []):
-                fwr = self.firewall_db.get_firewall_rule(
-                    context, assoc.firewall_rule_id)
-                fwg['egress_rule_list'].append(fwr.to_dict())
-
-        return fwg
+        rpc_payload = rpc_serial.build_firewall_group_rpc_payload_for_port(
+            context, self.firewall_db, fwg_port_binding[0])
+        return rpc_serial.serialize_firewall_group_for_rpc(
+            rpc_payload, rpc_version)
 
 
 class FirewallAgentApi:
@@ -151,23 +133,30 @@ class FirewallAgentApi:
 
     def __init__(self, topic, host):
         self.host = host
-        target = oslo_messaging.Target(topic=topic, version='1.0')
+        target = oslo_messaging.Target(topic=topic, version='1.1')
         self.client = n_rpc.get_client(target)
 
-    def create_firewall_group(self, context, firewall_group):
-        cctxt = self.client.prepare(fanout=True)
-        cctxt.cast(context, 'create_firewall_group',
-                   firewall_group=firewall_group, host=self.host)
+    def _cast_firewall_group(self, context, method_name, rpc_payload):
+        # TODO(slaweq): Use FWAAS_RPC_VERSION_OVO once 1.0 agents
+        # are no longer supported (after H+1 / I slurp).
+        rpc_version = rpc_serial.FWAAS_RPC_VERSION_LEGACY
+        payload = rpc_serial.serialize_firewall_group_for_rpc(
+            rpc_payload, rpc_version)
+        cctxt = self.client.prepare(fanout=True, version=rpc_version)
+        cctxt.cast(context, method_name,
+                   firewall_group=payload, host=self.host)
 
-    def update_firewall_group(self, context, firewall_group):
-        cctxt = self.client.prepare(fanout=True)
-        cctxt.cast(context, 'update_firewall_group',
-                   firewall_group=firewall_group, host=self.host)
+    def create_firewall_group(self, context, rpc_payload):
+        self._cast_firewall_group(
+            context, 'create_firewall_group', rpc_payload)
 
-    def delete_firewall_group(self, context, firewall_group):
-        cctxt = self.client.prepare(fanout=True)
-        cctxt.cast(context, 'delete_firewall_group',
-                   firewall_group=firewall_group, host=self.host)
+    def update_firewall_group(self, context, rpc_payload):
+        self._cast_firewall_group(
+            context, 'update_firewall_group', rpc_payload)
+
+    def delete_firewall_group(self, context, rpc_payload):
+        self._cast_firewall_group(
+            context, 'delete_firewall_group', rpc_payload)
 
 
 class FirewallAgentDriver(driver_api.FirewallDriverDB,
@@ -208,6 +197,7 @@ class FirewallAgentDriver(driver_api.FirewallDriverDB,
         return True
 
     def start_rpc_listener(self):
+        register_objects()
         self.endpoints = [FirewallAgentCallbacks(self.firewall_db)]
         self.rpc_connection = n_rpc.Connection()
         self.rpc_connection.create_consumer(constants.FIREWALL_PLUGIN,
@@ -221,15 +211,12 @@ class FirewallAgentDriver(driver_api.FirewallDriverDB,
             return
         status_update = {"status": nl_constants.PENDING_UPDATE}
         self.update_firewall_group(context, fwg_id, status_update)
-        fwg_with_rules = self.firewall_db.make_firewall_group_dict_with_rules(
-            context, fwg_id)
-        # this is triggered on an update to fwg rule or policy, no
-        # change in associated ports.
-        fwg_with_rules['add-port-ids'] = fw_ports
-        fwg_with_rules['del-port-ids'] = []
-        fwg_with_rules['port_details'] = self._get_fwg_port_details(
-            context, fwg_with_rules['add-port-ids'])
-        self.agent_rpc.update_firewall_group(context, fwg_with_rules)
+        rpc_payload = rpc_serial.build_firewall_group_rpc_payload(
+            context, self.firewall_db, fwg_id,
+            add_port_ids=fw_ports,
+            del_port_ids=[],
+            port_details=self._get_fwg_port_details(context, fw_ports))
+        self.agent_rpc.update_firewall_group(context, rpc_payload)
 
     def _rpc_update_firewall_policy(self, context, firewall_policy_id):
         firewall_policy = self.get_firewall_policy(context, firewall_policy_id)
@@ -280,14 +267,13 @@ class FirewallAgentDriver(driver_api.FirewallDriverDB,
 
     def create_firewall_group_postcommit(self, context, firewall_group):
         if firewall_group['status'] != nl_constants.INACTIVE:
-            fwg_with_rules =\
-                self.firewall_db.make_firewall_group_dict_with_rules(
-                    context, firewall_group['id'])
-            fwg_with_rules['add-port-ids'] = firewall_group['ports']
-            fwg_with_rules['del-ports-id'] = []
-            fwg_with_rules['port_details'] = self._get_fwg_port_details(
-                context, firewall_group['ports'])
-            self.agent_rpc.create_firewall_group(context, fwg_with_rules)
+            rpc_payload = rpc_serial.build_firewall_group_rpc_payload(
+                context, self.firewall_db, firewall_group['id'],
+                add_port_ids=firewall_group['ports'],
+                del_port_ids=[],
+                port_details=self._get_fwg_port_details(
+                    context, firewall_group['ports']))
+            self.agent_rpc.create_firewall_group(context, rpc_payload)
 
     def _need_pending_update(self, old_firewall_group, new_firewall_group):
         port_updated = (set(new_firewall_group['ports']) !=
@@ -317,46 +303,45 @@ class FirewallAgentDriver(driver_api.FirewallDriverDB,
                                          new_firewall_group):
             return
 
-        fwg_with_rules = self.firewall_db.make_firewall_group_dict_with_rules(
-            context, new_firewall_group['id'])
-
-        # determine ports to add fw to and del from
-        fwg_with_rules['add-port-ids'] = list(
+        add_port_ids = list(
             set(new_firewall_group['ports']) - set(old_firewall_group['ports'])
         )
-        fwg_with_rules['del-port-ids'] = list(
+        del_port_ids = list(
             set(old_firewall_group['ports']) - set(new_firewall_group['ports'])
         )
 
         # last-port drives agent to ack with status to set state to INACTIVE
         # Set last-port to True if there are no ports in the new group and
         # the old group had the same number of ports that need to be deleted.
-        fwg_with_rules['last-port'] = (len(old_firewall_group['ports']) == len(
-                                       fwg_with_rules['del-port-ids']) and
-                                       not new_firewall_group['ports'])
+        last_port = (len(old_firewall_group['ports']) == len(del_port_ids) and
+                     not new_firewall_group['ports'])
 
         LOG.debug("update_firewall_group %s: Add Ports: %s, Del Ports: %s",
                   new_firewall_group['id'],
-                  fwg_with_rules['add-port-ids'],
-                  fwg_with_rules['del-port-ids'])
+                  add_port_ids,
+                  del_port_ids)
 
-        fwg_with_rules['port_details'] = self._get_fwg_port_details(
-            context, fwg_with_rules['del-port-ids'])
-        fwg_with_rules['port_details'].update(self._get_fwg_port_details(
-            context, fwg_with_rules['add-port-ids']))
+        port_details = self._get_fwg_port_details(context, del_port_ids)
+        port_details.update(self._get_fwg_port_details(context, add_port_ids))
 
         if (new_firewall_group['name'] == constants.DEFAULT_FWG and
-                len(fwg_with_rules['add-port-ids']) == 1 and
-                not fwg_with_rules['del-port-ids']):
-            port_id = fwg_with_rules['add-port-ids'][0]
-            if (fwg_with_rules['port_details'][port_id].get('status') !=
+                len(add_port_ids) == 1 and
+                not del_port_ids):
+            port_id = add_port_ids[0]
+            if (port_details[port_id].get('status') !=
                     nl_constants.ACTIVE):
                 # If port not yet active, just associate to default firewall
                 # group. When agent will set it to UP, it'll found FG
                 # association and enforce default policies
                 return
-        # Warn agents Firewall Group port list updated
-        self.agent_rpc.update_firewall_group(context, fwg_with_rules)
+
+        rpc_payload = rpc_serial.build_firewall_group_rpc_payload(
+            context, self.firewall_db, new_firewall_group['id'],
+            add_port_ids=add_port_ids,
+            del_port_ids=del_port_ids,
+            port_details=port_details,
+            last_port=last_port)
+        self.agent_rpc.update_firewall_group(context, rpc_payload)
 
     def update_firewall_policy_postcommit(self, context, old_firewall_policy,
                                           new_firewall_group):

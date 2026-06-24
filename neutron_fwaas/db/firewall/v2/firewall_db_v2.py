@@ -74,8 +74,8 @@ class FirewallPluginDb:
             raise f_exc.FirewallRuleNotFound(firewall_rule_id=id)
         return fwr
 
-    def _get_policy_ordered_rules(self, context, policy_id):
-        """Return ordered list of rule dicts for a given policy (for RPC)."""
+    def _get_policy_ordered_rule_objects(self, context, policy_id):
+        """Return ordered list of rule OVOs for a given policy."""
         with db_api.CONTEXT_READER.using(context):
             assocs = fw_obj.FirewallPolicyRuleAssociation.get_objects(
                 context, firewall_policy_id=policy_id)
@@ -85,8 +85,14 @@ class FirewallPluginDb:
                 return []
             rules = fw_obj.FirewallRuleV2.get_objects(context, id=rule_ids)
             rules_by_id = {r.id: r for r in rules}
-            return [rules_by_id[rid].to_dict()
+            return [rules_by_id[rid]
                     for rid in rule_ids if rid in rules_by_id]
+
+    def _get_policy_ordered_rules(self, context, policy_id):
+        """Return ordered list of rule dicts for a given policy (for RPC)."""
+        return [rule.to_dict()
+                for rule in self._get_policy_ordered_rule_objects(
+                    context, policy_id)]
 
     def make_firewall_group_dict_with_rules(self, context, firewall_group_id):
         """Build a dict with embedded rule lists, suitable for RPC."""
