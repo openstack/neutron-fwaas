@@ -23,7 +23,6 @@ set +o xtrace
 
 # Source in L2 and L3 agent extension management
 LIBDIR=$DEST/neutron-fwaas/devstack/lib
-source $LIBDIR/l2_agent
 source $LIBDIR/l3_agent
 
 function install_fwaas() {
