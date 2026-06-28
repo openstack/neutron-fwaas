@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # This file was shamelessly stolen from the neutron repository here:
 # https://opendev.org/openstack/neutron/src/branch/master/devstack/lib/l2_agent
 
