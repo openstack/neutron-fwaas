@@ -426,6 +426,122 @@ class TestFWaaSL3AgentExtension(base.BaseTestCase):
                                       self.router_id,
                                       **self.ri_kwargs)
 
+    def test_get_firewall_group_ports_compute_ports_no_router_update(self):
+        project_id = uuidutils.generate_uuid()
+        compute_port = 'compute-port-1'
+        router_port = 'router-port-1'
+        firewall_group = {
+            'project_id': project_id,
+            'tenant_id': project_id,
+            'ports': [compute_port],
+            'add-port-ids': [],
+            'del-port-ids': ['compute-port-2'],
+        }
+        ri = self._prepare_router_data()
+        ri.router['project_id'] = project_id
+        ri.router['tenant_id'] = project_id
+        ri.internal_ports = [{'id': router_port}]
+        self.api.agent_api.get_routers_in_project.return_value = [ri]
+
+        result = self.api._get_firewall_group_ports(
+            self.context, firewall_group)
+        self.assertEqual([], result)
+
+        self.api.agent_api.get_router_hosting_port.return_value = None
+        result_del = self.api._get_firewall_group_ports(
+            self.context, firewall_group, to_delete=True,
+            require_new_plugin=True)
+        self.assertEqual([], result_del)
+
+    def test_get_firewall_group_ports_policy_applies_to_associated_routers(
+            self):
+        project_id = uuidutils.generate_uuid()
+        router_port = 'router-port-1'
+        firewall_group = {
+            'project_id': project_id,
+            'tenant_id': project_id,
+            'ports': [router_port],
+            'add-port-ids': [],
+            'del-port-ids': [],
+        }
+        ri = self._prepare_router_data()
+        ri.router['project_id'] = project_id
+        ri.router['tenant_id'] = project_id
+        ri.internal_ports = [{'id': router_port}]
+        self.api.agent_api.get_routers_in_project.return_value = [ri]
+        self.api.agent_api.get_router_hosting_port.return_value = ri
+
+        with mock.patch.object(ip_lib,
+                               'list_network_namespaces') as mock_list_netns:
+            mock_list_netns.return_value = [ri.ns_name]
+            result = self.api._get_firewall_group_ports(
+                self.context, firewall_group)
+
+        self.assertEqual([(ri, [router_port])], result)
+        self.api.agent_api.get_routers_in_project.assert_called_once_with(
+            project_id)
+
+    def test_get_firewall_group_ports_policy_only_skips_unassociated_routers(
+            self):
+        project_id = uuidutils.generate_uuid()
+        associated_router_port = 'router-port-1'
+        other_router_port = 'router-port-2'
+        firewall_group = {
+            'project_id': project_id,
+            'tenant_id': project_id,
+            'ports': [associated_router_port],
+            'add-port-ids': [],
+            'del-port-ids': [],
+        }
+        ri = self._prepare_router_data()
+        ri.router['project_id'] = project_id
+        ri.router['tenant_id'] = project_id
+        ri.internal_ports = [{'id': associated_router_port}]
+        other_ri = self._prepare_router_data()
+        other_ri.router['project_id'] = project_id
+        other_ri.internal_ports = [{'id': other_router_port}]
+        self.api.agent_api.get_routers_in_project.return_value = [ri, other_ri]
+        self.api.agent_api.get_router_hosting_port.return_value = ri
+
+        with mock.patch.object(ip_lib,
+                               'list_network_namespaces') as mock_list_netns:
+            mock_list_netns.return_value = [ri.ns_name]
+            result = self.api._get_firewall_group_ports(
+                self.context, firewall_group)
+
+        self.assertEqual([(ri, [associated_router_port])], result)
+
+    def test_update_firewall_group_compute_port_removed_skips_driver(self):
+        project_id = uuidutils.generate_uuid()
+        firewall_group = {'id': 'fwg-id',
+                          'project_id': project_id,
+                          'tenant_id': project_id,
+                          'admin_state_up': True,
+                          'ports': ['compute-port-2'],
+                          'add-port-ids': [],
+                          'del-port-ids': ['compute-port-1'],
+                          'last-port': False}
+        ri = self._prepare_router_data()
+        ri.router['project_id'] = project_id
+        ri.router['tenant_id'] = project_id
+        ri.internal_ports = [{'id': 'router-port-1'}]
+        self.api.agent_api.get_routers_in_project.return_value = [ri]
+        self.api.agent_api.get_router_hosting_port.return_value = None
+        self.api.plugin_rpc = mock.Mock()
+
+        with mock.patch.object(self.api.fwaas_driver,
+                               'update_firewall_group') as mock_update, \
+                mock.patch.object(self.api.fwaas_driver,
+                                  'delete_firewall_group') as mock_delete, \
+                mock.patch.object(self.api.fwplugin_rpc,
+                                  'set_firewall_group_status') as mock_status:
+            self.api.update_firewall_group(
+                self.context, firewall_group, host='host')
+
+        mock_update.assert_not_called()
+        mock_delete.assert_not_called()
+        mock_status.assert_not_called()
+
     def test_get_in_ns_ports_for_non_ns_fw(self):
         port_ids = [1, 2]
         ports = [{'id': pid} for pid in port_ids]
