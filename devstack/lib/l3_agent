@@ -1,5 +1,7 @@
+#!/bin/bash
+
 # This file is completely based on one in the neutron repository here:
-# https://opendev.org/openstack/neutron/src/branch/master/devstack/lib/l2_agent
+# https://opendev.org/openstack/neutron/src/branch/master/devstack/lib/l3_agent
 
 function plugin_agent_add_l3_agent_extension {
     local l3_agent_extension=$1
