@@ -44,8 +44,11 @@ class OvnNbDbSync(db_sync_base.BaseOvnDbSynchronizer):
         "neutron_fwaas.services.firewall.fwaas_plugin_v2.FirewallPluginV2"
     ]
 
-    def __init__(self, core_plugin, ovn_driver, mode, is_maintenance=False):
-        super().__init__(core_plugin, ovn_driver, mode, is_maintenance)
+    def __init__(self, core_plugin, ovn_driver, mode, is_maintenance=False,
+                 plugin_conf=None):
+        super().__init__(
+            core_plugin, ovn_driver, mode, is_maintenance,
+            plugin_conf=plugin_conf)
         self.fwaas_plugin = directory.get_plugin(fwaas_constants.FIREWALL_V2)
         self.fwaas_ovn_driver = self.fwaas_plugin.driver
 
