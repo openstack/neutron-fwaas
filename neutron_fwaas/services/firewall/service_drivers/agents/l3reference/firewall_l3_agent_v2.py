@@ -22,9 +22,12 @@ from neutron_lib import rpc as n_rpc
 from oslo_config import cfg
 from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
+import oslo_messaging
 
 from neutron_fwaas.common import fwaas_constants
 from neutron_fwaas.common import resources as f_resources
+from neutron_fwaas.objects import register_objects
+from neutron_fwaas.services.firewall.rpc import serialization as rpc_serial
 from neutron_fwaas.services.firewall.service_drivers.agents import\
     firewall_agent_api as api
 from neutron_fwaas.services.firewall.service_drivers.agents import\
@@ -36,15 +39,15 @@ LOG = logging.getLogger(__name__)
 
 class FWaaSL3PluginApi(api.FWaaSPluginApiMixin):
     """Agent side of the FWaaS agent-to-plugin RPC API."""
-    def __init__(self, topic, host):
-        super().__init__(topic, host)
 
     def get_firewall_groups_for_project(self, context, **kwargs):
         """Fetches a project's firewall groups from the plugin."""
         LOG.debug("Fetch firewall groups from plugin")
-        cctxt = self.client.prepare()
-        return cctxt.call(context, 'get_firewall_groups_for_project',
-                          host=self.host)
+        cctxt = self.client.prepare(version=self.rpc_version)
+        result = cctxt.call(context, 'get_firewall_groups_for_project',
+                            host=self.host,
+                            rpc_version=self.rpc_version)
+        return rpc_serial.deserialize_firewall_group_list_from_rpc(result)
 
     def get_projects_with_firewall_groups(self, context, **kwargs):
         """Fetches from the plugin all projects that have firewall groups
@@ -52,27 +55,33 @@ class FWaaSL3PluginApi(api.FWaaSPluginApiMixin):
         """
         LOG.debug("Fetch from plugin projects that have firewall groups "
                   "configured")
-        cctxt = self.client.prepare()
+        cctxt = self.client.prepare(version=self.rpc_version)
         return cctxt.call(context,
-                          'get_projects_with_firewall_groups', host=self.host)
+                          'get_projects_with_firewall_groups',
+                          host=self.host,
+                          rpc_version=self.rpc_version)
 
     def firewall_group_deleted(self, context, fwg_id, **kwargs):
         """Notifies the plugin that a firewall group has been deleted."""
         LOG.debug("Notify plugin that firewall group has been deleted")
-        cctxt = self.client.prepare()
+        cctxt = self.client.prepare(version=self.rpc_version)
         return cctxt.call(context, 'firewall_group_deleted', fwg_id=fwg_id,
-                          host=self.host)
+                          host=self.host,
+                          rpc_version=self.rpc_version)
 
     def set_firewall_group_status(self, context, fwg_id, status, **kwargs):
         """Sets firewall group's status on the plugin."""
         LOG.debug("Set firewall groups from plugin")
-        cctxt = self.client.prepare()
+        cctxt = self.client.prepare(version=self.rpc_version)
         return cctxt.call(context, 'set_firewall_group_status',
-                          fwg_id=fwg_id, status=status, host=self.host)
+                          fwg_id=fwg_id, status=status, host=self.host,
+                          rpc_version=self.rpc_version)
 
 
 class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
     """FWaaS agent extension."""
+
+    target = oslo_messaging.Target(version=rpc_serial.FWAAS_RPC_VERSION_OVO)
 
     SUPPORTED_RESOURCE_TYPES = [f_resources.FIREWALL_GROUP,
                                 f_resources.FIREWALL_POLICY,
@@ -99,6 +108,7 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
 
     def __init__(self, host, conf):
         LOG.debug("Initializing firewall group agent")
+        register_objects()
         self.agent_api = None
         self.neutron_service_plugins = None
         self.conf = conf
@@ -366,6 +376,8 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
     def create_firewall_group(self, context, firewall_group, host):
         """Handles RPC from plugin to create a firewall group.
         """
+        firewall_group = rpc_serial.deserialize_firewall_group_from_rpc(
+            firewall_group)
 
         # Get the in-namespace ports to which to add the firewall group.
         ports_for_fwg = self._get_firewall_group_ports(context, firewall_group)
@@ -409,6 +421,8 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
     def update_firewall_group(self, context, firewall_group, host):
         """Handles RPC from plugin to update a firewall group.
         """
+        firewall_group = rpc_serial.deserialize_firewall_group_from_rpc(
+            firewall_group)
 
         # Initialize firewall group status.
         status = ""
@@ -501,6 +515,8 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
     def delete_firewall_group(self, context, firewall_group, host):
         """Handles RPC from plugin to delete a firewall group.
         """
+        firewall_group = rpc_serial.deserialize_firewall_group_from_rpc(
+            firewall_group)
 
         ports_for_fwg = self._get_firewall_group_ports(context, firewall_group,
                                                        to_delete=True)

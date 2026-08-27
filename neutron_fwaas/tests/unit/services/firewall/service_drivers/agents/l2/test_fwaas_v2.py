@@ -90,7 +90,7 @@ class TestHandlePort(TestFWaasV2AgentExtensionBase):
         self.l2.fwg_map.get_port_fwg.return_value = None
         self.l2.handle_port(self.ctx, self.port)
         self.rpc.get_firewall_group_for_port.assert_called_once_with(
-            self.ctx, self.port['port_id'])
+            self.ctx, self.port['port_id'], self.l2.conf.host)
         self.l2._apply_fwg_rules.assert_called_once_with(self.fwg, [self.port])
         self.l2._compute_status.assert_called_once_with(
             self.fwg, True, event=consts.HANDLE_PORT)
@@ -116,7 +116,7 @@ class TestHandlePort(TestFWaasV2AgentExtensionBase):
         self.l2.handle_port(self.ctx, self.port)
 
         self.rpc.get_firewall_group_for_port.assert_called_once_with(
-            self.ctx, self.port['port_id'])
+            self.ctx, self.port['port_id'], self.l2.conf.host)
         self.l2._apply_fwg_rules.assert_not_called()
         self.l2._compute_status.assert_not_called()
         self.l2.fwg_map.set_port_fwg.assert_not_called()
@@ -676,34 +676,45 @@ class TestFWaaSL2PluginApi(TestFWaasV2AgentExtensionBase):
         self.plugin = fwaas_v2.FWaaSL2PluginApi(
             consts.FIREWALL_PLUGIN, self.host)
         self.plugin.client = mock.Mock()
-        self.cctxt = self.plugin.client.prepare()
+        self.cctxt = mock.Mock()
+        self.plugin.client.prepare.return_value = self.cctxt
 
     def test_get_firewall_group_for_port(self):
-        self.plugin.get_firewall_group_for_port(self.ctx, mock.ANY)
+        self.cctxt.call.return_value = self.fwg
+        result = self.plugin.get_firewall_group_for_port(
+            self.ctx, mock.ANY, self.host)
+        self.plugin.client.prepare.assert_called_once_with(version='1.1')
         self.cctxt.call.assert_called_once_with(
             self.ctx,
             'get_firewall_group_for_port',
-            port_id=mock.ANY
+            port_id=mock.ANY,
+            host=self.host,
+            rpc_version='1.1',
         )
+        self.assertEqual(self.fwg, result)
 
     def test_set_firewall_group_status(self):
         self.plugin.set_firewall_group_status(
             self.ctx, self.fwg_id, 'ACTIVE', self.host)
+        self.plugin.client.prepare.assert_called_once_with(version='1.1')
         self.cctxt.call.assert_called_once_with(
             self.ctx,
             'set_firewall_group_status',
             fwg_id=self.fwg_id,
             status='ACTIVE',
             host=self.host,
+            rpc_version='1.1',
         )
 
     def test_firewall_group_deleted(self):
         self.plugin.firewall_group_deleted(self.ctx, self.fwg_id, self.host)
+        self.plugin.client.prepare.assert_called_once_with(version='1.1')
         self.cctxt.call.assert_called_once_with(
             self.ctx,
             'firewall_group_deleted',
             fwg_id=self.fwg_id,
             host=self.host,
+            rpc_version='1.1',
         )
 
 

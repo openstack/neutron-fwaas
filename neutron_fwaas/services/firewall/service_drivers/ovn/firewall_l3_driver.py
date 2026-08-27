@@ -84,11 +84,17 @@ class OVNFwaasDriver(driver_api.FirewallDriverDB):
                                       rule_id=None):
         """Add all rules belong to firewall_group
         """
-        fwg_with_rules = \
-            self.firewall_db.make_firewall_group_dict_with_rules(
-                context, fwg_id)
-        egress_rule_list = fwg_with_rules['egress_rule_list']
-        ingress_rule_list = fwg_with_rules['ingress_rule_list']
+        fwg = self.firewall_db.get_firewall_group(context, fwg_id)
+        ingress_policy_id = fwg.ingress_firewall_policy_id
+        egress_policy_id = fwg.egress_firewall_policy_id
+        ingress_rule_list = (
+            self.firewall_db._get_policy_ordered_rules(
+                context, ingress_policy_id)
+            if ingress_policy_id else [])
+        egress_rule_list = (
+            self.firewall_db._get_policy_ordered_rules(
+                context, egress_policy_id)
+            if egress_policy_id else [])
         pg_name = ovn_utils.ovn_port_group_name(fwg_id)
         rule_map = {const.INGRESS_DIRECTION: ingress_rule_list,
                     const.EGRESS_DIRECTION: egress_rule_list}
