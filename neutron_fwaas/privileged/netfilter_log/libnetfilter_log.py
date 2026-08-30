@@ -16,11 +16,11 @@
 import multiprocessing
 import socket
 import struct
+import threading
 import time
+import zmq
 
 import cffi
-import eventlet
-from eventlet.green import zmq
 from neutron_lib.utils import runtime
 from os_ken.lib import addrconv
 from os_ken.lib.packet import arp
@@ -327,5 +327,7 @@ class NFLogApp:
                         self.callback(jsonutils.loads(msg))
                     sub.close()
                 time.sleep(1.0)
+
         # Spawn loop
-        eventlet.spawn_n(loop)
+        thread = threading.Thread(target=loop, args=())
+        thread.start()
