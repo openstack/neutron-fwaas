@@ -32,9 +32,8 @@ lib_log = importutils.import_module(
 class NFLogAppTestCase(base.BaseTestCase):
 
     def setUp(self):
-
         self.nflog_app = lib_log.NFLogApp()
-        self.spawn = mock.patch('eventlet.spawn').start()
+        mock.patch('threading.Thread.start').start()
         super().setUp()
 
     def test_register_packet_handler(self):
