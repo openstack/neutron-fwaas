@@ -25,13 +25,13 @@
         - neutron-tempest-plugin-fwaas-openvswitch
     experimental:
       jobs:
-        - openstack-tox-py313-with-oslo-master:
+        - openstack-tox-py314-with-oslo-master:
             required-projects: *fwaas_required_projects
     periodic-weekly:
       jobs:
-        - openstack-tox-py313:
+        - openstack-tox-py314:
             required-projects: *fwaas_required_projects
-        - openstack-tox-py313-with-oslo-master:
+        - openstack-tox-py314-with-oslo-master:
             required-projects: *fwaas_required_projects
         - neutron-fwaas-functional
         - neutron-tempest-plugin-fwaas-ovn
