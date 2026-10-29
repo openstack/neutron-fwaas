@@ -237,7 +237,7 @@ class NFLogWrapper:
             msg = _("Could not set mode for nflog")
             raise Exception(msg)
 
-    @ffi.callback("nflog_callback")
+    @ffi.callback("nflog_callback")  # type: ignore[union-attr]
     def cb(gh, nfmsg, nfa, data):
         ev = decode(nfa)
         msg = jsonutils.dumps(ev) + '\n'

@@ -25,8 +25,9 @@ from sqlalchemy import event
 MYSQL_ENGINE = None
 FWAAS_VERSION_TABLE = 'alembic_version_fwaas'
 config = context.config
-neutron_config = config.neutron_config
-logging_config.fileConfig(config.config_file_name)
+neutron_config = config.neutron_config  # type: ignore[attr-defined]
+if config.config_file_name is not None:
+    logging_config.fileConfig(config.config_file_name)
 target_metadata = model_base.BASEV2.metadata
 
 
