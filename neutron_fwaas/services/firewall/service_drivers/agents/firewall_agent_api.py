@@ -13,6 +13,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import typing
+
+from neutron_lib import context as n_ctx
 from neutron_lib import rpc as n_rpc
 from oslo_config import cfg
 import oslo_messaging
@@ -48,8 +51,9 @@ cfg.CONF.register_opts(FWaaSOpts, 'fwaas')
 class FWaaSPluginApiMixin:
     """Agent side of the FWaaS agent to FWaaS Plugin RPC API."""
 
-    def __init__(self, topic, host,
-                 rpc_version=rpc_serial.FWAAS_RPC_VERSION_OVO):
+    def __init__(self, topic: str, host: str,
+                 rpc_version: str = rpc_serial.FWAAS_RPC_VERSION_OVO
+                 ) -> None:
         # NOTE(annp): Mixin class should call super
         super().__init__()
 
@@ -58,13 +62,15 @@ class FWaaSPluginApiMixin:
         target = oslo_messaging.Target(topic=topic, version=rpc_version)
         self.client = n_rpc.get_client(target)
 
-    def set_firewall_status(self, context, firewall_id, status):
+    def set_firewall_status(self, context: n_ctx.Context,
+                            firewall_id: str, status: str) -> typing.Any:
         """Make a RPC to set the status of a firewall."""
         cctxt = self.client.prepare()
         return cctxt.call(context, 'set_firewall_status', host=self.host,
                           firewall_id=firewall_id, status=status)
 
-    def firewall_deleted(self, context, firewall_id):
+    def firewall_deleted(self, context: n_ctx.Context,
+                         firewall_id: str) -> typing.Any:
         """Make a RPC to indicate that the firewall resources are deleted."""
         cctxt = self.client.prepare()
         return cctxt.call(context, 'firewall_deleted', host=self.host,
@@ -74,18 +80,21 @@ class FWaaSPluginApiMixin:
 class FWaaSAgentRpcCallbackMixin:
     """Mixin for FWaaS agent Implementations."""
 
-    def __init__(self, host):
+    def __init__(self, host: str) -> None:
 
-        super().__init__(host)
+        super().__init__(host)  # type: ignore[call-arg]
 
-    def create_firewall(self, context, firewall, host):
+    def create_firewall(self, context: n_ctx.Context,
+                        firewall: dict[str, typing.Any], host: str) -> None:
         """Handle RPC cast from plugin to create a firewall."""
         pass
 
-    def update_firewall(self, context, firewall, host):
+    def update_firewall(self, context: n_ctx.Context,
+                        firewall: dict[str, typing.Any], host: str) -> None:
         """Handle RPC cast from plugin to update a firewall."""
         pass
 
-    def delete_firewall(self, context, firewall, host):
+    def delete_firewall(self, context: n_ctx.Context,
+                        firewall: dict[str, typing.Any], host: str) -> None:
         """Handle RPC cast from plugin to delete a firewall."""
         pass

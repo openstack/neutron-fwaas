@@ -10,7 +10,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import typing
+
 from neutron_lib import constants as nl_constants
+from neutron_lib import context as n_ctx
 
 from neutron_fwaas.objects import firewall_v2 as fw_obj
 
@@ -19,20 +22,27 @@ FWAAS_RPC_VERSION_LEGACY = '1.0'
 FWAAS_RPC_VERSION_OVO = '1.1'
 
 
-def is_ovo_primitive(obj):
+def is_ovo_primitive(obj: typing.Any) -> bool:
     return (isinstance(obj, dict) and
             'versioned_object.name' in obj)
 
 
-def is_rpc_ovo_payload(payload):
+def is_rpc_ovo_payload(
+        payload: dict[str, typing.Any]) -> bool:
     return (isinstance(payload, dict) and
             'firewall_group' in payload and
             is_ovo_primitive(payload['firewall_group']))
 
 
-def build_firewall_group_rpc_payload(context, firewall_db, fwg_id, *,
-                                     add_port_ids=None, del_port_ids=None,
-                                     port_details=None, last_port=None):
+def build_firewall_group_rpc_payload(
+        context: n_ctx.Context,
+        firewall_db: typing.Any,
+        fwg_id: str,
+        *,
+        add_port_ids: list[str] | None = None,
+        del_port_ids: list[str] | None = None,
+        port_details: dict[str, dict[str, typing.Any]] | None = None,
+        last_port: bool | None = None) -> dict[str, typing.Any]:
     """Build an RPC payload using FWaaS OVO objects plus RPC metadata."""
     fwg_ovo = firewall_db.get_firewall_group(context, fwg_id)
     ingress_policy_id = fwg_ovo.ingress_firewall_policy_id
@@ -55,7 +65,9 @@ def build_firewall_group_rpc_payload(context, firewall_db, fwg_id, *,
     }
 
 
-def build_firewall_group_rpc_payload_for_sync(context, firewall_db, fwg_ovo):
+def build_firewall_group_rpc_payload_for_sync(
+        context: n_ctx.Context, firewall_db: typing.Any,
+        fwg_ovo: typing.Any) -> dict[str, typing.Any]:
     """Build RPC payload for get_firewall_groups_for_project."""
     fwg_ports = firewall_db.get_ports_in_firewall_group(context, fwg_ovo.id)
     if fwg_ovo.status == nl_constants.PENDING_DELETE:
@@ -71,12 +83,16 @@ def build_firewall_group_rpc_payload_for_sync(context, firewall_db, fwg_ovo):
     )
 
 
-def build_firewall_group_rpc_payload_for_port(context, firewall_db, fwg_ovo):
+def build_firewall_group_rpc_payload_for_port(
+        context: n_ctx.Context, firewall_db: typing.Any,
+        fwg_ovo: typing.Any) -> dict[str, typing.Any]:
     """Build RPC payload for get_firewall_group_for_port."""
     return build_firewall_group_rpc_payload(context, firewall_db, fwg_ovo.id)
 
 
-def rpc_payload_to_legacy_dict(payload):
+def rpc_payload_to_legacy_dict(
+    payload: dict[str, typing.Any]
+) -> dict[str, typing.Any]:
     """Convert an RPC payload to the legacy agent dict format."""
     fwg = payload['firewall_group']
     result = {
@@ -107,7 +123,9 @@ def rpc_payload_to_legacy_dict(payload):
     return result
 
 
-def _serialize_ovo_payload(payload):
+def _serialize_ovo_payload(
+    payload: dict[str, typing.Any]
+) -> dict[str, typing.Any]:
     wire = {
         'firewall_group': payload['firewall_group'].obj_to_primitive(),
         'ingress_rules': [
@@ -121,7 +139,9 @@ def _serialize_ovo_payload(payload):
     return wire
 
 
-def _deserialize_ovo_payload(wire):
+def _deserialize_ovo_payload(
+    wire: dict[str, typing.Any]
+) -> dict[str, typing.Any]:
     payload = {
         'firewall_group': fw_obj.FirewallGroup.clean_obj_from_primitive(
             wire['firewall_group']),
@@ -138,7 +158,10 @@ def _deserialize_ovo_payload(wire):
     return payload
 
 
-def serialize_firewall_group_for_rpc(payload, rpc_version):
+def serialize_firewall_group_for_rpc(
+    payload: dict[str, typing.Any],
+    rpc_version: str
+) -> dict[str, typing.Any]:
     if rpc_version == FWAAS_RPC_VERSION_LEGACY:
         # TODO(slaweq): Remove legacy RPC dict format support when
         # minimum supported agent RPC version is 1.1.
@@ -146,7 +169,8 @@ def serialize_firewall_group_for_rpc(payload, rpc_version):
     return _serialize_ovo_payload(payload)
 
 
-def deserialize_firewall_group_from_rpc(payload):
+def deserialize_firewall_group_from_rpc(
+        payload: dict[str, typing.Any]) -> dict[str, typing.Any]:
     if is_rpc_ovo_payload(payload):
         return rpc_payload_to_legacy_dict(_deserialize_ovo_payload(payload))
     # TODO(slaweq): Remove legacy RPC dict format support when
@@ -154,11 +178,15 @@ def deserialize_firewall_group_from_rpc(payload):
     return payload
 
 
-def deserialize_firewall_group_list_from_rpc(payload_list):
+def deserialize_firewall_group_list_from_rpc(
+    payload_list: list[dict[str, typing.Any]] | None
+) -> list[dict[str, typing.Any]]:
     return [deserialize_firewall_group_from_rpc(item)
             for item in (payload_list or [])]
 
 
-def serialize_firewall_group_list_for_rpc(payload_list, rpc_version):
+def serialize_firewall_group_list_for_rpc(
+        payload_list: list[dict[str, typing.Any]],
+        rpc_version: str) -> list[dict[str, typing.Any]]:
     return [serialize_firewall_group_for_rpc(payload, rpc_version)
             for payload in payload_list]
