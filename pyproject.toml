@@ -117,6 +117,7 @@ module = [
     "neutron_fwaas.services.firewall.service_drivers.agents.agents",
     "neutron_fwaas.services.firewall.service_drivers.agents.drivers.conntrack_base",
     "neutron_fwaas.services.firewall.service_drivers.agents.drivers.fwaas_base_v2",
+    "neutron_fwaas.services.firewall.service_drivers.agents.drivers.linux.iptables_fwaas_v2",
     "neutron_fwaas.services.firewall.service_drivers.agents.drivers.linux.l2.driver_base",
     "neutron_fwaas.services.firewall.service_drivers.agents.drivers.linux.l2.noop.noop_driver",
     "neutron_fwaas.services.firewall.service_drivers.agents.drivers.linux.l2.openvswitch_firewall.constants",
