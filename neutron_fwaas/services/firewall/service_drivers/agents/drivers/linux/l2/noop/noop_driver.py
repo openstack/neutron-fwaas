@@ -38,7 +38,10 @@ class NoopFirewallL2Driver(driver_base.FirewallL2DriverBase):
         pass
 
     @log_helpers.log_method_call
-    def process_trusted_ports(self, ports: list[str]) -> None:
+    def process_trusted_ports(
+        self,
+        ports: list[dict[str, typing.Any]]
+    ) -> None:
         pass
 
     @log_helpers.log_method_call
