@@ -11,6 +11,7 @@
 #    under the License.
 
 from datetime import datetime
+import typing
 
 from neutron.common.ovn import utils as ovn_utils
 from neutron_lib import context
@@ -44,8 +45,14 @@ class OvnNbDbSync(db_sync_base.BaseOvnDbSynchronizer):
         "neutron_fwaas.services.firewall.fwaas_plugin_v2.FirewallPluginV2"
     ]
 
-    def __init__(self, core_plugin, ovn_driver, mode, is_maintenance=False,
-                 plugin_conf=None):
+    def __init__(
+        self,
+        core_plugin: typing.Any,
+        ovn_driver: typing.Any,
+        mode: str,
+        is_maintenance: bool = False,
+        plugin_conf: typing.Any = None
+    ) -> None:
         super().__init__(
             core_plugin, ovn_driver, mode, is_maintenance,
             plugin_conf=plugin_conf)
@@ -53,12 +60,12 @@ class OvnNbDbSync(db_sync_base.BaseOvnDbSynchronizer):
         self.fwaas_ovn_driver = self.fwaas_plugin.driver
 
     @classmethod
-    def prepare_additional_configuration(cls, conf):
+    def prepare_additional_configuration(cls, conf: typing.Any) -> None:
         # FWaaS service plugin requires service provider to be configured
         conf.set_override(
             'service_provider', [OVN_SERVICE_PROVIDER], 'service_providers')
 
-    def do_sync(self):
+    def do_sync(self) -> None:
         if not isinstance(self.fwaas_ovn_driver,
                           ovn_fwaas_driver.OVNFwaasDriver):
             LOG.warning("OVN FWaaS driver is required for OVN DB sync")
@@ -82,7 +89,8 @@ class OvnNbDbSync(db_sync_base.BaseOvnDbSynchronizer):
         LOG.debug("FWaaS OVN-Northbound DB sync process completed @ %s",
                   str(datetime.now()))
 
-    def _get_fw_port_groups_from_neutron_db(self, ctx):
+    def _get_fw_port_groups_from_neutron_db(
+            self, ctx: context.Context) -> dict[str, dict[str, typing.Any]]:
         neutron_fwaas_groups = {}
         with db_api.CONTEXT_READER.using(ctx):
             for fwg in self.fwaas_ovn_driver.get_firewall_groups(ctx):
@@ -91,7 +99,9 @@ class OvnNbDbSync(db_sync_base.BaseOvnDbSynchronizer):
                 neutron_fwaas_groups[fwg['id']] = fwg
         return neutron_fwaas_groups
 
-    def _get_fw_port_groups_from_ovn_db(self):
+    def _get_fw_port_groups_from_ovn_db(
+        self
+    ) -> dict[str, dict[str, typing.Any]]:
         ovn_port_groups = {}
         for pg in self.ovn_nb_api.db_list_rows('Port_Group').execute() or []:
             fwaas_group_id = pg.external_ids.get(
@@ -104,7 +114,13 @@ class OvnNbDbSync(db_sync_base.BaseOvnDbSynchronizer):
                 }
         return ovn_port_groups
 
-    def _get_firewall_groups(self, ctx):
+    def _get_firewall_groups(
+        self,
+        ctx: context.Context
+    ) -> tuple[
+        dict[str, dict[str, typing.Any]],
+        dict[str, dict[str, typing.Any]]
+    ]:
         neutron_fwaas_groups = self._get_fw_port_groups_from_neutron_db(ctx)
         ovn_port_groups = self._get_fw_port_groups_from_ovn_db()
         ids_to_remove = (
@@ -119,14 +135,16 @@ class OvnNbDbSync(db_sync_base.BaseOvnDbSynchronizer):
         # are not associated with any firewall group in Neutron DB.
         return neutron_fwaas_groups, groups_to_remove
 
-    def _sync_acls_for_firewall_group(self, ctx, txn, fw_group):
+    def _sync_acls_for_firewall_group(self, ctx: context.Context,
+                                      txn: typing.Any,
+                                      fw_group: dict[str, typing.Any]) -> None:
         if (fw_group['ingress_firewall_policy_id'] or
                 fw_group['egress_firewall_policy_id']):
             with db_api.CONTEXT_READER.using(ctx):
                 self.fwaas_plugin.driver._add_rules_for_firewall_group(
                     ctx, txn, fw_group['id'])
 
-    def _sync_firewall_groups(self, ctx):
+    def _sync_firewall_groups(self, ctx: context.Context) -> None:
         groups_to_sync, groups_to_remove = self._get_firewall_groups(ctx)
         if groups_to_sync or groups_to_remove:
             LOG.warning('Number of Port Groups to sync: %d, remove: %d',

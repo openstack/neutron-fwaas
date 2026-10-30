@@ -13,8 +13,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import typing
+
 from neutron.common.ovn import utils as ovn_utils
 from neutron_lib import constants as const
+from neutron_lib import context as n_ctx
 from oslo_log import log as logging
 
 from neutron_fwaas.services.firewall.service_drivers import driver_api
@@ -35,25 +38,25 @@ class OVNFwaasDriver(driver_api.FirewallDriverDB):
     is a peer of the lrp.
     """
 
-    def __init__(self, service_plugin):
+    def __init__(self, service_plugin: typing.Any) -> None:
         super().__init__(service_plugin)
         self._mech = None
 
-    def is_supported_l2_port(self, port):
+    def is_supported_l2_port(self, port: dict[str, typing.Any]) -> bool:
         return False
 
-    def is_supported_l3_port(self, port):
+    def is_supported_l3_port(self, port: dict[str, typing.Any]) -> bool:
         return True
 
-    def start_rpc_listener(self):
+    def start_rpc_listener(self) -> list[typing.Any]:
         return []
 
     @property
-    def _nb_ovn(self):
+    def _nb_ovn(self) -> typing.Any:
         return self._mech_driver.nb_ovn
 
     @property
-    def _mech_driver(self):
+    def _mech_driver(self) -> typing.Any:
         if self._mech is None:
             drivers = ('ovn', 'ovn-sync')
             for driver in drivers:
@@ -69,7 +72,7 @@ class OVNFwaasDriver(driver_api.FirewallDriverDB):
                     mechanism_drivers=drivers)
         return self._mech
 
-    def _init_firewall_group(self, txn, fwg_id):
+    def _init_firewall_group(self, txn: typing.Any, fwg_id: str) -> None:
         """Add port_group for firewall_group
 
         After create port_group for fwg, add default drop acls to it
@@ -80,8 +83,9 @@ class OVNFwaasDriver(driver_api.FirewallDriverDB):
         LOG.info("Successfully created port_group for firewall_group: %s",
                  fwg_id)
 
-    def _add_rules_for_firewall_group(self, context, txn, fwg_id,
-                                      rule_id=None):
+    def _add_rules_for_firewall_group(self, context: n_ctx.Context,
+                                      txn: typing.Any, fwg_id: str,
+                                      rule_id: str | None = None) -> None:
         """Add all rules belong to firewall_group
         """
         fwg = self.firewall_db.get_firewall_group(context, fwg_id)
@@ -123,7 +127,8 @@ class OVNFwaasDriver(driver_api.FirewallDriverDB):
         LOG.info("Successfully added rules for firewall_group %s",
                  fwg_id)
 
-    def _clear_rules_for_firewall_group(self, context, txn, fwg_id):
+    def _clear_rules_for_firewall_group(self, context: n_ctx.Context,
+                                        txn: typing.Any, fwg_id: str) -> None:
         """Clear acls belong to firewall_group
 
         Delete all rule acls but remain the default acls
@@ -139,9 +144,10 @@ class OVNFwaasDriver(driver_api.FirewallDriverDB):
         LOG.info("Successfully clear rules for firewall_group %s",
                  fwg_id)
 
-    def _process_acls_by_policies_or_rule(self, context, policy_ids,
-                                          rule_info=None,
-                                          op=ovn_const.OP_ADD):
+    def _process_acls_by_policies_or_rule(
+            self, context: n_ctx.Context, policy_ids: list[str] | None,
+            rule_info: dict[str, typing.Any] | None = None,
+            op: str = ovn_const.OP_ADD) -> None:
         """Delete/Update/Add the acls by rule or policies
         """
         ing_fwg_list = []
@@ -193,10 +199,12 @@ class OVNFwaasDriver(driver_api.FirewallDriverDB):
         LOG.info("Successfully %(op)s acls by rule %(rule)s "
                  "and policies %(p_ids)s",
                  {"op": op,
-                  "rule": rule_info.get('id'),
+                  "rule": rule_info.get('id') if rule_info else None,
                   "p_ids": policy_ids})
 
-    def create_firewall_group_precommit(self, context, firewall_group):
+    def create_firewall_group_precommit(self, context: n_ctx.Context,
+                                        firewall_group: dict[str, typing.Any]
+                                        ) -> None:
         if not firewall_group['ports']:
             LOG.info("No ports bound to firewall_group: %s, "
                      "set it to inactive", firewall_group['id'])
@@ -207,7 +215,9 @@ class OVNFwaasDriver(driver_api.FirewallDriverDB):
             self._init_firewall_group(txn, firewall_group['id'])
         firewall_group['status'] = status
 
-    def create_firewall_group_postcommit(self, context, firewall_group):
+    def create_firewall_group_postcommit(self, context: n_ctx.Context,
+                                         firewall_group: dict[str, typing.Any]
+                                         ) -> None:
         pg_name = ovn_utils.ovn_port_group_name(firewall_group['id'])
         try:
             with self._nb_ovn.transaction(check_error=True) as txn:
@@ -235,8 +245,12 @@ class OVNFwaasDriver(driver_api.FirewallDriverDB):
             self.firewall_db.update_firewall_group_status(
                 context, firewall_group['id'], firewall_group['status'])
 
-    def update_firewall_group_precommit(self, context, old_firewall_group,
-                                        new_firewall_group):
+    def update_firewall_group_precommit(
+        self,
+        context: n_ctx.Context,
+        old_firewall_group: dict[str, typing.Any],
+        new_firewall_group: dict[str, typing.Any]
+    ) -> None:
         port_updated = (set(new_firewall_group['ports']) !=
                         set(old_firewall_group['ports']))
         policies_updated = (
@@ -248,8 +262,12 @@ class OVNFwaasDriver(driver_api.FirewallDriverDB):
         if port_updated or policies_updated:
             new_firewall_group['status'] = const.PENDING_UPDATE
 
-    def update_firewall_group_postcommit(self, context, old_firewall_group,
-                                         new_firewall_group):
+    def update_firewall_group_postcommit(
+        self,
+        context: n_ctx.Context,
+        old_firewall_group: dict[str, typing.Any],
+        new_firewall_group: dict[str, typing.Any]
+    ) -> None:
         if new_firewall_group['status'] != const.PENDING_UPDATE:
             return
         old_ports = set(old_firewall_group['ports'])
@@ -302,14 +320,20 @@ class OVNFwaasDriver(driver_api.FirewallDriverDB):
             context, new_firewall_group['id'],
             new_firewall_group['status'])
 
-    def delete_firewall_group_precommit(self, context, firewall_group):
+    def delete_firewall_group_precommit(self, context: n_ctx.Context,
+                                        firewall_group: dict[str, typing.Any]
+                                        ) -> None:
         pg_name = ovn_utils.ovn_port_group_name(firewall_group['id'])
         with self._nb_ovn.transaction(check_error=True) as txn:
             if self._nb_ovn.get_port_group(pg_name):
                 txn.add(self._nb_ovn.pg_del(name=pg_name, if_exists=True))
 
-    def update_firewall_policy_postcommit(self, context, old_firewall_policy,
-                                          new_firewall_policy):
+    def update_firewall_policy_postcommit(
+        self,
+        context: n_ctx.Context,
+        old_firewall_policy: dict[str, typing.Any],
+        new_firewall_policy: dict[str, typing.Any]
+    ) -> None:
         old_rules = old_firewall_policy['firewall_rules']
         new_rules = new_firewall_policy['firewall_rules']
         if old_rules == new_rules:
@@ -317,8 +341,12 @@ class OVNFwaasDriver(driver_api.FirewallDriverDB):
         self._process_acls_by_policies_or_rule(context,
                                                [new_firewall_policy['id']])
 
-    def update_firewall_rule_postcommit(self, context, old_firewall_rule,
-                                        new_firewall_rule):
+    def update_firewall_rule_postcommit(
+        self,
+        context: n_ctx.Context,
+        old_firewall_rule: dict[str, typing.Any],
+        new_firewall_rule: dict[str, typing.Any]
+    ) -> None:
         NEED_UPDATE_FIELDS = ['enabled', 'protocol', 'ip_version',
                               'source_ip_address', 'destination_ip_address',
                               'source_port', 'destination_port', 'action']
@@ -353,11 +381,15 @@ class OVNFwaasDriver(driver_api.FirewallDriverDB):
         LOG.info("Successfully updated acls for rule: %s",
                  new_firewall_rule['id'])
 
-    def insert_rule_postcommit(self, context, policy_id, rule_info):
+    def insert_rule_postcommit(self, context: n_ctx.Context,
+                               policy_id: str,
+                               rule_info: dict[str, typing.Any]) -> None:
         # Add acls by policy_id
         self._process_acls_by_policies_or_rule(context, [policy_id])
 
-    def remove_rule_postcommit(self, context, policy_id, rule_info):
+    def remove_rule_postcommit(self, context: n_ctx.Context,
+                               policy_id: str,
+                               rule_info: dict[str, typing.Any]) -> None:
         rule_obj = self.firewall_db.get_firewall_rule(
             context, rule_info['firewall_rule_id'])
         rule_detail = rule_obj.to_dict()
