@@ -13,21 +13,25 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import typing
+
 from neutron_lib import constants
 from oslo_log import log as logging
 
 from neutron_fwaas.privileged import netlink_lib as nl_lib
 from neutron_fwaas.services.firewall.service_drivers.agents.drivers import\
     conntrack_base
+from neutron_fwaas.services.firewall.service_drivers.agents.drivers.\
+    conntrack_base import ConntrackEntry
 
 LOG = logging.getLogger(__name__)
 
 
 class ConntrackNetlink(conntrack_base.ConntrackDriverBase):
-    def initialize(self, *args, **kwargs):
+    def initialize(self, *args: typing.Any, **kwargs: typing.Any) -> None:
         LOG.debug('Conntrack Netlink loaded')
 
-    def flush_entries(self, namespace):
+    def flush_entries(self, namespace: str | None) -> None:
         """Flush all conntrack entries within the namespace
 
         :param namespace: namespace to flush
@@ -35,15 +39,20 @@ class ConntrackNetlink(conntrack_base.ConntrackDriverBase):
         """
         nl_lib.flush_entries(namespace)
 
-    def delete_entries(self, rules, namespace):
-        rule_filters = (self._get_filter_from_rule(r) for r in rules)
-        rule_filters = sorted(rule_filters)
+    def delete_entries(self, rules: list[dict[str, typing.Any]],
+                       namespace: str | None) -> None:
+        rule_filters = sorted(
+            self._get_filter_from_rule(r) for r in rules)
         entries = nl_lib.list_entries(namespace)
         delete_entries = self._get_entries_to_delete(rule_filters, entries)
         if delete_entries:
             nl_lib.delete_entries(delete_entries, namespace)
 
-    def _get_entries_to_delete(self, rule_filters, entries):
+    def _get_entries_to_delete(
+        self,
+        rule_filters: list[tuple[typing.Any, ...]],
+        entries: list[ConntrackEntry]
+    ) -> list[ConntrackEntry]:
         """Specify conntrack entries to delete
 
         :param rule_filters: List of filters parsed from firewall rules
@@ -75,7 +84,9 @@ class ConntrackNetlink(conntrack_base.ConntrackDriverBase):
         return delete_entries
 
     @staticmethod
-    def _get_filter_from_rule(rule):
+    def _get_filter_from_rule(
+        rule: dict[str, typing.Any]
+    ) -> tuple[typing.Any, ...]:
         """Parse the firewall rule to a tuple
 
         :param rule: firewall rule
@@ -98,7 +109,8 @@ class ConntrackNetlink(conntrack_base.ConntrackDriverBase):
         return tuple(rule_filter)
 
     @staticmethod
-    def _compare_entry_and_rule(rule_filter, entry):
+    def _compare_entry_and_rule(rule_filter: tuple[typing.Any, ...],
+                               entry: ConntrackEntry) -> int:
         """Define that the entry should be deleted or not
 
         :param rule_filter: filter that is parsed from a firewall rule

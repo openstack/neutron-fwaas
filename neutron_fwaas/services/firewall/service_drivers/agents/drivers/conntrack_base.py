@@ -25,6 +25,22 @@ from oslo_utils import excutils
 LOG = logging.getLogger(__name__)
 
 
+class ConntrackEntry(typing.NamedTuple):
+    """A parsed conntrack entry.
+
+    For icmp and icmpv6 entries the third and fourth fields hold the icmp
+    type and code, and icmp_id is set; for tcp and udp entries they hold
+    the source and destination ports and icmp_id is None.
+    """
+    ip_version: int
+    protocol: str
+    src_port_or_icmp_type: int
+    dst_port_or_icmp_code: int
+    src_ip: str
+    dst_ip: str
+    icmp_id: int | None = None
+
+
 def load_and_init_conntrack_driver(
     *args: typing.Any,
     **kwargs: typing.Any
@@ -50,9 +66,9 @@ class ConntrackDriverBase(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def delete_entries(self, rules: list[dict[str, typing.Any]],
-                       namespace: str) -> None:
+                       namespace: str | None) -> None:
         """Delete conntrack entries specified by list of rules"""
 
     @abc.abstractmethod
-    def flush_entries(self, namespace: str) -> None:
+    def flush_entries(self, namespace: str | None) -> None:
         """Delete all conntrack entries within namespace"""
