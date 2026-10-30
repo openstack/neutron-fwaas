@@ -12,6 +12,8 @@
 # License for the specific language governing permissions and limitations
 #    under the License.
 
+import typing
+
 from oslo_concurrency import lockutils
 from oslo_config import cfg
 from oslo_log import log as logging
@@ -21,6 +23,7 @@ from neutron import manager
 from neutron.plugins.ml2.drivers.openvswitch.agent import vlanmanager
 from neutron_lib.agent import l2_extension
 from neutron_lib import constants as nl_const
+from neutron_lib import context as n_ctx
 from neutron_lib.exceptions import firewall_v2 as f_exc
 from neutron_lib import rpc as n_rpc
 from neutron_lib.utils import net as nl_net
@@ -41,7 +44,9 @@ SG_OVS_DRIVER = 'openvswitch'
 class FWaaSL2PluginApi(api.FWaaSPluginApiMixin):
     """L2 agent side of FWaaS agent-to-plugin RPC API"""
 
-    def get_firewall_group_for_port(self, context, port_id, host):
+    def get_firewall_group_for_port(self, context: n_ctx.Context,
+                                    port_id: str | None, host: str
+                                    ) -> dict[str, typing.Any] | None:
         """Get firewall group is associated with a port"""
 
         LOG.debug("Get firewall group is associated with port %s", port_id)
@@ -53,7 +58,9 @@ class FWaaSL2PluginApi(api.FWaaSPluginApiMixin):
             return result
         return rpc_serial.deserialize_firewall_group_from_rpc(result)
 
-    def set_firewall_group_status(self, context, fwg_id, status, host):
+    def set_firewall_group_status(self, context: n_ctx.Context,
+                                  fwg_id: str, status: str | None,
+                                  host: str) -> typing.Any:
         """Set the status of a group operation."""
 
         LOG.debug("Fetch firewall group changing status")
@@ -62,7 +69,8 @@ class FWaaSL2PluginApi(api.FWaaSPluginApiMixin):
                           fwg_id=fwg_id, status=status, host=host,
                           rpc_version=self.rpc_version)
 
-    def firewall_group_deleted(self, context, fwg_id, host):
+    def firewall_group_deleted(self, context: n_ctx.Context,
+                               fwg_id: str, host: str) -> typing.Any:
         """Notifies the plugin that a firewall group has been deleted."""
 
         LOG.debug("Notify to the plugin that firewall group has been deleted")
@@ -76,7 +84,7 @@ class FWaaSV2AgentExtension(l2_extension.L2AgentExtension):
 
     target = oslo_messaging.Target(version=rpc_serial.FWAAS_RPC_VERSION_OVO)
 
-    def initialize(self, connection, driver_type):
+    def initialize(self, connection: typing.Any, driver_type: str) -> None:
         """Perform Agent Extension initialization"""
 
         self.conf = cfg.CONF
@@ -92,16 +100,16 @@ class FWaaSV2AgentExtension(l2_extension.L2AgentExtension):
         self.start_rpc_listeners()
         self.fwg_map = PortFirewallGroupMap()
 
-    def consume_api(self, agent_api):
+    def consume_api(self, agent_api: typing.Any) -> None:
         self.agent_api = agent_api
 
-    def start_rpc_listeners(self):
+    def start_rpc_listeners(self) -> list[typing.Any]:
         self.conn = n_rpc.Connection()
         endpoints = [self]
         self.conn.create_consumer(consts.FW_AGENT, endpoints, fanout=False)
         return self.conn.consume_in_threads()
 
-    def _load_l2_driver_class(self, driver_type):
+    def _load_l2_driver_class(self, driver_type: str) -> str:
         driver = self.conf.fwaas.firewall_l2_driver or 'noop'
         if driver == api.FW_L2_NOOP_DRIVER:
             return driver
@@ -111,7 +119,10 @@ class FWaaSV2AgentExtension(l2_extension.L2AgentExtension):
                 _("Firewall l2 driver: %s is not compatible"), driver_type)
         return driver
 
-    def _is_port_layer2(self, port):
+    def _is_port_layer2(
+        self,
+        port: dict[str, typing.Any] | None
+    ) -> typing.Any:
         """This function checks if a port belongs to a L2 case.
 
         Currently both DHCP and router ports are eliminated.
@@ -120,7 +131,9 @@ class FWaaSV2AgentExtension(l2_extension.L2AgentExtension):
         return port and port.get('device_owner', '').startswith(
             nl_const.DEVICE_OWNER_COMPUTE_PREFIX)
 
-    def _get_firewall_group_ports(self, fwg, host, to_delete=False):
+    def _get_firewall_group_ports(self, fwg: dict[str, typing.Any], host: str,
+                                  to_delete: bool = False
+                                  ) -> list[dict[str, typing.Any]]:
         port_list = []
         port_ids = fwg['del-port-ids'] if to_delete else fwg['add-port-ids']
 
@@ -134,7 +147,7 @@ class FWaaSV2AgentExtension(l2_extension.L2AgentExtension):
         return port_list
 
     @staticmethod
-    def _has_ports(fwg, event):
+    def _has_ports(fwg: dict[str, typing.Any], event: str) -> bool:
         """Verifying fwg has ports or not
 
          This function verify applying firewall group on ports
@@ -149,12 +162,13 @@ class FWaaSV2AgentExtension(l2_extension.L2AgentExtension):
             return bool(fwg['ports'])
 
     @staticmethod
-    def _has_policy(fwg):
+    def _has_policy(fwg: dict[str, typing.Any]) -> bool:
         """Verifying fwg has policy or not"""
         return bool(fwg['ingress_firewall_policy_id'] or
                     fwg['egress_firewall_policy_id'])
 
-    def _compute_status(self, fwg, result, event=consts.CREATE_FWG):
+    def _compute_status(self, fwg: dict[str, typing.Any], result: bool,
+                        event: str = consts.CREATE_FWG) -> str | None:
         """Compute a status of specified firewall group for update
 
         Validates 'ACTIVE', 'DOWN', 'INACTIVE', 'ERROR' and None as follows:
@@ -172,14 +186,17 @@ class FWaaSV2AgentExtension(l2_extension.L2AgentExtension):
 
         if event == consts.DELETE_FWG:
             # This firewall_group will be deleted. No need to update status.
-            return
+            return None
 
         if (self._has_ports(fwg, event) and self._has_policy(fwg)):
             return nl_const.ACTIVE
 
         return nl_const.INACTIVE
 
-    def _get_network_and_segmentation_id(self, fwg_port):
+    def _get_network_and_segmentation_id(
+        self,
+        fwg_port: dict[str, typing.Any]
+    ) -> tuple[typing.Any, typing.Any]:
         port_id = fwg_port.get('port_id', fwg_port.get('id'))
         port_details = fwg_port.get('port_details')
 
@@ -187,11 +204,11 @@ class FWaaSV2AgentExtension(l2_extension.L2AgentExtension):
             target = port_details.get(port_id)
             if target:
                 return target.get('network_id'), target.get('segmentation_id')
-            return
 
         return fwg_port.get('network_id'), fwg_port.get('segmentation_id')
 
-    def _add_local_vlan_to_ports(self, fwg_ports):
+    def _add_local_vlan_to_ports(self, fwg_ports: list[dict[str, typing.Any]]
+                                 ) -> list[dict[str, typing.Any]]:
         """Add local VLAN to ports if found
 
         This function tries to add local VLAN related to ports.
@@ -213,7 +230,9 @@ class FWaaSV2AgentExtension(l2_extension.L2AgentExtension):
 
         return ports_with_lvlan
 
-    def _apply_fwg_rules(self, fwg, ports, event=consts.UPDATE_FWG):
+    def _apply_fwg_rules(self, fwg: dict[str, typing.Any],
+                         ports: list[dict[str, typing.Any]],
+                         event: str = consts.UPDATE_FWG) -> bool:
         """This function invokes the driver create/update routine. """
         # Set firewall group status; will be overwritten if call to driver
         # fails.
@@ -237,7 +256,8 @@ class FWaaSV2AgentExtension(l2_extension.L2AgentExtension):
             return False
         return True
 
-    def _send_fwg_status(self, context, fwg_id, status, host):
+    def _send_fwg_status(self, context: n_ctx.Context, fwg_id: str,
+                         status: str | None, host: str) -> None:
         """Send firewall group's status to plugin.
 
         :returns: True if no exception occurred otherwise False
@@ -252,8 +272,9 @@ class FWaaSV2AgentExtension(l2_extension.L2AgentExtension):
             msg = _("Failed to send status for firewall_group(%s)")
             LOG.exception(msg, fwg_id)
 
-    def _create_firewall_group(self, context, fwg, host,
-                               event=consts.CREATE_FWG):
+    def _create_firewall_group(self, context: n_ctx.Context,
+                               fwg: dict[str, typing.Any], host: str,
+                               event: str = consts.CREATE_FWG) -> None:
         """Handles RPC from plugin to create a firewall group. """
 
         add_ports = self._get_firewall_group_ports(fwg, host)
@@ -273,8 +294,9 @@ class FWaaSV2AgentExtension(l2_extension.L2AgentExtension):
         # after updating.
         self._send_fwg_status(context, fwg['id'], status, host)
 
-    def _delete_firewall_group(self, context, fwg, host,
-                               event=consts.DELETE_FWG):
+    def _delete_firewall_group(self, context: n_ctx.Context,
+                               fwg: dict[str, typing.Any], host: str,
+                               event: str = consts.DELETE_FWG) -> None:
         """Handles RPC from plugin to delete a firewall group. """
 
         del_ports = self._get_firewall_group_ports(fwg, host, to_delete=True)
@@ -297,7 +319,9 @@ class FWaaSV2AgentExtension(l2_extension.L2AgentExtension):
             self._send_fwg_status(context, fwg['id'], status, self.conf.host)
 
     @lockutils.synchronized('fwg')
-    def create_firewall_group(self, context, firewall_group, host):
+    def create_firewall_group(self, context: n_ctx.Context,
+                              firewall_group: dict[str, typing.Any],
+                              host: str) -> None:
         """Handles create firewall group event"""
 
         firewall_group = rpc_serial.deserialize_firewall_group_from_rpc(
@@ -314,7 +338,9 @@ class FWaaSV2AgentExtension(l2_extension.L2AgentExtension):
                                       status=nl_const.ERROR, host=host)
 
     @lockutils.synchronized('fwg')
-    def delete_firewall_group(self, context, firewall_group, host):
+    def delete_firewall_group(self, context: n_ctx.Context,
+                              firewall_group: dict[str, typing.Any],
+                              host: str) -> None:
         """Handles delete firewall group event"""
 
         firewall_group = rpc_serial.deserialize_firewall_group_from_rpc(
@@ -331,7 +357,9 @@ class FWaaSV2AgentExtension(l2_extension.L2AgentExtension):
                                       status=nl_const.ERROR, host=host)
 
     @lockutils.synchronized('fwg')
-    def update_firewall_group(self, context, firewall_group, host):
+    def update_firewall_group(self, context: n_ctx.Context,
+                              firewall_group: dict[str, typing.Any],
+                              host: str) -> None:
         """Handles update firewall group event"""
 
         firewall_group = rpc_serial.deserialize_firewall_group_from_rpc(
@@ -351,7 +379,8 @@ class FWaaSV2AgentExtension(l2_extension.L2AgentExtension):
                                       status=nl_const.ERROR, host=host)
 
     @lockutils.synchronized('fwg-port')
-    def handle_port(self, context, port):
+    def handle_port(self, context: n_ctx.Context,
+                    port: dict[str, typing.Any]) -> None:
         """Handle port update event"""
 
         # Check if port is trusted and called at once.
@@ -380,14 +409,16 @@ class FWaaSV2AgentExtension(l2_extension.L2AgentExtension):
         self._send_fwg_status(
             context, fwg_id=fwg['id'], status=status, host=self.conf.host)
 
-    def _add_rule_for_trusted_port(self, port):
+    def _add_rule_for_trusted_port(self, port: dict[str, typing.Any]) -> None:
         self._add_local_vlan_to_ports([port])
         self.driver.process_trusted_ports([port])
 
-    def _delete_rule_for_trusted_port(self, port):
+    def _delete_rule_for_trusted_port(self, port: dict[str, typing.Any]
+                                      ) -> None:
         self.driver.remove_trusted_ports([port['port_id']])
 
-    def delete_port(self, context, port):
+    def delete_port(self, context: n_ctx.Context,
+                    port: dict[str, typing.Any]) -> None:
         """This is being called when a port is deleted by the agent. """
 
         # delete_port should be handled only unbound timing for a port.
@@ -396,7 +427,7 @@ class FWaaSV2AgentExtension(l2_extension.L2AgentExtension):
         if 'vif_port' in port:
             return
 
-        port = self.fwg_map.get_port(port)
+        port = self.fwg_map.get_port(port) or {}
 
         if port and nl_net.is_port_trusted(port):
             self._delete_rule_for_trusted_port(port)
@@ -434,39 +465,50 @@ class PortFirewallGroupMap:
     Furthermore, it is necessary to check 'device_owner' for trusted port, this
     Map also stores trusted port data.
     """
-    def __init__(self):
-        self.known_fwgs = {}
-        self.port_fwg = {}
-        self.port_detail = {}
+    def __init__(self) -> None:
+        self.known_fwgs: dict[str, dict[str, typing.Any]] = {}
+        self.port_fwg: dict[str, str] = {}
+        self.port_detail: dict[str, dict[str, typing.Any]] = {}
         # TODO(yushiro): If agent is restarted, this map doesn't have any
         # information. Need to consider map initialization in __init__()
 
-    def port_id(self, port):
+    def port_id(self, port: dict[str, typing.Any] | str) -> str | None:
         return (port if isinstance(port, str)
                 else port.get('port_id', port.get('id')))
 
-    def get_fwg(self, fwg_id):
+    def get_fwg(self, fwg_id: str) -> dict[str, typing.Any] | None:
         return self.known_fwgs.get(fwg_id)
 
-    def set_fwg(self, fwg):
+    def set_fwg(self, fwg: dict[str, typing.Any]) -> None:
         self.known_fwgs[fwg['id']] = fwg
 
-    def get_port(self, port):
-        return self.port_detail.get(self.port_id(port))
+    def get_port(self, port: dict[str, typing.Any] | str
+                 ) -> dict[str, typing.Any] | None:
+        port_id = self.port_id(port)
+        if port_id is not None:
+            return self.port_detail.get(port_id)
+        return None
 
-    def get_port_fwg(self, port):
-        fwg_id = self.port_fwg.get(self.port_id(port))
+    def get_port_fwg(self, port: dict[str, typing.Any] | str
+                     ) -> dict[str, typing.Any] | None:
+        port_id = self.port_id(port)
+        fwg_id = self.port_fwg.get(port_id) if port_id is not None else None
         if fwg_id:
             return self.get_fwg(fwg_id)
+        return None
 
-    def set_port(self, port):
+    def set_port(self, port: dict[str, typing.Any]) -> None:
         """Add a new port into port_detail"""
         port_id = self.port_id(port)
-        self.port_detail[port_id] = port
+        if port_id is not None:
+            self.port_detail[port_id] = port
 
-    def set_port_fwg(self, port, fwg):
+    def set_port_fwg(self, port: dict[str, typing.Any],
+                     fwg: dict[str, typing.Any]) -> None:
         """Add a new port into fwg['ports']"""
         port_id = self.port_id(port)
+        if port_id is None:
+            return
         # Update fwg['ports'] data
         fwg['ports'] = list(set(fwg['ports'] + [port_id]))
         # Update fwg_id -> firewall_group data
@@ -476,13 +518,15 @@ class PortFirewallGroupMap:
         # Update port_id -> firewall_group_id relation
         self.port_fwg[port_id] = fwg['id']
 
-    def remove_port(self, port):
+    def remove_port(self, port: dict[str, typing.Any]) -> None:
         """Remove port from fwg['ports'] and port_fwg dictionary
 
         When removing 'port' from several cases, the port should be removed
         from this map.
         """
         port_id = self.port_id(port)
+        if port_id is None:
+            return
         # Check if 'port_id' has registered in port_fwg dictionary.
         # Update firewall_group
         if port_id in self.port_fwg:
@@ -500,7 +544,7 @@ class PortFirewallGroupMap:
             del self.port_fwg[port_id]
             del self.port_detail[port_id]
 
-    def remove_fwg(self, fwg):
+    def remove_fwg(self, fwg: dict[str, typing.Any]) -> None:
         """Remove firewall_group from known_fwgs dictionary
 
         When removing firewall_group, it should be removed from this map

@@ -123,6 +123,7 @@ module = [
     "neutron_fwaas.services.firewall.service_drivers.agents.drivers.linux.l2.openvswitch_firewall.exceptions",
     "neutron_fwaas.services.firewall.service_drivers.agents.firewall_agent_api",
     "neutron_fwaas.services.firewall.service_drivers.agents.firewall_service",
+    "neutron_fwaas.services.firewall.service_drivers.agents.l2.fwaas_v2",
     "neutron_fwaas.services.firewall.service_drivers.agents.l3reference.firewall_l3_agent_v2",
     "neutron_fwaas.services.firewall.service_drivers.driver_api",
     "neutron_fwaas.services.firewall.service_drivers.ovn.constants",
