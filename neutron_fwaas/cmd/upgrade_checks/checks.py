@@ -12,6 +12,8 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import typing
+
 from neutron_lib.utils import upgrade_checks as base_checks
 from oslo_config import cfg
 from oslo_upgradecheck import upgradecheck
@@ -21,13 +23,13 @@ from neutron_fwaas._i18n import _
 
 class Checks(base_checks.BaseChecks):
 
-    def get_checks(self):
+    def get_checks(self) -> list[tuple[str, typing.Any]]:
         return [
             (_("Check FWaaS v1"), self.fwaas_v1_check)
         ]
 
     @staticmethod
-    def fwaas_v1_check(checker):
+    def fwaas_v1_check(checker: typing.Any) -> upgradecheck.Result:
         fwaas_v1_names = [
             'firewall',
             'neutron_fwaas.services.firewall.fwaas_plugin:FirewallPlugin']

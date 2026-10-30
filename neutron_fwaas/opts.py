@@ -10,6 +10,8 @@
 #  License for the specific language governing permissions and limitations
 #  under the License.
 
+import typing
+
 import neutron.conf.services.provider_configuration
 
 import neutron_fwaas.services.firewall.service_drivers.agents.\
@@ -17,7 +19,7 @@ import neutron_fwaas.services.firewall.service_drivers.agents.\
 import neutron_fwaas.extensions.firewall_v2
 
 
-def list_agent_opts():
+def list_agent_opts() -> list[tuple[str, list[typing.Any]]]:
     return [
         ('fwaas',
          neutron_fwaas.services.firewall.service_drivers.agents.
@@ -25,7 +27,7 @@ def list_agent_opts():
     ]
 
 
-def list_opts():
+def list_opts() -> list[tuple[str, list[typing.Any]]]:
     return [
         ('quotas',
          neutron_fwaas.extensions.firewall_v2.firewall_quota_opts),

@@ -98,5 +98,26 @@ exclude = "(?x)(^neutron_fwaas/tests/|^neutron_fwaas/privileged/tests/)"
 # package glob) once it passes, and never remove one. Once everything outside
 # the tests is listed, move these options to the global section.
 [[tool.mypy.overrides]]
-module = []
+module = [
+    "neutron_fwaas._i18n",
+    "neutron_fwaas.cmd.upgrade_checks.checks",
+    "neutron_fwaas.common.exceptions",
+    "neutron_fwaas.common.fwaas_constants",
+    "neutron_fwaas.common.resources",
+    "neutron_fwaas.common.utils",
+    "neutron_fwaas.db.models.head",
+    "neutron_fwaas.opts",
+    "neutron_fwaas.privileged.netlink_constants",
+    "neutron_fwaas.services.firewall.service_drivers.agents.drivers.linux.l2.openvswitch_firewall.constants",
+    "neutron_fwaas.services.firewall.service_drivers.agents.drivers.linux.l2.openvswitch_firewall.exceptions",
+    "neutron_fwaas.services.firewall.service_drivers.agents.firewall_service",
+    "neutron_fwaas.services.firewall.service_drivers.ovn.constants",
+    "neutron_fwaas.services.firewall.service_drivers.ovn.exceptions",
+    "neutron_fwaas.services.logapi.agents.drivers.iptables.driver",
+    "neutron_fwaas.services.logapi.agents.l3.fwg_log",
+    "neutron_fwaas.services.logapi.constants",
+    "neutron_fwaas.services.logapi.exceptions",
+    "neutron_fwaas.services.logapi.rpc.log_server",
+    "neutron_fwaas.version",
+]
 disallow_untyped_defs = true

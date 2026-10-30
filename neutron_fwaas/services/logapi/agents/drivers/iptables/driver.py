@@ -28,7 +28,7 @@ from neutron_fwaas.services.logapi.rpc import log_server as rpc_server
 
 LOG = logging.getLogger(__name__)
 
-DRIVER = None
+DRIVER: 'IptablesLoggingDriver | None' = None
 
 SUPPORTED_LOGGING_TYPES = [fw_const.FIREWALL_GROUP]
 
@@ -36,7 +36,7 @@ SUPPORTED_LOGGING_TYPES = [fw_const.FIREWALL_GROUP]
 class IptablesLoggingDriver(base.DriverBase):
 
     @staticmethod
-    def create():
+    def create() -> 'IptablesLoggingDriver':
         return IptablesLoggingDriver(
             name='iptables',
             vif_types=[],
@@ -45,7 +45,7 @@ class IptablesLoggingDriver(base.DriverBase):
             requires_rpc=True)
 
 
-def register():
+def register() -> None:
     """Register iptables-based logging driver for FWaaS."""
 
     global DRIVER

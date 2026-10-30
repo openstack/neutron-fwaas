@@ -13,18 +13,22 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import typing
+
 from neutron_fwaas.services.logapi.common import log_db_api
 
 
 # Use this when register log driver with
 # "register_rpc_methods" function
-def get_fwg_log_info_for_port(context, port_id):
+def get_fwg_log_info_for_port(context: typing.Any, port_id: str) -> typing.Any:
     return log_db_api.get_fwg_log_info_for_port(context, port_id)
 
 
 # Use this when register log driver with
 # "register_rpc_methods" function
-def get_fwg_log_info_for_log_resources(context, log_resources):
+def get_fwg_log_info_for_log_resources(
+        context: typing.Any,
+        log_resources: list[dict[str, typing.Any]]) -> typing.Any:
     return log_db_api.get_fwg_log_info_for_log_resources(
         context,
         log_resources)

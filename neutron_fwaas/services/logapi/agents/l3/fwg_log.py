@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import typing
+
 from neutron.services.logapi.agent.l3 import base
 from neutron.services.logapi.agent import log_extension as log_ext
 from neutron.services.logapi.rpc import agent as agent_rpc
@@ -25,7 +27,7 @@ FIREWALL_LOG_DRIVER_NAME = 'fwaas_v2_log'
 class FWaaSL3LoggingExtension(base.L3LoggingExtensionBase,
                               l3_extension.L3AgentExtension):
 
-    def initialize(self, connection, driver_type):
+    def initialize(self, connection: typing.Any, driver_type: str) -> None:
         """Initialize L3 logging agent extension"""
 
         fw_log_cls = self._load_driver_cls(
@@ -35,7 +37,7 @@ class FWaaSL3LoggingExtension(base.L3LoggingExtensionBase,
         self._register_rpc_consumers()
         self.log_driver.initialize(self.resource_rpc)
 
-    def update_network(self, context, data):
+    def update_network(self, context: typing.Any, data: typing.Any) -> None:
         # TODO(zhouhenglc) remove at base.L3LoggingExtensionBase support
         # update_network
         pass

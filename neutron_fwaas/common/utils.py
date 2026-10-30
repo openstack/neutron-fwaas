@@ -12,13 +12,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import typing
+
 import netaddr
 
 from neutron_lib import constants as nl_constants
 from neutron_lib.exceptions import firewall_v2 as f_exc
 
 
-def validate_fwr_protocol_parameters(fwr):
+def validate_fwr_protocol_parameters(fwr: dict[str, typing.Any]) -> None:
     protocol = fwr.get('protocol')
     source_port = fwr.get('source_port')
     dest_port = fwr.get('destination_port')
@@ -33,7 +35,8 @@ def validate_fwr_protocol_parameters(fwr):
         raise f_exc.FirewallRuleWithPortWithoutProtocolInvalid()
 
 
-def validate_fwr_src_dst_ip_version(fwr, fwr_db=None):
+def validate_fwr_src_dst_ip_version(
+        fwr: dict[str, typing.Any], fwr_db: typing.Any = None) -> None:
     src_version = dst_version = None
     if fwr.get('source_ip_address', None):
         src_version = netaddr.IPNetwork(fwr['source_ip_address']).version
@@ -48,13 +51,15 @@ def validate_fwr_src_dst_ip_version(fwr, fwr_db=None):
         raise f_exc.FirewallIpAddressConflict()
 
 
-def validate_fwr_port_range(min_port, max_port):
+def validate_fwr_port_range(
+        min_port: int | str, max_port: int | str) -> None:
     if int(min_port) > int(max_port):
         port_range = '{}:{}'.format(min_port, max_port)
         raise f_exc.FirewallRuleInvalidPortValue(port=port_range)
 
 
-def get_min_max_ports_from_range(port_range):
+def get_min_max_ports_from_range(
+        port_range: str | None) -> list[int | None]:
     if not port_range:
         return [None, None]
     min_port, sep, max_port = port_range.partition(":")
@@ -64,10 +69,12 @@ def get_min_max_ports_from_range(port_range):
     return [int(min_port), int(max_port)]
 
 
-def get_port_range_from_min_max_ports(min_port, max_port):
+def get_port_range_from_min_max_ports(
+        min_port: int | None, max_port: int | None) -> str | None:
     if not min_port:
         return None
     if min_port == max_port:
         return str(min_port)
+    assert max_port is not None
     validate_fwr_port_range(min_port, max_port)
     return '{}:{}'.format(min_port, max_port)
