@@ -10,6 +10,8 @@
 #  License for the specific language governing permissions and limitations
 #  under the License.
 
+import typing
+
 from neutron_lib import policy as base
 from neutron_lib.policy import rules as base_rules
 from oslo_policy import policy
@@ -156,5 +158,5 @@ rules = [
 ]
 
 
-def list_rules():
+def list_rules() -> list[typing.Any]:
     return rules

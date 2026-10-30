@@ -14,10 +14,12 @@
 #    under the License.
 
 import abc
+import typing
 
 from neutron_lib.callbacks import events
 from neutron_lib.callbacks import registry
 from neutron_lib import constants as nl_constants
+from neutron_lib import context as n_ctx
 from neutron_lib.db import api as db_api
 from neutron_lib.plugins import directory
 from oslo_log import log as logging
@@ -36,93 +38,146 @@ class FirewallDriver(metaclass=abc.ABCMeta):
     The driver needs to do it by itself.
     """
 
-    def __init__(self, service_plugin):
+    def __init__(self, service_plugin: typing.Any) -> None:
         self.service_plugin = service_plugin
         self.register_logging_driver()
 
     @property
-    def _core_plugin(self):
+    def _core_plugin(self) -> typing.Any:
         return directory.get_plugin()
 
-    def is_supported_l2_port(self, port):
+    def is_supported_l2_port(self, port: dict[str, typing.Any]) -> bool:
         return False
 
-    def is_supported_l3_port(self, port):
+    def is_supported_l3_port(self, port: dict[str, typing.Any]) -> bool:
         return False
 
-    def register_logging_driver(self):
+    def register_logging_driver(self) -> None:
         LOG.debug("No logging driver supported by %s firewall driver",
                   self.__class__.__name__)
 
     # Firewall Group
     @abc.abstractmethod
-    def create_firewall_group(self, context, firewall_group):
+    def create_firewall_group(
+        self,
+        context: n_ctx.Context,
+        firewall_group: dict[str, typing.Any]
+    ) -> typing.Any:
         pass
 
     @abc.abstractmethod
-    def delete_firewall_group(self, context, id):
+    def delete_firewall_group(self, context: n_ctx.Context, id: str) -> None:
         pass
 
     @abc.abstractmethod
-    def get_firewall_group(self, context, id, fields=None):
+    def get_firewall_group(
+        self,
+        context: n_ctx.Context,
+        id: str,
+        fields: dict[str, typing.Any] | None = None
+    ) -> typing.Any:
         pass
 
     @abc.abstractmethod
-    def get_firewall_groups(self, context, filters=None, fields=None):
+    def get_firewall_groups(self, context: n_ctx.Context,
+                            filters: dict[str, typing.Any] | None = None,
+                            fields: dict[str, typing.Any] | None = None
+                            ) -> list[typing.Any]:
         pass
 
     @abc.abstractmethod
-    def update_firewall_group(self, context, id, firewall_group):
+    def update_firewall_group(
+        self,
+        context: n_ctx.Context,
+        id: str,
+        firewall_group: dict[str, typing.Any]
+    ) -> typing.Any:
         pass
 
     # Firewall Policy
     @abc.abstractmethod
-    def create_firewall_policy(self, context, firewall_policy):
+    def create_firewall_policy(
+        self,
+        context: n_ctx.Context,
+        firewall_policy: dict[str, typing.Any]
+    ) -> typing.Any:
         pass
 
     @abc.abstractmethod
-    def delete_firewall_policy(self, context, id):
+    def delete_firewall_policy(self, context: n_ctx.Context, id: str) -> None:
         pass
 
     @abc.abstractmethod
-    def get_firewall_policy(self, context, id, fields=None):
+    def get_firewall_policy(
+        self,
+        context: n_ctx.Context,
+        id: str,
+        fields: dict[str, typing.Any] | None = None
+    ) -> typing.Any:
         pass
 
     @abc.abstractmethod
-    def get_firewall_policies(self, context, filters=None, fields=None):
+    def get_firewall_policies(self, context: n_ctx.Context,
+                              filters: dict[str, typing.Any] | None = None,
+                              fields: dict[str, typing.Any] | None = None
+                              ) -> list[typing.Any]:
         pass
 
     @abc.abstractmethod
-    def update_firewall_policy(self, context, id, firewall_policy):
+    def update_firewall_policy(
+        self,
+        context: n_ctx.Context,
+        id: str,
+        firewall_policy: dict[str, typing.Any]
+    ) -> typing.Any:
         pass
 
     # Firewall Rule
     @abc.abstractmethod
-    def create_firewall_rule(self, context, firewall_rule):
+    def create_firewall_rule(
+        self,
+        context: n_ctx.Context,
+        firewall_rule: dict[str, typing.Any]
+    ) -> typing.Any:
         pass
 
     @abc.abstractmethod
-    def delete_firewall_rule(self, context, id):
+    def delete_firewall_rule(self, context: n_ctx.Context, id: str) -> None:
         pass
 
     @abc.abstractmethod
-    def get_firewall_rule(self, context, id, fields=None):
+    def get_firewall_rule(
+        self,
+        context: n_ctx.Context,
+        id: str,
+        fields: dict[str, typing.Any] | None = None
+    ) -> typing.Any:
         pass
 
     @abc.abstractmethod
-    def get_firewall_rules(self, context, filters=None, fields=None):
+    def get_firewall_rules(self, context: n_ctx.Context,
+                           filters: dict[str, typing.Any] | None = None,
+                           fields: dict[str, typing.Any] | None = None
+                           ) -> list[typing.Any]:
         pass
 
     @abc.abstractmethod
-    def update_firewall_rule(self, context, id, firewall_rule):
+    def update_firewall_rule(
+        self,
+        context: n_ctx.Context,
+        id: str,
+        firewall_rule: dict[str, typing.Any]
+    ) -> typing.Any:
         pass
 
     @abc.abstractmethod
-    def insert_rule(self, context, policy_id, rule_info):
+    def insert_rule(self, context: n_ctx.Context, policy_id: str,
+                    rule_info: dict[str, typing.Any]) -> typing.Any:
         pass
 
     @abc.abstractmethod
-    def remove_rule(self, context, policy_id, rule_info):
+    def remove_rule(self, context: n_ctx.Context, policy_id: str,
+                    rule_info: dict[str, typing.Any]) -> typing.Any:
         pass
 
 
@@ -133,23 +188,27 @@ class FirewallDriverDBMixin(FirewallDriver, metaclass=abc.ABCMeta):
     the result to pre and post commit methods.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: typing.Any, **kwargs: typing.Any) -> None:
         super().__init__(*args, **kwargs)
         self.firewall_db = firewall_db_v2.FirewallPluginDb()
 
     # Firewall Group
-    def create_firewall_group(self, context, firewall_group):
+    def create_firewall_group(
+        self,
+        context: n_ctx.Context,
+        firewall_group: dict[str, typing.Any]
+    ) -> typing.Any:
         request_body = firewall_group
         with db_api.CONTEXT_WRITER.using(context):
-            firewall_group = self.firewall_db.create_firewall_group(
+            fw_group = self.firewall_db.create_firewall_group(
                 context, firewall_group)
-            firewall_group_dict = firewall_group.to_dict()
+            firewall_group_dict = fw_group.to_dict()
             self.create_firewall_group_precommit(context, firewall_group_dict)
             self.firewall_db.update_firewall_group_status(
                 context, firewall_group_dict['id'],
                 firewall_group_dict['status'])
         self.create_firewall_group_postcommit(context, firewall_group_dict)
-        firewall_group.status = firewall_group_dict['status']
+        fw_group.status = firewall_group_dict['status']
 
         payload = events.DBEventPayload(context=context,
                                         resource_id=firewall_group_dict['id'],
@@ -157,17 +216,21 @@ class FirewallDriverDBMixin(FirewallDriver, metaclass=abc.ABCMeta):
                                         states=(firewall_group_dict,))
         registry.publish(
             const.FIREWALL_GROUP, events.AFTER_CREATE, self, payload=payload)
-        return firewall_group
+        return fw_group
 
     @abc.abstractmethod
-    def create_firewall_group_precommit(self, context, firewall_group):
+    def create_firewall_group_precommit(self, context: n_ctx.Context,
+                                        firewall_group: dict[str, typing.Any]
+                                        ) -> None:
         pass
 
     @abc.abstractmethod
-    def create_firewall_group_postcommit(self, context, firewall_group):
+    def create_firewall_group_postcommit(self, context: n_ctx.Context,
+                                         firewall_group: dict[str, typing.Any]
+                                         ) -> None:
         pass
 
-    def delete_firewall_group(self, context, id):
+    def delete_firewall_group(self, context: n_ctx.Context, id: str) -> None:
         firewall_group = self.firewall_db.get_firewall_group(context, id)
         firewall_group_dict = firewall_group.to_dict()
         if firewall_group_dict['status'] == nl_constants.PENDING_DELETE:
@@ -184,20 +247,37 @@ class FirewallDriverDBMixin(FirewallDriver, metaclass=abc.ABCMeta):
             const.FIREWALL_GROUP, events.AFTER_DELETE, self, payload=payload)
 
     @abc.abstractmethod
-    def delete_firewall_group_precommit(self, context, firewall_group):
+    def delete_firewall_group_precommit(self, context: n_ctx.Context,
+                                        firewall_group: dict[str, typing.Any]
+                                        ) -> None:
         pass
 
     @abc.abstractmethod
-    def delete_firewall_group_postcommit(self, context, firewall_group):
+    def delete_firewall_group_postcommit(self, context: n_ctx.Context,
+                                         firewall_group: dict[str, typing.Any]
+                                         ) -> None:
         pass
 
-    def get_firewall_group(self, context, id, fields=None):
+    def get_firewall_group(
+        self,
+        context: n_ctx.Context,
+        id: str,
+        fields: dict[str, typing.Any] | None = None
+    ) -> typing.Any:
         return self.firewall_db.get_firewall_group(context, id, fields=fields)
 
-    def get_firewall_groups(self, context, filters=None, fields=None):
+    def get_firewall_groups(self, context: n_ctx.Context,
+                            filters: dict[str, typing.Any] | None = None,
+                            fields: dict[str, typing.Any] | None = None
+                            ) -> list[typing.Any]:
         return self.firewall_db.get_firewall_groups(context, filters, fields)
 
-    def update_firewall_group(self, context, id, firewall_group_delta):
+    def update_firewall_group(
+        self,
+        context: n_ctx.Context,
+        id: str,
+        firewall_group_delta: dict[str, typing.Any]
+    ) -> typing.Any:
         old_firewall_group = self.firewall_db.get_firewall_group(context, id)
         old_firewall_group_dict = old_firewall_group.to_dict()
         new_firewall_group = dict(old_firewall_group_dict)
@@ -222,22 +302,34 @@ class FirewallDriverDBMixin(FirewallDriver, metaclass=abc.ABCMeta):
         return firewall_group
 
     @abc.abstractmethod
-    def update_firewall_group_precommit(self, context, old_firewall_group,
-                                        new_firewall_group):
+    def update_firewall_group_precommit(
+        self,
+        context: n_ctx.Context,
+        old_firewall_group: dict[str, typing.Any],
+        new_firewall_group: dict[str, typing.Any]
+    ) -> None:
         pass
 
     @abc.abstractmethod
-    def update_firewall_group_postcommit(self, context, old_firewall_group,
-                                         new_firewall_group):
+    def update_firewall_group_postcommit(
+        self,
+        context: n_ctx.Context,
+        old_firewall_group: dict[str, typing.Any],
+        new_firewall_group: dict[str, typing.Any]
+    ) -> None:
         pass
 
     # Firewall Policy
-    def create_firewall_policy(self, context, firewall_policy):
+    def create_firewall_policy(
+        self,
+        context: n_ctx.Context,
+        firewall_policy: dict[str, typing.Any]
+    ) -> typing.Any:
         request_body = firewall_policy
         with db_api.CONTEXT_WRITER.using(context):
-            firewall_policy = self.firewall_db.create_firewall_policy(
+            fw_policy = self.firewall_db.create_firewall_policy(
                 context, firewall_policy)
-            firewall_policy_dict = firewall_policy.to_dict()
+            firewall_policy_dict = fw_policy.to_dict()
             self.create_firewall_policy_precommit(context,
                                                   firewall_policy_dict)
         self.create_firewall_policy_postcommit(context, firewall_policy_dict)
@@ -248,17 +340,23 @@ class FirewallDriverDBMixin(FirewallDriver, metaclass=abc.ABCMeta):
                                         states=(firewall_policy_dict,))
         registry.publish(
             const.FIREWALL_POLICY, events.AFTER_CREATE, self, payload=payload)
-        return firewall_policy
+        return fw_policy
 
     @abc.abstractmethod
-    def create_firewall_policy_precommit(self, context, firewall_policy):
+    def create_firewall_policy_precommit(self, context: n_ctx.Context,
+                                         firewall_policy: dict[str, typing.Any]
+                                         ) -> None:
         pass
 
     @abc.abstractmethod
-    def create_firewall_policy_postcommit(self, context, firewall_policy):
+    def create_firewall_policy_postcommit(
+        self,
+        context: n_ctx.Context,
+        firewall_policy: dict[str, typing.Any]
+    ) -> None:
         pass
 
-    def delete_firewall_policy(self, context, id):
+    def delete_firewall_policy(self, context: n_ctx.Context, id: str) -> None:
         firewall_policy = self.firewall_db.get_firewall_policy(context, id)
         firewall_policy_dict = firewall_policy.to_dict()
         self.delete_firewall_policy_precommit(context, firewall_policy_dict)
@@ -272,20 +370,39 @@ class FirewallDriverDBMixin(FirewallDriver, metaclass=abc.ABCMeta):
             const.FIREWALL_POLICY, events.AFTER_UPDATE, self, payload=payload)
 
     @abc.abstractmethod
-    def delete_firewall_policy_precommit(self, context, firewall_policy):
+    def delete_firewall_policy_precommit(self, context: n_ctx.Context,
+                                         firewall_policy: dict[str, typing.Any]
+                                         ) -> None:
         pass
 
     @abc.abstractmethod
-    def delete_firewall_policy_postcommit(self, context, firewall_policy):
+    def delete_firewall_policy_postcommit(
+        self,
+        context: n_ctx.Context,
+        firewall_policy: dict[str, typing.Any]
+    ) -> None:
         pass
 
-    def get_firewall_policy(self, context, id, fields=None):
+    def get_firewall_policy(
+        self,
+        context: n_ctx.Context,
+        id: str,
+        fields: dict[str, typing.Any] | None = None
+    ) -> typing.Any:
         return self.firewall_db.get_firewall_policy(context, id, fields)
 
-    def get_firewall_policies(self, context, filters=None, fields=None):
+    def get_firewall_policies(self, context: n_ctx.Context,
+                              filters: dict[str, typing.Any] | None = None,
+                              fields: dict[str, typing.Any] | None = None
+                              ) -> list[typing.Any]:
         return self.firewall_db.get_firewall_policies(context, filters, fields)
 
-    def update_firewall_policy(self, context, id, firewall_policy_delta):
+    def update_firewall_policy(
+        self,
+        context: n_ctx.Context,
+        id: str,
+        firewall_policy_delta: dict[str, typing.Any]
+    ) -> typing.Any:
         old_firewall_policy = self.firewall_db.get_firewall_policy(context, id)
         old_firewall_policy_dict = old_firewall_policy.to_dict()
         new_firewall_policy = dict(old_firewall_policy_dict)
@@ -305,22 +422,34 @@ class FirewallDriverDBMixin(FirewallDriver, metaclass=abc.ABCMeta):
         return firewall_policy
 
     @abc.abstractmethod
-    def update_firewall_policy_precommit(self, context, old_firewall_policy,
-                                         new_firewall_policy):
+    def update_firewall_policy_precommit(
+        self,
+        context: n_ctx.Context,
+        old_firewall_policy: dict[str, typing.Any],
+        new_firewall_policy: dict[str, typing.Any]
+    ) -> None:
         pass
 
     @abc.abstractmethod
-    def update_firewall_policy_postcommit(self, context, old_firewall_policy,
-                                          new_firewall_policy):
+    def update_firewall_policy_postcommit(
+        self,
+        context: n_ctx.Context,
+        old_firewall_policy: dict[str, typing.Any],
+        new_firewall_policy: dict[str, typing.Any]
+    ) -> None:
         pass
 
     # Firewall Rule
-    def create_firewall_rule(self, context, firewall_rule):
+    def create_firewall_rule(
+        self,
+        context: n_ctx.Context,
+        firewall_rule: dict[str, typing.Any]
+    ) -> typing.Any:
         request_body = firewall_rule
         with db_api.CONTEXT_WRITER.using(context):
-            firewall_rule = self.firewall_db.create_firewall_rule(
+            fw_rule = self.firewall_db.create_firewall_rule(
                 context, firewall_rule)
-            firewall_rule_dict = firewall_rule.to_dict()
+            firewall_rule_dict = fw_rule.to_dict()
             self.create_firewall_rule_precommit(context, firewall_rule_dict)
         self.create_firewall_rule_postcommit(context, firewall_rule_dict)
 
@@ -330,17 +459,25 @@ class FirewallDriverDBMixin(FirewallDriver, metaclass=abc.ABCMeta):
                                         states=(firewall_rule_dict,))
         registry.publish(
             const.FIREWALL_RULE, events.AFTER_CREATE, self, payload=payload)
-        return firewall_rule
+        return fw_rule
 
     @abc.abstractmethod
-    def create_firewall_rule_precommit(self, context, firewall_rule):
+    def create_firewall_rule_precommit(
+        self,
+        context: n_ctx.Context,
+        firewall_rule: dict[str, typing.Any]
+    ) -> None:
         pass
 
     @abc.abstractmethod
-    def create_firewall_rule_postcommit(self, context, firewall_rule):
+    def create_firewall_rule_postcommit(
+        self,
+        context: n_ctx.Context,
+        firewall_rule: dict[str, typing.Any]
+    ) -> None:
         pass
 
-    def delete_firewall_rule(self, context, id):
+    def delete_firewall_rule(self, context: n_ctx.Context, id: str) -> None:
         firewall_rule = self.firewall_db.get_firewall_rule(context, id)
         firewall_rule_dict = firewall_rule.to_dict()
         self.delete_firewall_rule_precommit(context, firewall_rule_dict)
@@ -354,20 +491,41 @@ class FirewallDriverDBMixin(FirewallDriver, metaclass=abc.ABCMeta):
             const.FIREWALL_RULE, events.AFTER_DELETE, self, payload=payload)
 
     @abc.abstractmethod
-    def delete_firewall_rule_precommit(self, context, firewall_rule):
+    def delete_firewall_rule_precommit(
+        self,
+        context: n_ctx.Context,
+        firewall_rule: dict[str, typing.Any]
+    ) -> None:
         pass
 
     @abc.abstractmethod
-    def delete_firewall_rule_postcommit(self, context, firewall_rule):
+    def delete_firewall_rule_postcommit(
+        self,
+        context: n_ctx.Context,
+        firewall_rule: dict[str, typing.Any]
+    ) -> None:
         pass
 
-    def get_firewall_rule(self, context, id, fields=None):
+    def get_firewall_rule(
+        self,
+        context: n_ctx.Context,
+        id: str,
+        fields: dict[str, typing.Any] | None = None
+    ) -> typing.Any:
         return self.firewall_db.get_firewall_rule(context, id, fields)
 
-    def get_firewall_rules(self, context, filters=None, fields=None):
+    def get_firewall_rules(self, context: n_ctx.Context,
+                           filters: dict[str, typing.Any] | None = None,
+                           fields: dict[str, typing.Any] | None = None
+                           ) -> list[typing.Any]:
         return self.firewall_db.get_firewall_rules(context, filters, fields)
 
-    def update_firewall_rule(self, context, id, firewall_rule_delta):
+    def update_firewall_rule(
+        self,
+        context: n_ctx.Context,
+        id: str,
+        firewall_rule_delta: dict[str, typing.Any]
+    ) -> typing.Any:
         old_firewall_rule = self.firewall_db.get_firewall_rule(context, id)
         old_firewall_rule_dict = old_firewall_rule.to_dict()
         new_firewall_rule = dict(old_firewall_rule_dict)
@@ -388,16 +546,25 @@ class FirewallDriverDBMixin(FirewallDriver, metaclass=abc.ABCMeta):
         return firewall_rule
 
     @abc.abstractmethod
-    def update_firewall_rule_precommit(self, context, old_firewall_rule,
-                                       new_firewall_rule):
+    def update_firewall_rule_precommit(
+        self,
+        context: n_ctx.Context,
+        old_firewall_rule: dict[str, typing.Any],
+        new_firewall_rule: dict[str, typing.Any]
+    ) -> None:
         pass
 
     @abc.abstractmethod
-    def update_firewall_rule_postcommit(self, context, old_firewall_rule,
-                                        new_firewall_rule):
+    def update_firewall_rule_postcommit(
+        self,
+        context: n_ctx.Context,
+        old_firewall_rule: dict[str, typing.Any],
+        new_firewall_rule: dict[str, typing.Any]
+    ) -> None:
         pass
 
-    def insert_rule(self, context, policy_id, rule_info):
+    def insert_rule(self, context: n_ctx.Context, policy_id: str,
+                    rule_info: dict[str, typing.Any]) -> typing.Any:
         self.insert_rule_precommit(context, policy_id, rule_info)
         firewall_policy = self.firewall_db.insert_rule(context, policy_id,
                                                        rule_info)
@@ -411,14 +578,17 @@ class FirewallDriverDBMixin(FirewallDriver, metaclass=abc.ABCMeta):
         return firewall_policy
 
     @abc.abstractmethod
-    def insert_rule_precommit(self, context, policy_id, rule_info):
+    def insert_rule_precommit(self, context: n_ctx.Context, policy_id: str,
+                              rule_info: dict[str, typing.Any]) -> None:
         pass
 
     @abc.abstractmethod
-    def insert_rule_postcommit(self, context, policy_id, rule_info):
+    def insert_rule_postcommit(self, context: n_ctx.Context, policy_id: str,
+                               rule_info: dict[str, typing.Any]) -> None:
         pass
 
-    def remove_rule(self, context, policy_id, rule_info):
+    def remove_rule(self, context: n_ctx.Context, policy_id: str,
+                    rule_info: dict[str, typing.Any]) -> typing.Any:
         self.remove_rule_precommit(context, policy_id, rule_info)
         firewall_policy = self.firewall_db.remove_rule(context, policy_id,
                                                        rule_info)
@@ -432,11 +602,13 @@ class FirewallDriverDBMixin(FirewallDriver, metaclass=abc.ABCMeta):
         return firewall_policy
 
     @abc.abstractmethod
-    def remove_rule_precommit(self, context, policy_id, rule_info):
+    def remove_rule_precommit(self, context: n_ctx.Context, policy_id: str,
+                              rule_info: dict[str, typing.Any]) -> None:
         pass
 
     @abc.abstractmethod
-    def remove_rule_postcommit(self, context, policy_id, rule_info):
+    def remove_rule_postcommit(self, context: n_ctx.Context, policy_id: str,
+                               rule_info: dict[str, typing.Any]) -> None:
         pass
 
 
@@ -451,78 +623,142 @@ class FirewallDriverDB(FirewallDriverDBMixin):
     """
 
     # Firewall Group
-    def create_firewall_group_precommit(self, context, firewall_group):
+    def create_firewall_group_precommit(self, context: n_ctx.Context,
+                                        firewall_group: dict[str, typing.Any]
+                                        ) -> None:
         pass
 
-    def create_firewall_group_postcommit(self, context, firewall_group):
+    def create_firewall_group_postcommit(self, context: n_ctx.Context,
+                                         firewall_group: dict[str, typing.Any]
+                                         ) -> None:
         pass
 
-    def update_firewall_group_precommit(self, context, old_firewall_group,
-                                        new_firewall_group):
+    def update_firewall_group_precommit(
+        self,
+        context: n_ctx.Context,
+        old_firewall_group: dict[str, typing.Any],
+        new_firewall_group: dict[str, typing.Any]
+    ) -> None:
         pass
 
-    def update_firewall_group_postcommit(self, context, old_firewall_group,
-                                         new_firewall_group):
+    def update_firewall_group_postcommit(
+        self,
+        context: n_ctx.Context,
+        old_firewall_group: dict[str, typing.Any],
+        new_firewall_group: dict[str, typing.Any]
+    ) -> None:
         pass
 
-    def delete_firewall_group_precommit(self, context, firewall_group):
+    def delete_firewall_group_precommit(self, context: n_ctx.Context,
+                                        firewall_group: dict[str, typing.Any]
+                                        ) -> None:
         pass
 
-    def delete_firewall_group_postcommit(self, context, firewall_group):
+    def delete_firewall_group_postcommit(self, context: n_ctx.Context,
+                                         firewall_group: dict[str, typing.Any]
+                                         ) -> None:
         pass
 
     # Firewall Policy
-    def create_firewall_policy_precommit(self, context, firewall_policy):
+    def create_firewall_policy_precommit(self, context: n_ctx.Context,
+                                         firewall_policy: dict[str, typing.Any]
+                                         ) -> None:
         pass
 
-    def create_firewall_policy_postcommit(self, context, firewall_policy):
+    def create_firewall_policy_postcommit(
+        self,
+        context: n_ctx.Context,
+        firewall_policy: dict[str, typing.Any]
+    ) -> None:
         pass
 
-    def update_firewall_policy_precommit(self, context, old_firewall_policy,
-                                         new_firewall_policy):
+    def update_firewall_policy_precommit(
+        self,
+        context: n_ctx.Context,
+        old_firewall_policy: dict[str, typing.Any],
+        new_firewall_policy: dict[str, typing.Any]
+    ) -> None:
         pass
 
-    def update_firewall_policy_postcommit(self, context, old_firewall_policy,
-                                          new_firewall_policy):
+    def update_firewall_policy_postcommit(
+        self,
+        context: n_ctx.Context,
+        old_firewall_policy: dict[str, typing.Any],
+        new_firewall_policy: dict[str, typing.Any]
+    ) -> None:
         pass
 
-    def delete_firewall_policy_precommit(self, context, firewall_policy):
+    def delete_firewall_policy_precommit(self, context: n_ctx.Context,
+                                         firewall_policy: dict[str, typing.Any]
+                                         ) -> None:
         pass
 
-    def delete_firewall_policy_postcommit(self, context, firewall_policy):
+    def delete_firewall_policy_postcommit(
+        self,
+        context: n_ctx.Context,
+        firewall_policy: dict[str, typing.Any]
+    ) -> None:
         pass
 
     # Firewall Rule
-    def create_firewall_rule_precommit(self, context, firewall_rule):
+    def create_firewall_rule_precommit(
+        self,
+        context: n_ctx.Context,
+        firewall_rule: dict[str, typing.Any]
+    ) -> None:
         pass
 
-    def create_firewall_rule_postcommit(self, context, firewall_rule):
+    def create_firewall_rule_postcommit(
+        self,
+        context: n_ctx.Context,
+        firewall_rule: dict[str, typing.Any]
+    ) -> None:
         pass
 
-    def update_firewall_rule_precommit(self, context, old_firewall_rule,
-                                       new_firewall_rule):
+    def update_firewall_rule_precommit(
+        self,
+        context: n_ctx.Context,
+        old_firewall_rule: dict[str, typing.Any],
+        new_firewall_rule: dict[str, typing.Any]
+    ) -> None:
         pass
 
-    def update_firewall_rule_postcommit(self, context, old_firewall_rule,
-                                        new_firewall_rule):
+    def update_firewall_rule_postcommit(
+        self,
+        context: n_ctx.Context,
+        old_firewall_rule: dict[str, typing.Any],
+        new_firewall_rule: dict[str, typing.Any]
+    ) -> None:
         pass
 
-    def delete_firewall_rule_precommit(self, context, firewall_rule):
+    def delete_firewall_rule_precommit(
+        self,
+        context: n_ctx.Context,
+        firewall_rule: dict[str, typing.Any]
+    ) -> None:
         pass
 
-    def delete_firewall_rule_postcommit(self, context, firewall_rule):
+    def delete_firewall_rule_postcommit(
+        self,
+        context: n_ctx.Context,
+        firewall_rule: dict[str, typing.Any]
+    ) -> None:
         pass
 
-    def insert_rule_precommit(self, context, policy_id, rule_info):
+    def insert_rule_precommit(self, context: n_ctx.Context, policy_id: str,
+                              rule_info: dict[str, typing.Any]) -> None:
         pass
 
-    def insert_rule_postcommit(self, context, policy_id, rule_info):
+    def insert_rule_postcommit(self, context: n_ctx.Context, policy_id: str,
+                               rule_info: dict[str, typing.Any]) -> None:
         pass
 
-    def remove_rule_precommit(self, context, policy_id, rule_info):
+    def remove_rule_precommit(self, context: n_ctx.Context, policy_id: str,
+                              rule_info: dict[str, typing.Any]) -> None:
         pass
 
-    def remove_rule_postcommit(self, context, policy_id, rule_info):
+    def remove_rule_postcommit(self, context: n_ctx.Context, policy_id: str,
+                               rule_info: dict[str, typing.Any]) -> None:
         pass
 
 
@@ -534,5 +770,5 @@ class FirewallDriverRPCMixin(metaclass=abc.ABCMeta):
     """
 
     @abc.abstractmethod
-    def start_rpc_listener(self):
+    def start_rpc_listener(self) -> list[typing.Any]:
         pass
