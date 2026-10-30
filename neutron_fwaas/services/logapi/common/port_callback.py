@@ -13,9 +13,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import typing
+
 from neutron.services.logapi.drivers import manager
 from neutron_lib.callbacks import events
 from neutron_lib import constants as nl_const
+from neutron_lib import context as n_ctx
 from neutron_lib.services.logapi import constants as log_const
 
 from neutron_fwaas.services.logapi.common import log_db_api
@@ -23,7 +26,13 @@ from neutron_fwaas.services.logapi.common import log_db_api
 
 class NeutronPortCallBack(manager.ResourceCallBackBase):
 
-    def handle_event(self, resource, event, trigger, payload):
+    def handle_event(
+        self,
+        resource: typing.Any,
+        event: str,
+        trigger: typing.Any,
+        payload: typing.Any
+    ) -> None:
         if event == events.AFTER_UPDATE:
             context = payload.context
             original_port = payload.states[0]
@@ -33,7 +42,8 @@ class NeutronPortCallBack(manager.ResourceCallBackBase):
                 if original_port['status'] != port['status']:
                     self.trigger_logging(context, port)
 
-    def trigger_logging(self, context, port):
+    def trigger_logging(self, context: n_ctx.Context,
+                        port: dict[str, typing.Any]) -> None:
         log_resources = log_db_api.get_logs_for_port(context, port['id'])
         if log_resources:
             self.resource_push_api(
