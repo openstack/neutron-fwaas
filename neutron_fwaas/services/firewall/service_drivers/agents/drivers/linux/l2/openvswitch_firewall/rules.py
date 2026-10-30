@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import typing
+
 import netaddr
 
 from neutron.common import utils
@@ -45,15 +47,19 @@ FORBIDDEN_PREFIXES = (n_consts.IPv4_ANY, n_consts.IPv6_ANY)
 
 
 # NOTE(ivasilevskaya) copy-paste from neutron ovsfw driver
-def is_valid_prefix(ip_prefix):
+def is_valid_prefix(ip_prefix: str | None) -> bool:
     # IPv6 have multiple ways how to describe ::/0 network, converting to
     # IPNetwork and back to string unifies it
-    return (ip_prefix and
-            str(netaddr.IPNetwork(ip_prefix)) not in FORBIDDEN_PREFIXES)
+    return bool(
+        ip_prefix and
+        str(netaddr.IPNetwork(ip_prefix)) not in FORBIDDEN_PREFIXES)
 
 
 # NOTE(ivasilevskaya) copy-paste from neutron ovsfw driver
-def create_flows_from_rule_and_port(rule, port):
+def create_flows_from_rule_and_port(
+    rule: dict[str, typing.Any],
+    port: typing.Any
+) -> list[dict[str, typing.Any]]:
     ethertype = rule['ethertype']
     direction = rule['direction']
     dst_ip_prefix = rule.get('dest_ip_prefix')
@@ -83,7 +89,8 @@ def create_flows_from_rule_and_port(rule, port):
 
 # NOTE(ivasilevskaya) copy-paste from neutron ovsfw driver, differs in
 # constants
-def populate_flow_common(direction, flow_template, port):
+def populate_flow_common(direction: str, flow_template: dict[str, typing.Any],
+                         port: typing.Any) -> dict[str, typing.Any]:
     """Initialize common flow fields."""
     if direction == n_consts.INGRESS_DIRECTION:
         flow_template['table'] = fwaas_ovs_consts.FW_RULES_INGRESS_TABLE
@@ -98,7 +105,9 @@ def populate_flow_common(direction, flow_template, port):
 
 
 # NOTE(ivasilevskaya) copy-paste from neutron ovsfw driver
-def create_protocol_flows(direction, flow_template, port, rule):
+def create_protocol_flows(direction: str, flow_template: dict[str, typing.Any],
+                          port: typing.Any, rule: dict[str, typing.Any]
+                          ) -> list[dict[str, typing.Any]]:
     flow_template = populate_flow_common(direction,
                                          flow_template.copy(),
                                          port)
@@ -115,7 +124,10 @@ def create_protocol_flows(direction, flow_template, port, rule):
 
 # NOTE(ivasilevskaya) copy-paste from neutron ovsfw driver, differs only in
 # constant
-def create_port_range_flows(flow_template, rule):
+def create_port_range_flows(
+    flow_template: dict[str, typing.Any],
+    rule: dict[str, typing.Any]
+) -> list[dict[str, typing.Any]]:
     protocol = fwaas_ovs_consts.REVERSE_IP_PROTOCOL_MAP_WITH_PORTS.get(
         rule.get('protocol'))
     if protocol is None:
@@ -155,10 +167,13 @@ def create_port_range_flows(flow_template, rule):
 
 
 # NOTE(ivasilevskaya) copy-paste from neutron ovsfw driver
-def create_icmp_flows(flow_template, rule):
+def create_icmp_flows(
+    flow_template: dict[str, typing.Any],
+    rule: dict[str, typing.Any]
+) -> list[dict[str, typing.Any]] | None:
     icmp_type = rule.get('port_range_min')
     if icmp_type is None:
-        return
+        return None
     flow = flow_template.copy()
     flow['icmp_type'] = icmp_type
 
@@ -168,7 +183,7 @@ def create_icmp_flows(flow_template, rule):
     return [flow]
 
 
-def resubmit_to_sg(flow):
+def resubmit_to_sg(flow: dict[str, typing.Any]) -> None:
     if flow['table'] == fwaas_ovs_consts.FW_RULES_EGRESS_TABLE:
         flow['actions'] = 'resubmit(,{:d})'.format(
             ovs_consts.RULES_EGRESS_TABLE)
@@ -177,7 +192,10 @@ def resubmit_to_sg(flow):
             ovs_consts.RULES_INGRESS_TABLE)
 
 
-def create_accept_flows(flow, sg_enabled=False):
+def create_accept_flows(
+    flow: dict[str, typing.Any],
+    sg_enabled: bool = False
+) -> list[dict[str, typing.Any]]:
     flow['ct_state'] = CT_STATES[0]
     if sg_enabled:
         resubmit_to_sg(flow)
@@ -196,7 +214,10 @@ def create_accept_flows(flow, sg_enabled=False):
     return result
 
 
-def create_drop_flows(flow):
+def create_drop_flows(
+    flow: dict[str, typing.Any]
+) -> list[dict[str, typing.Any]]:
+    result = []
     if flow['table'] in [fwaas_ovs_consts.FW_RULES_INGRESS_TABLE,
                          fwaas_ovs_consts.FW_RULES_EGRESS_TABLE]:
         flow['actions'] = 'resubmit(,%d)' % ovs_consts.DROPPED_TRAFFIC_TABLE
