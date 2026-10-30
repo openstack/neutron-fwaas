@@ -15,11 +15,13 @@
 
 from collections import defaultdict
 import signal
+import typing
 import uuid
 
 from neutron.agent.linux import utils
 from neutron.services.logapi.agent import log_extension as log_ext
 from neutron_lib import constants
+from neutron_lib import context as n_ctx
 from neutron_lib.services.logapi import constants as log_const
 from oslo_config import cfg
 from oslo_log import formatters
@@ -43,7 +45,7 @@ IPTABLES_DIRECTION_DEVICE = {
 }
 
 
-def setup_logging():
+def setup_logging() -> None:
 
     log_file = cfg.CONF.network_log.local_output_log_base
     if log_file:
@@ -73,7 +75,8 @@ class LogPrefix:
     Each of a couple (port_id, event) has its own LogPrefix object
     """
 
-    def __init__(self, port_id, event, project_id):
+    def __init__(self, port_id: str, event: str,
+                 project_id: str) -> None:
         self.id = self._generate_prefix_id()
         self.port_id = port_id
         self.action = event
@@ -81,32 +84,32 @@ class LogPrefix:
         self.log_object_refs = set()
         self.project_id = project_id
 
-    def __eq__(self, other):
+    def __eq__(self, other: typing.Any) -> bool:
         return (self.id == other.id and
                 self.action == other.action and
                 self.port_id == other.port_id)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.id)
 
-    def _generate_prefix_id(self):
+    def _generate_prefix_id(self) -> int:
         return uuid.uuid4().int & UINT64_BITMASK
 
-    def add_log_obj_ref(self, log_id):
+    def add_log_obj_ref(self, log_id: str) -> None:
         self.log_object_refs.add(log_id)
 
-    def remove_log_obj_ref(self, log_id):
+    def remove_log_obj_ref(self, log_id: str) -> None:
         self.log_object_refs.discard(log_id)
 
     @property
-    def is_empty(self):
+    def is_empty(self) -> bool:
         return not self.log_object_refs
 
 
 class FWGPortLog:
     """A firewall group port log per log_object"""
 
-    def __init__(self, port_id, log_info):
+    def __init__(self, port_id: str, log_info: dict[str, typing.Any]) -> None:
         self.port_id = port_id
         self.log_id = log_info['id']
         self.project_id = log_info['project_id']
@@ -117,31 +120,37 @@ class IptablesLoggingDriver(log_ext.LoggingDriver):
 
     SUPPORTED_LOGGING_TYPES = ['firewall_group']
 
-    def __init__(self, agent_api):
+    def __init__(self, agent_api: typing.Any) -> None:
         self.agent_api = agent_api
         self.conf = cfg.CONF
         self.rate_limit = self.conf.network_log.rate_limit
         if self.rate_limit:
             self.burst_limit = self.conf.network_log.burst_limit
-        self.ipt_mgr_list = defaultdict(dict)
+        self.ipt_mgr_list: defaultdict[
+            typing.Any, dict[str, typing.Any]] = defaultdict(dict)
         # A list of fwg port logs that are being logged
-        self.fwg_port_logs = defaultdict(set)
+        self.fwg_port_logs: defaultdict[str, set[FWGPortLog]] = \
+            defaultdict(set)
         # A list of prefixes that are being used in iptables
-        self.prefixes_table = {}
-        self.cleanup_table = defaultdict(set)
+        self.prefixes_table: dict[str, list[LogPrefix]] = {}
+        self.cleanup_table: defaultdict[str, set[int]] = defaultdict(set)
         # Handle NFLOG processing
-        self.nflog_proc_map = {}
+        self.nflog_proc_map: dict[str, int] = {}
         # A list of unused ports
-        self.unused_port_ids = set()
+        self.unused_port_ids: set[str] = set()
 
-    def initialize(self, resource_rpc, **kwargs):
+    def initialize(
+        self,
+        resource_rpc: typing.Any,
+        **kwargs: typing.Any
+    ) -> None:
         self.resource_rpc = resource_rpc
         setup_logging()
         self.log_app = libnflog.NFLogApp()
         self.log_app.register_packet_handler(self.log_packet)
         self.log_app.start()
 
-    def log_packet(self, ev):
+    def log_packet(self, ev: dict[str, typing.Any]) -> int:
         prefix = ev['prefix']
         pkt = ev['msg']
         prefix_entry = self._get_prefix_by_id(prefix)
@@ -155,31 +164,32 @@ class IptablesLoggingDriver(log_ext.LoggingDriver):
             LOG.warning("Unknown cookie packet_in pkt=%s", pkt)
         return 0
 
-    def _get_prefix(self, port_id, action):
+    def _get_prefix(self, port_id: str, action: str) -> LogPrefix | None:
         if port_id in self.prefixes_table:
             for prefix in self.prefixes_table[port_id]:
                 if prefix.action == action:
                     return prefix
         return None
 
-    def _get_prefix_by_id(self, prefix_id):
+    def _get_prefix_by_id(self, prefix_id: typing.Any) -> LogPrefix | None:
         for port, prefixes in self.prefixes_table.items():
             for prefix in prefixes:
                 if str(prefix.id) == str(prefix_id):
                     return prefix
         return None
 
-    def _add_to_cleanup(self, port_id, prefix_id):
+    def _add_to_cleanup(self, port_id: str, prefix_id: int) -> None:
         if port_id not in self.cleanup_table:
             self.cleanup_table[port_id] = set()
         self.cleanup_table[port_id].add(prefix_id)
 
-    def _add_to_prefixes_table(self, port_id, prefix):
+    def _add_to_prefixes_table(self, port_id: str,
+                               prefix: LogPrefix) -> None:
         if port_id not in self.prefixes_table:
             self.prefixes_table[port_id] = []
         self.prefixes_table[port_id].append(prefix)
 
-    def _cleanup_nflog_process(self, router_id):
+    def _cleanup_nflog_process(self, router_id: str) -> None:
         LOG.debug("Delete NFLOG for router %s", router_id)
         if router_id in self.nflog_proc_map:
             pid = self.nflog_proc_map[router_id]
@@ -193,7 +203,10 @@ class IptablesLoggingDriver(log_ext.LoggingDriver):
                 LOG.exception(
                     'An error occurred while killing process %d', pid)
 
-    def _cleanup_prefix_by_router(self, router_id):
+    def _cleanup_prefix_by_router(
+        self,
+        router_id: typing.Any
+    ) -> set[typing.Any]:
 
         ipt_mgr_per_port = set()
         for port_id in self.ipt_mgr_list[router_id]:
@@ -207,7 +220,7 @@ class IptablesLoggingDriver(log_ext.LoggingDriver):
                 self.unused_port_ids.add(port_id)
         return ipt_mgr_per_port
 
-    def _cleanup_unused_ipt_mgrs(self):
+    def _cleanup_unused_ipt_mgrs(self) -> None:
 
         need_cleanup = set()
         for port_id in self.unused_port_ids:
@@ -222,7 +235,8 @@ class IptablesLoggingDriver(log_ext.LoggingDriver):
 
         self.unused_port_ids.clear()
 
-    def start_logging(self, context, **kwargs):
+    def start_logging(self, context: n_ctx.Context, **kwargs: typing.Any
+                      ) -> None:
         LOG.debug("Start logging: %s", str(kwargs))
 
         for resource_type in self.SUPPORTED_LOGGING_TYPES:
@@ -245,7 +259,8 @@ class IptablesLoggingDriver(log_ext.LoggingDriver):
                 self._create_firewall_group_log(context, resource_type,
                                                 **kwargs)
 
-    def stop_logging(self, context, **kwargs):
+    def stop_logging(self, context: n_ctx.Context, **kwargs: typing.Any
+                     ) -> None:
         LOG.debug("Stop logging: %s", str(kwargs))
 
         # Delete router
@@ -257,7 +272,9 @@ class IptablesLoggingDriver(log_ext.LoggingDriver):
             # Handle incoming log request
             self._delete_firewall_group_log(context, **kwargs)
 
-    def _create_firewall_group_log(self, context, resource_type, **kwargs):
+    def _create_firewall_group_log(self, context: n_ctx.Context,
+                                   resource_type: str, **kwargs: typing.Any
+                                   ) -> None:
         ports = kwargs.get('ports')
         log_resources = kwargs.get('log_resources')
         applied_ipt_mgrs = set()
@@ -315,7 +332,8 @@ class IptablesLoggingDriver(log_ext.LoggingDriver):
         # Clean up unused iptables managers from ports
         self._cleanup_unused_ipt_mgrs()
 
-    def _cleanup_prefixes_table(self, port_id, log_id):
+    def _cleanup_prefixes_table(self, port_id: str,
+                               log_id: str) -> None:
 
         # Each a port has at most 2 prefix
         for index in [1, 0]:
@@ -333,16 +351,21 @@ class IptablesLoggingDriver(log_ext.LoggingDriver):
                 del self.prefixes_table[port_id]
                 self.unused_port_ids.add(port_id)
 
-    def _cleanup_nflog_rules(self, applied_ipt_mgrs):
+    def _cleanup_nflog_rules(self, applied_ipt_mgrs: set[typing.Any]) -> None:
         for port_id, prefix_ids in self.cleanup_table.items():
             ipt_mgr = self._get_ipt_mgr_by_port(port_id)
-            for prefix_id in prefix_ids:
-                self._clear_rules_from_tag_v4v6(ipt_mgr, tag=prefix_id)
-            applied_ipt_mgrs.add(ipt_mgr)
+            if ipt_mgr:
+                for prefix_id in prefix_ids:
+                    self._clear_rules_from_tag_v4v6(ipt_mgr,
+                                                    tag=prefix_id)
+                applied_ipt_mgrs.add(ipt_mgr)
         self.cleanup_table.clear()
 
-    def _delete_firewall_group_log(self, context, **kwargs):
+    def _delete_firewall_group_log(self, context: n_ctx.Context,
+                                   **kwargs: typing.Any) -> None:
         log_resources = kwargs.get('log_resources')
+        if not log_resources:
+            return
         applied_ipt_mgrs = set()
 
         for log_resource in log_resources:
@@ -362,7 +385,8 @@ class IptablesLoggingDriver(log_ext.LoggingDriver):
         # Clean up unused iptables managers
         self._cleanup_unused_ipt_mgrs()
 
-    def _get_if_prefix(self, agent_mode, router):
+    def _get_if_prefix(self, agent_mode: str,
+                       router: typing.Any) -> str | None:
         """Get the if prefix from router"""
         if not router.router.get('distributed'):
             return INTERNAL_DEV_PREFIX
@@ -372,14 +396,17 @@ class IptablesLoggingDriver(log_ext.LoggingDriver):
 
         if router.rtr_fip_connect:
             return ROUTER_2_FIP_DEV_PREFIX
+        return None
 
-    def _get_intf_name(self, port_id):
+    def _get_intf_name(self, port_id: str) -> str | None:
         agent_mode = self.conf.agent_mode
         router = self.agent_api.get_router_hosting_port(port_id)
         if_prefix = self._get_if_prefix(agent_mode, router)
+        if if_prefix is None:
+            return None
         return (if_prefix + port_id)[:constants.LINUX_DEV_LEN]
 
-    def _get_ipt_mgr_by_port(self, port_id):
+    def _get_ipt_mgr_by_port(self, port_id: str) -> typing.Any | None:
 
         router = self.agent_api.get_router_hosting_port(port_id)
         if router:
@@ -396,8 +423,10 @@ class IptablesLoggingDriver(log_ext.LoggingDriver):
         for router_id in self.ipt_mgr_list:
             if port_id in self.ipt_mgr_list[router_id]:
                 return self.ipt_mgr_list[router_id][port_id]
+        return None
 
-    def _setup_chains(self, applied_ipt_mgrs, fwg_port_log):
+    def _setup_chains(self, applied_ipt_mgrs: set[typing.Any],
+                      fwg_port_log: FWGPortLog) -> None:
         # Add NFLOG rules by log event
         event = fwg_port_log.event
         if event in [log_const.ACCEPT_EVENT, log_const.ALL_EVENT]:
@@ -405,7 +434,8 @@ class IptablesLoggingDriver(log_ext.LoggingDriver):
         if event in [log_const.DROP_EVENT, log_const.ALL_EVENT]:
             self._add_log_rules_dropped(applied_ipt_mgrs, fwg_port_log)
 
-    def _add_nflog_rules_accepted(self, applied_ipt_mgrs, fwg_port_log):
+    def _add_nflog_rules_accepted(self, applied_ipt_mgrs: set[typing.Any],
+                                  fwg_port_log: FWGPortLog) -> None:
         """Add NFLOG rules to the accepted chain into iptables"""
         action = log_const.ACCEPT_EVENT
         port_id = fwg_port_log.port_id
@@ -418,21 +448,23 @@ class IptablesLoggingDriver(log_ext.LoggingDriver):
 
             # Get iptables manager from router port
             ipt_mgr = self._get_ipt_mgr_by_port(port_id)
-            if ipt_mgr:
+            device = self._get_intf_name(port_id)
+            if ipt_mgr and device is not None:
                 applied_ipt_mgrs.add(ipt_mgr)
 
-            device = self._get_intf_name(port_id)
-
-            # Add the NFLOG rules to the dropped chain into iptables
-            ipv4_rules, ipv6_rules = \
-                self._generate_nflog_rules_v4v6(device, prefix=prefix.id)
-            self._add_rules_to_chain_v4v6(ipt_mgr,
-                                          'accepted', ipv4_rules, ipv6_rules,
-                                          wrap=True, top=True, tag=prefix.id)
+                # Add the NFLOG rules to the accepted chain into iptables
+                ipv4_rules, ipv6_rules = \
+                    self._generate_nflog_rules_v4v6(device,
+                                                    prefix=prefix.id)
+                self._add_rules_to_chain_v4v6(ipt_mgr,
+                                              'accepted', ipv4_rules,
+                                              ipv6_rules, wrap=True,
+                                              top=True, tag=prefix.id)
 
         prefix.add_log_obj_ref(fwg_port_log.log_id)
 
-    def _add_log_rules_dropped(self, applied_ipt_mgrs, fwg_port_log):
+    def _add_log_rules_dropped(self, applied_ipt_mgrs: set[typing.Any],
+                               fwg_port_log: FWGPortLog) -> None:
         """Add NFLOG rules to the dropped chain into iptables"""
 
         action = log_const.DROP_EVENT
@@ -447,24 +479,31 @@ class IptablesLoggingDriver(log_ext.LoggingDriver):
 
             # Get iptables manager from router port
             ipt_mgr = self._get_ipt_mgr_by_port(port_id)
-            if ipt_mgr:
+            device = self._get_intf_name(port_id)
+            if ipt_mgr and device is not None:
                 applied_ipt_mgrs.add(ipt_mgr)
 
-            # Add the NFLOG rules to the dropped chain into iptables
-            ipv4_rules, ipv6_rules = \
-                self._generate_nflog_rules_v4v6(device, prefix=prefix.id)
-            self._add_rules_to_chain_v4v6(ipt_mgr,
-                                          'dropped', ipv4_rules, ipv6_rules,
-                                          wrap=True, top=True, tag=prefix.id)
-            # Add the NFLOG rules to the rejected chain in iptables
-            self._add_rules_to_chain_v4v6(ipt_mgr,
-                                          'rejected', ipv4_rules, ipv6_rules,
-                                          wrap=True, top=True, tag=prefix.id)
+                # Add the NFLOG rules to the dropped chain into iptables
+                ipv4_rules, ipv6_rules = \
+                    self._generate_nflog_rules_v4v6(device,
+                                                    prefix=prefix.id)
+                self._add_rules_to_chain_v4v6(ipt_mgr,
+                                              'dropped', ipv4_rules,
+                                              ipv6_rules, wrap=True,
+                                              top=True, tag=prefix.id)
+                # Add the NFLOG rules to the rejected chain in iptables
+                self._add_rules_to_chain_v4v6(ipt_mgr,
+                                              'rejected', ipv4_rules,
+                                              ipv6_rules, wrap=True,
+                                              top=True, tag=prefix.id)
         prefix.add_log_obj_ref(fwg_port_log.log_id)
 
-    def _add_rules_to_chain_v4v6(self, ipt_mgr, chain_name, v4_rules, v6_rules,
-                                 wrap=False, comment=None,
-                                 top=False, tag=None):
+    def _add_rules_to_chain_v4v6(self, ipt_mgr: typing.Any, chain_name: str,
+                                 v4_rules: list[str], v6_rules: list[str],
+                                 wrap: bool = False,
+                                 comment: str | None = None,
+                                 top: bool = False, tag: int | None = None
+                                 ) -> None:
         """Add rules to filter table in iptables and ip6tables"""
 
         for rule in v4_rules:
@@ -474,7 +513,8 @@ class IptablesLoggingDriver(log_ext.LoggingDriver):
             ipt_mgr.ipv6['filter'].add_rule(chain_name, rule, wrap=wrap,
                                             comment=comment, top=top, tag=tag)
 
-    def _add_fwg_port_log(self, log_id, port_id, log_info):
+    def _add_fwg_port_log(self, log_id: str, port_id: str,
+                          log_info: dict[str, typing.Any]) -> None:
 
         self.fwg_port_logs[log_id].add(FWGPortLog(port_id, log_info))
 
@@ -488,7 +528,9 @@ class IptablesLoggingDriver(log_ext.LoggingDriver):
             if prefix:
                 prefix.add_log_obj_ref(log_id)
 
-    def _generate_nflog_rules_v4v6(self, device, prefix):
+    def _generate_nflog_rules_v4v6(self, device: str,
+                                   prefix: int | None = None
+                                   ) -> tuple[list[str], list[str]]:
         iptables_rules = []
         added_rules = set()
         for direction in constants.VALID_DIRECTIONS:
@@ -503,7 +545,8 @@ class IptablesLoggingDriver(log_ext.LoggingDriver):
         LOG.debug("iptables-nflog-rules %r", iptables_rules)
         return iptables_rules, iptables_rules
 
-    def _generate_iptables_args(self, direction, device, prefix=None):
+    def _generate_iptables_args(self, direction: str, device: str,
+                                prefix: int | None = None) -> list[str]:
 
         direction_config = ['-%s %s' %
                             (IPTABLES_DIRECTION_DEVICE[direction], device)]
@@ -520,7 +563,11 @@ class IptablesLoggingDriver(log_ext.LoggingDriver):
         args = direction_config + match_rule + target
         return args
 
-    def _clear_rules_from_tag_v4v6(self, ipt_mgt, tag):
+    def _clear_rules_from_tag_v4v6(
+        self,
+        ipt_mgt: typing.Any,
+        tag: int
+    ) -> None:
         """Remove rules from filter table in iptables and ip6tables"""
         ipt_mgt.ipv4['filter'].clear_rules_by_tag(tag)
         ipt_mgt.ipv6['filter'].clear_rules_by_tag(tag)
