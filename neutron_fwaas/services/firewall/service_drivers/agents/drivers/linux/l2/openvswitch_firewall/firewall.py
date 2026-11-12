@@ -13,6 +13,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from collections.abc import Iterator
+import typing
+
 import netaddr
 
 from neutron_lib import constants as lib_const
@@ -37,7 +40,8 @@ ACTION_ALLOW = 'allow'
 
 
 # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver.
-def _replace_register(flow_params, register_number, register_value):
+def _replace_register(flow_params: dict[str, typing.Any], register_number: int,
+                      register_value: str) -> None:
     """Replace value from flows to given register number
 
     'register_value' key in dictionary will be replaced by register number
@@ -58,27 +62,29 @@ def _replace_register(flow_params, register_number, register_value):
 
 # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver that
 # differs only in constants REG_PORT/REG_NET.
-def create_reg_numbers(flow_params):
+def create_reg_numbers(flow_params: dict[str, typing.Any]) -> None:
     """Replace reg_(port|net) values with defined register numbers"""
     _replace_register(flow_params, fwaas_ovs_consts.REG_PORT, 'reg_port')
     _replace_register(flow_params, fwaas_ovs_consts.REG_NET, 'reg_net')
 
 
 class FirewallGroup:
-    def __init__(self, id_):
+    def __init__(self, id_: str) -> None:
         self.id = id_
         self.ingress_rules = []
         self.egress_rules = []
         self.members = {}
         self.ports = set()
 
-    def update_rules(self, ingress_rules, egress_rules):
+    def update_rules(self, ingress_rules: list[dict[str, typing.Any]],
+                     egress_rules: list[dict[str, typing.Any]]) -> None:
         """Update firewall group with ingress/egress rules.
 
         If a rule has a protocol field, it is normalized to a number
         here in order to ease later processing.
         """
-        def _translate_protocol_to_number(rule):
+        def _translate_protocol_to_number(rule: dict[str, typing.Any]
+                                          ) -> dict[str, typing.Any]:
             protocol = rule.get('protocol')
             if protocol is not None:
                 if protocol.isdigit():
@@ -96,55 +102,58 @@ class FirewallGroup:
         self.egress_rules = [_translate_protocol_to_number(er)
                              for er in egress_rules]
 
-    def get_ethertype_filtered_addresses(self, ethertype,
-                                         exclude_addresses=None):
-        exclude_addresses = set(exclude_addresses if exclude_addresses else [])
+    def get_ethertype_filtered_addresses(
+            self, ethertype: str,
+            exclude_addresses: list[str] | None = None) -> list[str]:
+        excluded = set(exclude_addresses if exclude_addresses else [])
         group_addresses = set(self.members.get(ethertype, []))
-        return list(group_addresses - exclude_addresses)
+        return list(group_addresses - excluded)
 
 
 # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver that
 # differs only in firewall groups list field name
 class OFPort:
-    def __init__(self, port_dict, ovs_port, vlan_tag):
+    def __init__(self, port_dict: dict[str, typing.Any], ovs_port: typing.Any,
+                 vlan_tag: int) -> None:
         self.id = port_dict['device']
         self.vlan_tag = vlan_tag
         self.mac = ovs_port.vif_mac
         self.lla_address = str(netutils.get_ipv6_addr_by_EUI64(
             lib_const.IPv6_LLA_PREFIX, self.mac))
         self.ofport = ovs_port.ofport
-        self.fw_group = None
+        self.fw_group: FirewallGroup | None = None
         self.fixed_ips = port_dict.get('fixed_ips', [])
         self.neutron_port_dict = port_dict.copy()
         self.allowed_pairs_v4 = self._get_allowed_pairs(port_dict, version=4)
         self.allowed_pairs_v6 = self._get_allowed_pairs(port_dict, version=6)
 
     @staticmethod
-    def _get_allowed_pairs(port_dict, version):
+    def _get_allowed_pairs(port_dict: dict[str, typing.Any], version: int
+                           ) -> set[tuple[str, str]]:
         aap_dict = port_dict.get('allowed_address_pairs', set())
         return {(aap['mac_address'], aap['ip_address']) for aap in aap_dict
                 if netaddr.IPNetwork(aap['ip_address']).version == version}
 
     @property
-    def all_allowed_macs(self):
+    def all_allowed_macs(self) -> set[str]:
         macs = {item[0] for item in self.allowed_pairs_v4.union(
             self.allowed_pairs_v6)}
         macs.add(self.mac)
         return macs
 
     @property
-    def ipv4_addresses(self):
+    def ipv4_addresses(self) -> list[str]:
         return [ip_addr for ip_addr in
                 [fixed_ip['ip_address'] for fixed_ip in self.fixed_ips]
                 if netaddr.IPAddress(ip_addr).version == 4]
 
     @property
-    def ipv6_addresses(self):
+    def ipv6_addresses(self) -> list[str]:
         return [ip_addr for ip_addr in
                 [fixed_ip['ip_address'] for fixed_ip in self.fixed_ips]
                 if netaddr.IPAddress(ip_addr).version == 6]
 
-    def update(self, port_dict):
+    def update(self, port_dict: dict[str, typing.Any]) -> None:
         self.allowed_pairs_v4 = self._get_allowed_pairs(port_dict,
                                                         version=4)
         self.allowed_pairs_v6 = self._get_allowed_pairs(port_dict,
@@ -158,36 +167,38 @@ class OFPort:
 # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver that
 # differs in methods name [s/sg/fwg] and update_rules method.
 class FWGPortMap:
-    def __init__(self):
-        self.ports = {}
-        self.fw_groups = {}
+    def __init__(self) -> None:
+        self.ports: dict[str, OFPort] = {}
+        self.fw_groups: dict[str, FirewallGroup] = {}
         # Maps port_id to ofport number
-        self.unfiltered = {}
+        self.unfiltered: dict[str, typing.Any] = {}
 
-    def get_fwg(self, fwg_id):
+    def get_fwg(self, fwg_id: str) -> FirewallGroup | None:
         return self.fw_groups.get(fwg_id, None)
 
-    def get_or_create_fwg(self, fwg_id):
+    def get_or_create_fwg(self, fwg_id: str) -> FirewallGroup:
         fw_group = self.get_fwg(fwg_id)
         if not fw_group:
             fw_group = FirewallGroup(fwg_id)
             self.fw_groups[fwg_id] = fw_group
         return fw_group
 
-    def delete_fwg(self, fwg_id):
+    def delete_fwg(self, fwg_id: str) -> None:
         del self.fw_groups[fwg_id]
 
     # XXX NOTE(ivasilevskaya) couldn't find any logical definition why
     # firewall_group should come as 3rd argument instead of adding fwg_id
     # to port_dict. Removed in favor of SG api
-    def create_port(self, port, port_dict):
+    def create_port(self, port: OFPort, port_dict: dict[str, typing.Any]
+                    ) -> None:
         self.ports[port.id] = port
         self.update_port(port, port_dict)
 
     # XXX NOTE(ivasilevskaya) couldn't find any logical definition why
     # firewall_group should come as 3rd argument instead of adding fwg_id
     # to port_dict. Removed in favor of SG api
-    def update_port(self, port, port_dict):
+    def update_port(self, port: OFPort, port_dict: dict[str, typing.Any]
+                    ) -> None:
         for fw_group in self.fw_groups.values():
             fw_group.ports.discard(port)
 
@@ -196,16 +207,19 @@ class FWGPortMap:
         fw_group.ports.add(port)
         port.update(port_dict)
 
-    def remove_port(self, port):
+    def remove_port(self, port: OFPort) -> None:
         if port.fw_group:
             port.fw_group.ports.discard(port)
         del self.ports[port.id]
 
-    def update_rules(self, fwg_id, ingress_rules, egress_rules):
+    def update_rules(self, fwg_id: str,
+                     ingress_rules: list[dict[str, typing.Any]],
+                     egress_rules: list[dict[str, typing.Any]]) -> None:
         fw_group = self.get_or_create_fwg(fwg_id)
         fw_group.update_rules(ingress_rules, egress_rules)
 
-    def update_members(self, fwg_id, members):
+    def update_members(self, fwg_id: str,
+                       members: dict[str, list[str]]) -> None:
         fw_group = self.get_or_create_fwg(fwg_id)
         fw_group.members = members
 
@@ -227,7 +241,8 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver.
     # This driver won't have any conj_manager logic because there is no concept
     # of remote_group_id for firewall groups (that I know of at least)
-    def __init__(self, agent_api, sg_with_ovs=False):
+    def __init__(self, agent_api: typing.Any, sg_with_ovs: bool = False
+                 ) -> None:
         """Initialize object"""
 
         integration_bridge = agent_api.request_int_br()
@@ -240,16 +255,16 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
         self._initialize_third_party_tables()
 
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver
-    def _accept_flow(self, **flow):
+    def _accept_flow(self, **flow: typing.Any) -> None:
         for f in rules.create_accept_flows(flow, self.sg_with_ovs):
             self._add_flow(**f)
 
-    def _drop_flow(self, **flow):
+    def _drop_flow(self, **flow: typing.Any) -> None:
         for f in rules.create_drop_flows(flow):
             self._add_flow(**f)
 
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver
-    def _add_flow(self, **kwargs):
+    def _add_flow(self, **kwargs: typing.Any) -> None:
         dl_type = kwargs.get('dl_type')
         create_reg_numbers(kwargs)
         if isinstance(dl_type, int):
@@ -260,7 +275,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
             self.int_br.br.add_flow(**kwargs)
 
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver
-    def _delete_flows(self, **kwargs):
+    def _delete_flows(self, **kwargs: typing.Any) -> None:
         create_reg_numbers(kwargs)
         if self._deferred:
             self.int_br.delete_flows(**kwargs)
@@ -268,7 +283,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
             self.int_br.br.delete_flows(**kwargs)
 
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver
-    def _strict_delete_flow(self, **kwargs):
+    def _strict_delete_flow(self, **kwargs: typing.Any) -> None:
         """Delete given flow right away even if bridge is deferred.
 
         Delete command will use strict delete.
@@ -278,20 +293,20 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
 
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver
     @staticmethod
-    def initialize_bridge(int_br):
+    def initialize_bridge(int_br: typing.Any) -> typing.Any:
         int_br.add_protocols(*OVSFirewallDriver.REQUIRED_PROTOCOLS)
         return int_br.deferred(full_ordered=True)
 
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver,
     # differs in constants
-    def _drop_all_unmatched_flows(self):
+    def _drop_all_unmatched_flows(self) -> None:
         for table in fwaas_ovs_consts.OVS_FIREWALL_TABLES:
             if (table == fwaas_ovs_consts.FW_ACCEPT_OR_INGRESS_TABLE and
                     self.sg_with_ovs):
                 continue
             self.int_br.br.add_flow(table=table, priority=0, actions='drop')
 
-    def _initialize_third_party_tables(self):
+    def _initialize_third_party_tables(self) -> None:
         self.int_br.br.add_flow(
             table=ovs_consts.ACCEPTED_EGRESS_TRAFFIC_TABLE,
             priority=1,
@@ -302,13 +317,13 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
                 table=table, priority=0, actions='drop')
 
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver
-    def get_ovs_port(self, port_id):
+    def get_ovs_port(self, port_id: str) -> typing.Any:
         ovs_port = self.int_br.br.get_vif_port_by_id(port_id)
         if not ovs_port:
             raise exceptions.OVSFWaaSPortNotFound(port_id=port_id)
         return ovs_port
 
-    def _get_port_vlan_tag(self, port):
+    def _get_port_vlan_tag(self, port: dict[str, typing.Any]) -> int:
         vlan_tag = port.get('lvlan')
         if vlan_tag:
             return vlan_tag
@@ -321,13 +336,13 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
             raise exceptions.OVSFWaaSTagNotFound(port_id=port['device'])
 
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver
-    def get_ofport(self, port):
+    def get_ofport(self, port: dict[str, typing.Any]) -> OFPort | None:
         port_id = port['device']
         return self.fwg_port_map.ports.get(port_id)
 
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver,
     # self.sg_port_map -> self.fwg_port_map
-    def get_or_create_ofport(self, port):
+    def get_or_create_ofport(self, port: dict[str, typing.Any]) -> OFPort:
         """Get ofport specified by port['device'], checking and reflecting
         ofport changes.
         If ofport is nonexistent, create and return one.
@@ -349,11 +364,11 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
         return of_port
 
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver
-    def is_port_managed(self, port):
+    def is_port_managed(self, port: dict[str, typing.Any]) -> bool:
         return port['device'] in self.fwg_port_map.ports
 
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver
-    def prepare_port_filter(self, port):
+    def prepare_port_filter(self, port: dict[str, typing.Any]) -> None:
         # NOTE(annp): port no security should be handled by security group in
         # co-existence mode, otherwise(standalone mode) fwg will handle it.
         if not firewall.port_sec_enabled(port) and not self.sg_with_ovs:
@@ -373,7 +388,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
         self.add_flows_from_rules(of_port)
 
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver
-    def update_port_filter(self, port):
+    def update_port_filter(self, port: dict[str, typing.Any]) -> None:
         """Update rules for given port
 
         Current existing filtering rules are removed and new ones are generated
@@ -394,6 +409,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
             return
 
         old_of_port = self.get_ofport(port)
+        assert old_of_port is not None
         of_port = self.get_or_create_ofport(port)
         # TODO(jlibosva): Handle firewall blink
         self.delete_all_port_flows(old_of_port)
@@ -402,7 +418,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
 
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver,
     # sg_port_map -> fwg_port_map
-    def remove_port_filter(self, port):
+    def remove_port_filter(self, port: dict[str, typing.Any]) -> None:
         """Remove port from firewall
 
         All flows related to this port are removed from ovs. Port is also
@@ -411,18 +427,22 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
         """
         if self.is_port_managed(port):
             of_port = self.get_ofport(port)
+            assert of_port is not None
             self.delete_all_port_flows(of_port)
             self.fwg_port_map.remove_port(of_port)
+            assert of_port.fw_group is not None
             self._schedule_fwg_deletion_maybe(of_port.fw_group.id)
 
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver
     # with ingress\egress rules arguments instead of single rules
-    def update_firewall_group_rules(self, fwg_id, ingress_rules, egress_rules):
+    def update_firewall_group_rules(
+            self, fwg_id: str, ingress_rules: list[dict[str, typing.Any]],
+            egress_rules: list[dict[str, typing.Any]]) -> None:
         self.fwg_port_map.update_rules(fwg_id, ingress_rules, egress_rules)
 
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver
     # with sg_port_map -> fwg_port_map
-    def _schedule_fwg_deletion_maybe(self, fwg_id):
+    def _schedule_fwg_deletion_maybe(self, fwg_id: str) -> None:
         """Schedule possible deletion of the given firewall group.
 
         This function must be called when the number of ports
@@ -435,19 +455,22 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
 
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver
     # with sg_port_map -> fwg_port_map
-    def _cleanup_stale_fwg(self):
+    def _cleanup_stale_fwg(self) -> None:
         fwg_to_delete = self.fwg_to_delete
         self.fwg_to_delete = set()
 
         for fwg_id in fwg_to_delete:
             fw_group = self.fwg_port_map.get_fwg(fwg_id)
+            if fw_group is None:
+                continue
             if fw_group.members and fw_group.ports:
                 # firewall group is still in use
                 continue
 
             self.fwg_port_map.delete_fwg(fwg_id)
 
-    def process_trusted_ports(self, ports):
+    def process_trusted_ports(self, ports: list[dict[str, typing.Any]]
+                              ) -> None:
         """Pass packets from these ports directly to ingress pipeline."""
         if self.sg_with_ovs:
             return
@@ -455,7 +478,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
         for port in ports:
             self._initialize_egress_no_port_security(port)
 
-    def remove_trusted_ports(self, port_ids):
+    def remove_trusted_ports(self, port_ids: list[str]) -> None:
         if self.sg_with_ovs:
             return
 
@@ -463,11 +486,11 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
             self._remove_egress_no_port_security(port_id)
 
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver
-    def filter_defer_apply_on(self):
+    def filter_defer_apply_on(self) -> None:
         self._deferred = True
 
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver
-    def filter_defer_apply_off(self):
+    def filter_defer_apply_off(self) -> None:
         if self._deferred:
             self._cleanup_stale_fwg()
             self.int_br.apply_flows()
@@ -476,13 +499,13 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver
     # with sg_port_map -> fwg_port_map
     @property
-    def ports(self):
+    def ports(self) -> dict[str, dict[str, typing.Any]]:
         return {id_: port.neutron_port_dict
                 for id_, port in self.fwg_port_map.ports.items()}
 
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver
     # which differs in constants (table numbers)
-    def initialize_port_flows(self, port):
+    def initialize_port_flows(self, port: OFPort) -> None:
         """Set base flows for port
 
         :param port: OFPort instance
@@ -523,7 +546,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
         self._initialize_egress(port)
         self._initialize_ingress(port)
 
-    def _fwaas_process_colocated_ingress(self, port):
+    def _fwaas_process_colocated_ingress(self, port: OFPort) -> None:
         for mac_addr in port.all_allowed_macs:
             self._add_flow(
                 table=ovs_consts.ACCEPT_OR_INGRESS_TABLE,
@@ -538,7 +561,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
 
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver
     # which differs in constants (table numbers)
-    def _initialize_egress_ipv6_icmp(self, port):
+    def _initialize_egress_ipv6_icmp(self, port: OFPort) -> None:
         for icmp_type in firewall.ICMPV6_ALLOWED_EGRESS_TYPES:
             self._add_flow(
                 table=fwaas_ovs_consts.FW_BASE_EGRESS_TABLE,
@@ -552,7 +575,8 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
 
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver
     # which differs in constants (table numbers) and exception classes
-    def _initialize_egress_no_port_security(self, port):
+    def _initialize_egress_no_port_security(self, port: dict[str, typing.Any]
+                                            ) -> None:
         port_id = port['device']
         try:
             ovs_port = self.get_ovs_port(port_id)
@@ -589,7 +613,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
 
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver
     # which differs in constants (table numbers)
-    def _remove_egress_no_port_security(self, port_id):
+    def _remove_egress_no_port_security(self, port_id: str) -> None:
         try:
             ofport = self.fwg_port_map.unfiltered[port_id]
         except KeyError:
@@ -607,7 +631,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
 
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver
     # which differs in constants (table numbers)
-    def _initialize_egress(self, port):
+    def _initialize_egress(self, port: OFPort) -> None:
         """Identify egress traffic and send it to egress base"""
         self._initialize_egress_ipv6_icmp(port)
 
@@ -751,7 +775,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
 
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver
     # which differs in constants (table numbers)
-    def _initialize_tracked_egress(self, port):
+    def _initialize_tracked_egress(self, port: OFPort) -> None:
         # Drop invalid packets
         self._add_flow(
             table=fwaas_ovs_consts.FW_RULES_EGRESS_TABLE,
@@ -803,7 +827,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
 
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver
     # which differs in constants (table numbers)
-    def _initialize_ingress_ipv6_icmp(self, port):
+    def _initialize_ingress_ipv6_icmp(self, port: OFPort) -> None:
         for icmp_type in firewall.ICMPV6_ALLOWED_INGRESS_TYPES:
             self._add_flow(
                 table=fwaas_ovs_consts.FW_BASE_INGRESS_TABLE,
@@ -818,7 +842,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
 
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver
     # which differs in constants (table numbers)
-    def _initialize_ingress(self, port):
+    def _initialize_ingress(self, port: OFPort) -> None:
         # Allow incoming ARPs
         self._add_flow(
             table=fwaas_ovs_consts.FW_BASE_INGRESS_TABLE,
@@ -867,7 +891,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
 
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver
     # which differs in constants (table numbers)
-    def _initialize_tracked_ingress(self, port):
+    def _initialize_tracked_ingress(self, port: OFPort) -> None:
         # Drop invalid packets
         self._add_flow(
             table=fwaas_ovs_consts.FW_RULES_INGRESS_TABLE,
@@ -918,7 +942,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
 
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver
     # which differs in constants (table numbers) and rules_generator method
-    def add_flows_from_rules(self, port):
+    def add_flows_from_rules(self, port: OFPort) -> None:
         self._initialize_tracked_ingress(port)
         self._initialize_tracked_egress(port)
         LOG.debug('Creating flow rules for port %s that is port %d in OVS',
@@ -933,14 +957,16 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
                 else:
                     self._drop_flow(**flow)
 
-    def create_rules_generator_for_port(self, port):
+    def create_rules_generator_for_port(
+            self, port: OFPort) -> Iterator[dict[str, typing.Any]]:
         """Returns a generator emitting rules valid for further processing
 
         Injects necessary fields to feed one-by-one to rules module to
         transform into valid openflow rules.
         """
 
-        def inject_fields(rule, direction, offset=0):
+        def inject_fields(rule: dict[str, typing.Any], direction: str,
+                          offset: int = 0) -> None:
             """Add fields to rule dict to be able to utilize rules module
 
             Currently such fields are added:
@@ -956,7 +982,8 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
             rule['offset'] = offset
 
             # transfer destination_port into port_range_min/port_range_max
-            def add_range(range_key, key_min, key_max):
+            def add_range(range_key: str, key_min: str,
+                          key_max: str) -> None:
                 range_str = rule.get(range_key)
                 if not range_str:
                     return
@@ -970,6 +997,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
                       'source_port_range_max')
 
         # add direction field
+        assert port.fw_group is not None
         offset = len(port.fw_group.ingress_rules) - 1
         for rule in port.fw_group.ingress_rules:
             inject_fields(rule, lib_const.INGRESS_DIRECTION, offset)
@@ -984,7 +1012,7 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
 
     # NOTE(ivasilevskaya) That's a copy-paste from neutron ovsfw driver
     # which differs in constants (table numbers)
-    def delete_all_port_flows(self, port):
+    def delete_all_port_flows(self, port: OFPort) -> None:
         """Delete all flows for given port"""
         accept_or_ingress = fwaas_ovs_consts.FW_ACCEPT_OR_INGRESS_TABLE
         if self.sg_with_ovs:
@@ -1003,7 +1031,8 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
                                  in_port=port.ofport)
         self._delete_flows(reg_port=port.ofport)
 
-    def create_firewall_group(self, ports_for_fwg, firewall_group):
+    def create_firewall_group(self, ports_for_fwg: list[dict[str, typing.Any]],
+                              firewall_group: dict[str, typing.Any]) -> None:
         egress_rules = firewall_group['egress_rule_list']
         ingress_rules = firewall_group['ingress_rule_list']
         fwg_id = firewall_group['id']
@@ -1013,10 +1042,12 @@ class OVSFirewallDriver(driver_base.FirewallL2DriverBase):
             port['firewall_group'] = fwg_id
             self.update_port_filter(port)
 
-    def update_firewall_group(self, ports_for_fwg, firewall_group):
+    def update_firewall_group(self, ports_for_fwg: list[dict[str, typing.Any]],
+                              firewall_group: dict[str, typing.Any]) -> None:
         self.create_firewall_group(ports_for_fwg, firewall_group)
 
-    def delete_firewall_group(self, ports_for_fwg, firewall_group):
+    def delete_firewall_group(self, ports_for_fwg: list[dict[str, typing.Any]],
+                              firewall_group: dict[str, typing.Any]) -> None:
         for port in ports_for_fwg:
             port['firewall_group'] = firewall_group['id']
             self.remove_port_filter(port)

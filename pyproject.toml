@@ -124,6 +124,7 @@ module = [
     "neutron_fwaas.services.firewall.service_drivers.agents.drivers.linux.l2.noop.noop_driver",
     "neutron_fwaas.services.firewall.service_drivers.agents.drivers.linux.l2.openvswitch_firewall.constants",
     "neutron_fwaas.services.firewall.service_drivers.agents.drivers.linux.l2.openvswitch_firewall.exceptions",
+    "neutron_fwaas.services.firewall.service_drivers.agents.drivers.linux.l2.openvswitch_firewall.firewall",
     "neutron_fwaas.services.firewall.service_drivers.agents.drivers.linux.l2.openvswitch_firewall.rules",
     "neutron_fwaas.services.firewall.service_drivers.agents.firewall_agent_api",
     "neutron_fwaas.services.firewall.service_drivers.agents.firewall_service",
