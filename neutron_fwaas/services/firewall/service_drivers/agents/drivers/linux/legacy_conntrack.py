@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import typing
+
 from neutron.agent.linux import utils as linux_utils
 from neutron_lib import constants
 from oslo_log import log as logging
@@ -32,7 +34,9 @@ ATTR_POSITIONS = {
 }
 
 
-def normalize_filters_tuple(rule_tuple):
+def normalize_filters_tuple(
+    rule_tuple: tuple[typing.Any, ...]
+) -> tuple[typing.Any, ...]:
     new_rule = []
     for el in rule_tuple:
         if el is None:
@@ -43,16 +47,17 @@ def normalize_filters_tuple(rule_tuple):
 
 
 class ConntrackLegacy(conntrack_base.ConntrackDriverBase):
-    def initialize(self, execute=None):
+    def initialize(self, execute: typing.Any = None) -> None:
         LOG.debug('Initialize Conntrack Legacy')
         self.execute = execute or linux_utils.execute
 
-    def flush_entries(self, namespace):
+    def flush_entries(self, namespace: str | None) -> None:
         prefixcmd = ['ip', 'netns', 'exec', namespace] if namespace else []
         cmd = prefixcmd + ['conntrack', '-D']
         self._execute_command(cmd)
 
-    def delete_entries(self, rules, namespace):
+    def delete_entries(self, rules: list[dict[str, typing.Any]],
+                       namespace: str | None) -> None:
         rule_filters = [self._get_filter_from_rule(r) for r in rules]
         rule_filters.sort(key=normalize_filters_tuple)
 
@@ -62,7 +67,7 @@ class ConntrackLegacy(conntrack_base.ConntrackDriverBase):
             cmd = self._get_conntrack_cmd_from_entry(delete_entry, namespace)
             self._execute_command(cmd)
 
-    def _execute_command(self, cmd):
+    def _execute_command(self, cmd: list[typing.Any]) -> str:
         try:
             output = self.execute(cmd,
                                   run_as_root=True,
@@ -74,7 +79,9 @@ class ConntrackLegacy(conntrack_base.ConntrackDriverBase):
             raise RuntimeError(msg)
         return output
 
-    def list_entries(self, namespace):
+    def list_entries(
+        self, namespace: str | None
+    ) -> list[conntrack_base.ConntrackEntry]:
         """List and parse all conntrack entries
 
         :param namespace: namespace to get conntrack entries
@@ -94,10 +101,15 @@ class ConntrackLegacy(conntrack_base.ConntrackDriverBase):
                     parsed_entries.append(parsed_entry)
         return sorted(parsed_entries)
 
-    def _get_conntrack_cmd_from_entry(self, entry, namespace):
+    def _get_conntrack_cmd_from_entry(
+        self,
+        entry: conntrack_base.ConntrackEntry,
+        namespace: str | None
+    ) -> list[typing.Any]:
         prefixcmd = ['ip', 'netns', 'exec', namespace] if namespace else []
         cmd = ['conntrack', '-D']
-        contrack_filter = ['-f', 'ipv' + str(entry[0]), '-p', entry[1]]
+        contrack_filter: list[typing.Any] = ['-f', 'ipv' + str(entry[0]),
+                                  '-p', entry[1]]
         if entry[1] in ['icmp', 'icmpv6']:
             contrack_filter.extend(['--icmp-type', entry[2],
                                     '--icmp-code', entry[3],
@@ -112,7 +124,8 @@ class ConntrackLegacy(conntrack_base.ConntrackDriverBase):
         exec_cmd = prefixcmd + cmd + contrack_filter
         return exec_cmd
 
-    def _parse_entry(self, entry, ip_version):
+    def _parse_entry(self, entry: list[str],
+                     ip_version: int) -> conntrack_base.ConntrackEntry | None:
         """Parse entry from text to Python tuple
 
         :param entry: conntrack entry as a list of string
@@ -128,14 +141,18 @@ class ConntrackLegacy(conntrack_base.ConntrackDriverBase):
                 'Skipping conntrack entry %s with unsupported protocol', entry)
             return None
 
-        parsed_entry = [ip_version, protocol]
+        parsed_entry: list[typing.Any] = [ip_version, protocol]
         for attr, position in ATTR_POSITIONS[protocol]:
             val = entry[position].partition('=')[2]
             parsed_entry.append(int(val) if attr in ['sport', 'dport', 'type',
                                                      'code', 'id'] else val)
-        return tuple(parsed_entry)
+        return conntrack_base.ConntrackEntry(*parsed_entry)
 
-    def _get_entries_to_delete(self, rule_filters, entries):
+    def _get_entries_to_delete(
+        self,
+        rule_filters: list[tuple[typing.Any, ...]],
+        entries: list[conntrack_base.ConntrackEntry]
+    ) -> list[conntrack_base.ConntrackEntry]:
         """Specify conntrack entries to delete
 
         :param rule_filters: List of filters parsed from firewall rules
@@ -167,7 +184,9 @@ class ConntrackLegacy(conntrack_base.ConntrackDriverBase):
         return delete_entries
 
     @staticmethod
-    def _get_filter_from_rule(rule):
+    def _get_filter_from_rule(
+        rule: dict[str, typing.Any]
+    ) -> tuple[typing.Any, ...]:
         """Parse the firewall rule to a tuple
 
         :param rule: firewall rule
@@ -190,7 +209,9 @@ class ConntrackLegacy(conntrack_base.ConntrackDriverBase):
         return tuple(rule_filter)
 
     @staticmethod
-    def _compare_entry_and_rule_filter(rule_filter, entry):
+    def _compare_entry_and_rule_filter(
+            rule_filter: tuple[typing.Any, ...],
+            entry: conntrack_base.ConntrackEntry) -> int:
         """Define that the entry should be deleted or not
 
         :param rule_filter: filter that is parsed from a firewall rule
