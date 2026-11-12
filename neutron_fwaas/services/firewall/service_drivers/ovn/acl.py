@@ -13,6 +13,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from collections.abc import Iterable
+import typing
+
 from neutron.common.ovn import utils as ovn_utils
 from neutron_lib.api.definitions import constants as api_const
 from neutron_lib import constants as const
@@ -24,7 +27,7 @@ from neutron_fwaas.services.firewall.service_drivers.ovn import \
     exceptions as ovn_fw_exc
 
 
-def acl_direction(direction, port_group=None):
+def acl_direction(direction: str, port_group: str | None = None) -> str:
     if direction == const.INGRESS_DIRECTION:
         portdir = 'inport'
     else:
@@ -32,7 +35,8 @@ def acl_direction(direction, port_group=None):
     return '{} == @{}'.format(portdir, port_group)
 
 
-def acl_ethertype(rule):
+def acl_ethertype(
+        rule: dict[str, typing.Any]) -> tuple[str, str | None, str | None]:
     match = ''
     ip_version = None
     icmp = None
@@ -47,7 +51,7 @@ def acl_ethertype(rule):
     return match, ip_version, icmp
 
 
-def acl_ip(rule, ip_version):
+def acl_ip(rule: dict[str, typing.Any], ip_version: str | None) -> str:
     src_ip = rule.get('source_ip_address')
     dst_ip = rule.get('destination_ip_address')
     src = ' && {}.src == {}'.format(ip_version, src_ip) if src_ip else ''
@@ -55,7 +59,8 @@ def acl_ip(rule, ip_version):
     return src + dst
 
 
-def get_min_max_ports_from_range(port_range):
+def get_min_max_ports_from_range(
+        port_range: str | None) -> list[int | None]:
     if not port_range:
         return [None, None]
     min_port, sep, max_port = port_range.partition(":")
@@ -64,7 +69,8 @@ def get_min_max_ports_from_range(port_range):
     return [int(min_port), int(max_port)]
 
 
-def acl_protocol_ports(protocol, port_range, is_dst=True):
+def acl_protocol_ports(protocol: str | None, port_range: str | None,
+                       is_dst: bool = True) -> str:
     match = ''
     min_port, max_port = get_min_max_ports_from_range(port_range)
     dir = 'dst' if is_dst else 'src'
@@ -79,7 +85,8 @@ def acl_protocol_ports(protocol, port_range, is_dst=True):
     return match
 
 
-def acl_protocol_and_ports(rule, icmp):
+def acl_protocol_and_ports(rule: dict[str, typing.Any],
+                           icmp: str | None) -> str:
     match = ''
     protocol = rule.get('protocol')
     if protocol is None:
@@ -96,7 +103,8 @@ def acl_protocol_and_ports(rule, icmp):
     return match
 
 
-def acl_action_and_priority(rule, direction):
+def acl_action_and_priority(rule: dict[str, typing.Any],
+                            direction: str) -> tuple[str, int]:
     action = rule['action']
     pos = rule.get('position', 0)
     if (action == api_const.FWAAS_DENY and
@@ -123,7 +131,9 @@ def acl_action_and_priority(rule, direction):
     raise ValueError(_('Unkown action: %s' % action))
 
 
-def acl_entry_for_port_group(port_group, rule, direction, match):
+def acl_entry_for_port_group(port_group: str, rule: dict[str, typing.Any],
+                             direction: str, match: str
+                             ) -> dict[str, typing.Any]:
     dir_map = {const.INGRESS_DIRECTION: 'from-lport',
                const.EGRESS_DIRECTION: 'to-lport'}
     action, priority = acl_action_and_priority(rule, direction)
@@ -140,7 +150,8 @@ def acl_entry_for_port_group(port_group, rule, direction, match):
     return acl
 
 
-def get_rule_acl_for_port_group(port_group, rule, direction):
+def get_rule_acl_for_port_group(port_group: str, rule: dict[str, typing.Any],
+                                direction: str) -> dict[str, typing.Any]:
     match = acl_direction(direction, port_group=port_group)
     ip_match, ip_version, icmp = acl_ethertype(rule)
     match += ip_match
@@ -149,8 +160,10 @@ def get_rule_acl_for_port_group(port_group, rule, direction):
     return acl_entry_for_port_group(port_group, rule, direction, match)
 
 
-def update_ports_for_pg(nb_idl, txn, pg_name, ports_add=None,
-                        ports_delete=None):
+def update_ports_for_pg(nb_idl: typing.Any, txn: typing.Any, pg_name: str,
+                        ports_add: Iterable[str] | None = None,
+                        ports_delete: Iterable[str] | None = None
+                        ) -> None:
     if ports_add is None:
         ports_add = []
     if ports_delete is None:
@@ -164,7 +177,10 @@ def update_ports_for_pg(nb_idl, txn, pg_name, ports_add=None,
             pg_name, port_id, if_exists=True))
 
 
-def get_default_acls_for_pg(nb_idl, pg_name):
+def get_default_acls_for_pg(
+    nb_idl: typing.Any,
+    pg_name: str
+) -> list[typing.Any]:
     nb_acls = nb_idl.pg_acl_list(pg_name).execute(check_error=True)
     default_acl_list = []
     for nb_acl in nb_acls:
@@ -177,8 +193,9 @@ def get_default_acls_for_pg(nb_idl, pg_name):
     return default_acl_list
 
 
-def process_rule_for_pg(nb_idl, txn, pg_name, rule, direction,
-                        op=ovn_const.OP_ADD):
+def process_rule_for_pg(nb_idl: typing.Any, txn: typing.Any, pg_name: str,
+                        rule: dict[str, typing.Any], direction: str,
+                        op: str = ovn_const.OP_ADD) -> None:
     dir_map = {const.INGRESS_DIRECTION: 'from-lport',
                const.EGRESS_DIRECTION: 'to-lport'}
     supported_ops = [ovn_const.OP_ADD, ovn_const.OP_DEL,
@@ -216,7 +233,7 @@ def process_rule_for_pg(nb_idl, txn, pg_name, rule, direction,
                 break
 
 
-def create_pg_for_fwg(nb_idl, fwg_id):
+def create_pg_for_fwg(nb_idl: typing.Any, fwg_id: str) -> None:
     pg_name = ovn_utils.ovn_port_group_name(fwg_id)
     # Add port_group
     with nb_idl.transaction(check_error=True) as txn:
@@ -225,7 +242,11 @@ def create_pg_for_fwg(nb_idl, fwg_id):
                               external_ids=ext_ids, may_exist=True))
 
 
-def add_default_acls_for_pg(nb_idl, txn, pg_name):
+def add_default_acls_for_pg(
+    nb_idl: typing.Any,
+    txn: typing.Any,
+    pg_name: str
+) -> None:
     # Traffic is default denied, ipv4 or ipv6 with two directions,
     # so number of default acls is 4
     default_rule_v4 = {'action': api_const.FWAAS_DENY,
