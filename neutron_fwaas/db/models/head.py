@@ -11,7 +11,8 @@
 # limitations under the License.
 
 from neutron_lib.db import model_base
+import sqlalchemy as sa
 
 
-def get_metadata():
+def get_metadata() -> sa.MetaData:
     return model_base.BASEV2.metadata

@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import typing
+
 from neutron.services import provider_configuration as provconf
 from oslo_config import cfg
 from oslo_log import log as logging
@@ -28,7 +30,7 @@ FIREWALL_DRIVERS = 'firewall_drivers'
 class FirewallService:
     """Firewall Service observer."""
 
-    def load_device_drivers(self):
+    def load_device_drivers(self) -> typing.Any:
         """Loads a single device driver for FWaaS."""
         device_driver = provconf.get_provider_driver_class(
             cfg.CONF.fwaas.driver, FIREWALL_DRIVERS)
