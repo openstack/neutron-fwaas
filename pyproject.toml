@@ -81,3 +81,22 @@ neutron_fwaas = "neutron_fwaas.cmd.upgrade_checks.checks:Checks"
 
 [project.entry-points."neutron.ovn.db_sync"]
 neutron_fwaas_nb_sync = "neutron_fwaas.services.firewall.service_drivers.ovn.ovn_db_sync:OvnNbDbSync"
+
+[tool.mypy]
+python_version = "3.11"
+pretty = true
+show_error_context = true
+show_column_numbers = true
+disallow_incomplete_defs = true
+warn_unused_ignores = true
+# remove gradually as progress is made
+disable_error_code = ["import-untyped", "var-annotated"]
+files = ["neutron_fwaas"]
+exclude = "(?x)(^neutron_fwaas/tests/|^neutron_fwaas/privileged/tests/)"
+
+# Modules listed here are fully annotated; keep it that way. Add a module (or
+# package glob) once it passes, and never remove one. Once everything outside
+# the tests is listed, move these options to the global section.
+[[tool.mypy.overrides]]
+module = []
+disallow_untyped_defs = true
