@@ -12,6 +12,8 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import typing
+
 from oslo_log import helpers as log_helpers
 
 from neutron_fwaas.services.firewall.service_drivers.agents.drivers.linux.l2\
@@ -21,21 +23,24 @@ from neutron_fwaas.services.firewall.service_drivers.agents.drivers.linux.l2\
 class NoopFirewallL2Driver(driver_base.FirewallL2DriverBase):
 
     @log_helpers.log_method_call
-    def create_firewall_group(self, ports, firewall_group):
+    def create_firewall_group(self, ports: list[dict[str, typing.Any]],
+                              firewall_group: dict[str, typing.Any]) -> None:
         pass
 
     @log_helpers.log_method_call
-    def update_firewall_group(self, ports, firewall_group):
+    def update_firewall_group(self, ports: list[dict[str, typing.Any]],
+                              firewall_group: dict[str, typing.Any]) -> None:
         pass
 
     @log_helpers.log_method_call
-    def delete_firewall_group(self, ports, firewall_group):
+    def delete_firewall_group(self, ports: list[dict[str, typing.Any]],
+                              firewall_group: dict[str, typing.Any]) -> None:
         pass
 
     @log_helpers.log_method_call
-    def process_trusted_ports(self, ports):
+    def process_trusted_ports(self, ports: list[str]) -> None:
         pass
 
     @log_helpers.log_method_call
-    def remove_trusted_ports(self, port_ids):
+    def remove_trusted_ports(self, port_ids: list[str]) -> None:
         pass

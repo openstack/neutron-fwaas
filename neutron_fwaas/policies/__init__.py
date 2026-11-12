@@ -10,14 +10,16 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from collections.abc import Iterator
 import itertools
+import typing
 
 from neutron_fwaas.policies import firewall_group
 from neutron_fwaas.policies import firewall_policy
 from neutron_fwaas.policies import firewall_rule
 
 
-def list_rules():
+def list_rules() -> Iterator[typing.Any]:
     return itertools.chain(
         firewall_group.list_rules(),
         firewall_policy.list_rules(),

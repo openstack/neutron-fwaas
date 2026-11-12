@@ -13,11 +13,13 @@
 # under the License.
 
 import abc
+import typing
 
 from neutron.api.v2 import resource_helper
 from neutron_lib.api.definitions import constants as api_const
 from neutron_lib.api.definitions import firewall_v2
 from neutron_lib.api import extensions
+from neutron_lib import context as n_ctx
 from neutron_lib.services import base as service_base
 from oslo_config import cfg
 
@@ -116,7 +118,7 @@ class Firewall_v2(extensions.APIExtensionDescriptor):
     api_definition = firewall_v2
 
     @classmethod
-    def get_resources(cls):
+    def get_resources(cls) -> list[typing.Any]:
         special_mappings = {'firewall_policies': 'firewall_policy'}
         plural_mappings = resource_helper.build_plural_mappings(
             special_mappings, firewall_v2.RESOURCE_ATTRIBUTE_MAP)
@@ -126,86 +128,139 @@ class Firewall_v2(extensions.APIExtensionDescriptor):
             register_quota=True)
 
     @classmethod
-    def get_plugin_interface(cls):
+    def get_plugin_interface(cls) -> type:
         return Firewallv2PluginBase
 
 
 class Firewallv2PluginBase(service_base.ServicePluginBase,
                            metaclass=abc.ABCMeta):
 
-    def get_plugin_type(self):
+    def get_plugin_type(self) -> str:
         return fwaas_constants.FIREWALL_V2
 
-    def get_plugin_description(self):
+    def get_plugin_description(self) -> str:
         return 'Firewall Service v2 Plugin'
 
     # Firewall Group
     @abc.abstractmethod
-    def create_firewall_group(self, context, firewall_group):
+    def create_firewall_group(
+        self,
+        context: n_ctx.Context,
+        firewall_group: dict[str, typing.Any]
+    ) -> typing.Any:
         pass
 
     @abc.abstractmethod
-    def delete_firewall_group(self, context, id):
+    def delete_firewall_group(self, context: n_ctx.Context, id: str) -> None:
         pass
 
     @abc.abstractmethod
-    def get_firewall_group(self, context, id, fields=None):
+    def get_firewall_group(
+        self,
+        context: n_ctx.Context,
+        id: str,
+        fields: dict[str, typing.Any] | None = None
+    ) -> typing.Any:
         pass
 
     @abc.abstractmethod
-    def get_firewall_groups(self, context, filters=None, fields=None):
+    def get_firewall_groups(self, context: n_ctx.Context,
+                            filters: dict[str, typing.Any] | None = None,
+                            fields: dict[str, typing.Any] | None = None
+                            ) -> list[typing.Any]:
         pass
 
     @abc.abstractmethod
-    def update_firewall_group(self, context, id, firewall_group):
+    def update_firewall_group(
+        self,
+        context: n_ctx.Context,
+        id: str,
+        firewall_group: dict[str, typing.Any]
+    ) -> typing.Any:
         pass
 
     # Firewall Policy
     @abc.abstractmethod
-    def create_firewall_policy(self, context, firewall_policy):
+    def create_firewall_policy(
+        self,
+        context: n_ctx.Context,
+        firewall_policy: dict[str, typing.Any]
+    ) -> typing.Any:
         pass
 
     @abc.abstractmethod
-    def delete_firewall_policy(self, context, id):
+    def delete_firewall_policy(self, context: n_ctx.Context, id: str) -> None:
         pass
 
     @abc.abstractmethod
-    def get_firewall_policy(self, context, id, fields=None):
+    def get_firewall_policy(
+        self,
+        context: n_ctx.Context,
+        id: str,
+        fields: dict[str, typing.Any] | None = None
+    ) -> typing.Any:
         pass
 
     @abc.abstractmethod
-    def get_firewall_policies(self, context, filters=None, fields=None):
+    def get_firewall_policies(self, context: n_ctx.Context,
+                              filters: dict[str, typing.Any] | None = None,
+                              fields: dict[str, typing.Any] | None = None
+                              ) -> list[typing.Any]:
         pass
 
     @abc.abstractmethod
-    def update_firewall_policy(self, context, id, firewall_policy):
+    def update_firewall_policy(
+        self,
+        context: n_ctx.Context,
+        id: str,
+        firewall_policy: dict[str, typing.Any]
+    ) -> typing.Any:
         pass
 
     # Firewall Rule
     @abc.abstractmethod
-    def create_firewall_rule(self, context, firewall_rule):
+    def create_firewall_rule(
+        self,
+        context: n_ctx.Context,
+        firewall_rule: dict[str, typing.Any]
+    ) -> typing.Any:
         pass
 
     @abc.abstractmethod
-    def delete_firewall_rule(self, context, id):
+    def delete_firewall_rule(self, context: n_ctx.Context, id: str) -> None:
         pass
 
     @abc.abstractmethod
-    def get_firewall_rule(self, context, id, fields=None):
+    def get_firewall_rule(
+        self,
+        context: n_ctx.Context,
+        id: str,
+        fields: dict[str, typing.Any] | None = None
+    ) -> typing.Any:
         pass
 
     @abc.abstractmethod
-    def get_firewall_rules(self, context, filters=None, fields=None):
+    def get_firewall_rules(self, context: n_ctx.Context,
+                           filters: dict[str, typing.Any] | None = None,
+                           fields: dict[str, typing.Any] | None = None
+                           ) -> list[typing.Any]:
         pass
 
     @abc.abstractmethod
-    def update_firewall_rule(self, context, id, firewall_rule):
+    def update_firewall_rule(
+        self,
+        context: n_ctx.Context,
+        id: str,
+        firewall_rule: dict[str, typing.Any]
+    ) -> typing.Any:
         pass
 
     @abc.abstractmethod
-    def insert_rule(self, context, id, rule_info):
+    def insert_rule(self, context: n_ctx.Context, id: str,
+                    rule_info: dict[str, typing.Any]) -> typing.Any:
         pass
 
     @abc.abstractmethod
-    def remove_rule(self, context, id, rule_info):
+    def remove_rule(self, context: n_ctx.Context, id: str,
+                    rule_info: dict[str, typing.Any]) -> typing.Any:
         pass

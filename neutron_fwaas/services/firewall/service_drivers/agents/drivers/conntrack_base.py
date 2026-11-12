@@ -14,6 +14,7 @@
 #    under the License.
 
 import abc
+import typing
 
 
 from neutron_lib.utils import runtime
@@ -24,7 +25,10 @@ from oslo_utils import excutils
 LOG = logging.getLogger(__name__)
 
 
-def load_and_init_conntrack_driver(*args, **kwargs):
+def load_and_init_conntrack_driver(
+    *args: typing.Any,
+    **kwargs: typing.Any
+) -> typing.Any:
     driver = cfg.CONF.fwaas.conntrack_driver
     try:
         conntrack_driver_cls = runtime.load_class_by_alias_or_classname(
@@ -41,13 +45,14 @@ class ConntrackDriverBase(metaclass=abc.ABCMeta):
     """Base Driver for Conntrack"""
 
     @abc.abstractmethod
-    def initialize(self, *args, **kwargs):
+    def initialize(self, *args: typing.Any, **kwargs: typing.Any) -> None:
         """Initialize the driver"""
 
     @abc.abstractmethod
-    def delete_entries(self, rules, namespace):
+    def delete_entries(self, rules: list[dict[str, typing.Any]],
+                       namespace: str) -> None:
         """Delete conntrack entries specified by list of rules"""
 
     @abc.abstractmethod
-    def flush_entries(self, namespace):
+    def flush_entries(self, namespace: str) -> None:
         """Delete all conntrack entries within namespace"""

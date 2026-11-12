@@ -14,6 +14,7 @@
 #    under the License.
 
 import abc
+import typing
 
 
 class FwaasDriverBase(metaclass=abc.ABCMeta):
@@ -55,7 +56,12 @@ class FwaasDriverBase(metaclass=abc.ABCMeta):
     DVR_SNAT or LEGACY mode.
     """
     @abc.abstractmethod
-    def create_firewall_group(self, agent_mode, apply_list, firewall):
+    def create_firewall_group(
+        self,
+        agent_mode: str,
+        apply_list: list[typing.Any],
+        firewall: dict[str, typing.Any]
+    ) -> None:
         """Create the Firewall with default (drop all) policy.
 
         The default policy will be applied on all the interfaces of
@@ -64,7 +70,12 @@ class FwaasDriverBase(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def delete_firewall_group(self, agent_mode, apply_list, firewall):
+    def delete_firewall_group(
+        self,
+        agent_mode: str,
+        apply_list: list[typing.Any],
+        firewall: dict[str, typing.Any]
+    ) -> None:
         """Delete firewall.
 
         Removes all policies created by this instance and frees up
@@ -73,7 +84,12 @@ class FwaasDriverBase(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def update_firewall_group(self, agent_mode, apply_list, firewall):
+    def update_firewall_group(
+        self,
+        agent_mode: str,
+        apply_list: list[typing.Any],
+        firewall: dict[str, typing.Any]
+    ) -> None:
         """Apply the policy on all trusted interfaces.
 
         Remove previous policy and apply the new policy on all trusted
@@ -82,7 +98,12 @@ class FwaasDriverBase(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def apply_default_policy(self, agent_mode, apply_list, firewall):
+    def apply_default_policy(
+        self,
+        agent_mode: str,
+        apply_list: list[typing.Any],
+        firewall: dict[str, typing.Any]
+    ) -> None:
         """Apply the default policy on all trusted interfaces.
 
         Remove current policy and apply the default policy on all trusted

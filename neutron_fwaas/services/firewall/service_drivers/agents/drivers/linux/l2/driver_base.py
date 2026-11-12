@@ -13,30 +13,33 @@
 # under the License.
 
 import abc
+from collections.abc import Generator
 import contextlib
+import typing
 
 
 class FirewallL2DriverBase(metaclass=abc.ABCMeta):
     """Abstract firewall L2 driver base"""
 
-    def __init__(self, integration_bridge, sg_enabled=False):
+    def __init__(self, integration_bridge: str,
+                 sg_enabled: bool = False) -> None:
         pass
 
-    def filter_defer_apply_on(self):
+    def filter_defer_apply_on(self) -> None:
         """Defer application of filtering rule."""
         pass
 
-    def filter_defer_apply_off(self):
+    def filter_defer_apply_off(self) -> None:
         """Turn off deferral of rules and apply the rules now."""
         pass
 
     @property
-    def ports(self):
+    def ports(self) -> typing.Any:
         """Returns filtered ports."""
         pass
 
     @contextlib.contextmanager
-    def defer_apply(self):
+    def defer_apply(self) -> Generator[None, None, None]:
         """Defer apply context."""
         self.filter_defer_apply_on()
         try:
@@ -44,17 +47,20 @@ class FirewallL2DriverBase(metaclass=abc.ABCMeta):
         finally:
             self.filter_defer_apply_off()
 
-    def create_firewall_group(self, ports, firewall_group):
+    def create_firewall_group(self, ports: list[dict[str, typing.Any]],
+                              firewall_group: dict[str, typing.Any]) -> None:
         """Called when a firewall group is created.
         """
         raise NotImplementedError()
 
-    def update_firewall_group(self, ports, firewall_group):
+    def update_firewall_group(self, ports: list[dict[str, typing.Any]],
+                              firewall_group: dict[str, typing.Any]) -> None:
         """Called when a firewall group is updated.
         """
         raise NotImplementedError()
 
-    def delete_firewall_group(self, ports, firewall_group):
+    def delete_firewall_group(self, ports: list[dict[str, typing.Any]],
+                              firewall_group: dict[str, typing.Any]) -> None:
         """Called when a firewall group is deleted.
         """
         raise NotImplementedError()
