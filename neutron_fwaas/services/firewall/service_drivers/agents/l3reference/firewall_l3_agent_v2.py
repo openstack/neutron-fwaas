@@ -130,6 +130,7 @@ class FWaaSL3AgentExtension(l3_extension.L3AgentExtension):
         self.agent_api = None
         self.neutron_service_plugins: list[str] | None = None
         self.conf = conf
+        self.host = host
         self.fwaas_enabled = cfg.CONF.fwaas.enabled
 
         self.start_rpc_listeners(host, conf)

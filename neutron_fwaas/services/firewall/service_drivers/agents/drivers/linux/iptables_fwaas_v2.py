@@ -513,7 +513,7 @@ class IptablesFwaasDriver(fwaas_base_v2.FwaasDriverBase):
 
     def _convert_fwaas_to_iptables_rule(self, rule: dict[str, typing.Any]
                                         ) -> str:
-        action = FWAAS_TO_IPTABLE_ACTION_MAP[rule.get('action')]
+        action = FWAAS_TO_IPTABLE_ACTION_MAP[rule['action']]
 
         # Output ordering is important here as it must exactly match what
         # is returned by iptables-save.  If not we risk unnecessarily removing

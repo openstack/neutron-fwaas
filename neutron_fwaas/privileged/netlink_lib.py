@@ -278,9 +278,8 @@ def list_entries(namespace=None):
     """List and parse all conntrack entries
 
     :param namespace: namespace to get conntrack entries
-    :return: sorted list of conntrack entries in Python tuple
-    example: [(4, 'icmp', '8', '0', '1.1.1.1', '2.2.2.2', '1234'),
-              (4, 'tcp', '1', '2', '1.1.1.1', '2.2.2.2')]
+    :return: sorted list of conntrack entries in Python tuple, e.g.
+        ``[(4, 'icmp', '8', '0', '1.1.1.1', '2.2.2.2', '1234'), ...]``
     """
     parsed_entries = []
     with fwaas_utils.in_namespace(namespace):

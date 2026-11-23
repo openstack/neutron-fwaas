@@ -128,8 +128,11 @@ def create_port_range_flows(
     flow_template: dict[str, typing.Any],
     rule: dict[str, typing.Any]
 ) -> list[dict[str, typing.Any]]:
+    protocol_num = rule.get('protocol')
+    if protocol_num is None:
+        return []
     protocol = fwaas_ovs_consts.REVERSE_IP_PROTOCOL_MAP_WITH_PORTS.get(
-        rule.get('protocol'))
+        protocol_num)
     if protocol is None:
         return []
     flows = []

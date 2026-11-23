@@ -279,7 +279,7 @@ class FWaaSV2AgentExtension(l2_extension.L2AgentExtension):
 
         add_ports = self._get_firewall_group_ports(fwg, host)
         if not add_ports:
-            status = nl_const.INACTIVE
+            status: str | None = nl_const.INACTIVE
         else:
             ret = self._apply_fwg_rules(fwg, add_ports, event)
 
