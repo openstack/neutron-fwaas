@@ -137,6 +137,7 @@ module = [
     "neutron_fwaas.services.firewall.service_drivers.ovn.firewall_l3_driver",
     "neutron_fwaas.services.firewall.service_drivers.ovn.ovn_db_sync",
     "neutron_fwaas.services.logapi.agents.drivers.iptables.driver",
+    "neutron_fwaas.services.logapi.agents.drivers.iptables.log",
     "neutron_fwaas.services.logapi.agents.l3.fwg_log",
     "neutron_fwaas.services.logapi.common.fwg_callback",
     "neutron_fwaas.services.logapi.common.log_db_api",
