@@ -105,6 +105,7 @@ module = [
     "neutron_fwaas.common.fwaas_constants",
     "neutron_fwaas.common.resources",
     "neutron_fwaas.common.utils",
+    "neutron_fwaas.db.firewall.v2.firewall_db_v2",
     "neutron_fwaas.db.firewall.v2.models",
     "neutron_fwaas.db.models.head",
     "neutron_fwaas.extensions.firewall_v2",

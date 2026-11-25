@@ -15,6 +15,7 @@
 
 import copy
 import netaddr
+import typing
 
 from neutron_lib import constants as nl_constants
 from neutron_lib import context as lib_context
@@ -34,7 +35,8 @@ from neutron_fwaas.objects import firewall_v2 as fw_obj
 _IP_ADDR_FIELDS = ('source_ip_address', 'destination_ip_address')
 
 
-def _ip_str_to_network(value):
+def _ip_str_to_network(
+        value: str | netaddr.IPNetwork | None) -> netaddr.IPNetwork | None:
     """Convert an IP address string to AuthenticIPNetwork for OVO fields.
 
     AuthenticIPNetwork preserves the original string representation
@@ -68,13 +70,15 @@ class FirewallDefaultObjectUpdateRestricted(FirewallDefaultParameterExists):
 
 class FirewallPluginDb:
 
-    def _get_firewall_rule(self, context, id):
+    def _get_firewall_rule(self, context: lib_context.Context,
+                           id: str) -> typing.Any:
         fwr = fw_obj.FirewallRuleV2.get_object(context, id=id)
         if not fwr:
             raise f_exc.FirewallRuleNotFound(firewall_rule_id=id)
         return fwr
 
-    def _get_policy_ordered_rule_objects(self, context, policy_id):
+    def _get_policy_ordered_rule_objects(self, context: lib_context.Context,
+                                         policy_id: str) -> list[typing.Any]:
         """Return ordered list of rule OVOs for a given policy."""
         with db_api.CONTEXT_READER.using(context):
             assocs = fw_obj.FirewallPolicyRuleAssociation.get_objects(
@@ -88,13 +92,19 @@ class FirewallPluginDb:
             return [rules_by_id[rid]
                     for rid in rule_ids if rid in rules_by_id]
 
-    def _get_policy_ordered_rules(self, context, policy_id):
+    def _get_policy_ordered_rules(
+        self,
+        context: lib_context.Context,
+        policy_id: str
+    ) -> list[dict[str, typing.Any]]:
         """Return ordered list of rule dicts for a given policy (for RPC)."""
         return [rule.to_dict()
                 for rule in self._get_policy_ordered_rule_objects(
                     context, policy_id)]
 
-    def make_firewall_group_dict_with_rules(self, context, firewall_group_id):
+    def make_firewall_group_dict_with_rules(
+            self, context: lib_context.Context,
+            firewall_group_id: str) -> dict[str, typing.Any]:
         """Build a dict with embedded rule lists, suitable for RPC."""
         fwg = self.get_firewall_group(context, firewall_group_id)
         fwg_dict = fwg.to_dict()
@@ -113,15 +123,18 @@ class FirewallPluginDb:
             fwg_dict['egress_rule_list'] = []
         return fwg_dict
 
-    def _check_firewall_rule_conflict(self, fwr_db, fwp_db):
+    def _check_firewall_rule_conflict(self, fwr_db: typing.Any,
+                                     fwp_db: typing.Any) -> None:
         if not fwr_db['shared']:
             if fwr_db['project_id'] != fwp_db['project_id']:
                 raise f_exc.FirewallRuleConflict(
                     firewall_rule_id=fwr_db['id'],
                     project_id=fwr_db['project_id'])
 
-    def _process_rule_for_policy(self, context, firewall_policy_id,
-                                 firewall_rule_id, position):
+    def _process_rule_for_policy(self, context: lib_context.Context,
+                                 firewall_policy_id: str,
+                                 firewall_rule_id: str,
+                                 position: int | None) -> typing.Any:
         with db_api.CONTEXT_WRITER.using(context):
             assocs = fw_obj.FirewallPolicyRuleAssociation.get_objects(
                 context, firewall_policy_id=firewall_policy_id)
@@ -148,8 +161,9 @@ class FirewallPluginDb:
             fwp_ovo.update()
         return self.get_firewall_policy(context, firewall_policy_id)
 
-    def _ensure_rule_not_already_associated(self, context, firewall_policy_id,
-                                            firewall_rule_id):
+    def _ensure_rule_not_already_associated(
+            self, context: lib_context.Context, firewall_policy_id: str,
+            firewall_rule_id: str) -> None:
         """Checks that a rule is not already associated with a particular
         policy. If it is the function will throw an exception.
         """
@@ -162,8 +176,9 @@ class FirewallPluginDb:
                 firewall_rule_id=firewall_rule_id,
                 firewall_policy_id=firewall_policy_id)
 
-    def _get_policy_rule_association(self, context, firewall_policy_id,
-                                     firewall_rule_id):
+    def _get_policy_rule_association(self, context: lib_context.Context,
+                                     firewall_policy_id: str,
+                                     firewall_rule_id: str) -> typing.Any:
         """Returns the association between a firewall rule and a firewall
         policy. Throws an exception if the association does not exist.
         """
@@ -177,7 +192,8 @@ class FirewallPluginDb:
                 firewall_policy_id=firewall_policy_id)
         return assoc
 
-    def _create_default_firewall_rules(self, context, project_id):
+    def _create_default_firewall_rules(self, context: lib_context.Context,
+                                       project_id: str) -> dict[str, str]:
         # NOTE(xgerman) Maybe generating the final set of rules from a
         # configuration file makes sense. Can be done some time later
 
@@ -245,7 +261,11 @@ class FirewallPluginDb:
             'eg_ipv6': self.create_firewall_rule(context, eg_fwr_v6)['id'],
         }
 
-    def create_firewall_rule(self, context, firewall_rule):
+    def create_firewall_rule(
+        self,
+        context: lib_context.Context,
+        firewall_rule: dict[str, typing.Any]
+    ) -> typing.Any:
         fwr = firewall_rule
         fwaas_utils.validate_fwr_protocol_parameters(fwr)
         fwaas_utils.validate_fwr_src_dst_ip_version(fwr)
@@ -277,7 +297,12 @@ class FirewallPluginDb:
             fwr_ovo.create()
         return fwr_ovo
 
-    def update_firewall_rule(self, context, id, firewall_rule):
+    def update_firewall_rule(
+        self,
+        context: lib_context.Context,
+        id: str,
+        firewall_rule: dict[str, typing.Any]
+    ) -> typing.Any:
         fwr_ovo = self._get_firewall_rule(context, id)
         fwr_merged = fwr_ovo.to_dict()
         fwr_merged.update(firewall_rule)
@@ -312,7 +337,8 @@ class FirewallPluginDb:
                 fwp_ovo.update()
         return fwr_ovo
 
-    def delete_firewall_rule(self, context, id):
+    def delete_firewall_rule(self, context: lib_context.Context,
+                             id: str) -> None:
         with db_api.CONTEXT_WRITER.using(context):
             fwr = self._get_firewall_rule(context, id)
             # make sure rule is not associated with any policy
@@ -320,7 +346,8 @@ class FirewallPluginDb:
                 raise f_exc.FirewallRuleInUse(firewall_rule_id=id)
             fwr.delete()
 
-    def insert_rule(self, context, id, rule_info):
+    def insert_rule(self, context: lib_context.Context, id: str,
+                    rule_info: dict[str, typing.Any]) -> typing.Any:
         firewall_rule_id = rule_info['firewall_rule_id']
         # ensure rule is not already assigned to the policy
         self._ensure_rule_not_already_associated(context, id, firewall_rule_id)
@@ -358,7 +385,8 @@ class FirewallPluginDb:
             return self._process_rule_for_policy(context, id, firewall_rule_id,
                                                  position)
 
-    def remove_rule(self, context, id, rule_info):
+    def remove_rule(self, context: lib_context.Context, id: str,
+                    rule_info: dict[str, typing.Any]) -> typing.Any:
         firewall_rule_id = rule_info['firewall_rule_id']
         with db_api.CONTEXT_WRITER.using(context):
             # Getting fwr rule and rule association here is just to validate
@@ -369,33 +397,47 @@ class FirewallPluginDb:
                                                  None)
 
     @db_api.CONTEXT_READER
-    def get_firewall_rule(self, context, id, fields=None):
+    def get_firewall_rule(
+        self,
+        context: lib_context.Context,
+        id: str,
+        fields: dict[str, typing.Any] | None = None
+    ) -> typing.Any:
         fwr = self._get_firewall_rule(context, id)
         fwr._policies = self.get_policies_with_rule(context, id) or None
         return fwr
 
-    def get_firewall_rules(self, context, filters=None, fields=None):
+    def get_firewall_rules(
+        self,
+        context: lib_context.Context,
+        filters: dict[str, typing.Any] | None = None,
+        fields: dict[str, typing.Any] | None = None
+    ) -> list[typing.Any]:
         project_id = filters.get('project_id', [None])[0] if filters else None
         self._ensure_default_firewall_group(context, project_id)
         with db_api.CONTEXT_READER.using(context):
             return fw_obj.FirewallRuleV2.get_objects(
                 context, validate_filters=False, **(filters or {}))
 
-    def _get_rules_in_policy(self, context, fwpid):
+    def _get_rules_in_policy(self, context: lib_context.Context,
+                             fwpid: str) -> list[str]:
         """Gets rules in a firewall policy"""
         with db_api.CONTEXT_READER.using(context):
             assocs = fw_obj.FirewallPolicyRuleAssociation.get_objects(
                 context, firewall_policy_id=fwpid)
             return [assoc.firewall_rule_id for assoc in assocs]
 
-    def get_policies_with_rule(self, context, fwrid):
+    def get_policies_with_rule(self, context: lib_context.Context,
+                               fwrid: str) -> list[str]:
         """Gets policies that contain a given firewall rule"""
         with db_api.CONTEXT_READER.using(context):
             assocs = fw_obj.FirewallPolicyRuleAssociation.get_objects(
                 context, firewall_rule_id=fwrid)
             return [assoc.firewall_policy_id for assoc in assocs]
 
-    def _set_rules_in_policy_rule_assoc(self, context, fwp_ovo, rule_id_list):
+    def _set_rules_in_policy_rule_assoc(self, context: lib_context.Context,
+                                        fwp_ovo: typing.Any,
+                                        rule_id_list: list[str]) -> None:
         if not rule_id_list:
             return
         with db_api.CONTEXT_WRITER.using(context):
@@ -407,8 +449,10 @@ class FirewallPluginDb:
                     position=position)
                 assoc.create()
 
-    def _check_rules_for_policy_is_valid(self, context, fwp, fwp_db,
-                                         rule_id_list):
+    def _check_rules_for_policy_is_valid(self, context: lib_context.Context,
+                                         fwp: dict[str, typing.Any],
+                                         fwp_db: typing.Any,
+                                         rule_id_list: list[str]) -> None:
         rules_in_db = fw_obj.FirewallRuleV2.get_objects(
             context, id=rule_id_list)
         rules_dict = {fwr.id: fwr for fwr in rules_in_db}
@@ -433,7 +477,9 @@ class FirewallPluginDb:
                             firewall_rule_id=fwrule_id,
                             project_id=rules_dict[fwrule_id]['project_id'])
 
-    def _check_if_rules_shared_for_policy_shared(self, context, fwp_db, fwp):
+    def _check_if_rules_shared_for_policy_shared(
+            self, context: lib_context.Context, fwp_db: typing.Any,
+            fwp: dict[str, typing.Any]) -> None:
         if fwp['shared']:
             rules_in_db = fwp_db.rule_associations or []
             for entry in rules_in_db:
@@ -444,7 +490,8 @@ class FirewallPluginDb:
                         firewall_rule_id=fwr_db['id'],
                         firewall_policy_id=fwp_db['id'])
 
-    def get_fwgs_with_policy(self, context, fwp_id):
+    def get_fwgs_with_policy(self, context: lib_context.Context,
+                             fwp_id: str) -> tuple[list[str], list[str]]:
         with db_api.CONTEXT_READER.using(context):
             ing_fwgs = fw_obj.FirewallGroup.get_objects(
                 context, ingress_firewall_policy_id=fwp_id)
@@ -454,9 +501,9 @@ class FirewallPluginDb:
             eg_fwg_ids = [fwg.id for fwg in eg_fwgs]
         return ing_fwg_ids, eg_fwg_ids
 
-    def _check_fwgs_associated_with_policy_in_same_project(self, context,
-                                                           fwp_id,
-                                                           fwp_project_id):
+    def _check_fwgs_associated_with_policy_in_same_project(
+            self, context: lib_context.Context, fwp_id: str,
+            fwp_project_id: str) -> None:
         with db_api.CONTEXT_READER.using(context):
             ing_fwgs = fw_obj.FirewallGroup.get_objects(
                 context, ingress_firewall_policy_id=fwp_id)
@@ -467,11 +514,14 @@ class FirewallPluginDb:
                 raise f_exc.FirewallPolicyInUse(
                             firewall_policy_id=fwp_id)
 
-    def _delete_all_rules_from_policy(self, context, fwp_id):
+    def _delete_all_rules_from_policy(self, context: lib_context.Context,
+                                      fwp_id: str) -> None:
         fw_obj.FirewallPolicyRuleAssociation.delete_policy_associations(
             context, fwp_id)
 
-    def _set_rules_for_policy(self, context, fwp_ovo, fwp):
+    def _set_rules_for_policy(self, context: lib_context.Context,
+                              fwp_ovo: typing.Any,
+                              fwp: dict[str, typing.Any]) -> None:
         rule_id_list = fwp['firewall_rules']
         with db_api.CONTEXT_WRITER.using(context):
             if not rule_id_list:
@@ -483,8 +533,10 @@ class FirewallPluginDb:
             self._set_rules_in_policy_rule_assoc(context, fwp_ovo,
                                                  rule_id_list)
 
-    def _create_default_firewall_policy(self, context, project_id, policy_type,
-                                        **kwargs):
+    def _create_default_firewall_policy(self, context: lib_context.Context,
+                                        project_id: str,
+                                        policy_type: str,
+                                        **kwargs: typing.Any) -> typing.Any:
         fwrs = kwargs.get('firewall_rules', [])
         description = kwargs.get('description', '')
         name = (const.DEFAULT_FWP_INGRESS
@@ -499,7 +551,11 @@ class FirewallPluginDb:
         }
         return self._do_create_firewall_policy(context, firewall_policy)
 
-    def _do_create_firewall_policy(self, context, firewall_policy):
+    def _do_create_firewall_policy(
+        self,
+        context: lib_context.Context,
+        firewall_policy: dict[str, typing.Any]
+    ) -> typing.Any:
         fwp = firewall_policy
         with db_api.CONTEXT_WRITER.using(context):
             fwp_ovo = fw_obj.FirewallPolicy(
@@ -515,11 +571,20 @@ class FirewallPluginDb:
             fwp_ovo = self.get_firewall_policy(context, fwp_ovo.id)
         return fwp_ovo
 
-    def create_firewall_policy(self, context, firewall_policy):
+    def create_firewall_policy(
+        self,
+        context: lib_context.Context,
+        firewall_policy: dict[str, typing.Any]
+    ) -> typing.Any:
         self._ensure_not_default_resource(firewall_policy, 'firewall_policy')
         return self._do_create_firewall_policy(context, firewall_policy)
 
-    def update_firewall_policy(self, context, id, firewall_policy):
+    def update_firewall_policy(
+        self,
+        context: lib_context.Context,
+        id: str,
+        firewall_policy: dict[str, typing.Any]
+    ) -> typing.Any:
         fwp = firewall_policy
         with db_api.CONTEXT_WRITER.using(context):
             fwp_ovo = self.get_firewall_policy(context, id)
@@ -542,7 +607,8 @@ class FirewallPluginDb:
             fwp_ovo.update()
         return self.get_firewall_policy(context, id)
 
-    def delete_firewall_policy(self, context, id):
+    def delete_firewall_policy(self, context: lib_context.Context,
+                               id: str) -> None:
         with db_api.CONTEXT_WRITER.using(context):
             fwp_ovo = self.get_firewall_policy(context, id)
             if fw_obj.FirewallGroup.get_objects(
@@ -555,13 +621,21 @@ class FirewallPluginDb:
             fwp_ovo.delete()
 
     @db_api.CONTEXT_READER
-    def get_firewall_policy(self, context, id, fields=None):
+    def get_firewall_policy(
+        self,
+        context: lib_context.Context,
+        id: str,
+        fields: dict[str, typing.Any] | None = None
+    ) -> typing.Any:
         fwp = fw_obj.FirewallPolicy.get_object(context, id=id)
         if not fwp:
             raise f_exc.FirewallPolicyNotFound(firewall_policy_id=id)
         return fwp
 
-    def get_firewall_policies(self, context, filters=None, fields=None):
+    def get_firewall_policies(self, context: lib_context.Context,
+                              filters: dict[str, typing.Any] | None = None,
+                              fields: dict[str, typing.Any] | None = None
+                              ) -> list[typing.Any]:
         project_id = filters.get('project_id', [None])[0] if filters else None
         self._ensure_default_firewall_group(context, project_id)
         filters = dict(filters) if filters else {}
@@ -577,7 +651,9 @@ class FirewallPluginDb:
             return fw_obj.FirewallPolicy.get_objects(
                 context, validate_filters=False, **(filters or {}))
 
-    def _set_ports_for_firewall_group(self, context, fwg_ovo, fwg):
+    def _set_ports_for_firewall_group(self, context: lib_context.Context,
+                                      fwg_ovo: typing.Any,
+                                      fwg: dict[str, typing.Any]) -> None:
         port_id_list = fwg['ports']
         if not port_id_list:
             return
@@ -595,21 +671,24 @@ class FirewallPluginDb:
         if exc_ports:
             raise f_exc.FirewallGroupPortInUse(port_ids=exc_ports)
 
-    def get_ports_in_firewall_group(self, context, firewall_group_id):
+    def get_ports_in_firewall_group(self, context: lib_context.Context,
+                                    firewall_group_id: str) -> list[str]:
         """Get the Ports associated with the  firewall group."""
         with db_api.CONTEXT_READER.using(context):
             assocs = fw_obj.FirewallGroupPortAssociation.get_objects(
                 context, firewall_group_id=firewall_group_id)
             return [assoc.port_id for assoc in assocs]
 
-    def _delete_ports_in_firewall_group(self, context, firewall_group_id):
+    def _delete_ports_in_firewall_group(self, context: lib_context.Context,
+                                        firewall_group_id: str) -> None:
         """Delete the Ports associated with the  firewall group."""
         with db_api.CONTEXT_WRITER.using(context):
             fw_obj.FirewallGroupPortAssociation.delete_group_port_associations(
                 context, firewall_group_id=firewall_group_id)
 
     @db_api.CONTEXT_READER
-    def _get_default_fwg_id(self, context, project_id):
+    def _get_default_fwg_id(self, context: lib_context.Context,
+                            project_id: str) -> str | None:
         """Returns an id of default firewall group for given project or None"""
         fwgs = fw_obj.FirewallGroup.get_objects(
             context.elevated(), project_id=project_id,
@@ -618,7 +697,8 @@ class FirewallPluginDb:
             return fwgs[0].id
         return None
 
-    def get_fwg_attached_to_port(self, context, port_id):
+    def get_fwg_attached_to_port(self, context: lib_context.Context,
+                                 port_id: str) -> str | None:
         """Return a firewall group ID that is attached to a given port"""
         with db_api.CONTEXT_READER.using(context):
             assocs = fw_obj.FirewallGroupPortAssociation.get_objects(
@@ -627,7 +707,8 @@ class FirewallPluginDb:
             return assocs[0].firewall_group_id
         return None
 
-    def get_fwg_ports_in_project(self, context, project_id):
+    def get_fwg_ports_in_project(self, context: lib_context.Context,
+                                 project_id: str) -> list[str]:
         """Return a list of ports under a given project"""
         # Question: why don't we need to handle NoResultFound exception here?
         with db_api.CONTEXT_READER.using(context):
@@ -640,14 +721,15 @@ class FirewallPluginDb:
                 ports.update(a.port_id for a in assocs)
             return list(ports)
 
-    def _ensure_default_firewall_group(self, context, project_id):
+    def _ensure_default_firewall_group(self, context: lib_context.Context,
+                                       project_id: str | None) -> str | None:
         """Create a default firewall group if one doesn't exist for a project
 
         Returns the default firewall group id for a given project.
         """
         project_id = project_id or context.project_id
         if not project_id:
-            return
+            return None
         exists = self._get_default_fwg_id(context, project_id)
         if exists:
             return exists
@@ -700,8 +782,9 @@ class FirewallPluginDb:
             LOG.debug("Default FWG was concurrently created")
             return self._get_default_fwg_id(context, project_id)
 
-    def _create_firewall_group(self, context, firewall_group,
-                               default_fwg=False):
+    def _create_firewall_group(self, context: lib_context.Context,
+                               firewall_group: dict[str, typing.Any],
+                               default_fwg: bool = False) -> typing.Any:
         """Create a firewall group
 
         If default_fwg is True then a default firewall group is being created
@@ -740,11 +823,20 @@ class FirewallPluginDb:
             fwg_ovo = self.get_firewall_group(context, fwg_ovo.id)
         return fwg_ovo
 
-    def create_firewall_group(self, context, firewall_group):
+    def create_firewall_group(
+        self,
+        context: lib_context.Context,
+        firewall_group: dict[str, typing.Any]
+    ) -> typing.Any:
         self._ensure_not_default_resource(firewall_group, 'firewall_group')
         return self._create_firewall_group(context, firewall_group)
 
-    def update_firewall_group(self, context, id, firewall_group):
+    def update_firewall_group(
+        self,
+        context: lib_context.Context,
+        id: str,
+        firewall_group: dict[str, typing.Any]
+    ) -> typing.Any:
         fwg = firewall_group
         # make sure that no group can be updated to have name=default
         self._ensure_not_default_resource(fwg, 'firewall_group')
@@ -777,7 +869,9 @@ class FirewallPluginDb:
                 fwg_ovo.update()
         return self.get_firewall_group(context, id)
 
-    def update_firewall_group_status(self, context, id, status, not_in=None):
+    def update_firewall_group_status(self, context: lib_context.Context,
+                                     id: str, status: str,
+                                     not_in: list[str] | None = None) -> int:
         """Conditionally update firewall_group status.
         Status transition is performed only if firewall is not in the specified
         states as defined by 'not_in' list.
@@ -786,7 +880,8 @@ class FirewallPluginDb:
             return fw_obj.FirewallGroup.update_status(
                 context, id, status, not_in)
 
-    def delete_firewall_group(self, context, id):
+    def delete_firewall_group(self, context: lib_context.Context,
+                              id: str) -> None:
         # Note: Plugin should ensure that it's okay to delete if the
         # firewall is active
 
@@ -814,7 +909,12 @@ class FirewallPluginDb:
             else:
                 fwg_ovo.delete()
 
-    def _ensure_not_default_resource(self, resource_dict, r_type, action=None):
+    def _ensure_not_default_resource(
+        self,
+        resource_dict: dict[str, typing.Any],
+        r_type: str,
+        action: str | None = None
+    ) -> None:
         """Checks that a resource is not default by checking its name
 
         A resource_dict can be either a dictionary in form {r_type : {}} or a
@@ -842,13 +942,23 @@ class FirewallPluginDb:
                     resource_type='Firewall Policy', name=resource['name'])
 
     @db_api.CONTEXT_READER
-    def get_firewall_group(self, context, id, fields=None):
+    def get_firewall_group(
+        self,
+        context: lib_context.Context,
+        id: str,
+        fields: dict[str, typing.Any] | None = None
+    ) -> typing.Any:
         fwg = fw_obj.FirewallGroup.get_object(context, id=id)
         if not fwg:
             raise f_exc.FirewallGroupNotFound(firewall_id=id)
         return fwg
 
-    def get_firewall_groups(self, context, filters=None, fields=None):
+    def get_firewall_groups(
+        self,
+        context: lib_context.Context,
+        filters: dict[str, typing.Any] | None = None,
+        fields: dict[str, typing.Any] | None = None
+    ) -> list[typing.Any]:
         project_id = filters.get('project_id', [None])[0] if filters else None
         self._ensure_default_firewall_group(context, project_id)
         filters = dict(filters) if filters else {}
@@ -865,5 +975,5 @@ class FirewallPluginDb:
                 context, validate_filters=False, **(filters or {}))
 
 
-def _is_default(fwg):
+def _is_default(fwg: typing.Any) -> bool:
     return fwg.name == const.DEFAULT_FWG
