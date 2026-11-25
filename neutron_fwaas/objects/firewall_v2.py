@@ -10,8 +10,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import typing
+
 from neutron_lib.api.definitions import constants as api_const
 from neutron_lib import constants as lib_constants
+from neutron_lib import context as n_ctx
 from neutron_lib.db import resource_extend
 from neutron_lib.objects import common_types
 from neutron_lib.utils import net as net_utils
@@ -75,7 +78,10 @@ class FirewallRuleV2(base.NeutronDbObject):
     fields_no_update = ['project_id']
 
     @classmethod
-    def modify_fields_to_db(cls, fields):
+    def modify_fields_to_db(
+        cls,
+        fields: dict[str, typing.Any]
+    ) -> dict[str, typing.Any]:
         """Convert IP address fields to strings before storing in DB."""
         result = super().modify_fields_to_db(fields)
         for field in ('source_ip_address', 'destination_ip_address'):
@@ -84,7 +90,10 @@ class FirewallRuleV2(base.NeutronDbObject):
         return result
 
     @classmethod
-    def modify_fields_from_db(cls, db_obj):
+    def modify_fields_from_db(
+        cls,
+        db_obj: typing.Any
+    ) -> dict[str, typing.Any]:
         """Convert IP address strings from DB to AuthenticIPNetwork."""
         fields = super().modify_fields_from_db(db_obj)
         for field in ('source_ip_address', 'destination_ip_address'):
@@ -92,7 +101,7 @@ class FirewallRuleV2(base.NeutronDbObject):
                 fields[field] = net_utils.AuthenticIPNetwork(fields[field])
         return fields
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, typing.Any]:
         _dict = super().to_dict()
         # NeutronDbObject.modify_fields_from_db skips NULL columns, so
         # nullable fields may be absent after loading from the DB.
@@ -140,7 +149,8 @@ class FirewallPolicyRuleAssociation(base.NeutronDbObject):
     fields_no_update = ['firewall_policy_id', 'firewall_rule_id']
 
     @classmethod
-    def delete_policy_associations(cls, context, firewall_policy_id):
+    def delete_policy_associations(cls, context: n_ctx.Context,
+                                   firewall_policy_id: str) -> None:
         context.session.query(cls.db_model).filter_by(
             firewall_policy_id=firewall_policy_id).delete()
 
@@ -167,7 +177,7 @@ class FirewallPolicy(base.NeutronDbObject):
 
     fields_no_update = ['project_id']
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, typing.Any]:
         _dict = super().to_dict()
         # NeutronDbObject.modify_fields_from_db skips NULL columns, so
         # nullable fields may be absent after loading from the DB.
@@ -203,7 +213,8 @@ class FirewallGroupPortAssociation(base.NeutronDbObject):
     fields_no_update = ['firewall_group_id', 'port_id']
 
     @classmethod
-    def delete_group_port_associations(cls, context, firewall_group_id):
+    def delete_group_port_associations(cls, context: n_ctx.Context,
+                                       firewall_group_id: str) -> None:
         context.session.query(cls.db_model).filter_by(
             firewall_group_id=firewall_group_id).delete()
 
@@ -250,10 +261,10 @@ class FirewallGroup(base.NeutronDbObject):
     obj_extra_fields = ['ports']
 
     @property
-    def ports(self):
+    def ports(self) -> list[str]:
         return [assoc.port_id for assoc in (self.port_associations or [])]
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, typing.Any]:
         _dict = super().to_dict()
         # NeutronDbObject.modify_fields_from_db skips NULL columns, so
         # nullable fields may be absent after loading from the DB.
@@ -271,7 +282,9 @@ class FirewallGroup(base.NeutronDbObject):
         return _dict
 
     @classmethod
-    def update_status(cls, context, id, status, not_in=None):
+    def update_status(cls, context: n_ctx.Context, id: str,
+                      status: str, not_in: list[str] | None = None
+                      ) -> int:
         not_in = not_in or []
         return context.session.query(cls.db_model).filter(
             cls.db_model.id == id
@@ -279,7 +292,7 @@ class FirewallGroup(base.NeutronDbObject):
             ~cls.db_model.status.in_(not_in)
         ).update({'status': status}, synchronize_session=False)
 
-    def load_synthetic_db_fields(self, db_obj=None):
+    def load_synthetic_db_fields(self, db_obj: typing.Any = None) -> None:
         """Override to handle multiple FK references to FirewallPolicy.
 
         The base implementation raises NeutronSyntheticFieldMultipleForeignKeys
