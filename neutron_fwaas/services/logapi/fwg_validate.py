@@ -13,10 +13,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import typing
+
 from neutron.objects import ports
 from neutron.services.logapi.common import exceptions as log_exc
 from neutron.services.logapi.common import validators
 from neutron_lib import constants as nl_const
+from neutron_lib import context as n_ctx
 from neutron_lib.plugins import directory
 from sqlalchemy.orm import exc as orm_exc
 
@@ -24,10 +27,12 @@ from neutron_fwaas.common import fwaas_constants
 from neutron_fwaas.services.logapi import constants as log_const
 from neutron_fwaas.services.logapi import exceptions as fwg_log_exc
 
-fwg_plugin = None
+fwg_plugin: typing.Any | None = None
 
 
-def _check_fwg(context, fwg_id):
+def _check_fwg(context: n_ctx.Context, fwg_id: str) -> None:
+    if fwg_plugin is None:
+        return
     try:
         fwg = fwg_plugin.get_firewall_group(context, id=fwg_id)
     except orm_exc.NoResultFound:
@@ -38,7 +43,9 @@ def _check_fwg(context, fwg_id):
             fwg_id=fwg_id, fwg_status=fwg['status'])
 
 
-def _check_fwg_port(context, port_id):
+def _check_fwg_port(context: n_ctx.Context, port_id: str) -> None:
+    if fwg_plugin is None:
+        return
 
     # Checking port exists
     port = ports.Port.get_object(context, id=port_id)
@@ -79,7 +86,10 @@ def _check_fwg_port(context, port_id):
                                                   fwg_status=fwg['status'])
 
 
-def _check_target_resource_bound_fwg(context, fwg_id, target_id):
+def _check_target_resource_bound_fwg(context: n_ctx.Context,
+                                     fwg_id: str, target_id: str
+                                     ) -> None:
+    assert fwg_plugin is not None
     ports = fwg_plugin.driver.firewall_db.get_ports_in_firewall_group(
         context=context, firewall_group_id=fwg_id)
     if target_id not in ports:
@@ -91,7 +101,8 @@ def _check_target_resource_bound_fwg(context, fwg_id, target_id):
 
 
 @validators.ResourceValidateRequest.register(log_const.FIREWALL_GROUP)
-def validate_firewall_group_request(context, log_data):
+def validate_firewall_group_request(context: n_ctx.Context,
+                                    log_data: dict[str, typing.Any]) -> None:
     """Validate a log request
 
     This method validates log request is satisfied or not.

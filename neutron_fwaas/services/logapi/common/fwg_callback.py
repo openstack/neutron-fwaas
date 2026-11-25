@@ -13,10 +13,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import typing
+
 from neutron.objects import ports as port_objects
 from neutron.services.logapi.drivers import manager
 from neutron_lib.callbacks import events
 from neutron_lib import constants as nl_const
+from neutron_lib import context as n_ctx
 from neutron_lib.services.logapi import constants as log_const
 
 from neutron_fwaas.services.logapi.common import log_db_api
@@ -24,10 +27,19 @@ from neutron_fwaas.services.logapi.common import log_db_api
 
 class FirewallGroupCallBack(manager.ResourceCallBackBase):
 
-    def handle_event(self, resource, event, trigger, **kwargs):
+    def handle_event(
+        self,
+        resource: typing.Any,
+        event: str,
+        trigger: typing.Any,
+        **kwargs: typing.Any
+    ) -> None:
         payload = kwargs.get('payload')
+        if not payload:
+            return
+
         context = payload.context
-        ports_delta = []
+        ports_delta: list[str] | set[str] = []
         if event == events.AFTER_CREATE:
             # Update log when a new firewall group is created with ports
             ports_delta = payload.latest_state['ports']
@@ -43,14 +55,16 @@ class FirewallGroupCallBack(manager.ResourceCallBackBase):
         if self.need_to_notify(context, ports_delta):
             self.trigger_logging(context, payload.resource_id, ports_delta)
 
-    def trigger_logging(self, context, fwg_id, ports_delta):
+    def trigger_logging(self, context: n_ctx.Context, fwg_id: str,
+                        ports_delta: list[str] | set[str]) -> None:
         log_resources = log_db_api.get_logs_for_fwg(
             context, fwg_id, ports_delta)
         if log_resources:
             self.resource_push_api(
                 log_const.RESOURCE_UPDATE, context, log_resources)
 
-    def need_to_notify(self, context, ports):
+    def need_to_notify(self, context: n_ctx.Context,
+                       ports: list[str] | set[str]) -> bool:
         notify = False
         for port_id in ports:
             port = port_objects.Port.get_object(context, id=port_id)

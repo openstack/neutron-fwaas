@@ -20,7 +20,9 @@ from neutron_fwaas.services.logapi.common import log_db_api
 
 # Use this when register log driver with
 # "register_rpc_methods" function
-def get_fwg_log_info_for_port(context: typing.Any, port_id: str) -> typing.Any:
+def get_fwg_log_info_for_port(
+        context: typing.Any, port_id: list[str]
+) -> list[dict[str, typing.Any]]:
     return log_db_api.get_fwg_log_info_for_port(context, port_id)
 
 

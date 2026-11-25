@@ -13,22 +13,28 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import typing
+
 from neutron.objects.logapi import logging_resource as log_object
 from neutron.objects import ports as port_objects
 from neutron_lib import constants as nl_const
+from neutron_lib import context as n_ctx
 from neutron_lib.plugins import directory
 
 from neutron_fwaas.common import fwaas_constants
 from neutron_fwaas.services.logapi import constants
 
-fw_plugin_db = None
+fw_plugin_db: typing.Any | None = None
 
 
 # TODO(longkb): We will support L2 port. Currently, this method returns only
 # router ports.
-def _get_ports_being_logged(context, log_obj):
+def _get_ports_being_logged(context: n_ctx.Context, log_obj: typing.Any
+                            ) -> list[str]:
     """Return a list of ports being logged with a given log_obj"""
 
+    if fw_plugin_db is None:
+        return []
     target_id = log_obj['target_id']
     resource_id = log_obj['resource_id']
 
@@ -51,6 +57,8 @@ def _get_ports_being_logged(context, log_obj):
     filtered_port_ids = []
     for port_id in port_ids:
         port = port_objects.Port.get_object(context, id=port_id)
+        if not port:
+            continue
         device_owner = port.get('device_owner', '')
         # TODO(longkb): L2 ports will be supported in the future
         # Check whether a port is router port or not.
@@ -64,7 +72,8 @@ def _get_ports_being_logged(context, log_obj):
     return filtered_port_ids
 
 
-def _make_log_info_dict(log_obj, port_ids):
+def _make_log_info_dict(log_obj: typing.Any,
+                        port_ids: list[str]) -> dict[str, typing.Any]:
     log_info = {
         'id': log_obj['id'],
         'ports_log': port_ids,
@@ -74,7 +83,10 @@ def _make_log_info_dict(log_obj, port_ids):
     return log_info
 
 
-def get_logs_for_port(context, port_id):
+def get_logs_for_port(
+    context: n_ctx.Context,
+    port_id: str
+) -> list[typing.Any]:
     """Return a list of log_resources bound to a given port_id"""
 
     global fw_plugin_db
@@ -116,7 +128,8 @@ def get_logs_for_port(context, port_id):
     return logs_bounded
 
 
-def get_logs_for_fwg(context, fwg_id, ports_delta):
+def get_logs_for_fwg(context: n_ctx.Context, fwg_id: str,
+                     ports_delta: list[str] | set[str]) -> list[typing.Any]:
     """Return a list of log_resources bound to a firewall group"""
 
     global fw_plugin_db
@@ -144,7 +157,10 @@ def get_logs_for_fwg(context, fwg_id, ports_delta):
     return log_resources
 
 
-def get_fwg_log_info_for_port(context, port_ids):
+def get_fwg_log_info_for_port(
+    context: n_ctx.Context,
+    port_ids: list[str]
+) -> list[dict[str, typing.Any]]:
     """Return a list of firewall group log info for a given port
     The list has format as below:
 
@@ -188,7 +204,10 @@ def get_fwg_log_info_for_port(context, port_ids):
     return logs_info
 
 
-def get_fwg_log_info_for_log_resources(context, log_resources):
+def get_fwg_log_info_for_log_resources(
+    context: n_ctx.Context,
+    log_resources: list[dict[str, typing.Any]]
+) -> list[dict[str, typing.Any]]:
     """Return a list of firewall group log info for list of log_resources
     The list has format as below:
 
